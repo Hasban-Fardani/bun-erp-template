@@ -13,3 +13,4 @@ konsekuensi. Alternatif yang ditolak dicatat supaya tidak diusulkan ulang.
 - [ADR-0008 — Distribusi: satu repo template, client menyalin](0008-distribusi-template.md)
 - [ADR-0009 — Auth: email+password, Google OAuth dorman](0009-auth-google-dorman.md)
 - [ADR-0010 — Driver database: PGlite (dev/test), PostgreSQL (produksi)](0010-database-driver.md)
+- [ADR-0011 — Deployment: hybrid (web statis di Cloudflare, API portabel)](0011-deployment-hybrid.md)
