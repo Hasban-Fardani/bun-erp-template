@@ -62,6 +62,22 @@ export function useCreateUser() {
   });
 }
 
+export function useUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name, roleKey }: { id: string; name: string; roleKey?: string }) => {
+      const updated = await api.patch<PublicUser>(`/api/v1/users/${id}`, { name });
+      // Peran diubah lewat endpoint assign/revoke terpisah — service update tidak menyentuhnya.
+      if (roleKey) await api.post<PublicUser>(`/api/v1/users/${id}/roles`, { roleKey });
+      return updated;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["users"] });
+      void qc.invalidateQueries({ queryKey: ["audit"] });
+    },
+  });
+}
+
 export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({

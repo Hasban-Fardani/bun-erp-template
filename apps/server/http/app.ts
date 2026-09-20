@@ -44,7 +44,7 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
       origin: (origin) => (ctx.env.trustedOrigins.includes(origin) ? origin : null),
       credentials: true,
       allowHeaders: ["content-type"],
-      allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
       maxAge: 86_400,
     }),
   );

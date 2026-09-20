@@ -2,10 +2,8 @@
 export const statements = {
   // create/read/update/delete ditegakkan route user; `impersonate` menyusul bersama fiturnya.
   user: ["create", "read", "update", "delete", "impersonate"],
-  // Hanya `read` dan `assign` yang ditegakkan route saat ini. `create`/`update`/`delete`
-  // sengaja belum masuk katalog: role sistem berasal dari kode (`systemRoles`), dan
-  // menambahkan izin tanpa route yang menegakkannya hanya membuat katalog berbohong.
-  role: ["read", "assign"],
+  // `assign` = menugaskan role ke user; kelola role & izinnya dijaga create/update/delete.
+  role: ["create", "read", "update", "delete", "assign"],
   department: ["create", "read", "update", "delete"],
   audit: ["read"],
 } as const;

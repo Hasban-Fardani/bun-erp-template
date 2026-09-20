@@ -9,6 +9,8 @@
   --color-ink-muted: #78716c;
   --color-accent: #047857;
   --color-accent-soft: #ecfdf5;
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fef2f2;
 }
 
 body {

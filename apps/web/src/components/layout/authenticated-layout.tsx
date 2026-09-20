@@ -1,37 +1,64 @@
 import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
-import { Menu, Users as UsersIcon } from "lucide-react";
+import { Menu, PanelLeftClose, PanelLeftOpen, Users as UsersIcon } from "lucide-react";
 import { useState } from "react";
 import { uiConfig } from "../../config/ui.ts";
 import { useSession, useSignOut } from "../../features/users/api.ts";
 import { cn } from "../../lib/cn.ts";
 import { UserMenu } from "../../shared/ui/dropdown-menu.tsx";
 import { Sheet } from "../../shared/ui/sheet.tsx";
+import { Tooltip } from "../../shared/ui/tooltip.tsx";
 import { navGroups } from "./sidebar-data.ts";
 
 type SessionData = Awaited<ReturnType<typeof useSession>>["data"];
+
+const COLLAPSE_KEY = "erp.sidebar.collapsed";
+
+/** Preferensi collapse bertahan antar-reload; dibaca malas agar tak menyentuh localStorage saat SSR. */
+function useCollapsed() {
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
+  return [
+    collapsed,
+    (next: boolean) => {
+      localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      setCollapsed(next);
+    },
+  ] as const;
+}
 
 function hasPermission(session: SessionData, permission?: string): boolean {
   if (!permission) return true;
   return session?.permissions.includes(permission) ?? false;
 }
 
-function NavContent({ session, onNavigate }: { session: SessionData; onNavigate?: () => void }) {
+function NavContent({
+  session,
+  onNavigate,
+  collapsed = false,
+}: {
+  session: SessionData;
+  onNavigate?: () => void;
+  collapsed?: boolean;
+}) {
   const location = useLocation();
   return (
-    <nav className="flex h-full flex-col">
-      <div className="flex h-14 items-center gap-2 border-b border-border px-4">
-        <span className="flex size-7 items-center justify-center rounded-md bg-accent text-accent-ink">
+    <nav className="flex h-full flex-col" aria-label="Navigasi utama">
+      <div className={cn("flex h-14 shrink-0 items-center gap-2 border-b border-border", collapsed ? "px-3" : "px-4")}>
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-accent-ink">
           <UsersIcon className="size-4" />
         </span>
-        <span className="text-[14.5px] font-semibold tracking-tight">{uiConfig.appName}</span>
+        {/* Mode rail: nama aplikasi hilang, ikonnya tetap jadi penanda posisi. */}
+        {collapsed ? null : (
+          <span className="truncate text-[14.5px] font-semibold tracking-tight">{uiConfig.appName}</span>
+        )}
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+
+      <div className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
         {navGroups.map((group) => {
           const items = group.items.filter((item) => hasPermission(session, item.permission));
           if (items.length === 0) return null;
           return (
             <div key={group.title} className="mb-5">
-              {group.title ? (
+              {group.title && !collapsed ? (
                 <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-ink-muted">
                   {group.title}
                 </p>
@@ -39,21 +66,31 @@ function NavContent({ session, onNavigate }: { session: SessionData; onNavigate?
               <ul className="space-y-0.5">
                 {items.map((item) => {
                   const active = location.pathname === item.url || location.pathname.startsWith(`${item.url}/`);
+                  const link = (
+                    <Link
+                      to={item.url}
+                      onClick={onNavigate}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex items-center rounded-md text-[13.5px] font-medium outline-none transition-colors",
+                        "focus-visible:ring-2 focus-visible:ring-accent/40",
+                        collapsed ? "h-9 justify-center" : "gap-2.5 px-2 py-2",
+                        active ? "bg-accent-soft text-accent-ink" : "text-ink-soft hover:bg-background",
+                      )}
+                    >
+                      <item.icon className="size-4 shrink-0" aria-hidden />
+                      {collapsed ? <span className="sr-only">{item.title}</span> : item.title}
+                    </Link>
+                  );
                   return (
                     <li key={item.url}>
-                      <Link
-                        to={item.url}
-                        onClick={onNavigate}
-                        aria-current={active ? "page" : undefined}
-                        className={cn(
-                          "flex items-center gap-2.5 rounded-md px-2 py-2 text-[13.5px] font-medium outline-none transition-colors",
-                          "focus-visible:ring-2 focus-visible:ring-accent/40",
-                          active ? "bg-accent-soft text-accent-ink" : "text-ink-soft hover:bg-background",
-                        )}
-                      >
-                        <item.icon className="size-4 shrink-0" aria-hidden />
-                        {item.title}
-                      </Link>
+                      {collapsed ? (
+                        <Tooltip label={item.title} side="right">
+                          {link}
+                        </Tooltip>
+                      ) : (
+                        link
+                      )}
                     </li>
                   );
                 })}
@@ -68,16 +105,22 @@ function NavContent({ session, onNavigate }: { session: SessionData; onNavigate?
 
 function Topbar({ session }: { session: SessionData }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useCollapsed();
   const signOut = useSignOut();
 
   return (
     <>
-      {/* Sidebar desktop: kolom tetap; mobile: tersembunyi, diganti drawer. */}
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 border-r border-border bg-surface lg:block">
-        <NavContent session={session} />
+      {/* Desktop: bisa diringkas jadi rail ikon; mobile: drawer penuh. */}
+      <aside
+        className={cn(
+          "sticky top-0 hidden h-dvh shrink-0 border-r border-border bg-surface transition-[width] duration-200 lg:block",
+          collapsed ? "w-16" : "w-60",
+        )}
+      >
+        <NavContent session={session} collapsed={collapsed} />
       </aside>
 
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen} className="lg:hidden">
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen} title="Navigasi" titleHidden className="lg:hidden">
         <NavContent session={session} onNavigate={() => setMobileOpen(false)} />
       </Sheet>
 
@@ -90,6 +133,16 @@ function Topbar({ session }: { session: SessionData }) {
             className="rounded-md p-1.5 text-ink-soft outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent/40 lg:hidden"
           >
             <Menu className="size-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Perluas sidebar" : "Ringkas sidebar"}
+            aria-expanded={!collapsed}
+            className="hidden rounded-md p-1.5 text-ink-soft outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent/40 lg:inline-flex"
+          >
+            {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           </button>
 
           <div className="ml-auto flex items-center">

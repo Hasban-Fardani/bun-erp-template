@@ -1,3 +1,4 @@
+/** Bentuk respons API admin — disamakan dengan service server, bukan dikarang. */
 export type Role = {
   id: string;
   key: string;
@@ -5,6 +6,14 @@ export type Role = {
   description: string;
   isSystem: boolean;
   organizationId: string;
+  permissions: string[];
+};
+
+/** Katalog statemen dari kode (`/roles/statements`) — sumber layar izin, tidak disalin. */
+export type RoleStatements = {
+  statements: Record<string, string[]>;
+  permissions: string[];
+  systemRoles: { key: string; name: string; description: string; permissions: string[] }[];
 };
 
 export type AuditLog = {

@@ -2,6 +2,7 @@ import * as z from "zod";
 import * as auditSchema from "../modules/audit/schema.ts";
 import * as deptSchema from "../modules/departments/schema.ts";
 import * as identitySchema from "../modules/identity/schema.ts";
+import * as rbacSchema from "../modules/rbac/schema.ts";
 import { allPermissions, statements, systemRoles } from "../modules/rbac/statements.ts";
 import type { Env } from "../platform/config/index.ts";
 
@@ -107,10 +108,36 @@ const ops: Record<string, OpSpec> = {
   },
   "GET /api/v1/roles": {
     permission: "role.read",
-    summary: "Daftar role organisasi",
+    summary: "Daftar role organisasi beserta izinnya",
     data: {
       type: "object",
       properties: { items: { type: "array", items: ref("Role") }, total: { type: "integer" } },
+    },
+  },
+  "POST /api/v1/roles": {
+    permission: "role.create",
+    summary: "Buat role kustom",
+    requestBody: "CreateRole",
+    data: ref("Role"),
+  },
+  "PATCH /api/v1/roles/:id": {
+    permission: "role.update",
+    summary: "Ubah nama/deskripsi role",
+    requestBody: "UpdateRole",
+    data: ref("Role"),
+  },
+  "DELETE /api/v1/roles/:id": {
+    permission: "role.delete",
+    summary: "Hapus role kustom (ditolak bila sistem atau masih dipakai)",
+    data: { type: "object", properties: { id: { type: "string" } } },
+  },
+  "PUT /api/v1/roles/:id/permissions": {
+    permission: "role.update",
+    summary: "Timpa seluruh izin role dengan daftar yang dikirim",
+    requestBody: "SetRolePermissions",
+    data: {
+      type: "object",
+      properties: { id: { type: "string" }, permissions: { type: "array", items: { type: "string" } } },
     },
   },
   "GET /api/v1/roles/statements": {
@@ -293,6 +320,7 @@ export function buildOpenApi(env: Env): Record<string, unknown> {
             description: { type: "string" },
             isSystem: { type: "boolean" },
             organizationId: { type: "string", format: "uuid" },
+            permissions: { type: "array", items: { type: "string" } },
           },
         },
         Department: {
@@ -326,6 +354,9 @@ export function buildOpenApi(env: Env): Record<string, unknown> {
         UserCreate: jsonSchema(identitySchema.createUserSchema),
         UserUpdate: jsonSchema(identitySchema.updateUserSchema),
         AssignRole: jsonSchema(identitySchema.assignRoleSchema),
+        CreateRole: jsonSchema(rbacSchema.createRoleSchema),
+        UpdateRole: jsonSchema(rbacSchema.updateRoleSchema),
+        SetRolePermissions: jsonSchema(rbacSchema.setRolePermissionsSchema),
         DepartmentCreate: jsonSchema(deptSchema.createDepartmentSchema),
         DepartmentUpdate: jsonSchema(deptSchema.updateDepartmentSchema),
       },

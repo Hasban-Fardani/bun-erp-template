@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { Check, type LucideIcon, Trash2, X } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { cn } from "../../lib/cn.ts";
 
 /** Kartu permukaan dasar; warna & garis dari token tema, bukan nilai mentah. */
@@ -18,7 +19,7 @@ export function CardHeader({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border/70">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {description ? <p className="text-[13px] text-ink-muted">{description}</p> : null}
       </div>
       {action}
@@ -39,22 +40,66 @@ export function Badge({ tone = "neutral", children }: { tone?: "neutral" | "acce
   );
 }
 
+/**
+ * Aksi selalu tampil sebagai ikon berlabel, bukan teks polos: baris tabel penuh aksi
+ * jadi terbaca sekali lihat, dan `aria-label` wajib supaya ikon tetap punya nama.
+ */
+export function IconButton({
+  icon: Icon,
+  label,
+  variant = "ghost",
+  className,
+  ...rest
+}: {
+  icon: LucideIcon;
+  label: string;
+  variant?: "ghost" | "danger" | "primary";
+} & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "title">) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      className={cn(
+        "inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+        "disabled:opacity-40 disabled:pointer-events-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        variant === "primary" && "bg-ink text-white hover:bg-ink/85",
+        variant === "ghost" && "text-ink-soft hover:bg-background hover:text-ink",
+        variant === "danger" && "text-ink-soft hover:bg-danger-soft hover:text-danger",
+        className,
+      )}
+      {...rest}
+    >
+      <Icon size={15} aria-hidden="true" />
+    </button>
+  );
+}
+
 export function Button({
   variant = "primary",
+  icon: Icon,
   className,
   children,
   ...rest
-}: { variant?: "primary" | "ghost" } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+}: {
+  variant?: "primary" | "ghost" | "danger";
+  icon?: LucideIcon;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={cn(
         "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
         "disabled:opacity-50 disabled:pointer-events-none",
-        variant === "primary" ? "bg-ink text-white hover:bg-ink/85" : "text-ink-soft hover:bg-background",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        variant === "primary" && "bg-ink text-white hover:bg-ink/85",
+        variant === "ghost" && "text-ink-soft hover:bg-background",
+        variant === "danger" && "text-danger hover:bg-danger-soft",
         className,
       )}
       {...rest}
     >
+      {Icon ? <Icon size={15} aria-hidden="true" /> : null}
       {children}
     </button>
   );
@@ -73,7 +118,93 @@ export function Input({ className, ...rest }: React.InputHTMLAttributes<HTMLInpu
   );
 }
 
-/** Empty/error state tunggal supaya setiap tabel punya cara bicara yang sama. */
-export function EmptyState({ message }: { message: string }) {
-  return <div className="px-4 py-10 text-center text-[13px] text-ink-muted">{message}</div>;
+export function Textarea({ className, ...rest }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        "min-h-20 w-full rounded-md border border-border bg-surface px-2.5 py-2 text-[13px] outline-none",
+        "placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-accent/40",
+        className,
+      )}
+      {...rest}
+    />
+  );
+}
+
+export function Select({ className, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={cn(
+        "h-8 w-full rounded-md border border-border bg-surface px-2 text-[13px] outline-none",
+        "focus-visible:ring-2 focus-visible:ring-accent/40",
+        className,
+      )}
+      {...rest}
+    />
+  );
+}
+
+/** Label selalu terikat `htmlFor`; input tanpa label terbaca kosong oleh screen reader. */
+export function Field({
+  id,
+  label,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor={id} className="text-[12.5px] font-medium text-ink-soft">
+        {label}
+      </label>
+      {children}
+      {hint ? <p className="text-[11.5px] text-ink-muted">{hint}</p> : null}
+    </div>
+  );
+}
+
+export function EmptyState({ message, icon: Icon }: { message: string; icon?: LucideIcon }) {
+  return (
+    <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-[13px] text-ink-muted">
+      {Icon ? <Icon size={20} aria-hidden="true" className="text-ink-muted" /> : null}
+      {message}
+    </div>
+  );
+}
+
+/**
+ * Hapus butuh konfirmasi, tapi `window.confirm` memblokir dan tak bisa ditata. Tombol ini
+ * berubah jadi tanya-jawab di tempat: klik pertama membuka pilihan, yang batal mudah dijangkau.
+ */
+export function ConfirmDelete({
+  label,
+  onConfirm,
+  disabled,
+}: {
+  label: string;
+  onConfirm: () => void;
+  disabled?: boolean;
+}) {
+  const [armed, setArmed] = useState(false);
+  if (!armed) {
+    return (
+      <IconButton
+        icon={Trash2}
+        label={`Hapus ${label}`}
+        variant="danger"
+        disabled={disabled}
+        onClick={() => setArmed(true)}
+      />
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1">
+      <IconButton icon={Check} label={`Konfirmasi hapus ${label}`} variant="danger" onClick={onConfirm} />
+      <IconButton icon={X} label="Batal" onClick={() => setArmed(false)} />
+    </span>
+  );
 }
