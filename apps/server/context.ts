@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { type Auth, createAuth } from "./modules/identity/auth.ts";
 import { type Env, loadEnv } from "./platform/config/index.ts";
 import { createDatabase, type Database } from "./platform/database/index.ts";
 import { migrate } from "./platform/database/migrate.ts";
-import { organizations } from "./platform/database/schema.ts";
 import { createLogger, type Logger } from "./platform/observability/logger.ts";
+
+export { resolveDefaultOrganizationId } from "./platform/database/organizations.ts";
 
 /**
  * Composition root: satu tempat yang tahu bagaimana potongan disusun. Modul menerima
@@ -16,6 +17,7 @@ export type AppContext = {
   env: Env;
   db: Database;
   logger: Logger;
+  auth: Auth;
   close: () => Promise<void>;
 };
 
@@ -38,17 +40,7 @@ export async function createContext(options: BootstrapOptions = {}): Promise<App
     if (ran.length > 0) logger.info({ event: "database.migrated", migrations: ran });
   }
 
-  return { env, db, logger, close };
-}
+  const auth = createAuth(env, db);
 
-/** Modul bisnis tidak boleh mengarang organisasi sendiri: bagian ini yang menyelesaikannya. */
-export async function resolveDefaultOrganizationId(db: Database, slug = "default"): Promise<string> {
-  const rows = await db
-    .select({ id: organizations.id })
-    .from(organizations)
-    .where(eq(organizations.slug, slug))
-    .limit(1);
-  const id = rows[0]?.id;
-  if (!id) throw new Error("Default organization missing — run `bun erp db:seed`");
-  return id;
+  return { env, db, logger, auth, close };
 }

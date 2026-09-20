@@ -29,5 +29,7 @@
       }
     ]
   },
-  "moduleReferenceExample": "apps/server/modules/departments"
+  "moduleReferenceExample": "apps/server/modules/identity",
+  "coreModules": ["apps/server/modules/identity", "apps/server/modules/rbac", "apps/server/modules/audit"],
+  "moduleSecondaryExamples": ["apps/server/modules/departments"]
 }

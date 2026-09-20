@@ -4,6 +4,7 @@ import type * as z from "zod";
 /** Stable error codes: klien boleh bergantung padanya, pesan boleh berubah. */
 export const ErrorCode = {
   validationFailed: "VALIDATION_FAILED",
+  unauthorized: "UNAUTHORIZED",
   notFound: "NOT_FOUND",
   forbidden: "FORBIDDEN",
   conflict: "CONFLICT",
@@ -36,6 +37,15 @@ export class ApiError extends Error {
 
   static notFound(message = "Resource not found"): ApiError {
     return new ApiError(ErrorCode.notFound, 404, message);
+  }
+
+  /** 401 = belum ada identitas. 403 = identitas ada, izinnya tidak. Jangan ditukar. */
+  static unauthorized(message = "Authentication required"): ApiError {
+    return new ApiError(ErrorCode.unauthorized, 401, message);
+  }
+
+  static forbidden(message = "Permission denied"): ApiError {
+    return new ApiError(ErrorCode.forbidden, 403, message);
   }
 
   /** 409 untuk bentrok state (kode unik sudah dipakai), bukan 422 yang berarti bentuk input salah. */

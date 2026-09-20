@@ -1,22 +1,24 @@
-#!/usr/bin/env bun
 /**
  * CLI thin wrapper (PRD §11). Perintah memanggil modul yang sama dengan runtime —
  * CLI tidak menyimpan logika sendiri.
  */
 import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
-import { sql } from "drizzle-orm";
-import { checkScope } from "../../tools/scope.ts";
-import { validateSkills } from "../../tools/skills.ts";
-import { loadTasks, validateTasks } from "../../tools/tasks.ts";
-import { createContext, resolveDefaultOrganizationId } from "./context.ts";
-import { createApp } from "./http/app.ts";
-import { loadEnv, strayKeyWarnings } from "./platform/config/index.ts";
-import { migrate } from "./platform/database/migrate.ts";
-import { organizations } from "./platform/database/schema.ts";
-import { seed } from "./platform/database/seed.ts";
+import { eq, sql } from "drizzle-orm";
+import { createContext, resolveDefaultOrganizationId } from "./apps/server/context.ts";
+import { createApp } from "./apps/server/http/app.ts";
+import { recordAudit, snapshot } from "./apps/server/modules/audit/service.ts";
+import { users } from "./apps/server/modules/identity/data.ts";
+import { assignRole, findRoleByKey } from "./apps/server/modules/rbac/service.ts";
+import { loadEnv, strayKeyWarnings } from "./apps/server/platform/config/index.ts";
+import { migrate } from "./apps/server/platform/database/migrate.ts";
+import { organizations } from "./apps/server/platform/database/schema.ts";
+import { seed } from "./apps/server/platform/database/seed.ts";
+import { checkScope } from "./tools/scope.ts";
+import { validateSkills } from "./tools/skills.ts";
+import { loadTasks, validateTasks } from "./tools/tasks.ts";
 
-const repoRoot = resolve(import.meta.dir, "../..");
+const repoRoot = resolve(import.meta.dir);
 const MIGRATIONS_DIR = resolve(repoRoot, "apps/server/migrations");
 const TASKS_DIR = resolve(repoRoot, "docs/tasks");
 const SKILLS_DIR = resolve(repoRoot, "skills");
@@ -52,25 +54,29 @@ class GateFailure extends Error {
 }
 
 /** Gate membaca file repo langsung — dipakai `check` dan bisa dipanggil sendiri. */
-async function runGate(kind: "skills" | "task" | "scope"): Promise<void> {
+async function runGate(kind: "skills" | "task" | "scope" | "slop"): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
     findings = (await validateSkills(SKILLS_DIR)).map((f) => `${f.file}: ${f.message}`);
   } else if (kind === "task") {
     findings = validateTasks(await loadTasks(TASKS_DIR)).map((f) => `${f.file}: ${f.message}`);
-  } else {
+  } else if (kind === "scope") {
     findings = (await checkScope(repoRoot)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`);
+  } else {
+    const { findCodeSlop } = await import("./tools/slop.ts");
+    findings = await findCodeSlop(repoRoot);
   }
   if (findings.length > 0) throw new GateFailure(findings);
 }
 
-const commands: Record<string, () => Promise<void>> = {
+const commands: Record<string, (args: string[]) => Promise<void>> = {
   check: async () => {
     await run(["bunx", "--bun", "biome", "check", "."], "biome check");
     await run(["bunx", "--bun", "tsc", "-p", "tsconfig.json"], "tsc");
     await guard("skills", () => runGate("skills"));
     await guard("task", () => runGate("task"));
     await guard("scope", () => runGate("scope"));
+    await guard("slop", () => runGate("slop"));
     process.stdout.write("check: OK\n");
   },
 
@@ -128,6 +134,50 @@ const commands: Record<string, () => Promise<void>> = {
     await ctx.close();
   },
 
+  /**
+   * Memberi role pertama kepada pengguna yang sudah ada.
+   *
+   * Tanpa ini template buntu: `db:seed` membuat role `owner`, tetapi tidak ada seorang
+   * pun yang memegangnya, dan route `/users/:id/roles` sendiri menuntut izin `role.assign`.
+   * Perintah ini jalur keluar dari ayam-dan-telur itu, dan karena itu wajib dijalankan
+   * dari shell server — bukan lewat HTTP.
+   */
+  "user:grant": async (args) => {
+    const [email, roleKey = "owner"] = args;
+    if (!email) {
+      process.stderr.write("Usage: bun erp user:grant <email> [roleKey]\n");
+      process.exit(1);
+    }
+    const ctx = await createContext({ migrateOnStart: false });
+    const organizationId = await resolveDefaultOrganizationId(ctx.db);
+    const userRows = await ctx.db.select().from(users).where(eq(users.email, email)).limit(1);
+    const user = userRows[0];
+    if (!user) {
+      process.stderr.write(`No user with email ${email}. Sign up first.\n`);
+      await ctx.close();
+      process.exit(1);
+    }
+    const role = await findRoleByKey(ctx.db, organizationId, roleKey);
+    if (!role) {
+      process.stderr.write(`No role "${roleKey}" in this organization. Run: bun erp db:seed\n`);
+      await ctx.close();
+      process.exit(1);
+    }
+    await assignRole(ctx.db, { userId: user.id, roleId: role.id });
+    await recordAudit(ctx.db, {
+      organizationId,
+      actorId: null,
+      actorLabel: "cli",
+      event: "user.role_assigned",
+      subjectType: "user",
+      subjectId: user.id,
+      after: snapshot("userRole", { userId: user.id, roleId: role.id, scopeType: null, scopeId: null }),
+      traceId: `cli-${Date.now()}`,
+    });
+    process.stdout.write(`Granted "${roleKey}" to ${email}.\n`);
+    await ctx.close();
+  },
+
   "db:migrate": async () => {
     const ctx = await createContext({ migrateOnStart: false });
     const ran = await migrate(ctx.db, MIGRATIONS_DIR);
@@ -135,10 +185,34 @@ const commands: Record<string, () => Promise<void>> = {
     await ctx.close();
   },
 
+  /**
+   * Status tiap migration: sudah jalan atau belum. CI/CD butuh ini untuk memutuskan
+   * apakah `db:migrate` wajib dulu sebelum deploy — tanpa daftar eksplisit, migration
+   * yang gagal di tengah hanya kelihatan sebagai "aplikasi error" tanpa petunjuk.
+   */
+  "db:status": async () => {
+    const ctx = await createContext({ migrateOnStart: false });
+    const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
+    const applied = new Set(
+      await ctx.db
+        .execute(sql`select name from _migrations`)
+        .then((r) => (Array.isArray(r) ? r : (r as { rows: { name: string }[] }).rows).map((row) => row.name)),
+    );
+    const pending = files.filter((f) => !applied.has(f));
+    for (const f of files) {
+      process.stdout.write(`  ${applied.has(f) ? "applied " : "PENDING"} ${f}\n`);
+    }
+    process.stdout.write(`\n${files.length - pending.length}/${files.length} applied, ${pending.length} pending\n`);
+    await ctx.close();
+    if (pending.length > 0) process.exitCode = 1;
+  },
+
   "db:seed": async () => {
     const ctx = await createContext({ migrateOnStart: false });
     const result = await seed(ctx.db);
-    process.stdout.write(`Seeded ${result.organizations} organization(s).\n`);
+    process.stdout.write(
+      `Seeded ${result.organizations} organization(s), ${result.permissions} permission(s), ${result.roles} role(s).\n`,
+    );
     await ctx.close();
   },
 
@@ -186,13 +260,13 @@ const commands: Record<string, () => Promise<void>> = {
   },
 };
 
-const [command] = process.argv.slice(2);
+const [command, ...args] = process.argv.slice(2);
 
 if (!command) {
   const list = Object.keys(commands)
     .map((c) => `  ${c}`)
     .join("\n");
-  process.stdout.write(`bun erp <command>\n\nCommands:\n${list}\n`);
+  process.stdout.write(`bun erp <command> [args]\n\nCommands:\n${list}\n`);
   process.exit(0);
 }
 
@@ -203,7 +277,7 @@ if (!handler) {
 }
 
 try {
-  await handler();
+  await handler(args);
 } catch (err) {
   process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
   process.exit(1);

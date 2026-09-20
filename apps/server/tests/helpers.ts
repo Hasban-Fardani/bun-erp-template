@@ -1,6 +1,9 @@
 import { resolve } from "node:path";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { type AppContext, createContext } from "../context.ts";
+import type { createApp } from "../http/app.ts";
+import { roles } from "../modules/rbac/data.ts";
+import { assignRole } from "../modules/rbac/service.ts";
 import type { Env } from "../platform/config/index.ts";
 import { loadEnv } from "../platform/config/index.ts";
 
@@ -55,4 +58,33 @@ export async function truncateAll(ctx: AppContext): Promise<void> {
   );
   if (tables.length === 0) return;
   await ctx.db.execute(sql.raw(`truncate table ${tables.map((t) => `"${t}"`).join(", ")} restart identity cascade`));
+}
+
+/**
+ * Login admin bercakup penuh lewat jalur Better Auth yang sesungguhnya, lalu mengembalikan
+ * cookie-nya. Test bisnis butuh ini karena semua route privat sekarang di balik RBAC.
+ */
+export async function loginOwner(app: ReturnType<typeof createApp>, db: AppContext["db"]): Promise<string> {
+  const signUp = await app.request("/api/v1/auth/sign-up/email", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email: "admin@example.test", password: "sandi-yang-panjang", name: "Admin" }),
+  });
+  if (signUp.status !== 200) throw new Error(`sign-up gagal: ${signUp.status}`);
+  const { user } = (await signUp.json()) as { user: { id: string } };
+
+  const owner = (await db.select({ id: roles.id }).from(roles).where(eq(roles.key, "owner")).limit(1))[0];
+  if (!owner) throw new Error("role owner tidak ada — seed belum jalan?");
+  await assignRole(db, { userId: user.id, roleId: owner.id });
+
+  const signIn = await app.request("/api/v1/auth/sign-in/email", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email: "admin@example.test", password: "sandi-yang-panjang" }),
+  });
+  if (signIn.status !== 200) throw new Error(`sign-in gagal: ${signIn.status}`);
+
+  const setCookie = signIn.headers.get("set-cookie");
+  if (!setCookie) throw new Error("tidak ada cookie sesi");
+  return setCookie.split(";")[0] as string;
 }

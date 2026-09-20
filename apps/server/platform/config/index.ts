@@ -20,7 +20,7 @@ export class ConfigError extends Error {
   }
 }
 
-const SECRET_KEYS = new Set(["BETTER_AUTH_SECRET", "SMTP_PASSWORD", "DATABASE_URL"]);
+const SECRET_KEYS = new Set(["BETTER_AUTH_SECRET", "SMTP_PASSWORD", "DATABASE_URL", "GOOGLE_CLIENT_SECRET"]);
 
 function describe(env: Record<string, unknown>, key: string): string {
   const value = env[key];

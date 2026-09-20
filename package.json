@@ -8,7 +8,10 @@
     "apps/web"
   ],
   "scripts": {
-    "erp": "bun apps/server/erp.ts"
+    "erp": "bun erp.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

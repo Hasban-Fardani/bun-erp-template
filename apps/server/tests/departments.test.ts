@@ -2,15 +2,16 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { type AppContext, resolveDefaultOrganizationId } from "../context.ts";
 import { createApp } from "../http/app.ts";
 import { seed } from "../platform/database/seed.ts";
-import { createTestContext, truncateAll } from "./helpers.ts";
+import { createTestContext, loginOwner, truncateAll } from "./helpers.ts";
 
 let ctx: AppContext;
 let orgId: string;
 let app: ReturnType<typeof createApp>;
+let cookie = "";
 
 const json = (body: unknown, method = "POST"): RequestInit => ({
   method,
-  headers: { "content-type": "application/json" },
+  headers: { "content-type": "application/json", cookie },
   body: JSON.stringify(body),
 });
 
@@ -20,6 +21,7 @@ beforeEach(async () => {
   await seed(ctx.db);
   orgId = await resolveDefaultOrganizationId(ctx.db);
   app = createApp(ctx, orgId);
+  cookie = await loginOwner(app, ctx.db);
 });
 
 afterAll(async () => {
@@ -27,6 +29,13 @@ afterAll(async () => {
 });
 
 describe("departments", () => {
+  test("anonymous caller is rejected before any business logic runs", async () => {
+    const res = await app.request("/api/v1/departments", { method: "GET" });
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("UNAUTHORIZED");
+  });
+
   test("create returns envelope with requestId and uuidv7 id", async () => {
     const res = await app.request("/api/v1/departments", json({ name: "Keuangan", code: "KEU" }));
     expect(res.status).toBe(200);
@@ -59,13 +68,15 @@ describe("departments", () => {
   });
 
   test("missing id is 404 (not 403)", async () => {
-    const res = await app.request("/api/v1/departments/0199aaaa-0000-7000-8000-000000000000");
+    const res = await app.request("/api/v1/departments/0199aaaa-0000-7000-8000-000000000000", {
+      headers: { cookie },
+    });
     expect(res.status).toBe(404);
   });
 
   test("list is scoped to organization", async () => {
     await app.request("/api/v1/departments", json({ name: "A", code: "AA" }));
-    const res = await app.request("/api/v1/departments?limit=10");
+    const res = await app.request("/api/v1/departments?limit=10", { headers: { cookie } });
     const body = (await res.json()) as { data: { items: { organizationId: string }[]; total: number } };
     expect(body.data.total).toBe(1);
     expect(body.data.items[0]?.organizationId).toBe(orgId);

@@ -52,6 +52,9 @@ const rawSchema = z
     BETTER_AUTH_URL: z.url(),
     BETTER_AUTH_SECRET: z.string().default(""),
     AUTH_TRUSTED_ORIGINS: z.string().default(""),
+    // Google OAuth dorman (ADR-0009): provider hanya aktif kalau KEDUANYA terisi.
+    GOOGLE_CLIENT_ID: z.string().default(""),
+    GOOGLE_CLIENT_SECRET: z.string().default(""),
 
     // Storage
     STORAGE_DRIVER: z.enum(["local", "s3"]),
@@ -123,6 +126,7 @@ export function findStrayKeys(env: Record<string, string | undefined>): string[]
     "PGLITE_",
     "BETTER_AUTH_",
     "AUTH_",
+    "GOOGLE_",
     "STORAGE_",
     "MAIL_",
     "SMTP_",
