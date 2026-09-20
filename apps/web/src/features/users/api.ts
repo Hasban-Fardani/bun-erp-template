@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { ApiError, api, apiUrl } from "../../lib/api.ts";
 import type { PublicUser, SessionView } from "./types.ts";
 
@@ -45,5 +46,19 @@ export function useUsers(search: string) {
       api.get<{ items: PublicUser[]; total: number }>(
         `/api/v1/users?limit=50${search ? `&search=${encodeURIComponent(search)}` : ""}`,
       ),
+  });
+}
+
+export function useSignOut() {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: async () => {
+      await fetch(apiUrl("/api/v1/auth/sign-out"), { method: "POST", credentials: "include" });
+    },
+    onSuccess: () => {
+      qc.clear();
+      void navigate({ to: "/login" });
+    },
   });
 }

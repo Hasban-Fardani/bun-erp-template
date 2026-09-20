@@ -1,9 +1,8 @@
 import { Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useSession, useUsers } from "../features/users/api.ts";
-import { apiUrl } from "../lib/api.ts";
 import { relativeTime } from "../shared/lib/format.ts";
-import { Badge, Button, Card, CardHeader, EmptyState, Input } from "../shared/ui/primitives.tsx";
+import { Badge, Card, CardHeader, EmptyState, Input } from "../shared/ui/primitives.tsx";
 
 /** Layar admin pertama: daftar pengguna organisasi (butuh izin `user.read`). */
 export function UsersPage() {
@@ -19,26 +18,7 @@ export function UsersPage() {
   const canRead = session.data.permissions.includes("user.read");
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 lg:px-6">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[13px] text-ink-muted">ERP Template</p>
-          <p className="text-[13px] text-ink-soft">
-            {session.data.user?.name} · {session.data.user?.email}
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            void fetch(apiUrl("/api/v1/auth/sign-out"), { method: "POST", credentials: "include" }).then(() => {
-              window.location.href = "/login";
-            });
-          }}
-        >
-          Keluar
-        </Button>
-      </header>
-
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
       <Card>
         <CardHeader
           title="Pengguna"

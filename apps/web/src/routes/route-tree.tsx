@@ -1,23 +1,36 @@
 import { createRootRoute, createRoute, Navigate, Outlet } from "@tanstack/react-router";
+import { AuthenticatedLayout } from "../components/layout/authenticated-layout.tsx";
 import { LoginPage } from "../pages/login-page.tsx";
 import { UsersPage } from "../pages/users-page.tsx";
 
-const RootRoute = createRootRoute({
-  component: () => (
-    <main className="min-h-dvh">
-      <Outlet />
-    </main>
-  ),
+const rootRoute = createRootRoute({
+  component: () => <Outlet />,
 });
 
-const IndexRoute = createRoute({
-  getParentRoute: () => RootRoute,
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: LoginPage,
+});
+
+const appRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "app",
+  component: AuthenticatedLayout,
+});
+
+const usersRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/users",
+  component: UsersPage,
+});
+
+const indexRoute = createRoute({
+  getParentRoute: () => appRoute,
   path: "/",
-  component: () => <Navigate to="/users" />,
+  component: () => <Navigate to="/users" replace />,
 });
 
-const LoginRoute = createRoute({ getParentRoute: () => RootRoute, path: "/login", component: LoginPage });
+const routeTree = rootRoute.addChildren([loginRoute, appRoute.addChildren([indexRoute, usersRoute])]);
 
-const UsersRoute = createRoute({ getParentRoute: () => RootRoute, path: "/users", component: UsersPage });
-
-export const routeTree = RootRoute.addChildren([IndexRoute, LoginRoute, UsersRoute]);
+export { routeTree };
