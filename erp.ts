@@ -135,7 +135,6 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   // Jalur keluar ayam-telur: owner pertama tak bisa dibuat via HTTP yang butuh role.
-
   "user:grant": async (args) => {
     const [email, roleKey = "owner"] = args;
     if (!email) {
@@ -253,7 +252,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
 const [command, ...args] = process.argv.slice(2);
 
-if (!command) {
+if (!command || command === "--help" || command === "-h" || command === "help") {
   const list = Object.keys(commands)
     .map((c) => `  ${c}`)
     .join("\n");
@@ -263,7 +262,7 @@ if (!command) {
 
 const handler = commands[command];
 if (!handler) {
-  process.stderr.write(`Unknown command: ${command}\n`);
+  process.stderr.write(`Unknown command: ${command}. Run: bun erp --help\n`);
   process.exit(1);
 }
 
