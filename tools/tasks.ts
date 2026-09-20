@@ -1,14 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
-/**
- * F1.11 — task readiness gate. Task di `docs/tasks/` punya status eksplisit.
- *
- * Agent dilarang menaikkan status ke `ready`/`done`; hanya manusia yang boleh. Karena gate
- * tidak bisa tahu siapa yang menulis file, syaratnya dibuat eksplisit: status itu WAJIB
- * membawa `approved_by` (nama manusia) dan `evidence` (perintah + hasilnya). Agent yang
- * menulis kedua field itu meninggalkan jejak audit — tidak bisa lolos diam-diam.
- */
+/** F1.11 — ready/done wajib approved_by + evidence; agent tak bisa menaikkannya diam. */
 export const TASK_STATUSES = ["draft", "blocked", "ready", "in_progress", "done"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 

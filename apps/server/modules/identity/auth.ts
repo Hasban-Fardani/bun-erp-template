@@ -5,20 +5,7 @@ import type { Database } from "../../platform/database/index.ts";
 import { resolveDefaultOrganizationId } from "../../platform/database/organizations.ts";
 import { accounts, sessions, users, verifications } from "./data.ts";
 
-/**
- * Instance Better Auth (ADR-0009). Dipisah dari route supaya CLI dan test bisa memakainya
- * tanpa menyalakan server.
- *
- * Tiga hal yang mudah salah dan sengaja dikunci di sini:
- *
- * 1. Adapter Drizzle butuh OBJEK SCHEMA, bukan hanya koneksi. Tanpa itu library menolak
- *    jalan dengan "Drizzle schema mismatch" — dan mematikan pemeriksaannya
- *    (`validateSchema: false`) hanya menyembunyikan masalah, bukan menyelesaikannya.
- * 2. Nama model di sini (`user`/`session`/`account`/`verification`) harus sama dengan
- *    nama tabel fisik di migrasi 0003.
- * 3. Id dibuat `Bun.randomUUIDv7()` supaya sejenis dengan primary key tabel lain.
- *    Bawaan library adalah string acak pendek, yang akan bentrok dengan kolom `uuid`.
- */
+/** Instance Better Auth; dipisah agar CLI/test bisa memakainya tanpa server. */
 export function createAuth(env: Env, db: Database) {
   const googleEnabled = env.GOOGLE_CLIENT_ID !== "" && env.GOOGLE_CLIENT_SECRET !== "";
 
@@ -63,14 +50,7 @@ export function createAuth(env: Env, db: Database) {
     databaseHooks: {
       user: {
         create: {
-          /**
-           * Setiap pengguna baru masuk ke organisasi default.
-           *
-           * Tanpa ini `organization_id` tetap NULL, dan pengguna hasil sign-up tidak
-           * terlihat oleh admin organisasi mana pun — termasuk untuk memberinya role
-           * pertama. Alur undangan multi-organisasi (Phase 3) akan menggantinya dengan
-           * organisasi dari undangan.
-           */
+          // Tanpa ini organization_id user baru NULL — tak terlihat admin mana pun.
           before: async (user) => {
             const organizationId = await resolveDefaultOrganizationId(db);
             return { data: { ...user, organizationId } };

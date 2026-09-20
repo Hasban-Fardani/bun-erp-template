@@ -6,12 +6,7 @@ import { requirePermission } from "./policy.ts";
 import { AssignRoleInput, ListUsersInput, UpdateUserInput } from "./schema.ts";
 import { assignUserRole, findUser, listUsers, revokeUserRole, updateUser } from "./service.ts";
 
-/**
- * Route tipis: validasi → permission → service → envelope (PRD §6).
- *
- * Autentikasi TIDAK ditulis ulang di sini. Better Auth memasang handler-nya sendiri di
- * `/api/v1/auth/*`; route ini hanya untuk administrasi pengguna yang butuh RBAC.
- */
+/** Administrasi user (butuh RBAC). Sign-up/sign-in milik handler Better Auth. */
 export function identityRoutes(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   return new Hono<{ Variables: AppVariables }>()
     .get("/", async (c) => {

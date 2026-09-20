@@ -4,12 +4,8 @@ import { organizations } from "../../platform/database/schema.ts";
 import { users } from "../identity/data.ts";
 
 /**
- * RBAC model spatie/laravel-permission (PRD §RBAC).
- *
- * `permissions` = statemen statis (ditulis di kode, di-seed). `roles` = kumpulan izin
- * yang diubah runtime. Pemisahan itu disengaja: kode tidak boleh bergantung pada role
- * yang bisa dihapus admin, dan admin tidak boleh mengarang permission yang tidak
- * dipahami kode.
+ * RBAC model spatie: permission = statemen statis dari kode, role = dinamis di DB.
+ * Kode tak boleh bergantung role yang bisa dihapus admin, dan sebaliknya.
  */
 export const permissions = pgTable("permissions", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -49,13 +45,7 @@ export const rolePermissions = pgTable(
   (table) => [primaryKey({ columns: [table.roleId, table.permissionId] })],
 );
 
-/**
- * Penugasan berlingkup. `scopeType`/`scopeId` kosong = role berlaku di seluruh
- * organisasi. Terisi = hanya pada satu lingkup (mis. satu departemen).
- *
- * Departemen karena itu opsional: user tanpa departemen tetap bisa memegang role
- * global. Itu alasan `department_id` tidak pernah menjadi kolom di tabel user.
- */
+/** Scope kosong = role global; terisi = terbatas satu lingkup (mis. departemen). */
 export const userRoles = pgTable(
   "user_roles",
   {

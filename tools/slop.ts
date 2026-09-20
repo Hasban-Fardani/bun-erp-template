@@ -1,15 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-/**
- * Gate slop untuk repo template. Dua keluarga temuan:
- *
- *  - komentar: narasi pembuka berkas, penjelasan yang mengulang tipe, komentar usang
- *  - kode: fungsi passthrough, export tanpa pemakai, blok duplikat
- *
- * Pola disengaja sempit: hanya yang terbukti berulang, bukan selera gaya. Komentar
- * `slop-ok: <alasan>` di dekat blok membebaskannya dari temuan.
- */
+/** Gate slop: komentar naratif + temuan AST dari validator governance. slop-ok melewatkan. */
 export async function findCodeSlop(root: string): Promise<string[]> {
   const findings: string[] = [];
   const sourceDirs = [join(root, "apps"), join(root, "tools")].filter((dir) => exists(dir));

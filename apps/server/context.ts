@@ -6,13 +6,7 @@ import { createLogger, type Logger } from "./platform/observability/logger.ts";
 
 export { resolveDefaultOrganizationId } from "./platform/database/organizations.ts";
 
-/**
- * Composition root: satu tempat yang tahu bagaimana potongan disusun. Modul menerima
- * context ini lewat parameter — tidak ada state global tersembunyi (PRD §3 explicit over magic).
- *
- * Context sengaja TIDAK memuat organisasi: perintah seperti `db:migrate` harus bisa jalan
- * sebelum tabelnya ada. Organisasi diselesaikan terpisah lewat `resolveDefaultOrganizationId`.
- */
+/** Composition root. Organisasi di luar context: migrate harus jalan sebelum tabelnya ada. */
 export type AppContext = {
   env: Env;
   db: Database;

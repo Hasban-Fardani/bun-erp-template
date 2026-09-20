@@ -48,11 +48,7 @@ export async function requireActor(c: Context, ctx: AppContext): Promise<Actor> 
   return actor;
 }
 
-/**
- * Wajib punya izin. Deny by default: memanggil ini tanpa key yang sah tidak mungkin,
- * karena `key` bertipe `PermissionKey` — izin yang tidak ada di `statements.ts`
- * ditolak saat compile, bukan saat runtime.
- */
+/** Deny by default: `key` bertipe PermissionKey, izin ngawur ditolak saat compile. */
 export async function requirePermission(c: Context, ctx: AppContext, key: PermissionKey): Promise<Actor> {
   const actor = await requireActor(c, ctx);
   if (!actor.permissions.includes(key)) {

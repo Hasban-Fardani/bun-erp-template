@@ -134,14 +134,8 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await ctx.close();
   },
 
-  /**
-   * Memberi role pertama kepada pengguna yang sudah ada.
-   *
-   * Tanpa ini template buntu: `db:seed` membuat role `owner`, tetapi tidak ada seorang
-   * pun yang memegangnya, dan route `/users/:id/roles` sendiri menuntut izin `role.assign`.
-   * Perintah ini jalur keluar dari ayam-dan-telur itu, dan karena itu wajib dijalankan
-   * dari shell server — bukan lewat HTTP.
-   */
+  // Jalur keluar ayam-telur: owner pertama tak bisa dibuat via HTTP yang butuh role.
+
   "user:grant": async (args) => {
     const [email, roleKey = "owner"] = args;
     if (!email) {
@@ -185,11 +179,8 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await ctx.close();
   },
 
-  /**
-   * Status tiap migration: sudah jalan atau belum. CI/CD butuh ini untuk memutuskan
-   * apakah `db:migrate` wajib dulu sebelum deploy — tanpa daftar eksplisit, migration
-   * yang gagal di tengah hanya kelihatan sebagai "aplikasi error" tanpa petunjuk.
-   */
+  // Exit 1 bila ada pending — dipakai CI untuk memaksa db:migrate sebelum deploy.
+
   "db:status": async () => {
     const ctx = await createContext({ migrateOnStart: false });
     const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();

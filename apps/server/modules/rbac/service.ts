@@ -6,12 +6,7 @@ import { allPermissions, type PermissionKey, type SystemRoleKey, systemRoles } f
 
 export type Role = typeof roles.$inferSelect;
 
-/**
- * Menanam katalog permission dan role sistem. Idempotent: aman dijalankan tiap start.
- *
- * Permission disinkronkan dari kode, jadi menghapus satu statemen di `statements.ts`
- * juga menghapus barisnya di sini — tanpa itu, izin mati akan terus terlihat di UI.
- */
+/** Sinkron katalog permission + role sistem dari kode; idempotent. */
 export async function seedRbac(db: Database, organizationId: string): Promise<{ permissions: number; roles: number }> {
   await db
     .insert(permissions)
@@ -63,13 +58,7 @@ export async function seedRbac(db: Database, organizationId: string): Promise<{ 
   return { permissions: permissionRows.length, roles: roleCount };
 }
 
-/**
- * Izin efektif seorang user: gabungan semua role yang dipegangnya, lintas lingkup.
- *
- * Lingkup sengaja diabaikan di sini — penyaringan "boleh pada record ini?" adalah tugas
- * policy modul, bukan fungsi ini. Memisahkannya mencegah satu fungsi menjadi tempat
- * semua aturan menumpuk.
- */
+/** Gabungan izin semua role user. Penyaringan per-record adalah tugas policy modul. */
 export async function permissionsForUser(db: Database, userId: string): Promise<PermissionKey[]> {
   const rows = await db
     .selectDistinct({ key: permissions.key })

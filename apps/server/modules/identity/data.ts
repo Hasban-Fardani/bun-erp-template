@@ -2,14 +2,7 @@ import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { organizations } from "../../platform/database/schema.ts";
 
-/**
- * Tabel identitas Better Auth. Nama fisik (`user`, `session`, `account`, `verification`)
- * dan kolomnya adalah kontrak library — adapter Drizzle memverifikasinya dan menolak
- * jalan kalau berbeda. Jangan diganti nama demi selera penamaan.
- *
- * `password` sengaja ada di `account`, bukan di `user`: satu akun bisa punya banyak
- * penyedia (email+password, Google) dan Better Auth menyimpannya per penyedia.
- */
+/** Nama tabel = kontrak Better Auth, diverifikasi adapter. Password ada di `account`. */
 export const users = pgTable(
   "user",
   {

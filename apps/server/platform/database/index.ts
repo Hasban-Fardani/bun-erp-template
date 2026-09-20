@@ -16,11 +16,7 @@ function ensurePgliteDir(path: string): void {
   mkdirSync(path, { recursive: true });
 }
 
-/**
- * Memilih driver sesuai `DATABASE_DRIVER`. Modul lain menerima objek `db` yang sama
- * dan tidak boleh tahu driver mana yang aktif (ADR-0010a) — dialek tetap Postgres,
- * jadi tidak ada dua set migration.
- */
+/** Driver tersembunyi di sini; modul lain menerima `db` yang sama (ADR-0010). */
 export function createDatabase(env: Env): Handle {
   if (env.DATABASE_DRIVER === "pglite") {
     ensurePgliteDir(env.PGLITE_PATH);

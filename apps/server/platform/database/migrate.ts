@@ -10,11 +10,7 @@ const MIGRATIONS_TABLE = `
   )
 `;
 
-/**
- * Migrasi forward-only yang di-review (PRD §12). SQL ditulis manual, bukan generated,
- * supaya perubahannya terlihat di diff. Satu file = satu langkah, dijalankan berurutan
- * dan dicatat sehingga aman diulang.
- */
+/** SQL manual supaya terlihat di diff; satu file = satu langkah, aman diulang. */
 export async function migrate(db: Database, dir: string): Promise<string[]> {
   await db.execute(sql.raw(MIGRATIONS_TABLE));
 

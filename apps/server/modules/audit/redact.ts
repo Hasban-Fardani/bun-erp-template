@@ -1,10 +1,4 @@
-/**
- * Redaksi audit terpusat (ADR-0007). Allowlist per entitas, default TOLAK.
- *
- * Menyalin record mentah ke tabel audit membuat tabel itu menjadi salinan kedua
- * `password_hash`, token reset, dan PII. Karena itu modul tidak boleh memilih sendiri
- * field mana yang disimpan — semuanya lewat sini.
- */
+/** Redaksi audit terpusat: allowlist per entitas, default TOLAK (ADR-0007). */
 
 /** Field yang selalu dibuang, walaupun entitasnya mendaftarkannya di allowlist. */
 const ALWAYS_REDACT = [
@@ -42,12 +36,7 @@ function looksSecret(key: string): boolean {
   return REDACT_HINTS.some((hint) => normalized.includes(hint));
 }
 
-/**
- * Menyaring satu record menjadi snapshot audit yang aman.
- *
- * `allowed` wajib diisi eksplisit oleh modul: field yang tidak terdaftar tidak
- * disimpan. Lupa mendaftar berarti field itu hilang dari audit, bukan bocor ke audit.
- */
+/** Field di luar allowlist hilang dari audit — bukan bocor ke audit. */
 export function redact<T extends Record<string, unknown>>(
   entity: string,
   record: T | undefined,

@@ -24,14 +24,9 @@ export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppC
     });
   });
 
-  /**
-   * Handler Better Auth dipasang apa adanya. Semua jalur auth (sign-up, sign-in, sign-out,
-   * session) dimiliki library — menyalinnya ke route sendiri berarti punya dua sumber
-   * kebenaran untuk cookie dan masa berlaku session.
-   */
+  // Handler auth milik Better Auth — cookie/session tidak diduplikasi di sini.
   app.on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => ctx.auth.handler(c.req.raw));
 
-  /** Identitas pemanggil + izin efektifnya. Dipakai UI untuk memutuskan menu yang tampil. */
   app.get(`${API_PREFIX}/me`, async (c) => {
     const actor = await requireActor(c, ctx);
     return ok(c, {

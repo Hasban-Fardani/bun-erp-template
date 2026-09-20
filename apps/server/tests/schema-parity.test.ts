@@ -10,11 +10,7 @@ import {
 } from "../modules/departments/schema.ts";
 import { EnvRawSchema, EnvSchema } from "../platform/config/schema.ts";
 
-/**
- * F1.16 — parity compiled vs uncompiled. `z.compile()` mempercepat parse, tapi kontraknya
- * harus identik dengan definisi sumber. Test ini membandingkan keduanya pada definisi yang
- * sama supaya penyimpangan tertangkap, bukan tersembunyi.
- */
+/** F1.16 — hasil z.compile() harus identik dengan definisi sumber. */
 type Pair = { name: string; compiled: z.ZodType; raw: z.ZodType; inputs: unknown[] };
 
 const pairs: Pair[] = [

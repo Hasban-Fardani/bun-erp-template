@@ -2,13 +2,7 @@ import { sql } from "drizzle-orm";
 import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { organizations } from "../../platform/database/schema.ts";
 
-/**
- * Jejak audit (PRD §12, ADR-0007). Append-only: tidak ada update/delete di kode.
- *
- * `actor_id` sengaja TANPA foreign key ke `user`: menghapus user tidak boleh ikut
- * menghapus bukti perbuatannya. Nama pelaku disimpan sebagai teks beku pada saat
- * kejadian, karena nama bisa berubah sedangkan catatan tidak boleh.
- */
+/** Jejak audit, append-only. `actor_id` tanpa FK: hapus user tak boleh hapus bukti. */
 export const auditLogs = pgTable(
   "audit_logs",
   {

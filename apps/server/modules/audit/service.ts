@@ -20,13 +20,7 @@ export type AuditEvent = {
   traceId?: string;
 };
 
-/**
- * Menulis satu baris audit. Dipanggil dari service modul, BUKAN dari route, supaya
- * aksi yang gagal di tengah transaksi tidak meninggalkan catatan "berhasil".
- *
- * Snapshot mentah wajib lewat `redactEntity`; menerima objek mentah dari pemanggil
- * akan membuat tabel audit menyimpan hash sandi dan token (ADR-0007).
- */
+/** Panggil dari service (bukan route) di dalam transaksi; snapshot wajib via redactEntity. */
 export async function recordAudit(db: Database, entry: AuditEvent): Promise<void> {
   await db.insert(auditLogs).values({
     organizationId: entry.organizationId ?? null,

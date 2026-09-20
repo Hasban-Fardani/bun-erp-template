@@ -2,13 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Database } from "./index.ts";
 import { organizations } from "./schema.ts";
 
-/**
- * Modul bisnis tidak boleh mengarang organisasi sendiri: bagian ini yang menyelesaikannya.
- *
- * Sengaja berdiri sendiri, bukan di `context.ts`, karena `modules/identity/auth.ts` juga
- * membutuhkannya sedangkan `context.ts` mengimpor `auth.ts` — menaruhnya di sana membuat
- * lingkaran impor.
- */
+/** Terpisah dari context.ts untuk memutus lingkaran impor context -> auth -> context. */
 export async function resolveDefaultOrganizationId(db: Database, slug = "default"): Promise<string> {
   const rows = await db
     .select({ id: organizations.id })

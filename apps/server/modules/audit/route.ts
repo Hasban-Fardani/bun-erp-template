@@ -6,11 +6,7 @@ import { requirePermission } from "../identity/policy.ts";
 import { ListAuditInput } from "./schema.ts";
 import { listAuditLogs } from "./service.ts";
 
-/**
- * Audit bersifat baca-saja dari HTTP. Tidak ada endpoint tulis: satu-satunya jalan masuk
- * adalah `recordAudit()` dari service modul, di dalam transaksi yang sama dengan
- * perubahannya. Kalau audit bisa ditulis lewat API, ia berhenti menjadi bukti.
- */
+/** Audit baca-saja via HTTP — satu penulisnya recordAudit di transaksi service. */
 export function auditRoutes(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   return new Hono<{ Variables: AppVariables }>().get("/", async (c) => {
     const actor = await requirePermission(c, ctx, "audit.read");

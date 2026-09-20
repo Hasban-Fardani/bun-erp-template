@@ -1,12 +1,4 @@
-/**
- * Katalog statemen — satu-satunya sumber kebenaran izin yang dikenal kode (PRD §RBAC).
- *
- * Ditulis di kode, bukan di database, karena kode yang memanggil `authorize("user.create")`
- * harus gagal saat compile bila izinnya tidak ada. Role (kumpulan izin) tetap dinamis
- * di database; yang statis hanya daftar aksinya.
- *
- * Format key: `<resource>.<action>`.
- */
+/** Satu-satunya sumber izin yang dikenal kode; key = `<resource>.<action>`. */
 export const statements = {
   user: ["create", "read", "update", "delete", "impersonate"],
   // Hanya `read` dan `assign` yang ditegakkan route saat ini. `create`/`update`/`delete`
