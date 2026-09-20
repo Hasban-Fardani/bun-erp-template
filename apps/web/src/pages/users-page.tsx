@@ -1,6 +1,7 @@
 import { Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useSession, useUsers } from "../features/users/api.ts";
+import { apiUrl } from "../lib/api.ts";
 import { relativeTime } from "../shared/lib/format.ts";
 import { Badge, Button, Card, CardHeader, EmptyState, Input } from "../shared/ui/primitives.tsx";
 
@@ -29,7 +30,7 @@ export function UsersPage() {
         <Button
           variant="ghost"
           onClick={() => {
-            void fetch("/api/v1/auth/sign-out", { method: "POST", credentials: "include" }).then(() => {
+            void fetch(apiUrl("/api/v1/auth/sign-out"), { method: "POST", credentials: "include" }).then(() => {
               window.location.href = "/login";
             });
           }}

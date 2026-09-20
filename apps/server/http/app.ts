@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { requestId as requestIdMiddleware } from "hono/request-id";
 import type { AppContext } from "../context.ts";
 import { ApiError, type ApiErrorBody, ErrorCode, requestId } from "./errors.ts";
@@ -14,6 +15,19 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
   const app = new Hono<{ Variables: AppVariables }>();
 
   app.use(requestIdMiddleware({ limitLength: 128, headerName: "X-Request-Id" }));
+
+  // Deployment hybrid (ADR-0011): web di domain sendiri, jadi klinta lintas origin.
+  // Allowlist = AUTH_TRUSTED_ORIGINS — origin lain tak mendapat header CORS sama sekali.
+  app.use(
+    "/api/*",
+    cors({
+      origin: (origin) => (ctx.env.trustedOrigins.includes(origin) ? origin : null),
+      credentials: true,
+      allowHeaders: ["content-type"],
+      allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      maxAge: 86_400,
+    }),
+  );
 
   app.use(async (c, next) => {
     const started = performance.now();

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, api } from "../../lib/api.ts";
+import { ApiError, api, apiUrl } from "../../lib/api.ts";
 import type { PublicUser, SessionView } from "./types.ts";
 
 export function useSession() {
@@ -7,7 +7,7 @@ export function useSession() {
     queryKey: ["session"],
     queryFn: async (): Promise<SessionView> => {
       // Respons Better Auth TIDAK lewat envelope {data,meta} milik API — baca mentah.
-      const res = await fetch("/api/v1/auth/get-session", { credentials: "include" });
+      const res = await fetch(apiUrl("/api/v1/auth/get-session"), { credentials: "include" });
       const auth = (await res.json()) as { user?: { id: string; name: string; email: string } | null } | null;
       if (!auth?.user) return { authenticated: false, user: null, permissions: [] };
       // 403 di /me = identitas sah tanpa izin (bukan sesi mati) — jangan dilempar sebagai error.
@@ -24,7 +24,7 @@ export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { email: string; password: string }) => {
-      const res = await fetch("/api/v1/auth/sign-in/email", {
+      const res = await fetch(apiUrl("/api/v1/auth/sign-in/email"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         credentials: "include",

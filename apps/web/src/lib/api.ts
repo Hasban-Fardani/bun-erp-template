@@ -4,6 +4,13 @@ export type ApiFailure = {
   meta: { requestId: string };
 };
 
+// Kosong = same-origin (dev via proxy Vite); terisi = deployment hybrid (ADR-0011).
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 /** Satu gerbang fetch: same-origin via proxy Vite, kredensial cookie selalu ikut. */
 export class ApiError extends Error {
   readonly status: number;
@@ -19,7 +26,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, { credentials: "include", ...init });
+  const res = await fetch(apiUrl(path), { credentials: "include", ...init });
   const body = (await res.json()) as ApiSuccess<T> | ApiFailure;
   if (!res.ok || "error" in body) {
     const err = "error" in body ? body.error : { code: "unknown", message: res.statusText };
