@@ -49,6 +49,39 @@ export function useUsers(search: string) {
   });
 }
 
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; email: string; password: string; roleKey?: string }) =>
+      api.post<PublicUser>("/api/v1/users", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["users"] });
+      void qc.invalidateQueries({ queryKey: ["audit"] });
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<{ id: string }>(`/api/v1/users/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["users"] });
+      void qc.invalidateQueries({ queryKey: ["audit"] });
+    },
+  });
+}
+
+/** Katalog role untuk pilihan form; organisasi tanpa izin role.read jatuh ke role sistem bawaan. */
+export function useRoles() {
+  return useQuery({
+    queryKey: ["roles"],
+    queryFn: () => api.get<{ items: { key: string; name: string }[] }>("/api/v1/roles"),
+    select: (d) => d.items,
+    retry: false,
+  });
+}
+
 export function useSignOut() {
   const qc = useQueryClient();
   const navigate = useNavigate();

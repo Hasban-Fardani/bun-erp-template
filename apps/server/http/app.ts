@@ -3,9 +3,25 @@ import { cors } from "hono/cors";
 import { requestId as requestIdMiddleware } from "hono/request-id";
 import type { AppContext } from "../context.ts";
 import { ApiError, type ApiErrorBody, ErrorCode, requestId } from "./errors.ts";
+import { buildOpenApi } from "./openapi.ts";
 import { registerRoutes } from "./routes.ts";
 
 export type AppVariables = { requestId: string };
+
+/** Halaman /api/docs — Scalar menyajikan openapi.json agar review API bisa dari browser. */
+const docsHtml = `<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Reference</title>
+    <style>body { margin: 0; }</style>
+  </head>
+  <body>
+    <script id="api-reference" data-url="/api/openapi.json"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>`;
 
 /**
  * `ctx` disuntikkan lewat closure, `organizationId` diberikan saat bootstrap — Phase 2
@@ -13,6 +29,10 @@ export type AppVariables = { requestId: string };
  */
 export function createApp(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   const app = new Hono<{ Variables: AppVariables }>();
+
+  // Dokumentasi API untuk review manusia. Kredensial tak pernah masuk spesifikasi.
+  app.get("/api/openapi.json", (c) => c.json(buildOpenApi(ctx.env)));
+  app.get("/api/docs", (c) => c.html(docsHtml));
 
   app.use(requestIdMiddleware({ limitLength: 128, headerName: "X-Request-Id" }));
 

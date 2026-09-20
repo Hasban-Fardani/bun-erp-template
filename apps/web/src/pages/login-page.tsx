@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { uiConfig } from "../config/ui.ts";
 import { useLogin } from "../features/users/api.ts";
 import { Button, Input } from "../shared/ui/primitives.tsx";
 
@@ -9,6 +10,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
@@ -20,7 +22,7 @@ export function LoginPage() {
         }}
       >
         <h1 className="text-lg font-semibold tracking-tight">Masuk</h1>
-        <p className="mt-0.5 text-[13px] text-ink-muted">ERP Template — organisasi Anda</p>
+        <p className="mt-0.5 text-[13px] text-ink-muted">{uiConfig.appName} — organisasi Anda</p>
         <label htmlFor="email" className="mt-5 block text-[13px] font-medium text-ink-soft">
           Email
         </label>
@@ -36,15 +38,26 @@ export function LoginPage() {
         <label htmlFor="password" className="mt-3 block text-[13px] font-medium text-ink-soft">
           Sandi
         </label>
-        <Input
-          id="password"
-          className="mt-1"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
+        <div className="relative mt-1">
+          <Input
+            id="password"
+            className="w-full pr-16"
+            type={showPassword ? "text" : "password"}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-pressed={showPassword}
+            aria-label={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded px-1.5 py-1 text-[12px] font-medium text-ink-soft hover:bg-background"
+          >
+            {showPassword ? "Sembunyi" : "Lihat"}
+          </button>
+        </div>
         {login.isError ? <p className="mt-3 text-[13px] text-red-700">{(login.error as Error).message}</p> : null}
         <Button className="mt-5 w-full justify-center" type="submit" disabled={login.isPending}>
           {login.isPending ? "Memproses…" : "Masuk"}

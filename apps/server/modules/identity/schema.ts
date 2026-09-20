@@ -11,6 +11,20 @@ export const listUsersSchema = z.strictObject({
   search: z.string().trim().max(120).optional(),
 });
 
+export const createUserSchema = z.strictObject({
+  name: z.string().trim().min(1).max(120),
+  email: z.email().transform((v) => v.trim().toLowerCase()),
+  // Sandi awal dibuat admin; user bisa ganti sendiri begitu mail driver (Phase 3) ada.
+  password: z.string().min(10).max(200),
+  roleKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_-]+$/, "use lowercase letters, digits, dash, or underscore")
+    .optional(),
+});
+
 export const updateUserSchema = z.strictObject({
   name: z.string().trim().min(1).max(120).optional(),
   // Perubahan organisasi hanya oleh yang punya `user.update`; nilainya dari server.
@@ -33,7 +47,9 @@ export const assignRoleSchema = z.strictObject({
 export const ListUsersInput = z.compile(listUsersSchema);
 export const UpdateUserInput = z.compile(updateUserSchema);
 export const AssignRoleInput = z.compile(assignRoleSchema);
+export const CreateUserInput = z.compile(createUserSchema);
 
 export type ListUsersInput = z.output<typeof ListUsersInput>;
 export type UpdateUserInput = z.output<typeof UpdateUserInput>;
 export type AssignRoleInput = z.output<typeof AssignRoleInput>;
+export type CreateUserInput = z.output<typeof CreateUserInput>;

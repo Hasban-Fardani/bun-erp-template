@@ -3,8 +3,8 @@ import type { AppContext } from "../../context.ts";
 import type { AppVariables } from "../../http/app.ts";
 import { ApiError, ok, parseInput } from "../../http/errors.ts";
 import { requirePermission } from "./policy.ts";
-import { AssignRoleInput, ListUsersInput, UpdateUserInput } from "./schema.ts";
-import { assignUserRole, findUser, listUsers, revokeUserRole, updateUser } from "./service.ts";
+import { AssignRoleInput, CreateUserInput, ListUsersInput, UpdateUserInput } from "./schema.ts";
+import { assignUserRole, createUser, deleteUser, findUser, listUsers, revokeUserRole, updateUser } from "./service.ts";
 
 /** Administrasi user (butuh RBAC). Sign-up/sign-in milik handler Better Auth. */
 export function identityRoutes(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
@@ -20,6 +20,29 @@ export function identityRoutes(ctx: AppContext, organizationId: string): Hono<{ 
       const user = await findUser(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"));
       if (!user) throw ApiError.notFound("User not found");
       return ok(c, user);
+    })
+    .post("/", async (c) => {
+      const actor = await requirePermission(c, ctx, "user.create");
+      const input = parseInput(CreateUserInput, await c.req.json());
+      return ok(
+        c,
+        await createUser(ctx.db, actor.organizationId ?? organizationId, input, {
+          userId: actor.userId,
+          traceId: actor.traceId,
+          label: actor.label,
+        }),
+      );
+    })
+    .delete("/:id", async (c) => {
+      const actor = await requirePermission(c, ctx, "user.delete");
+      return ok(
+        c,
+        await deleteUser(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"), {
+          userId: actor.userId,
+          traceId: actor.traceId,
+          label: actor.label,
+        }),
+      );
     })
     .patch("/:id", async (c) => {
       const actor = await requirePermission(c, ctx, "user.update");

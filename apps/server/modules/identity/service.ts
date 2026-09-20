@@ -1,10 +1,15 @@
+import { hashPassword } from "better-auth/crypto";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
+
+/** Re-export: CLI (erp.ts) memakai primitif hash yang sama, bukan duplikat. */
+export { hashPassword };
+
 import { ApiError } from "../../http/errors.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { recordAudit, snapshot } from "../audit/service.ts";
 import { assignRole, findRoleByKey, permissionsForUser, revokeRole, rolesForUser } from "../rbac/service.ts";
-import { users } from "./data.ts";
-import type { ListUsersInput, UpdateUserInput } from "./schema.ts";
+import { accounts, users } from "./data.ts";
+import type { CreateUserInput, ListUsersInput, UpdateUserInput } from "./schema.ts";
 
 export type User = typeof users.$inferSelect;
 
@@ -105,6 +110,89 @@ export async function updateUser(
     });
 
     return toPublicUser(tx as unknown as Database, after);
+  });
+}
+
+/**
+ * Membuat user + kredensial email/password sekaligus (admin invite tanpa e-mail server).
+ * Hash memakai primitif Better Auth sendiri sehingga sign-in berikutnya langsung sah.
+ */
+export async function createUser(
+  db: Database,
+  organizationId: string,
+  input: CreateUserInput,
+  actor: { userId: string; traceId: string; label?: string },
+): Promise<PublicUser> {
+  return db.transaction(async (tx) => {
+    const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, input.email)).limit(1);
+    if (existing.length > 0) throw ApiError.conflict("Email already exists");
+
+    const rows = await tx
+      .insert(users)
+      .values({
+        name: input.name,
+        email: input.email,
+        organizationId,
+        emailVerified: true,
+      })
+      .returning();
+    const user = rows[0] as User;
+
+    await tx.insert(accounts).values({
+      accountId: user.id,
+      providerId: "credential",
+      userId: user.id,
+      password: await hashPassword(input.password),
+    });
+
+    if (input.roleKey) {
+      const role = await findRoleByKey(tx as unknown as Database, organizationId, input.roleKey);
+      if (!role) throw ApiError.notFound(`Role not found: ${input.roleKey}`);
+      await assignRole(tx as unknown as Database, { userId: user.id, roleId: role.id });
+    }
+
+    await recordAudit(tx as unknown as Database, {
+      organizationId,
+      actorId: actor.userId,
+      actorLabel: actor.label,
+      event: "user.created",
+      subjectType: "user",
+      subjectId: user.id,
+      after: snapshot("user", user as unknown as Record<string, unknown>),
+      traceId: actor.traceId,
+    });
+
+    return toPublicUser(tx as unknown as Database, user);
+  });
+}
+
+/**
+ * Menghapus user dari organisasi. Sesi/kredensial ikut lewat ON DELETE CASCADE;
+ * jejak audit sengaja dibiarkan hidup — actorId tanpa FK (hapus user tak boleh hapus bukti).
+ */
+export async function deleteUser(
+  db: Database,
+  organizationId: string,
+  id: string,
+  actor: { userId: string; traceId: string; label?: string },
+): Promise<{ id: string }> {
+  return db.transaction(async (tx) => {
+    const before = await findUserInOrg(tx as unknown as Database, organizationId, id);
+    if (before.id === actor.userId) throw ApiError.conflict("Cannot delete yourself");
+
+    await tx.delete(users).where(eq(users.id, id));
+
+    await recordAudit(tx as unknown as Database, {
+      organizationId,
+      actorId: actor.userId,
+      actorLabel: actor.label,
+      event: "user.deleted",
+      subjectType: "user",
+      subjectId: id,
+      before: snapshot("user", before as unknown as Record<string, unknown>),
+      traceId: actor.traceId,
+    });
+    return { id };
   });
 }
 

@@ -1,5 +1,6 @@
 /** Satu-satunya sumber izin yang dikenal kode; key = `<resource>.<action>`. */
 export const statements = {
+  // create/read/update/delete ditegakkan route user; `impersonate` menyusul bersama fiturnya.
   user: ["create", "read", "update", "delete", "impersonate"],
   // Hanya `read` dan `assign` yang ditegakkan route saat ini. `create`/`update`/`delete`
   // sengaja belum masuk katalog: role sistem berasal dari kode (`systemRoles`), dan

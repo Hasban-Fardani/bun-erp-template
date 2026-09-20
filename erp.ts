@@ -8,9 +8,11 @@ import { eq, sql } from "drizzle-orm";
 import { createContext, resolveDefaultOrganizationId } from "./apps/server/context.ts";
 import { createApp } from "./apps/server/http/app.ts";
 import { recordAudit, snapshot } from "./apps/server/modules/audit/service.ts";
-import { users } from "./apps/server/modules/identity/data.ts";
-import { assignRole, findRoleByKey } from "./apps/server/modules/rbac/service.ts";
+import { accounts, users } from "./apps/server/modules/identity/data.ts";
+import { hashPassword } from "./apps/server/modules/identity/service.ts";
+import { assignRole, findRoleByKey, rolesForUser } from "./apps/server/modules/rbac/service.ts";
 import { loadEnv, strayKeyWarnings } from "./apps/server/platform/config/index.ts";
+import type { Database } from "./apps/server/platform/database/index.ts";
 import { migrate } from "./apps/server/platform/database/migrate.ts";
 import { organizations } from "./apps/server/platform/database/schema.ts";
 import { seed } from "./apps/server/platform/database/seed.ts";
@@ -168,6 +170,64 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
       traceId: `cli-${Date.now()}`,
     });
     process.stdout.write(`Granted "${roleKey}" to ${email}.\n`);
+    await ctx.close();
+  },
+
+  // Sandi reset via CLI: jalur pemulihan saat e-mail driver belum ada. Audit tetap dicatat.
+  "user:passwd": async (args) => {
+    const [email, newPassword] = args;
+    if (!email) {
+      process.stderr.write("Usage: bun erp user:passwd <email> [sandi-baru]\n");
+      process.exit(1);
+    }
+    const password = newPassword ?? Array.from({ length: 3 }, () => Math.random().toString(36).slice(2, 6)).join("-");
+    const ctx = await createContext({ migrateOnStart: false });
+    const organizationId = await resolveDefaultOrganizationId(ctx.db);
+    const userRows = await ctx.db.select().from(users).where(eq(users.email, email)).limit(1);
+    const user = userRows[0];
+    if (!user) {
+      process.stderr.write(`No user with email ${email}.\n`);
+      await ctx.close();
+      process.exit(1);
+    }
+
+    const hash = await hashPassword(password);
+    await ctx.db.transaction(async (tx) => {
+      const updated = await tx
+        .update(accounts)
+        .set({ password: hash, updatedAt: new Date() })
+        .where(eq(accounts.userId, user.id))
+        .returning({ id: accounts.id });
+      if (updated.length === 0) {
+        await tx
+          .insert(accounts)
+          .values({ accountId: user.id, providerId: "credential", userId: user.id, password: hash });
+      }
+      await recordAudit(tx as unknown as Database, {
+        organizationId,
+        actorId: null,
+        actorLabel: "cli",
+        event: "user.password_reset",
+        subjectType: "user",
+        subjectId: user.id,
+        traceId: `cli-${Date.now()}`,
+      });
+    });
+    process.stdout.write(`Password updated: ${email}\nNew password: ${password}\n`);
+    await ctx.close();
+  },
+
+  "user:list": async () => {
+    const ctx = await createContext({ migrateOnStart: false });
+    const rows = await ctx.db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .orderBy(users.email);
+    for (const u of rows) {
+      const roles = (await rolesForUser(ctx.db, u.id)).map((r) => r.key).join(", ");
+      process.stdout.write(`${u.email.padEnd(40)} ${u.name.padEnd(20)} ${roles || "—"}\n`);
+    }
+    process.stdout.write(`total: ${rows.length}\n`);
     await ctx.close();
   },
 
