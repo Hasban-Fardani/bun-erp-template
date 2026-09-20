@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 import { createContext, resolveDefaultOrganizationId } from "./context.ts";
 import { createApp } from "./http/app.ts";
 import { ConfigError } from "./platform/config/index.ts";
