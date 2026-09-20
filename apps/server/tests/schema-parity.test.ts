@@ -88,6 +88,62 @@ describe("compiled schema parity", () => {
     expect(a.success && b.success ? a.data : null).toEqual(b.success ? b.data : null);
   });
 
+  test("hybrid deployment: BETTER_AUTH_URL may differ from APP_URL when trusted (ADR-0011)", () => {
+    const result = EnvSchema.safeParse({
+      APP_NAME: "Bun ERP Template",
+      APP_ENV: "production",
+      APP_URL: "https://erp.danarifamily.web.id",
+      APP_PORT: "8095",
+      APP_RELEASE: "web-1",
+      APP_TIMEZONE: "Asia/Jakarta",
+      LOG_DRIVER: "console",
+      LOG_LEVEL: "info",
+      LOG_PATH: "/var/log/bun-erp/app.log",
+      LOG_RETENTION_DAYS: "14",
+      LOG_MAX_SIZE_MB: "100",
+      TRUST_PROXY: "true",
+      DATABASE_DRIVER: "postgres",
+      DATABASE_URL: "postgres://user:pass@db.internal:5432/erp",
+      BETTER_AUTH_URL: "https://erp-api.danarifamily.web.id",
+      AUTH_TRUSTED_ORIGINS: "https://erp.danarifamily.web.id,https://erp-api.danarifamily.web.id",
+      STORAGE_DRIVER: "s3",
+      MAIL_DRIVER: "log",
+      MAIL_FROM_ADDRESS: "no-reply@example.test",
+      MAIL_FROM_NAME: "Bun ERP Template",
+      BETTER_AUTH_SECRET: "x".repeat(32),
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("hybrid deployment: BETTER_AUTH_URL di luar trusted origins tetap ditolak", () => {
+    const result = EnvSchema.safeParse({
+      APP_NAME: "Bun ERP Template",
+      APP_ENV: "production",
+      APP_URL: "https://erp.danarifamily.web.id",
+      APP_PORT: "8095",
+      APP_RELEASE: "web-1",
+      APP_TIMEZONE: "Asia/Jakarta",
+      LOG_DRIVER: "console",
+      LOG_LEVEL: "info",
+      LOG_PATH: "/var/log/bun-erp/app.log",
+      LOG_RETENTION_DAYS: "14",
+      LOG_MAX_SIZE_MB: "100",
+      TRUST_PROXY: "true",
+      DATABASE_DRIVER: "postgres",
+      DATABASE_URL: "postgres://user:pass@db.internal:5432/erp",
+      BETTER_AUTH_URL: "https://penyerang.example",
+      AUTH_TRUSTED_ORIGINS: "https://erp.danarifamily.web.id",
+      STORAGE_DRIVER: "s3",
+      MAIL_DRIVER: "log",
+      MAIL_FROM_ADDRESS: "no-reply@example.test",
+      MAIL_FROM_NAME: "Bun ERP Template",
+      BETTER_AUTH_SECRET: "x".repeat(32),
+    });
+    expect(result.success).toBe(false);
+    const paths = result.success ? [] : result.error.issues.map((i) => i.path.join("."));
+    expect(paths).toContain("BETTER_AUTH_URL");
+  });
+
   test("production guard rejects debug logging, local storage, and short secret", () => {
     const result = EnvSchema.safeParse({
       APP_NAME: "Bun ERP Template",

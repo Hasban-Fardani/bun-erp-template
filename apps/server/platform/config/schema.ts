@@ -100,8 +100,16 @@ const rawSchema = z
     if (!env.APP_URL.startsWith("https://") && !env.APP_URL.startsWith("http://localhost")) {
       ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "public URL must use https in production" });
     }
-    if (env.BETTER_AUTH_URL !== env.APP_URL) {
-      ctx.addIssue({ code: "custom", path: ["BETTER_AUTH_URL"], message: "must equal APP_URL in production" });
+    // Hybrid (ADR-0011): auth boleh di domain lain asal origin itu eksplisit tepercaya.
+    const trustedOrigins = env.AUTH_TRUSTED_ORIGINS.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+    if (env.BETTER_AUTH_URL !== env.APP_URL && !trustedOrigins.includes(env.BETTER_AUTH_URL)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["BETTER_AUTH_URL"],
+        message: "must equal APP_URL or be listed in AUTH_TRUSTED_ORIGINS in production",
+      });
     }
   });
 
