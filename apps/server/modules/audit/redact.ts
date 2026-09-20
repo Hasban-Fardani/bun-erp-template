@@ -62,7 +62,6 @@ export const AUDIT_FIELDS = {
   role: ["id", "key", "name", "isSystem", "organizationId"],
   userRole: ["userId", "roleId", "scopeType", "scopeId"],
   department: ["id", "name", "code", "isActive", "organizationId"],
-  post: ["id", "title", "slug", "content", "published", "authorId", "organizationId"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AuditEntity = keyof typeof AUDIT_FIELDS;

@@ -5,7 +5,6 @@ import { auditRoutes } from "../modules/audit/route.ts";
 import { departmentRoutes } from "../modules/departments/route.ts";
 import { requireActor } from "../modules/identity/policy.ts";
 import { identityRoutes } from "../modules/identity/route.ts";
-import { postRoutes } from "../modules/posts/route.ts";
 import { rbacRoutes } from "../modules/rbac/route.ts";
 import type { AppVariables } from "./app.ts";
 import { ok } from "./errors.ts";
@@ -41,5 +40,4 @@ export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppC
   app.route(`${API_PREFIX}/roles`, rbacRoutes(ctx, organizationId));
   app.route(`${API_PREFIX}/audit-logs`, auditRoutes(ctx, organizationId));
   app.route(`${API_PREFIX}/departments`, departmentRoutes(ctx, organizationId));
-  app.route(`${API_PREFIX}/posts`, postRoutes(ctx, organizationId));
 }

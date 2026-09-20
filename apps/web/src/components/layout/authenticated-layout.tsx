@@ -1,6 +1,7 @@
 import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { Menu, Users as UsersIcon } from "lucide-react";
 import { useState } from "react";
+import { uiConfig } from "../../config/ui.ts";
 import { useSession, useSignOut } from "../../features/users/api.ts";
 import { cn } from "../../lib/cn.ts";
 import { UserMenu } from "../../shared/ui/dropdown-menu.tsx";
@@ -22,7 +23,7 @@ function NavContent({ session, onNavigate }: { session: SessionData; onNavigate?
         <span className="flex size-7 items-center justify-center rounded-md bg-accent text-accent-ink">
           <UsersIcon className="size-4" />
         </span>
-        <span className="text-[14.5px] font-semibold tracking-tight">ERP Template</span>
+        <span className="text-[14.5px] font-semibold tracking-tight">{uiConfig.appName}</span>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-4">
         {navGroups.map((group) => {

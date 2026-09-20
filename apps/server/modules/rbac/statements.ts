@@ -6,7 +6,6 @@ export const statements = {
   // menambahkan izin tanpa route yang menegakkannya hanya membuat katalog berbohong.
   role: ["read", "assign"],
   department: ["create", "read", "update", "delete"],
-  post: ["create", "read", "update", "delete"],
   audit: ["read"],
 } as const;
 

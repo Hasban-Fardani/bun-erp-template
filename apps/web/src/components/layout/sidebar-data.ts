@@ -13,11 +13,10 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-/** Sumber tunggal navigasi: halaman baru menambah baris di sini, bukan mengubah sidebar. */
+/** Sumber tunggal navigasi — halaman baru menambah baris di sini, bukan mengubah sidebar. */
 export const navGroups: NavGroup[] = [
   {
-    title: "Umum",
-    items: [{ title: "Pengguna", url: "/users", icon: Users }],
+    items: [{ title: "Pengguna", url: "/users", icon: Users, permission: "user.read" }],
   },
   {
     title: "Administrasi",
