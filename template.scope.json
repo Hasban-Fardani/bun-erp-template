@@ -1,0 +1,33 @@
+{
+  "$comment": "Batas template: apa yang BOLEH ada di repo template vs apa yang milik instance client. Dijaga `bun erp check:scope` (F1.10).",
+  "version": 1,
+  "template": {
+    "name": "bun-erp-template",
+    "license": "MIT"
+  },
+  "allowed": {
+    "topLevelDirs": ["apps", "tools", "docs", "skills", "scripts", "platform", "tests", ".github"],
+    "apps": ["apps/server", "apps/web"],
+    "note": "Modul bisnis client tidak masuk repo template. Template hanya berisi fondasi + satu modul referensi."
+  },
+  "forbidden": {
+    "paths": [".env", ".env.local", ".env.production", ".data"],
+    "patterns": [
+      {
+        "id": "client-name",
+        "regex": "\\b(flora|idar|danari|daness|hasban)\\b",
+        "reason": "Nama client/owner tidak boleh bocor ke repo template publik",
+        "allowIn": ["docs/tasks/**", "*.local", ".gitignore"],
+        "flags": "i"
+      },
+      {
+        "id": "business-domain",
+        "regex": "\\b(payroll|absensi|attendance|procurement|inventory-stock|pos-cashier)\\b",
+        "reason": "Aturan bisnis client dibuat dari product spec terpisah (PRD §2 non-goals)",
+        "allowIn": ["docs/**"],
+        "flags": "i"
+      }
+    ]
+  },
+  "moduleReferenceExample": "apps/server/modules/departments"
+}
