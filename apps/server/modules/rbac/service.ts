@@ -136,3 +136,34 @@ export async function revokeRole(db: Database, userId: string, roleId: string): 
     .returning({ id: userRoles.id });
   return rows.length > 0;
 }
+
+/** Beri permission ke role non-sistem. Idempotent. */
+export async function grantRolePermissions(
+  db: Database,
+  roleId: string,
+  keys: readonly PermissionKey[],
+): Promise<void> {
+  const rows = await db.select({ id: permissions.id, key: permissions.key }).from(permissions);
+  const idByKey = new Map(rows.map((r) => [r.key, r.id]));
+  for (const key of keys) {
+    const permissionId = idByKey.get(key);
+    if (!permissionId) throw ApiError.notFound(`Permission not found: ${key}`);
+    const existing = await db
+      .select({ roleId: rolePermissions.roleId })
+      .from(rolePermissions)
+      .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)))
+      .limit(1);
+    if (existing.length > 0) continue;
+    await db.insert(rolePermissions).values({ roleId, permissionId });
+  }
+}
+
+/** Cabut permission dari role. */
+export async function revokeRolePermission(db: Database, roleId: string, key: PermissionKey): Promise<void> {
+  const rows = await db.select({ id: permissions.id }).from(permissions).where(eq(permissions.key, key)).limit(1);
+  const permissionId = rows[0]?.id;
+  if (!permissionId) return;
+  await db
+    .delete(rolePermissions)
+    .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)));
+}

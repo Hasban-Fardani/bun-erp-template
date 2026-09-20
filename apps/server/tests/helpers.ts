@@ -88,3 +88,15 @@ export async function loginOwner(app: ReturnType<typeof createApp>, db: AppConte
   if (!setCookie) throw new Error("tidak ada cookie sesi");
   return setCookie.split(";")[0] as string;
 }
+
+/** Buat user via Better Auth sungguhan; balikin id-nya. */
+export async function signUpUser(app: ReturnType<typeof createApp>, email: string): Promise<{ id: string }> {
+  const res = await app.request("/api/v1/auth/sign-up/email", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password: "sandi-yang-panjang", name: email.split("@")[0] ?? "User" }),
+  });
+  if (res.status !== 200) throw new Error(`sign-up gagal: ${res.status}`);
+  const { user } = (await res.json()) as { user: { id: string } };
+  return user;
+}
