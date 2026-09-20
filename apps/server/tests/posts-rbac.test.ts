@@ -6,28 +6,28 @@ import { resolveDefaultOrganizationId } from "../platform/database/organizations
 import { createTestContext, loginOwner, signUpUser, truncateAll } from "./helpers.ts";
 
 describe("posts RBAC end-to-end", () => {
-  let ctx: AppContext | null = null;
+  let ctxBox: { ctx: AppContext } = {} as { ctx: AppContext };
   let app: ReturnType<typeof createApp>;
   let ownerCookie: string;
   let organizationId: string;
 
   beforeEach(async () => {
-    ctx ??= await createTestContext();
-    await truncateAll(ctx);
+    ctxBox = { ctx: await createTestContext() };
+    await truncateAll(ctxBox.ctx);
     const { seed } = await import("../platform/database/seed.ts");
-    await seed(ctx.db);
-    organizationId = await resolveDefaultOrganizationId(ctx.db);
-    app = createApp(ctx, organizationId);
-    ownerCookie = await loginOwner(app, ctx.db);
+    await seed(ctxBox.ctx.db);
+    organizationId = await resolveDefaultOrganizationId(ctxBox.ctx.db);
+    app = createApp(ctxBox.ctx, organizationId);
+    ownerCookie = await loginOwner(app, ctxBox.ctx.db);
   });
 
   async function createUserWithRole(email: string, roleKey: string | null): Promise<string> {
     const user = await signUpUser(app, email);
     if (roleKey) {
-      const role = await findRoleByKey(ctx.db, organizationId, roleKey);
+      const role = await findRoleByKey(ctxBox.ctx.db, organizationId, roleKey);
       if (!role) throw new Error(`role ${roleKey} tidak ada`);
       const { assignRole } = await import("../modules/rbac/service.ts");
-      await assignRole(ctx.db, { userId: user.id, roleId: role.id });
+      await assignRole(ctxBox.ctx.db, { userId: user.id, roleId: role.id });
     }
     const signIn = await app.request("/api/v1/auth/sign-in/email", {
       method: "POST",
@@ -96,7 +96,7 @@ describe("posts RBAC end-to-end", () => {
     const cookie = await createUserWithRole("editor@example.test", null);
     expect((await app.request("/api/v1/posts", { headers: { cookie } })).status).toBe(403);
 
-    const owner = await findRoleByKey(ctx.db, organizationId, "owner");
+    const owner = await findRoleByKey(ctxBox.ctx.db, organizationId, "owner");
     if (!owner) throw new Error("owner hilang");
     const created = await app.request("/api/v1/posts", {
       method: "POST",
@@ -106,15 +106,15 @@ describe("posts RBAC end-to-end", () => {
     const { data: post } = (await created.json()) as { data: { id: string } };
 
     const { roles: rolesTable } = await import("../modules/rbac/data.ts");
-    const inserted = await ctx.db
+    const inserted = await ctxBox.ctx.db
       .insert(rolesTable)
       .values({ organizationId, key: "editor", name: "Editor", description: "baca post saja", isSystem: false })
       .returning({ id: rolesTable.id });
     const editorId = inserted[0]?.id as string;
-    await grantRolePermissions(ctx.db, editorId, ["post.read"]);
+    await grantRolePermissions(ctxBox.ctx.db, editorId, ["post.read"]);
     const { assignRole } = await import("../modules/rbac/service.ts");
     const editorUser = await signUpUser(app, "editor2@example.test");
-    await assignRole(ctx.db, { userId: editorUser.id, roleId: editorId });
+    await assignRole(ctxBox.ctx.db, { userId: editorUser.id, roleId: editorId });
     const editorCookie = await (async () => {
       const signIn = await app.request("/api/v1/auth/sign-in/email", {
         method: "POST",
@@ -131,11 +131,11 @@ describe("posts RBAC end-to-end", () => {
     ).toBe(403);
 
     // Revoke post.read dari editor -> akses hilang pada request berikutnya.
-    await revokeRolePermission(ctx.db, editorId, "post.read");
+    await revokeRolePermission(ctxBox.ctx.db, editorId, "post.read");
     expect((await app.request("/api/v1/posts", { headers: { cookie: editorCookie } })).status).toBe(403);
 
     // Grant kembali -> akses pulih.
-    await grantRolePermissions(ctx.db, editorId, ["post.read"]);
+    await grantRolePermissions(ctxBox.ctx.db, editorId, ["post.read"]);
     expect((await app.request("/api/v1/posts", { headers: { cookie: editorCookie } })).status).toBe(200);
   });
 });
