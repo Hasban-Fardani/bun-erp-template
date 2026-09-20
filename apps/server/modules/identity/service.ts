@@ -1,5 +1,5 @@
 import { hashPassword } from "better-auth/crypto";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 /** Re-export: CLI (erp.ts) memakai primitif hash yang sama, bukan duplikat. */
 export { hashPassword };
@@ -7,7 +7,8 @@ export { hashPassword };
 import { ApiError } from "../../http/errors.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { recordAudit, snapshot } from "../audit/service.ts";
-import { assignRole, findRoleByKey, permissionsForUser, revokeRole, rolesForUser } from "../rbac/service.ts";
+import { permissions as rbacPermissions, roles as rbacRoles, rolePermissions, userRoles } from "../rbac/data.ts";
+import { assignRole, findRoleByKey, revokeRole } from "../rbac/service.ts";
 import { accounts, users } from "./data.ts";
 import type { CreateUserInput, ListUsersInput, UpdateUserInput } from "./schema.ts";
 
@@ -25,8 +26,57 @@ export type PublicUser = {
   permissions: string[];
 };
 
+/**
+ * Role + izin untuk BANYAK user dalam dua query. Versi per-user (N+1) membuat daftar
+ * 50 baris menembak ~100 query; batch ini membuatnya tetap 4 query berapa pun panjangnya.
+ */
+async function rolesAndPermissionsFor(
+  db: Database,
+  userIds: string[],
+): Promise<{
+  roles: Map<string, PublicUser["roles"]>;
+  permissions: Map<string, string[]>;
+}> {
+  const roles = new Map<string, PublicUser["roles"]>();
+  const permissions = new Map<string, string[]>();
+  if (userIds.length === 0) return { roles, permissions };
+
+  const [roleRows, permissionRows] = await Promise.all([
+    db
+      .select({
+        userId: userRoles.userId,
+        roleId: rbacRoles.id,
+        key: rbacRoles.key,
+        name: rbacRoles.name,
+        scopeType: userRoles.scopeType,
+        scopeId: userRoles.scopeId,
+      })
+      .from(userRoles)
+      .innerJoin(rbacRoles, eq(rbacRoles.id, userRoles.roleId))
+      .where(inArray(userRoles.userId, userIds)),
+    db
+      .selectDistinct({ userId: userRoles.userId, key: rbacPermissions.key })
+      .from(userRoles)
+      .innerJoin(rolePermissions, eq(rolePermissions.roleId, userRoles.roleId))
+      .innerJoin(rbacPermissions, eq(rbacPermissions.id, rolePermissions.permissionId))
+      .where(inArray(userRoles.userId, userIds)),
+  ]);
+
+  for (const row of roleRows) {
+    const list = roles.get(row.userId) ?? [];
+    list.push({ roleId: row.roleId, key: row.key, name: row.name, scopeType: row.scopeType, scopeId: row.scopeId });
+    roles.set(row.userId, list);
+  }
+  for (const row of permissionRows) {
+    const list = permissions.get(row.userId) ?? [];
+    list.push(row.key);
+    permissions.set(row.userId, list);
+  }
+  return { roles, permissions };
+}
+
 async function toPublicUser(db: Database, user: User): Promise<PublicUser> {
-  const [roles, permissions] = await Promise.all([rolesForUser(db, user.id), permissionsForUser(db, user.id)]);
+  const { roles, permissions } = await rolesAndPermissionsFor(db, [user.id]);
   return {
     id: user.id,
     name: user.name,
@@ -34,8 +84,8 @@ async function toPublicUser(db: Database, user: User): Promise<PublicUser> {
     emailVerified: user.emailVerified,
     organizationId: user.organizationId,
     createdAt: user.createdAt,
-    roles,
-    permissions: [...permissions],
+    roles: roles.get(user.id) ?? [],
+    permissions: permissions.get(user.id) ?? [],
   };
 }
 
@@ -54,7 +104,24 @@ export async function listUsers(
     db.select({ total: sql<number>`count(*)::int` }).from(users).where(where),
   ]);
 
-  return { items: await Promise.all(rows.map((r) => toPublicUser(db, r))), total: count[0]?.total ?? 0 };
+  const { roles, permissions } = await rolesAndPermissionsFor(
+    db,
+    rows.map((r) => r.id),
+  );
+
+  return {
+    items: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      emailVerified: r.emailVerified,
+      organizationId: r.organizationId,
+      createdAt: r.createdAt,
+      roles: roles.get(r.id) ?? [],
+      permissions: permissions.get(r.id) ?? [],
+    })),
+    total: count[0]?.total ?? 0,
+  };
 }
 
 export async function findUser(db: Database, organizationId: string, id: string): Promise<PublicUser | undefined> {
@@ -121,7 +188,7 @@ export async function createUser(
   db: Database,
   organizationId: string,
   input: CreateUserInput,
-  actor: { userId: string; traceId: string; label?: string },
+  actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
   return db.transaction(async (tx) => {
     const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, input.email)).limit(1);
@@ -174,7 +241,7 @@ export async function deleteUser(
   db: Database,
   organizationId: string,
   id: string,
-  actor: { userId: string; traceId: string; label?: string },
+  actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ id: string }> {
   return db.transaction(async (tx) => {
     const before = await findUserInOrg(tx as unknown as Database, organizationId, id);

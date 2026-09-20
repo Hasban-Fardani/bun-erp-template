@@ -9,7 +9,7 @@ import { createContext, resolveDefaultOrganizationId } from "./apps/server/conte
 import { createApp } from "./apps/server/http/app.ts";
 import { recordAudit, snapshot } from "./apps/server/modules/audit/service.ts";
 import { accounts, users } from "./apps/server/modules/identity/data.ts";
-import { hashPassword } from "./apps/server/modules/identity/service.ts";
+import { createUser, hashPassword } from "./apps/server/modules/identity/service.ts";
 import { assignRole, findRoleByKey, rolesForUser } from "./apps/server/modules/rbac/service.ts";
 import { loadEnv, strayKeyWarnings } from "./apps/server/platform/config/index.ts";
 import type { Database } from "./apps/server/platform/database/index.ts";
@@ -137,6 +137,24 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   // Jalur keluar ayam-telur: owner pertama tak bisa dibuat via HTTP yang butuh role.
+  "user:create": async (args) => {
+    const [email, password, roleKey = "staff", name] = args;
+    if (!email || !password) {
+      process.stderr.write("Usage: bun erp user:create <email> <password> [roleKey] [name]\n");
+      process.exit(1);
+    }
+    const ctx = await createContext({ migrateOnStart: false });
+    const organizationId = await resolveDefaultOrganizationId(ctx.db);
+    const created = await createUser(
+      ctx.db,
+      organizationId,
+      { email, password, roleKey, name: name ?? email.split("@")[0] ?? "User" },
+      { userId: null, traceId: `cli-${Date.now()}`, label: "cli" },
+    );
+    process.stdout.write(`Created ${created.email} (${created.roles.map((r) => r.key).join(", ") || "tanpa role"})\n`);
+    await ctx.close();
+  },
+
   "user:grant": async (args) => {
     const [email, roleKey = "owner"] = args;
     if (!email) {

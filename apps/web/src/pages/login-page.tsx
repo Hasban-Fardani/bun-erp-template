@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { uiConfig } from "../config/ui.ts";
 import { useLogin } from "../features/users/api.ts";
@@ -53,9 +54,9 @@ export function LoginPage() {
             onClick={() => setShowPassword((v) => !v)}
             aria-pressed={showPassword}
             aria-label={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded px-1.5 py-1 text-[12px] font-medium text-ink-soft hover:bg-background"
+            className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center rounded p-1.5 text-ink-muted hover:bg-background hover:text-ink"
           >
-            {showPassword ? "Sembunyi" : "Lihat"}
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
         {login.isError ? <p className="mt-3 text-[13px] text-red-700">{(login.error as Error).message}</p> : null}
