@@ -64,9 +64,12 @@ async function runGate(kind: "skills" | "task" | "scope" | "slop"): Promise<void
     findings = validateTasks(await loadTasks(TASKS_DIR)).map((f) => `${f.file}: ${f.message}`);
   } else if (kind === "scope") {
     findings = (await checkScope(repoRoot)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`);
-  } else {
+  } else if (kind === "slop") {
     const { findCodeSlop } = await import("./tools/slop.ts");
     findings = await findCodeSlop(repoRoot);
+  } else {
+    const { findReactDoctorIssues } = await import("./tools/react-doctor.ts");
+    findings = await findReactDoctorIssues(repoRoot);
   }
   if (findings.length > 0) throw new GateFailure(findings);
 }
@@ -79,6 +82,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await guard("task", () => runGate("task"));
     await guard("scope", () => runGate("scope"));
     await guard("slop", () => runGate("slop"));
+    await guard("react", () => runGate("react"));
     process.stdout.write("check: OK\n");
   },
 
@@ -315,6 +319,11 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "check:scope": async () => {
     await guard("scope", () => runGate("scope"));
     process.stdout.write("Scope OK: no client name or business rule in template files.\n");
+  },
+
+  "check:react": async () => {
+    await guard("react", () => runGate("react"));
+    process.stdout.write("React Doctor OK.\n");
   },
 
   "check:task": async () => {

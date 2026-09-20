@@ -9,6 +9,7 @@ export function useSession() {
     queryFn: async (): Promise<SessionView> => {
       // Respons Better Auth TIDAK lewat envelope {data,meta} milik API — baca mentah.
       const res = await fetch(apiUrl("/api/v1/auth/get-session"), { credentials: "include" });
+      if (!res.ok) throw new Error(`Gagal memeriksa sesi (HTTP ${res.status})`);
       const auth = (await res.json()) as { user?: { id: string; name: string; email: string } | null } | null;
       if (!auth?.user) return { authenticated: false, user: null, permissions: [] };
       // 403 di /me = identitas sah tanpa izin (bukan sesi mati) — jangan dilempar sebagai error.
