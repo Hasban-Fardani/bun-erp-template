@@ -87,7 +87,8 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   test: async () => {
-    await run(["bun", "test", "apps/server"], "bun test");
+    await run(["bun", "test", "apps/server"], "bun test server");
+    await run(["bun", "test", "apps/web"], "bun test web");
   },
 
   doctor: async () => {
