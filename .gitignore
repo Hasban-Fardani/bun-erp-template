@@ -5,3 +5,4 @@ dist/
 .env.*.local
 *.log
 *.tsbuildinfo
+docs/tasks/F1.19-rbac-post-e2e.md
