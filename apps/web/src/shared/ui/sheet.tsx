@@ -3,9 +3,9 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 
 /**
- * Drawer samping berbasis Radix Dialog. `side="left"` untuk navigasi mobile,
- * `side="right"` untuk form — sama-sama satu permukaan, jadi perilaku fokus terkunci
- * (trap, Esc, klik luar) hanya ditulis sekali.
+ * Side drawer built on Radix Dialog. `side="left"` for mobile navigation,
+ * `side="right"` for forms — both are one surface, so the locked-focus behavior
+ * (trap, Esc, outside click) is written only once.
  */
 export function Sheet({
   open,
@@ -22,7 +22,7 @@ export function Sheet({
   side?: "left" | "right";
   children: ReactNode;
   className?: string;
-  /** Sembunyikan bar judul bila isi sudah punya header sendiri; nama tetap terbaca screen reader. */
+  /** Hide the title bar when the content carries its own header; the name stays readable to a screen reader. */
   titleHidden?: boolean;
 }) {
   return (

@@ -17,14 +17,14 @@ afterAll(async () => {
 });
 
 /**
- * CORS mengizinkan method yang TIDAK dipakai route = preflight gagal, dan gejalanya hanya
- * muncul di build hybrid (web dan API beda origin). Test ini menyamakan keduanya supaya
- * menambah verb baru tak bisa diam-diam merusak produksi.
+ * CORS allowing a method the routes do NOT use = a failed preflight, and the symptom only
+ * shows in a hybrid build (web and API on different origins). This test keeps the two in sync
+ * so adding a new verb cannot silently break production.
  */
 test("CORS mengizinkan setiap method yang benar-benar dipakai route", async () => {
   const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
   const used = new Set(app.routes.map((r) => r.method.toUpperCase()).filter((m) => m !== "ALL"));
-  // Origin tepercaya dari env test; endpoint mana pun cukup — yang diuji hanya header preflight.
+  // Trusted origin from the test env; any endpoint will do — only the preflight headers are under test.
   const res = await app.request("/api/v1/users", {
     method: "OPTIONS",
     headers: {

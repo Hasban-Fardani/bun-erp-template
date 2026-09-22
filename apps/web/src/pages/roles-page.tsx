@@ -14,7 +14,7 @@ import { useSession } from "../features/users/api.ts";
 import { ApiError } from "../lib/api.ts";
 import { Badge, Button, Card, CardHeader, ConfirmDelete, EmptyState, IconButton } from "../shared/ui/primitives.tsx";
 
-/** Pengelolaan peran: tambah, ubah, hapus, dan atur izin — semuanya menulis ke server. */
+/** Role management: create, edit, delete, and set permissions — all of it writes to the server. */
 export function RolesPage() {
   const session = useSession();
   const roles = useRoleList(Boolean(session.data?.authenticated));
@@ -136,7 +136,7 @@ export function RolesPage() {
                               }}
                             />
                           ) : null}
-                          {/* Role sistem berasal dari kode: menghapusnya hanya akan dihidupkan lagi oleh seed. */}
+                          {/* System roles come from code: deleting one only lets the seed revive it. */}
                           {canDelete && !role.isSystem ? (
                             <ConfirmDelete
                               label={role.name}

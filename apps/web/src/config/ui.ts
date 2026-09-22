@@ -1,10 +1,10 @@
 /**
- * Konfigurasi UI dibaca saat build dari env `VITE_*` (public by design).
- * Ganti tema/title = ganti .env, bukan ubah komponen.
+ * UI config is read at build time from `VITE_*` env (public by design).
+ * Swapping theme/title = editing .env, not editing components.
  */
 export type ThemeConfig = {
   appName: string;
-  /** Palet "kertas-tenang" (default) atau "tinta-gelap". */
+  /** Palette "kertas-tenang" (default) or "tinta-gelap". */
   theme: "kertas-tenang" | "tinta-gelap";
 };
 

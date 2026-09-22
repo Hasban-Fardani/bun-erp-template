@@ -12,7 +12,7 @@ import { ok } from "./errors.ts";
 
 export const API_PREFIX = "/api/v1";
 
-/** `http/routes.ts` hanya mendaftarkan route — tidak berisi business logic (PRD §6). */
+/** `http/routes.ts` only registers routes — it holds no business logic (PRD §6). */
 export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppContext, organizationId: string): void {
   app.get(
     "/health",
@@ -47,8 +47,8 @@ export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppC
     },
   );
 
-  // Handler auth milik Better Auth: isinya milik library, jadi tak melewati `describeRoute`.
-  // Operasi yang dipakai aplikasi didokumentasikan di `http/openapi.ts`.
+  // Auth handlers belong to Better Auth: the library owns the contents, so they skip `describeRoute`.
+  // The operations the app uses are documented in `http/openapi.ts`.
   app.on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => ctx.auth.handler(c.req.raw));
 
   app.get(

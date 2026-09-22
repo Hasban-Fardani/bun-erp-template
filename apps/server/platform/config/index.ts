@@ -7,7 +7,7 @@ export type Env = RawEnv & {
   isTest: boolean;
   isDevelopment: boolean;
   trustedOrigins: string[];
-  /** Nilai aman untuk ditampilkan/di-log: tidak pernah memuat secret. */
+  /** Safe values to display/log: never carry a secret. */
   safeSummary: Record<string, string>;
 };
 
@@ -44,8 +44,8 @@ function shape(parsed: RawEnv): Env {
 }
 
 /**
- * `Bun.env` memuat seluruh environment OS (PATH, HOME, variabel deployment). Hanya key
- * milik schema yang diserahkan ke parser — sisanya diabaikan, bukan dianggap salah config.
+ * `Bun.env` holds the whole OS environment (PATH, HOME, deployment vars). Only keys that
+ * belong to the schema reach the parser — the rest are ignored, not treated as bad config.
  */
 function pickKnownKeys(source: Record<string, string | undefined>): Record<string, string | undefined> {
   const picked: Record<string, string | undefined> = {};
@@ -57,8 +57,8 @@ function pickKnownKeys(source: Record<string, string | undefined>): Record<strin
 }
 
 /**
- * Satu-satunya pembaca Bun.env di seluruh aplikasi (PRD §6).
- * Melempar ConfigError saat bootstrap bila config invalid — bukan saat request pertama.
+ * The only reader of Bun.env in the whole app (PRD §6).
+ * Throws ConfigError at bootstrap when config is invalid — not on the first request.
  */
 export function loadEnv(
   source: Record<string, string | undefined> = Bun.env as Record<string, string | undefined>,
@@ -70,7 +70,7 @@ export function loadEnv(
   return shape(result.data);
 }
 
-/** Dipakai `env:list` dan pesan error bootstrap: key asing = salah ketik atau variabel mati. */
+/** Used by `env:list` and the bootstrap error message: a foreign key is a typo or a dead variable. */
 export function strayKeyWarnings(
   source: Record<string, string | undefined> = Bun.env as Record<string, string | undefined>,
 ): string[] {

@@ -4,14 +4,14 @@ export type ApiFailure = {
   meta: { requestId: string };
 };
 
-// Kosong = same-origin (dev via proxy Vite); terisi = deployment hybrid (ADR-0011).
+// Empty = same-origin (dev through the Vite proxy); set = hybrid deployment (ADR-0011).
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export function apiUrl(path: string): string {
   return `${API_BASE}${path}`;
 }
 
-/** Satu gerbang fetch: same-origin via proxy Vite, kredensial cookie selalu ikut. */
+/** One fetch gate: same-origin through the Vite proxy, cookie credentials always included. */
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;

@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import type * as z from "zod";
 
-/** Stable error codes: klien boleh bergantung padanya, pesan boleh berubah. */
+/** Stable error codes: clients may depend on them, messages may change. */
 export const ErrorCode = {
   validationFailed: "VALIDATION_FAILED",
   unauthorized: "UNAUTHORIZED",
@@ -16,7 +16,7 @@ export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 export type FieldError = { path: string; message: string };
 
-/** Bentuk error tunggal untuk seluruh API (PRD §12). */
+/** Single error shape for the whole API (PRD §12). */
 export type ApiErrorBody = {
   error: { code: ErrorCodeValue; message: string; fields?: FieldError[] };
   meta: { requestId: string };
@@ -39,7 +39,7 @@ export class ApiError extends Error {
     return new ApiError(ErrorCode.notFound, 404, message);
   }
 
-  /** 401 = belum ada identitas. 403 = identitas ada, izinnya tidak. Jangan ditukar. */
+  /** 401 = no identity yet. 403 = identity exists, permission does not. Never swap them. */
   static unauthorized(message = "Authentication required"): ApiError {
     return new ApiError(ErrorCode.unauthorized, 401, message);
   }
@@ -48,7 +48,7 @@ export class ApiError extends Error {
     return new ApiError(ErrorCode.forbidden, 403, message);
   }
 
-  /** 409 untuk bentrok state (kode unik sudah dipakai), bukan 422 yang berarti bentuk input salah. */
+  /** 409 for a state conflict (unique code already taken), not 422 which means malformed input. */
   static conflict(message: string, path = "code"): ApiError {
     return new ApiError(ErrorCode.conflict, 409, message, [{ path, message: "already in use in this organization" }]);
   }
@@ -67,7 +67,7 @@ export class ApiError extends Error {
   }
 }
 
-/** Sukses: `{ data, meta: { requestId } }` (PRD §12). */
+/** Success: `{ data, meta: { requestId } }` (PRD §12). */
 export function ok<T>(c: Context, data: T): Response {
   return c.json({ data, meta: { requestId: requestId(c) } });
 }
@@ -76,7 +76,7 @@ export function requestId(c: Context): string {
   return c.get("requestId") as string;
 }
 
-/** Parse input dengan compiled schema; error Zod diubah menjadi ApiError 422. */
+/** Parse input with the compiled schema; Zod errors become ApiError 422. */
 export function parseInput<T extends z.ZodType>(schema: T, input: unknown): z.output<T> {
   const result = schema.safeParse(input);
   if (!result.success) throw ApiError.validation(result.error.issues);

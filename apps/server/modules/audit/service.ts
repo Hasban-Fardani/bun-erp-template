@@ -11,7 +11,7 @@ export type AuditEvent = {
   organizationId?: string | null;
   actorId?: string | null;
   actorLabel?: string;
-  /** `domain.aksi_hasil` — nama harus stabil, ia yang dicari saat investigasi. */
+  /** `domain.action_result` — the name must stay stable, it is what investigations search for. */
   event: string;
   subjectType: string;
   subjectId: string;
@@ -20,7 +20,7 @@ export type AuditEvent = {
   traceId?: string;
 };
 
-/** Panggil dari service (bukan route) di dalam transaksi; snapshot wajib via redactEntity. */
+/** Call from the service (not the route) inside a transaction; snapshots must go through redactEntity. */
 export async function recordAudit(db: Database, entry: AuditEvent): Promise<void> {
   await db.insert(auditLogs).values({
     organizationId: entry.organizationId ?? null,

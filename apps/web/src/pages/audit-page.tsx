@@ -9,7 +9,7 @@ import { Badge, Card, CardHeader, EmptyState, IconButton, Input } from "../share
 
 const stamp = (iso: string) => new Date(iso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
 
-/** Ekspor CSV dibuat di klien dari data yang sudah terlihat — tidak ada endpoint baru. */
+/** CSV export is built client-side from data already on screen — no new endpoint. */
 function toCsv(items: AuditLog[]): string {
   const head = ["waktu", "event", "pelaku", "subjek", "trace"];
   const rows = items.map((l) => [
@@ -31,7 +31,7 @@ function download(items: AuditLog[]) {
   URL.revokeObjectURL(url);
 }
 
-/** Jejak audit: baca-saja menurut desain (append-only), tapi tiap kejadian bisa dibedah. */
+/** Audit trail: read-only by design (append-only), yet every event can be drilled into. */
 export function AuditPage() {
   const session = useSession();
   const [search, setSearch] = useState("");

@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-/** Filter log audit. Rentang waktu memakai ISO string supaya mudah dipakai dari URL. */
+/** Audit log filters. The time range uses ISO strings so it stays URL-friendly. */
 export const listAuditSchema = z.strictObject({
   limit: z.coerce.number().int().min(1).max(100).default(25),
   offset: z.coerce.number().int().min(0).default(0),

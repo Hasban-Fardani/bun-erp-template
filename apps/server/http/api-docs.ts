@@ -2,14 +2,14 @@ import { describeRoute, resolver } from "hono-openapi";
 import * as z from "zod";
 
 /**
- * Metadata dokumentasi menempel pada route-nya, bukan di berkas terpisah: menambah route
- * baru otomatis menambah dokumentasi, dan tak ada peta manual yang bisa basi. Test
- * `openapi-coverage` menolak rilis bila ada route yang belum lewat helper ini.
+ * Documentation metadata rides on the route itself, not a separate file: adding a route
+ * adds docs automatically, and no hand-written map can go stale. The `openapi-coverage`
+ * test rejects a release when a route bypasses this helper.
  */
 
 type DescribeRouteOptions = Parameters<typeof describeRoute>[0];
 
-/** Bentuk badan galat dari `http/app.ts`. Status di sini bukan hiasan — ia yang ditulis klien. */
+/** Error body shape from `http/app.ts`. Statuses here are not decoration — the client writes them. */
 const ERROR_DESCRIPTIONS: Record<string, string> = {
   "400": "Request rusak / JSON tidak valid",
   "401": "Belum login (tidak ada sesi)",
@@ -29,8 +29,8 @@ const envelope = (data: Record<string, unknown>) => ({
 });
 
 /**
- * Parameter query dari skema zod asli — batasan dan default ikut, tidak ditulis ulang.
- * Path param diisi library dari pola route, jadi di sini hanya query.
+ * Query params come from the real zod schema — constraints and defaults included, never retyped.
+ * The library fills path params from the route pattern, so only query lives here.
  */
 function queryParameters(schema: z.ZodType) {
   const json = z.toJSONSchema(schema, { io: "input", unrepresentable: "any" }) as {
@@ -47,7 +47,7 @@ function queryParameters(schema: z.ZodType) {
 
 export function doc(spec: {
   summary: string;
-  /** Izin yang ditegakkan `requirePermission`. `public: true` untuk endpoint tanpa sesi. */
+  /** Permission enforced by `requirePermission`. `public: true` for endpoints without a session. */
   permission?: string;
   public?: boolean;
   tag?: string;
@@ -56,8 +56,8 @@ export function doc(spec: {
   data: Record<string, unknown>;
 }) {
   /**
-   * Endpoint publik hanya bisa gagal karena input, bukan identitas: 401/403 di sana
-   * adalah janji palsu yang membuat klien menulis penanganan mati.
+   * Public endpoints can only fail on input, never on identity: 401/403 there
+   * are a false promise that makes clients write dead handlers.
    */
   const statuses = spec.public ? ["200", "400", "404", "422"] : Object.keys(ERROR_DESCRIPTIONS);
 
@@ -72,7 +72,7 @@ export function doc(spec: {
   return describeRoute({
     ...(spec.tag ? { tags: [spec.tag] } : {}),
     summary: spec.summary,
-    // Ditegakkan handler; ditulis di sini supaya reviewer melihat izinnya tanpa buka kode.
+    // Enforced by the handler; listed here so a reviewer sees the permission without opening code.
     ...(spec.permission ? { "x-permission": spec.permission } : {}),
     security: spec.public ? [] : [{ cookieAuth: [] }],
     ...(spec.body

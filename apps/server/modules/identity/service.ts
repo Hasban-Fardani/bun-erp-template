@@ -1,7 +1,7 @@
 import { hashPassword } from "better-auth/crypto";
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
-/** Re-export: CLI (erp.ts) memakai primitif hash yang sama, bukan duplikat. */
+/** Re-export: the CLI (erp.ts) uses the same hash primitives, not a duplicate. */
 export { hashPassword };
 
 import { ApiError } from "../../http/errors.ts";
@@ -14,7 +14,7 @@ import type { CreateUserInput, ListUsersInput, UpdateUserInput } from "./schema.
 
 export type User = typeof users.$inferSelect;
 
-/** Bentuk aman untuk dikirim ke klien: tidak ada kolom akun/kredensial di sini. */
+/** Safe shape to send to clients: no account/credential columns here. */
 export type PublicUser = {
   id: string;
   name: string;
@@ -27,8 +27,8 @@ export type PublicUser = {
 };
 
 /**
- * Role + izin untuk BANYAK user dalam dua query. Versi per-user (N+1) membuat daftar
- * 50 baris menembak ~100 query; batch ini membuatnya tetap 4 query berapa pun panjangnya.
+ * Roles + permissions for MANY users in two queries. A per-user (N+1) version makes a
+ * 50-row list fire ~100 queries; this batch keeps it at 4 queries however long the list.
  */
 async function rolesAndPermissionsFor(
   db: Database,
@@ -135,8 +135,8 @@ export async function findUser(db: Database, organizationId: string, id: string)
 }
 
 /**
- * Memperbarui profil. Perubahan dicatat ke audit dengan snapshot sebelum/sesudah;
- * snapshot disaring `redactEntity` sehingga hash sandi dan token tidak pernah masuk.
+ * Updates a profile. Changes go to the audit with before/after snapshots;
+ * snapshots pass through `redactEntity` so password hashes and tokens never land there.
  */
 export async function updateUser(
   db: Database,
@@ -181,8 +181,8 @@ export async function updateUser(
 }
 
 /**
- * Membuat user + kredensial email/password sekaligus (admin invite tanpa e-mail server).
- * Hash memakai primitif Better Auth sendiri sehingga sign-in berikutnya langsung sah.
+ * Creates a user + email/password credentials in one go (admin invite without a mail server).
+ * The hash uses Better Auth's own primitives so the next sign-in is valid immediately.
  */
 export async function createUser(
   db: Database,
@@ -234,8 +234,8 @@ export async function createUser(
 }
 
 /**
- * Menghapus user dari organisasi. Sesi/kredensial ikut lewat ON DELETE CASCADE;
- * jejak audit sengaja dibiarkan hidup — actorId tanpa FK (hapus user tak boleh hapus bukti).
+ * Deletes a user from the organization. Sessions/credentials follow via ON DELETE CASCADE;
+ * the audit trail is deliberately left alive — actorId has no FK (deleting a user must not destroy evidence).
  */
 export async function deleteUser(
   db: Database,
@@ -263,7 +263,7 @@ export async function deleteUser(
   });
 }
 
-/** User harus ada DI ORGANISASI INI — id dari klien tidak boleh melintasi organisasi. */
+/** The user must exist IN THIS ORGANIZATION — a client-supplied id must not cross organizations. */
 async function findUserInOrg(db: Database, organizationId: string, userId: string) {
   const rows = await db
     .select()
@@ -275,8 +275,8 @@ async function findUserInOrg(db: Database, organizationId: string, userId: strin
 }
 
 /**
- * Menugaskan role. Role dicari lewat `key` di organisasi aktor, bukan lewat id mentah
- * dari klien — mencegah menugaskan role milik organisasi lain.
+ * Assigns a role. The role is looked up by `key` within the actor's organization, never by a raw
+ * client-supplied id — that prevents assigning another organization's role.
  */
 export async function assignUserRole(
   db: Database,

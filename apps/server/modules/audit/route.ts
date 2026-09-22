@@ -7,7 +7,7 @@ import { requirePermission } from "../identity/policy.ts";
 import { ListAuditInput } from "./schema.ts";
 import { listAuditLogs } from "./service.ts";
 
-/** Audit baca-saja via HTTP — satu penulisnya recordAudit di transaksi service. */
+/** Audit is read-only over HTTP — its single writer is recordAudit inside the service transaction. */
 export function auditRoutes(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   return new Hono<{ Variables: AppVariables }>().get(
     "/",

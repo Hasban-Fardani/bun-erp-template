@@ -5,7 +5,7 @@ import { uiConfig } from "../config/ui.ts";
 import { useLogin } from "../features/users/api.ts";
 import { Button, Input } from "../shared/ui/primitives.tsx";
 
-/** Gerbang tunggal masuk aplikasi; sesi setelahnya dikelola cookie Better Auth. */
+/** The app's single entry gate; the session after it is managed by the Better Auth cookie. */
 export function LoginPage() {
   const login = useLogin();
   const navigate = useNavigate();

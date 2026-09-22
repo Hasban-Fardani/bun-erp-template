@@ -17,7 +17,7 @@ import {
   Input,
 } from "../shared/ui/primitives.tsx";
 
-/** Layar admin pertama: daftar, tambah, ubah, dan hapus pengguna. */
+/** The first admin screen: list, create, edit, and delete users. */
 export function UsersPage() {
   const session = useSession();
   const [search, setSearch] = useState("");

@@ -5,21 +5,21 @@ import { permissionsForUser } from "../rbac/service.ts";
 import type { PermissionKey } from "../rbac/statements.ts";
 
 /**
- * Identitas per-request. Dibangun dari session Better Auth, bukan dari header yang
- * dikirim klien — header bisa dikarang, session tidak.
+ * Per-request identity. Built from the Better Auth session, not from client-sent
+ * headers — headers can be forged, sessions cannot.
  */
 export type Actor = {
   userId: string;
   organizationId: string | null;
   permissions: readonly PermissionKey[];
   traceId: string;
-  /** Nama pelaku sebagai teks beku untuk audit — nama bisa berubah, catatan tidak. */
+  /** Actor name as frozen text for the audit — names can change, records cannot. */
   label: string;
 };
 
 /**
- * Menyelesaikan aktor dari session. `null` berarti belum login (401), bukan "tidak boleh"
- * (403) — dua hal itu sering tertukar dan membuat debugging sulit.
+ * Resolves the actor from the session. `null` means not logged in (401), not "not allowed"
+ * (403) — the two are often swapped and that makes debugging hard.
  */
 export async function resolveActor(c: Context, ctx: AppContext): Promise<Actor | null> {
   const session = await ctx.auth.api.getSession({ headers: c.req.raw.headers });
@@ -36,19 +36,19 @@ export async function resolveActor(c: Context, ctx: AppContext): Promise<Actor |
     organizationId: user.organizationId ?? null,
     permissions: await permissionsForUser(ctx.db, user.id),
     traceId: (c.get("requestId") as string | undefined) ?? "",
-    // Email lebih tahan lama daripada nama tampilan, dan tetap terbaca saat investigasi.
+    // Email outlives the display name, and stays readable during an investigation.
     label: user.email ?? user.name ?? "",
   };
 }
 
-/** Wajib login. Dipakai route privat; 401 bila belum ada session. */
+/** Requires a login. Used by private routes; 401 when no session exists. */
 export async function requireActor(c: Context, ctx: AppContext): Promise<Actor> {
   const actor = await resolveActor(c, ctx);
   if (!actor) throw ApiError.unauthorized();
   return actor;
 }
 
-/** Deny by default: `key` bertipe PermissionKey, izin ngawur ditolak saat compile. */
+/** Deny by default: `key` is typed PermissionKey, a bogus permission is rejected at compile time. */
 export async function requirePermission(c: Context, ctx: AppContext, key: PermissionKey): Promise<Actor> {
   const actor = await requireActor(c, ctx);
   if (!actor.permissions.includes(key)) {

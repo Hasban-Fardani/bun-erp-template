@@ -50,7 +50,7 @@ const routeTree = rootRoute.addChildren([
   appRoute.addChildren([indexRoute, usersRoute, rolesRoute, auditRoute]),
 ]);
 
-/** Path yang benar-benar terdaftar di router. Test menjaganya tetap sinkron dengan nav. */
+/** The paths actually registered in the router. A test keeps them in sync with nav. */
 export const registeredPaths: readonly string[] = ["/", "/login", "/users", "/roles", "/audit"];
 
 export { routeTree };

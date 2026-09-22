@@ -4,8 +4,8 @@ import { organizations } from "../../platform/database/schema.ts";
 import { users } from "../identity/data.ts";
 
 /**
- * RBAC model spatie: permission = statemen statis dari kode, role = dinamis di DB.
- * Kode tak boleh bergantung role yang bisa dihapus admin, dan sebaliknya.
+ * Spatie-style RBAC: permission = static statements from code, role = dynamic in the DB.
+ * Code must not depend on a role an admin can delete, and vice versa.
  */
 export const permissions = pgTable("permissions", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -45,7 +45,7 @@ export const rolePermissions = pgTable(
   (table) => [primaryKey({ columns: [table.roleId, table.permissionId] })],
 );
 
-/** Scope kosong = role global; terisi = terbatas satu lingkup (mis. departemen). */
+/** Empty scope = global role; set = limited to one scope (e.g. a department). */
 export const userRoles = pgTable(
   "user_roles",
   {

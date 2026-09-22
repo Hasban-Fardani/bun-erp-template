@@ -42,7 +42,7 @@ describe("departments", () => {
     const body = (await res.json()) as { data: { id: string; code: string }; meta: { requestId: string } };
     expect(body.data.code).toBe("KEU");
     expect(body.meta.requestId).toMatch(/^[0-9a-f-]{36}$/);
-    // uuidv7: byte pertama time-based
+    // uuidv7: the first byte is time-based
     expect(body.data.id[14]).toBe("7");
     expect(res.headers.get("x-request-id")).toBe(body.meta.requestId);
   });

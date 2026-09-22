@@ -1,6 +1,6 @@
-/** Redaksi audit terpusat: allowlist per entitas, default TOLAK (ADR-0007). */
+/** Central audit redaction: allowlist per entity, DENY by default (ADR-0007). */
 
-/** Field yang selalu dibuang, walaupun entitasnya mendaftarkannya di allowlist. */
+/** Fields always dropped, even when their entity lists them in the allowlist. */
 const ALWAYS_REDACT = [
   "password",
   "passwordhash",
@@ -23,7 +23,7 @@ const ALWAYS_REDACT = [
   "private_key",
 ] as const;
 
-/** Nama field yang mengandung penanda rahasia/PII, dicocokkan tanpa peduli besar-kecil. */
+/** Field names containing a secret/PII marker, matched case-insensitively. */
 const REDACT_HINTS = ["secret", "token", "password", "passwd", "credential", "api_key", "apikey"] as const;
 
 function isAlwaysRedacted(key: string): boolean {
@@ -36,7 +36,7 @@ function looksSecret(key: string): boolean {
   return REDACT_HINTS.some((hint) => normalized.includes(hint));
 }
 
-/** Field di luar allowlist hilang dari audit — bukan bocor ke audit. */
+/** Fields outside the allowlist vanish from the audit — they do not leak into it. */
 export function redact<T extends Record<string, unknown>>(
   entity: string,
   record: T | undefined,
@@ -49,14 +49,14 @@ export function redact<T extends Record<string, unknown>>(
     if (isAlwaysRedacted(key) || looksSecret(key)) continue;
     const value = record[key];
     if (value === undefined) continue;
-    // Buffer/typed array bisa memuat kunci biner; jangan pernah diserialisasi.
+    // Buffers/typed arrays can hold binary keys; never serialize them.
     if (ArrayBuffer.isView(value)) continue;
     out[key] = value;
   }
   return out;
 }
 
-/** Allowlist per entitas. Entitas baru wajib menambah barisnya di sini. */
+/** Allowlist per entity. A new entity must add its row here. */
 export const AUDIT_FIELDS = {
   user: ["id", "name", "email", "emailVerified", "organizationId", "createdAt"],
   role: ["id", "key", "name", "isSystem", "organizationId"],

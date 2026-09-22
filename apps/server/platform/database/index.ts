@@ -10,13 +10,13 @@ export type Database = ReturnType<typeof drizzlePglite<typeof schema>>;
 
 type Handle = { db: Database; close: () => Promise<void> };
 
-/** PGlite hanya membuat direktori terdalam, bukan parent-nya (`.data/pglite`). */
+/** PGlite only creates the deepest directory, not its parents (`.data/pglite`). */
 function ensurePgliteDir(path: string): void {
   if (path === "memory://") return;
   mkdirSync(path, { recursive: true });
 }
 
-/** Driver tersembunyi di sini; modul lain menerima `db` yang sama (ADR-0010). */
+/** The driver stays hidden here; other modules receive the same `db` (ADR-0010). */
 export function createDatabase(env: Env): Handle {
   if (env.DATABASE_DRIVER === "pglite") {
     ensurePgliteDir(env.PGLITE_PATH);

@@ -1,21 +1,21 @@
--- Jejak audit (PRD §12, ADR-0007). Append-only: tidak ada update/delete di kode.
+-- Audit trail (PRD §12, ADR-0007). Append-only: no update/delete in code.
 --
--- `actor_id` sengaja TANPA foreign key ke "user": menghapus pengguna tidak boleh ikut
--- menghapus bukti perbuatannya. `actor_label` menyimpan nama pelaku sebagai teks beku
--- pada saat kejadian, karena nama bisa berubah sedangkan catatan tidak boleh.
+-- `actor_id` deliberately has NO foreign key to "user": deleting a user must not also
+-- delete the evidence of their actions. `actor_label` stores the actor name as frozen text
+-- at the moment of the event, because names can change while records must not.
 
 create table if not exists audit_logs (
   id uuid primary key default uuidv7(),
   organization_id uuid references organizations (id),
   actor_id uuid,
   actor_label text not null default '',
-  -- `domain.aksi_hasil`, mis. `user.role_assigned`.
+  -- `domain.action_result`, e.g. `user.role_assigned`.
   event text not null,
   subject_type text not null default '',
   subject_id text not null default '',
   before jsonb,
   after jsonb,
-  -- requestId dari envelope: satu kejadian bisa dilacak sampai ke log server.
+  -- requestId from the envelope: an event can be traced to the server log.
   trace_id text not null default '',
   created_at timestamptz not null default now()
 );

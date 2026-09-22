@@ -11,7 +11,7 @@ export function useRoleList(enabled: boolean) {
   });
 }
 
-/** Katalog statemen dari server: UI membangun kotak centang dari sini, tidak menyalinnya. */
+/** Statement catalog from the server: the UI builds its checkboxes from here instead of copying them. */
 export function useRoleStatements(enabled: boolean) {
   return useQuery({
     queryKey: ["role-statements"],
@@ -32,7 +32,7 @@ export function useAuditLogs(search: string, enabled: boolean) {
   });
 }
 
-/** Setiap mutasi role menyegarkan katalog + audit: perubahan izin harus terlihat jejaknya. */
+/** Every role mutation refetches catalog + audit: permission changes must leave a visible trail. */
 function useRoleMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
   const qc = useQueryClient();
   return useMutation({

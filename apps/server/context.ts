@@ -6,7 +6,7 @@ import { createLogger, type Logger } from "./platform/observability/logger.ts";
 
 export { resolveDefaultOrganizationId } from "./platform/database/organizations.ts";
 
-/** Composition root. Organisasi di luar context: migrate harus jalan sebelum tabelnya ada. */
+/** Composition root. Organization lives outside context: migrations must run before its tables exist. */
 export type AppContext = {
   env: Env;
   db: Database;
@@ -17,7 +17,7 @@ export type AppContext = {
 
 export type BootstrapOptions = {
   env?: Env;
-  /** `false` untuk perintah yang mengurus migrasi sendiri. */
+  /** `false` for commands that handle their own migrations. */
   migrateOnStart?: boolean;
   migrationsDir?: string;
 };

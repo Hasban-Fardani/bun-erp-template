@@ -1,8 +1,8 @@
 import * as z from "zod";
 
 /**
- * Kontrak input HTTP untuk manajemen pengguna. Autentikasi (sign-up/sign-in) ditangani
- * Better Auth di `/api/v1/auth/*` — bukan di sini, dan tidak boleh diduplikasi.
+ * HTTP input contract for user management. Authentication (sign-up/sign-in) is handled by
+ * Better Auth at `/api/v1/auth/*` — not here, and must never be duplicated.
  */
 
 export const listUsersSchema = z.strictObject({
@@ -14,7 +14,7 @@ export const listUsersSchema = z.strictObject({
 export const createUserSchema = z.strictObject({
   name: z.string().trim().min(1).max(120),
   email: z.email().transform((v) => v.trim().toLowerCase()),
-  // Sandi awal dibuat admin; user bisa ganti sendiri begitu mail driver (Phase 3) ada.
+  // The admin sets the initial password; users change it themselves once the mail driver (Phase 3) lands.
   password: z.string().min(10).max(200),
   roleKey: z
     .string()
@@ -27,7 +27,7 @@ export const createUserSchema = z.strictObject({
 
 export const updateUserSchema = z.strictObject({
   name: z.string().trim().min(1).max(120).optional(),
-  // Perubahan organisasi hanya oleh yang punya `user.update`; nilainya dari server.
+  // Only a holder of `user.update` can change the organization; the value comes from the server.
   organizationId: z.uuid().nullable().optional(),
   emailVerified: z.boolean().optional(),
 });
@@ -39,7 +39,7 @@ export const assignRoleSchema = z.strictObject({
     .min(1)
     .max(64)
     .regex(/^[a-z0-9_-]+$/, "use lowercase letters, digits, dash, or underscore"),
-  // Lingkup opsional: kosong berarti role berlaku di seluruh organisasi.
+  // Scope is optional: empty means the role applies to the whole organization.
   scopeType: z.enum(["organization", "department"]).optional(),
   scopeId: z.uuid().optional(),
 });

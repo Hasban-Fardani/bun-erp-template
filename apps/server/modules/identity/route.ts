@@ -25,7 +25,7 @@ const actorOf = (actor: { userId: string; traceId: string; label: string }) => (
   label: actor.label,
 });
 
-/** Administrasi user (butuh RBAC). Sign-up/sign-in milik handler Better Auth. */
+/** User administration (needs RBAC). Sign-up/sign-in belongs to the Better Auth handlers. */
 export function identityRoutes(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   return new Hono<{ Variables: AppVariables }>()
     .get(

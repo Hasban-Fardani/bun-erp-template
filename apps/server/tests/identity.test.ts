@@ -20,7 +20,7 @@ const json = (body: unknown, method = "POST"): RequestInit => ({
   body: JSON.stringify(body),
 });
 
-/** Mendaftar lewat jalur Better Auth yang sesungguhnya — bukan menulis baris user langsung. */
+/** Signs up through the real Better Auth path — not by writing a user row directly. */
 async function signUp(email: string, password = "sandi-yang-panjang") {
   const res = await app.request("/api/v1/auth/sign-up/email", json({ email, password, name: email.split("@")[0] }));
   expect(res.status).toBe(200);
@@ -31,7 +31,7 @@ async function signIn(email: string, password = "sandi-yang-panjang") {
   return app.request("/api/v1/auth/sign-in/email", json({ email, password }));
 }
 
-/** Cookie sesi dari hasil sign-in, untuk request berikutnya. */
+/** Session cookie from the sign-in result, for the following requests. */
 async function sessionCookie(email: string, password = "sandi-yang-panjang"): Promise<string> {
   const res = await signIn(email, password);
   expect(res.status).toBe(200);
@@ -61,7 +61,7 @@ describe("identity", () => {
   test("sign-up through Better Auth creates a uuidv7 primary key", async () => {
     const { user } = await signUp("orang@example.test");
     expect(user.id).toMatch(/^[0-9a-f-]{36}$/);
-    // uuidv7 — digit ke-15 menandai versi 7 (bukan 4 seperti uuid acak).
+    // uuidv7 — the 15th digit marks version 7 (not 4 like a random uuid).
     expect(user.id[14]).toBe("7");
   });
 
@@ -94,7 +94,7 @@ describe("identity", () => {
     const { user } = await signUp("tanpa-izin@example.test");
     const cookie = await sessionCookie("tanpa-izin@example.test");
     const res = await app.request("/api/v1/users", { headers: { cookie } });
-    // 403 (bukan 401) membuktikan identitasnya dikenali tetapi izinnya kurang.
+    // 403 (not 401) proves the identity is recognised but the permission is missing.
     expect(res.status).toBe(403);
     const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("FORBIDDEN");
@@ -119,10 +119,10 @@ describe("identity", () => {
     await assignRole(ctx.db, { userId: user.id, roleId: await roleIdByKey("staff") });
     const cookie = await sessionCookie("staff@example.test");
 
-    // `staff` memegang user.read — membaca daftar pengguna memang boleh.
+    // `staff` holds user.read — reading the user list is indeed allowed.
     expect((await app.request("/api/v1/users", { headers: { cookie } })).status).toBe(200);
 
-    // Tetapi tidak memegang role.assign: ini yang harus ditolak, dan dengan 403.
+    // But it does not hold role.assign: that is what must be refused, and with 403.
     const res = await app.request(`/api/v1/users/${user.id}/roles`, {
       ...json({ roleKey: "owner" }),
       headers: { "content-type": "application/json", cookie },
@@ -140,7 +140,7 @@ describe("identity", () => {
       data: { userId: string; permissions: string[] };
     };
     expect(res.data.userId).toBe(user.id);
-    // User baru belum punya role: izin kosong, bukan error.
+    // The new user has no role yet: empty permissions, not an error.
     expect(res.data.permissions).toEqual([]);
   });
 
@@ -159,8 +159,8 @@ describe("identity", () => {
   });
 
   test("assigning a role writes an audit row with a named event and trace id", async () => {
-    // Pelaku harus memegang role.assign; tanpa itu route menolak dan tidak ada catatan
-    // audit — perilaku yang benar, tapi bukan yang sedang diuji di sini.
+    // The actor must hold role.assign; without it the route refuses and no audit row
+    // is written — correct behaviour, but not what is under test here.
     const admin = await signUp("admin-audit@example.test");
     await assignRole(ctx.db, { userId: admin.user.id, roleId: await roleIdByKey("owner") });
     const cookie = await sessionCookie("admin-audit@example.test");
@@ -177,10 +177,10 @@ describe("identity", () => {
     expect(assigned).toBeDefined();
     expect(assigned?.subjectType).toBe("user");
     expect(assigned?.traceId).not.toBe("");
-    // Pelaku tercatat sebagai teks beku — jejak tanpa pelaku tidak bisa ditelusuri.
+    // The actor is recorded as frozen text — a trail without an actor cannot be traced.
     expect(assigned?.actorId).toBe(admin.user.id);
     expect(assigned?.actorLabel).toBe("admin-audit@example.test");
-    // Snapshot hanya memuat field yang di-allowlist, bukan record mentah.
+    // The snapshot holds only allowlisted fields, not the raw record.
     expect(assigned?.after).toMatchObject({ entity: "userRole", roleId: expect.any(String) });
   });
 
@@ -202,7 +202,7 @@ describe("identity", () => {
   test("a role can be scoped to a department, and scope survives the round trip", async () => {
     const { user } = await signUp("manajer@example.test");
 
-    // Lingkup diuji langsung di service: route hanya meneruskan nilainya.
+    // Scope is tested directly at the service: the route only forwards its value.
     await assignRole(ctx.db, {
       userId: user.id,
       roleId: await roleIdByKey("staff"),
@@ -227,14 +227,14 @@ describe("identity", () => {
     expect(body.data.items.map((r) => r.key).sort()).toEqual(["owner", "staff"]);
     expect(body.data.items.every((r) => r.isSystem)).toBe(true);
 
-    // Katalog statemen dibaca dari kode: kalau daftarnya disalin ke route, ini akan basi.
+    // The statement catalogue is read from code: if the list were copied into the route, this would go stale.
     const catalog = await app.request("/api/v1/roles/statements", { headers: { cookie } });
     const catalogBody = (await catalog.json()) as {
       data: { statements: Record<string, string[]>; permissions: string[] };
     };
     expect(catalogBody.data.permissions).toContain("role.assign");
     expect(catalogBody.data.permissions).toContain("audit.read");
-    // Setiap izin yang diumumkan katalog harus punya bentuk resource.action.
+    // Every permission the catalogue announces must have the resource.action shape.
     for (const key of catalogBody.data.permissions) {
       const [resource, action] = key.split(".");
       expect(resource && action).toBeTruthy();

@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-/** Kontrak input pengelolaan role. `key` huruf kecil stabil — dipakai kode & audit. */
+/** Role management input contract. `key` is stable lowercase — used by code & audit. */
 const keySchema = z
   .string()
   .trim()

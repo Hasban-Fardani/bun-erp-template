@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { organizations } from "../../platform/database/schema.ts";
 
-/** Nama tabel = kontrak Better Auth, diverifikasi adapter. Password ada di `account`. */
+/** Table names = the Better Auth contract, verified by the adapter. Passwords live in `account`. */
 export const users = pgTable(
   "user",
   {
@@ -11,7 +11,7 @@ export const users = pgTable(
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
-    // Nullable: pendaftaran terjadi sebelum admin menetapkan organisasi (ADR-0004).
+    // Nullable: sign-up happens before an admin assigns an organization (ADR-0004).
     organizationId: uuid("organization_id").references(() => organizations.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

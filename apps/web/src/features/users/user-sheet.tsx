@@ -7,8 +7,8 @@ import { useCreateUser, useRoles, useUpdateUser } from "./api.ts";
 import type { PublicUser } from "./types.ts";
 
 /**
- * Satu formulir untuk tambah & ubah: field-nya identik, hanya jalur simpan yang beda.
- * `user` kosong = mode tambah.
+ * One form for create & edit: the fields are identical, only the save path differs.
+ * Empty `user` = create mode.
  */
 export function UserSheet({
   open,

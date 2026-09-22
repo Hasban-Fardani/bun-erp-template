@@ -1,8 +1,8 @@
-/** Satu-satunya sumber izin yang dikenal kode; key = `<resource>.<action>`. */
+/** The only source of permissions the code knows; key = `<resource>.<action>`. */
 export const statements = {
-  // create/read/update/delete ditegakkan route user; `impersonate` menyusul bersama fiturnya.
+  // create/read/update/delete are enforced by the user routes; `impersonate` follows with its feature.
   user: ["create", "read", "update", "delete", "impersonate"],
-  // `assign` = menugaskan role ke user; kelola role & izinnya dijaga create/update/delete.
+  // `assign` = granting a role to a user; managing roles & their permissions is guarded by create/update/delete.
   role: ["create", "read", "update", "delete", "assign"],
   department: ["create", "read", "update", "delete"],
   audit: ["read"],
@@ -12,17 +12,17 @@ export type Statement = typeof statements;
 export type Resource = keyof Statement;
 export type Action<R extends Resource> = Statement[R][number];
 
-/** `user.create` — bentuk kanonik yang disimpan di tabel `permissions`. */
+/** `user.create` — the canonical form stored in the `permissions` table. */
 export type PermissionKey = { [R in Resource]: `${R}.${Action<R>}` }[Resource];
 
-/** Daftar datar seluruh permission, dipakai seeding dan validasi. */
+/** Flat list of every permission, used for seeding and validation. */
 export const allPermissions: readonly PermissionKey[] = Object.entries(statements).flatMap(([resource, actions]) =>
   (actions as readonly string[]).map((action) => `${resource}.${action}` as PermissionKey),
 ) as readonly PermissionKey[];
 
 /**
- * Role sistem: selalu ada, tidak bisa dihapus, dan dipakai sebagai jaring pengaman
- * supaya selalu ada jalur masuk ketika role buatan admin salah dikonfigurasi.
+ * System roles: always present, cannot be deleted, and act as the safety net
+ * so a way in always exists when an admin-built role is misconfigured.
  */
 export const systemRoles = {
   owner: {

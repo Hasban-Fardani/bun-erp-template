@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Database } from "./index.ts";
 import { organizations } from "./schema.ts";
 
-/** Terpisah dari context.ts untuk memutus lingkaran impor context -> auth -> context. */
+/** Split from context.ts to break the import cycle context -> auth -> context. */
 export async function resolveDefaultOrganizationId(db: Database, slug = "default"): Promise<string> {
   const rows = await db
     .select({ id: organizations.id })

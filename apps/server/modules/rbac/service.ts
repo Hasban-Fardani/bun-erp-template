@@ -7,7 +7,7 @@ import { allPermissions, type PermissionKey, type SystemRoleKey, systemRoles } f
 
 export type Role = typeof roles.$inferSelect;
 
-/** Sinkron katalog permission + role sistem dari kode; idempotent. */
+/** Syncs the permission catalogue + system roles from code; idempotent. */
 export async function seedRbac(db: Database, organizationId: string): Promise<{ permissions: number; roles: number }> {
   await db
     .insert(permissions)
@@ -49,7 +49,7 @@ export async function seedRbac(db: Database, organizationId: string): Promise<{ 
       .map((p) => idByKey.get(p))
       .filter((id): id is string => typeof id === "string");
 
-    // Sinkron penuh: role sistem harus persis sama dengan definisinya di kode.
+    // Full sync: a system role must match its definition in code exactly.
     await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
     if (wanted.length > 0) {
       await db.insert(rolePermissions).values(wanted.map((permissionId) => ({ roleId, permissionId })));
@@ -59,7 +59,7 @@ export async function seedRbac(db: Database, organizationId: string): Promise<{ 
   return { permissions: permissionRows.length, roles: roleCount };
 }
 
-/** Gabungan izin semua role user. Penyaringan per-record adalah tugas policy modul. */
+/** Union of permissions across all of a user's roles. Per-record filtering is the module policy's job. */
 export async function permissionsForUser(db: Database, userId: string): Promise<PermissionKey[]> {
   const rows = await db
     .selectDistinct({ key: permissions.key })
@@ -71,7 +71,7 @@ export async function permissionsForUser(db: Database, userId: string): Promise<
   return rows.map((r) => r.key) as PermissionKey[];
 }
 
-/** Role yang dipegang user beserta lingkunpnya — dipakai UI untuk menampilkan konteks. */
+/** Roles a user holds along with their scopes — the UI uses this to show context. */
 export async function rolesForUser(db: Database, userId: string) {
   return db
     .select({
@@ -90,7 +90,7 @@ export async function listRoles(db: Database, organizationId: string): Promise<R
   return db.select().from(roles).where(eq(roles.organizationId, organizationId)).orderBy(roles.key);
 }
 
-/** Katalog izin yang dipegang role, dipakai UI untuk mencentang. */
+/** Permission catalogue a role holds, used by the UI to render checkboxes. */
 export async function permissionsForRole(db: Database, roleId: string): Promise<string[]> {
   const rows = await db
     .select({ key: permissions.key })
@@ -101,8 +101,8 @@ export async function permissionsForRole(db: Database, roleId: string): Promise<
 }
 
 /**
- * Membuat role kustom. Role sistem berasal dari kode dan tidak dibuat lewat sini —
- * menyimpang dari definisi `statements` akan kalah saat seed berikutnya.
+ * Creates a custom role. System roles come from code and are not created here —
+ * one that diverges from the `statements` definition loses at the next seed.
  */
 export async function createRole(
   db: Database,
@@ -176,7 +176,7 @@ export async function updateRole(
   });
 }
 
-/** Role sistem dihapus dari kode, bukan dari DB — biar jalur masuk selalu ada. */
+/** A system role is removed from code, not from the DB — so a way in always exists. */
 export async function deleteRole(
   db: Database,
   organizationId: string,
@@ -193,7 +193,7 @@ export async function deleteRole(
     if (!role) throw ApiError.notFound("Role not found");
     if (role.isSystem) throw ApiError.conflict("Role sistem tidak bisa dihapus");
 
-    // FK akan meng-cascade `user_roles`; itu mencabut akses orang diam-diam. Tolak lebih dulu.
+    // The FK would cascade `user_roles`; that silently revokes people's access. Refuse first.
     const inUse = await tx.select({ id: userRoles.id }).from(userRoles).where(eq(userRoles.roleId, id)).limit(1);
     if (inUse.length > 0) throw ApiError.conflict("Role masih dipakai pengguna");
 
@@ -214,8 +214,8 @@ export async function deleteRole(
 }
 
 /**
- * Menimpa seluruh izin role dengan daftar yang dikirim (bukan tambah/cabut satu-satu):
- * layar izin adalah kotak centang penuh, jadi permintaan terakhir adalah kebenarannya.
+ * Overwrites all of a role's permissions with the submitted list (not add/remove one by one):
+ * the permission screen is a full checkbox grid, so the last request is the truth.
  */
 export async function setRolePermissions(
   db: Database,
@@ -272,8 +272,8 @@ export async function findRoleByKey(db: Database, organizationId: string, key: s
 }
 
 /**
- * Memberi role ke user. Idempotent: menugaskan role yang sama dua kali tidak error,
- * karena unique index-nya memperlakukan `scope_id` NULL sebagai satu nilai.
+ * Grants a role to a user. Idempotent: assigning the same role twice is not an error,
+ * because its unique index treats `scope_id` NULL as a single value.
  */
 export async function assignRole(
   db: Database,
@@ -310,7 +310,7 @@ export async function revokeRole(db: Database, userId: string, roleId: string): 
   return rows.length > 0;
 }
 
-/** Beri permission ke role non-sistem. Idempotent. */
+/** Grants a permission to a non-system role. Idempotent. */
 export async function grantRolePermissions(
   db: Database,
   roleId: string,
@@ -331,7 +331,7 @@ export async function grantRolePermissions(
   }
 }
 
-/** Cabut permission dari role. */
+/** Revokes a permission from a role. */
 export async function revokeRolePermission(db: Database, roleId: string, key: PermissionKey): Promise<void> {
   const rows = await db.select({ id: permissions.id }).from(permissions).where(eq(permissions.key, key)).limit(1);
   const permissionId = rows[0]?.id;

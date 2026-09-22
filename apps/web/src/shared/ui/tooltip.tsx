@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 
 /**
- * Label rail ikon: tanpa ini, sidebar ringkas jadi teka-teki ikon. CSS-only (group-hover)
- * supaya tak menambah satu pun state atau listener React.
+ * Icon rail labels: without them the collapsed sidebar turns into a guess-the-icon puzzle.
+ * CSS-only (group-hover) so it adds no React state or listeners.
  */
 export function Tooltip({
   label,

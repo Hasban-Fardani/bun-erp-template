@@ -7,8 +7,8 @@ import type { CreateDepartmentInput, ListDepartmentsInput, UpdateDepartmentInput
 export type Department = typeof departments.$inferSelect;
 
 /**
- * Transaction boundary ada di service (PRD §12). Route hanya memanggil fungsi ini.
- * Organization diambil dari context server — bukan dari input klien.
+ * The transaction boundary lives in the service (PRD §12). Routes only call these functions.
+ * Organization is taken from the server context — never from client input.
  */
 export async function listDepartments(
   db: Database,
@@ -53,7 +53,7 @@ export async function createDepartment(
       .where(and(eq(departments.organizationId, organizationId), eq(departments.code, input.code)))
       .limit(1);
 
-    // Cek dulu supaya pesan errornya jelas; unique index tetap penjaga terakhir.
+    // Check first so the error message is clear; the unique index stays the last line of defence.
     if (existing.length > 0) {
       throw ApiError.conflict("Department code already exists");
     }

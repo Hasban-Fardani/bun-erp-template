@@ -1,6 +1,6 @@
 /**
- * Gate React Doctor untuk apps/web. `warningCount` tidak memblokir (kompleksitas halaman
- * daftar itu wajar); `errorCount` memblokir. Peringatan tetap dicetak agar terlihat mata.
+ * React Doctor gate for apps/web. `warningCount` does not block (that list-page complexity
+ * is expected); `errorCount` blocks. Warnings still print so they stay visible.
  */
 export async function findReactDoctorIssues(root: string): Promise<string[]> {
   const webDir = `${root}/apps/web`;

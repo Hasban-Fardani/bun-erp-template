@@ -1,11 +1,11 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
-/** F1.11 — ready/done wajib approved_by + evidence; agent tak bisa menaikkannya diam. */
+/** F1.11 — ready/done require approved_by + evidence; an agent cannot raise them silently. */
 export const TASK_STATUSES = ["draft", "blocked", "ready", "in_progress", "done"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
-/** Status yang menuntut persetujuan manusia tercatat. */
+/** Statuses that require recorded human approval. */
 const HUMAN_APPROVAL_REQUIRED: readonly TaskStatus[] = ["ready", "done"];
 
 export type Task = {
@@ -70,8 +70,8 @@ export function validateTasks(tasks: readonly Task[]): TaskFinding[] {
     }
     if (!task.title) findings.push({ file: task.file, message: "missing title in front matter" });
 
-    // Ketergantungan menahan task selama belum dimulai. `in_progress` berarti sudah
-    // dikerjakan — menuntut `done` akan memaksa agent mengklaim selesai lebih awal.
+    // A dependency holds the task only until it starts. `in_progress` means work has
+    // begun — requiring `done` would force the agent to claim completion early.
     for (const dep of task.dependsOn) {
       const target = byId.get(dep);
       if (!target) findings.push({ file: task.file, message: `depends_on "${dep}" does not exist` });

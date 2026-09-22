@@ -10,7 +10,7 @@ import {
 } from "../modules/departments/schema.ts";
 import { EnvRawSchema, EnvSchema } from "../platform/config/schema.ts";
 
-/** F1.16 — hasil z.compile() harus identik dengan definisi sumber. */
+/** F1.16 — the z.compile() result must be identical to the source definition. */
 type Pair = { name: string; compiled: z.ZodType; raw: z.ZodType; inputs: unknown[] };
 
 const pairs: Pair[] = [

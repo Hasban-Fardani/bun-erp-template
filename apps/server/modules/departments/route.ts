@@ -21,8 +21,8 @@ const listData = {
 };
 
 /**
- * Route tipis: validasi → policy → service → envelope (PRD §6). Tidak ada business logic
- * di sini. Organization berasal dari ACTOR (session), bukan dari input klien.
+ * Thin route: validation → policy → service → envelope (PRD §6). No business logic
+ * here. Organization comes from the ACTOR (session), not from client input.
  */
 export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string): Hono<{ Variables: AppVariables }> {
   return new Hono<{ Variables: AppVariables }>()
@@ -57,7 +57,7 @@ export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string
           actor.organizationId ?? fallbackOrganizationId,
           c.req.param("id"),
         );
-        // Tidak ada = 404. 403 hanya untuk yang gagal authorization (PRD §12).
+        // Absent = 404. 403 is only for a failed authorization (PRD §12).
         if (!department) throw ApiError.notFound("Department not found");
         return ok(c, department);
       },

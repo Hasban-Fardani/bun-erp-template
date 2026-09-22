@@ -9,7 +9,7 @@ import { loadEnv } from "../platform/config/index.ts";
 
 const MIGRATIONS_DIR = resolve(import.meta.dir, "../migrations");
 
-/** Env uji: PGlite di memori, tanpa file `.data` yang bisa bocor antar-test. */
+/** Test env: PGlite in memory, no `.data` files that can leak between tests. */
 export const testEnv: Env = loadEnv({
   APP_NAME: "Bun ERP Template",
   APP_ENV: "test",
@@ -44,7 +44,7 @@ export const testEnv: Env = loadEnv({
   FEATURE_ADVANCED_REPORTS: "false",
 });
 
-/** Tiap test file mendapat database bersih sendiri — migrasi dijalankan di awal. */
+/** Each test file gets its own clean database — migrations run at the start. */
 export async function createTestContext(): Promise<AppContext> {
   return createContext({ env: testEnv, migrationsDir: MIGRATIONS_DIR });
 }
@@ -61,8 +61,8 @@ export async function truncateAll(ctx: AppContext): Promise<void> {
 }
 
 /**
- * Login admin bercakup penuh lewat jalur Better Auth yang sesungguhnya, lalu mengembalikan
- * cookie-nya. Test bisnis butuh ini karena semua route privat sekarang di balik RBAC.
+ * Logs in a full-scope admin through the real Better Auth path, then returns
+ * its cookie. Business tests need this because every private route now sits behind RBAC.
  */
 export async function loginOwner(app: ReturnType<typeof createApp>, db: AppContext["db"]): Promise<string> {
   const signUp = await app.request("/api/v1/auth/sign-up/email", {
@@ -89,7 +89,7 @@ export async function loginOwner(app: ReturnType<typeof createApp>, db: AppConte
   return setCookie.split(";")[0] as string;
 }
 
-/** Buat user via Better Auth sungguhan; balikin id-nya. */
+/** Creates a user through real Better Auth; returns its id. */
 export async function signUpUser(app: ReturnType<typeof createApp>, email: string): Promise<{ id: string }> {
   const res = await app.request("/api/v1/auth/sign-up/email", {
     method: "POST",

@@ -3,8 +3,8 @@ import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "dri
 import { organizations } from "../../platform/database/schema.ts";
 
 /**
- * Reference module (PRD §6): pola yang ditiru generator. Tabel bisnis selalu membawa
- * organization_id + kolom audit dasar.
+ * Reference module (PRD §6): the pattern the generator copies. Business tables always carry
+ * organization_id + the base audit columns.
  */
 export const departments = pgTable(
   "departments",

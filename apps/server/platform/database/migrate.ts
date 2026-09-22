@@ -10,12 +10,12 @@ const MIGRATIONS_TABLE = `
   )
 `;
 
-/** SQL manual supaya terlihat di diff; satu file = satu langkah, aman diulang. */
+/** SQL written by hand so it shows up in diffs; one file = one step, safe to repeat. */
 export async function migrate(db: Database, dir: string): Promise<string[]> {
   await db.execute(sql.raw(MIGRATIONS_TABLE));
 
   const appliedRows = await db.execute<{ name: string }>(sql`select name from _migrations`);
-  // Drizzle mengembalikan array untuk node-postgres, tapi `{ rows }` untuk driver PGlite.
+  // Drizzle returns an array for node-postgres, but `{ rows }` for the PGlite driver.
   const applied = new Set(rowsOf<{ name: string }>(appliedRows).map((r) => r.name));
 
   const files = [...new Bun.Glob("*.sql").scanSync({ cwd: dir })].sort();
@@ -24,7 +24,7 @@ export async function migrate(db: Database, dir: string): Promise<string[]> {
   for (const file of files) {
     if (applied.has(file)) continue;
     const body = await readFile(join(dir, file), "utf8");
-    // Satu file = satu transaksi: migrasi gagal tidak meninggalkan schema separuh jadi.
+    // One file = one transaction: a failed migration leaves no half-built schema.
     await db.transaction(async (tx) => {
       for (const statement of splitStatements(body)) {
         await tx.execute(sql.raw(statement));
@@ -37,14 +37,14 @@ export async function migrate(db: Database, dir: string): Promise<string[]> {
   return ran;
 }
 
-/** Drizzle `execute()` mengembalikan array (postgres-js) atau `{ rows }` (pglite). */
+/** Drizzle `execute()` returns an array (postgres-js) or `{ rows }` (pglite). */
 export function rowsOf<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
   const rows = (result as { rows?: unknown }).rows;
   return Array.isArray(rows) ? (rows as T[]) : [];
 }
 
-/** Statement dipisah `;` di akhir baris — cukup untuk SQL template ini, bukan parser SQL penuh. */
+/** Statements split on `;` at end of line — enough for this SQL template, not a full SQL parser. */
 export function splitStatements(body: string): string[] {
   return body
     .replace(/^\s*--.*$/gm, "")

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-/** organization_id sejak migrasi pertama (ADR-0004) — ditambah belakangan itu mahal. */
+/** organization_id from the first migration (ADR-0004) — adding it later is expensive. */
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
   name: text("name").notNull(),

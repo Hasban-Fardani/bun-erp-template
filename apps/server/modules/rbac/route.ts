@@ -12,8 +12,8 @@ const roleRef = { $ref: "#/components/schemas/Role" } as const;
 const idRef = { type: "object", properties: { id: { type: "string" } } } as const;
 
 /**
- * Katalog + pengelolaan RBAC. Role sistem boleh dibaca & izinnya diubah, tapi tidak
- * dihapus: `statements.ts` adalah sumber kebenarannya, dan seed akan mengembalikannya.
+ * Catalogue + RBAC management. System roles may be read and have their permissions changed,
+ * but not deleted: `statements.ts` is the source of truth, and the seed will bring them back.
  */
 export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   const actorOf = (actor: { userId: string; traceId: string; label: string }) => ({
@@ -124,8 +124,8 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
         },
       )
       /**
-       * Katalog statemen apa adanya dari kode. Dipakai UI untuk membangun layar izin
-       * tanpa menyalin daftarnya — daftar yang disalin pasti akan basi.
+       * The statement catalogue verbatim from code. The UI builds the permission screen from it
+       * without copying the list — a copied list is guaranteed to go stale.
        */
       .get(
         "/statements",

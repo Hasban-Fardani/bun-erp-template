@@ -2,7 +2,7 @@ import { Check, type LucideIcon, Trash2, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { cn } from "../../lib/cn.ts";
 
-/** Kartu permukaan dasar; warna & garis dari token tema, bukan nilai mentah. */
+/** Base surface card; colors & borders come from theme tokens, not raw values. */
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return <div className={cn("rounded-lg border border-border bg-surface", className)}>{children}</div>;
 }
@@ -41,8 +41,8 @@ export function Badge({ tone = "neutral", children }: { tone?: "neutral" | "acce
 }
 
 /**
- * Aksi selalu tampil sebagai ikon berlabel, bukan teks polos: baris tabel penuh aksi
- * jadi terbaca sekali lihat, dan `aria-label` wajib supaya ikon tetap punya nama.
+ * Actions always render as labeled icons, never plain text: action-heavy table rows
+ * stay scannable, and `aria-label` is required so the icon keeps a name.
  */
 export function IconButton({
   icon: Icon,
@@ -144,7 +144,7 @@ export function Select({ className, ...rest }: React.SelectHTMLAttributes<HTMLSe
   );
 }
 
-/** Label selalu terikat `htmlFor`; input tanpa label terbaca kosong oleh screen reader. */
+/** Label is always bound to `htmlFor`; an unlabeled input reads as blank to a screen reader. */
 export function Field({
   id,
   label,
@@ -177,8 +177,8 @@ export function EmptyState({ message, icon: Icon }: { message: string; icon?: Lu
 }
 
 /**
- * Hapus butuh konfirmasi, tapi `window.confirm` memblokir dan tak bisa ditata. Tombol ini
- * berubah jadi tanya-jawab di tempat: klik pertama membuka pilihan, yang batal mudah dijangkau.
+ * Delete needs confirmation, but `window.confirm` blocks and cannot be styled. This button
+ * turns into an inline question: the first click opens the options, cancel stays within reach.
  */
 export function ConfirmDelete({
   label,

@@ -7,12 +7,12 @@ export function useSession() {
   return useQuery({
     queryKey: ["session"],
     queryFn: async (): Promise<SessionView> => {
-      // Respons Better Auth TIDAK lewat envelope {data,meta} milik API — baca mentah.
+      // Better Auth responses do NOT go through the API's {data,meta} envelope — read raw.
       const res = await fetch(apiUrl("/api/v1/auth/get-session"), { credentials: "include" });
       if (!res.ok) throw new Error(`Gagal memeriksa sesi (HTTP ${res.status})`);
       const auth = (await res.json()) as { user?: { id: string; name: string; email: string } | null } | null;
       if (!auth?.user) return { authenticated: false, user: null, permissions: [] };
-      // 403 di /me = identitas sah tanpa izin (bukan sesi mati) — jangan dilempar sebagai error.
+      // 403 on /me = valid identity without permission (not a dead session) — do not throw it as an error.
       const me = await api
         .get<{ userId: string; organizationId: string | null; permissions: string[] }>("/api/v1/me")
         .catch((err) => (err instanceof ApiError && err.status === 403 ? null : Promise.reject(err)));
@@ -67,7 +67,7 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: async ({ id, name, roleKey }: { id: string; name: string; roleKey?: string }) => {
       const updated = await api.patch<PublicUser>(`/api/v1/users/${id}`, { name });
-      // Peran diubah lewat endpoint assign/revoke terpisah — service update tidak menyentuhnya.
+      // Roles change through the separate assign/revoke endpoints — the update service never touches them.
       if (roleKey) await api.post<PublicUser>(`/api/v1/users/${id}/roles`, { roleKey });
       return updated;
     },
@@ -89,7 +89,7 @@ export function useDeleteUser() {
   });
 }
 
-/** Katalog role untuk pilihan form; organisasi tanpa izin role.read jatuh ke role sistem bawaan. */
+/** Role catalog for form options; an org lacking role.read falls back to built-in system roles. */
 export function useRoles() {
   return useQuery({
     queryKey: ["roles"],

@@ -1,6 +1,6 @@
 import type { PermissionKey } from "../rbac/statements.ts";
 
-/** Peta aksi modul ke permission. Route membaca dari sini — permission tidak pernah hardcode. */
+/** Maps module actions to permissions. Routes read from here — permissions are never hardcoded. */
 export const ACTION_PERMISSION = {
   list: "department.read",
   read: "department.read",

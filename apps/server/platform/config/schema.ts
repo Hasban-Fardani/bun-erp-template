@@ -1,8 +1,8 @@
 import * as z from "zod";
 
 /**
- * Schema final dikompilasi sekali saat module di-load (aturan PRD §5).
- * Compile setelah semua refine selesai terpasang — jangan di handler.
+ * The final schema is compiled once when the module loads (PRD §5 rule).
+ * Compile after every refine is attached — never inside a handler.
  */
 
 const boolOr = (fallback: "true" | "false") =>
@@ -52,7 +52,7 @@ const rawSchema = z
     BETTER_AUTH_URL: z.url(),
     BETTER_AUTH_SECRET: z.string().default(""),
     AUTH_TRUSTED_ORIGINS: z.string().default(""),
-    // Google OAuth dorman (ADR-0009): provider hanya aktif kalau KEDUANYA terisi.
+    // Google OAuth dormant (ADR-0009): the provider activates only when BOTH are set.
     GOOGLE_CLIENT_ID: z.string().default(""),
     GOOGLE_CLIENT_SECRET: z.string().default(""),
 
@@ -74,7 +74,7 @@ const rawSchema = z
     FEATURE_ADVANCED_REPORTS: boolOr("false"),
   })
   .superRefine((env, ctx) => {
-    // Cross-field: variable yang wajib hanya pada driver/mode tertentu.
+    // Cross-field: variables required only under a specific driver/mode.
     if (env.DATABASE_DRIVER === "postgres" && env.DATABASE_URL === "") {
       ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "required when DATABASE_DRIVER=postgres" });
     }
@@ -83,7 +83,7 @@ const rawSchema = z
     }
     if (env.APP_ENV !== "production") return;
 
-    // APP_ENV=production menolak konfigurasi tidak aman.
+    // APP_ENV=production rejects unsafe configuration.
     if (env.LOG_LEVEL === "debug" || env.LOG_LEVEL === "trace") {
       ctx.addIssue({ code: "custom", path: ["LOG_LEVEL"], message: "debug/trace logging is refused in production" });
     }
@@ -100,7 +100,7 @@ const rawSchema = z
     if (!env.APP_URL.startsWith("https://") && !env.APP_URL.startsWith("http://localhost")) {
       ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "public URL must use https in production" });
     }
-    // Hybrid (ADR-0011): auth boleh di domain lain asal origin itu eksplisit tepercaya.
+    // Hybrid (ADR-0011): auth may live on another domain as long as that origin is explicitly trusted.
     const trustedOrigins = env.AUTH_TRUSTED_ORIGINS.split(",")
       .map((o) => o.trim())
       .filter(Boolean);
@@ -115,17 +115,17 @@ const rawSchema = z
 
 export const EnvSchema = z.compile(rawSchema);
 
-/** Definisi mentah diekspor untuk test parity dan pembacaan ulang key (F1.16). */
+/** Raw definitions are exported for the parity test and for re-reading keys (F1.16). */
 export { rawSchema as EnvRawSchema };
 
-/** Semua key yang dikenal schema — dipakai untuk memfilter Bun.env dan melaporkan key asing. */
+/** Every key the schema knows — used to filter Bun.env and report foreign keys. */
 export const envKeys: readonly string[] = Object.freeze(
   Object.keys((rawSchema as unknown as { def: { shape: Record<string, unknown> } }).def.shape),
 );
 
 export type RawEnv = z.output<typeof EnvSchema>;
 
-/** Key berprefiks aplikasi yang tidak dikenal schema = salah ketik / variabel mati. */
+/** An app-prefixed key the schema does not know = a typo / dead variable. */
 export function findStrayKeys(env: Record<string, string | undefined>): string[] {
   const prefixes = [
     "APP_",

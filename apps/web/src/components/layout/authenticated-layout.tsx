@@ -13,7 +13,7 @@ type SessionData = Awaited<ReturnType<typeof useSession>>["data"];
 
 const COLLAPSE_KEY = "erp.sidebar.collapsed";
 
-/** Preferensi collapse bertahan antar-reload; dibaca malas agar tak menyentuh localStorage saat SSR. */
+/** Collapse preference survives reloads; read lazily so SSR never touches localStorage. */
 function useCollapsed() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   return [
@@ -46,7 +46,7 @@ function NavContent({
         <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-accent-ink">
           <UsersIcon className="size-4" />
         </span>
-        {/* Mode rail: nama aplikasi hilang, ikonnya tetap jadi penanda posisi. */}
+        {/* Rail mode: the app name drops out, icons stay as position markers. */}
         {collapsed ? null : (
           <span className="truncate text-[14.5px] font-semibold tracking-tight">{uiConfig.appName}</span>
         )}
@@ -110,7 +110,7 @@ function Topbar({ session }: { session: SessionData }) {
 
   return (
     <>
-      {/* Desktop: bisa diringkas jadi rail ikon; mobile: drawer penuh. */}
+      {/* Desktop: collapses into an icon rail; mobile: full drawer. */}
       <aside
         className={cn(
           "sticky top-0 hidden h-dvh shrink-0 border-r border-border bg-surface transition-[width] duration-200 lg:block",

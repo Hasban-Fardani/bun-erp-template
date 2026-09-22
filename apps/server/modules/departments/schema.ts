@@ -1,8 +1,8 @@
 import * as z from "zod";
 
 /**
- * Kontrak input HTTP modul. Definisi mentah diekspor supaya test parity (F1.16) bisa
- * membandingkan hasil compiled vs uncompiled dari definisi yang sama, bukan salinannya.
+ * The module's HTTP input contract. Raw definitions are exported so the parity test (F1.16)
+ * can compare compiled vs uncompiled from the same definition, not from a copy.
  */
 export const createDepartmentSchema = z.strictObject({
   name: z.string().trim().min(1).max(120),

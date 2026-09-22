@@ -3,9 +3,9 @@ import { navGroups } from "../src/components/layout/sidebar-data.ts";
 import { registeredPaths } from "../src/routes/route-tree.tsx";
 
 /**
- * Aturan keras template: sidebar tidak boleh mengarah ke tempat yang tidak ada.
- * Menu "Peran & Izin" yang membuka NotFound adalah bug yang lolos justru karena
- * tak ada yang menautkan daftar nav dengan daftar route.
+ * Hard template rule: the sidebar must never point somewhere that does not exist.
+ * A "Peran & Izin" menu opening NotFound is a bug that slipped through precisely because
+ * nothing linked the nav list to the route list.
  */
 test("setiap item navigasi menunjuk path yang benar-benar terdaftar", () => {
   const missing = navGroups

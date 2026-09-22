@@ -2,7 +2,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 
-// slop-ok: UserMenu adalah namespace komponen (Root/Trigger/Content), bukan nilai lepas.
+// slop-ok: UserMenu is a component namespace (Root/Trigger/Content), not a loose value.
 const content = "z-50 min-w-44 rounded-md border border-border bg-surface p-1 text-[13px] shadow-md outline-none";
 
 export const UserMenu = {

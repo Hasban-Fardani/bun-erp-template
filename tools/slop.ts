@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-/** Gate slop: komentar naratif + temuan AST dari validator governance. slop-ok melewatkan. */
+/** Slop gate: narrative comments + AST findings from the governance validator. slop-ok bypasses it. */
 export async function findCodeSlop(root: string): Promise<string[]> {
   const findings: string[] = [];
   const sourceDirs = [join(root, "apps"), join(root, "tools")].filter((dir) => exists(dir));
@@ -13,17 +13,17 @@ export async function findCodeSlop(root: string): Promise<string[]> {
 
       lines.forEach((line, i) => {
         if (/slop-ok/.test(line)) return;
-        for (const rule of [NARASI_BERKAS, ULANG_TIPE]) {
+        for (const rule of [FILE_NARRATION, TYPE_RESTATEMENT]) {
           if (rule.test(line)) {
-            findings.push(`${rel}:${i + 1} komentar naratif — jelaskan KENAPA, bukan APA: ${line.trim().slice(0, 70)}`);
+            findings.push(`${rel}:${i + 1} narrative comment — explain WHY, not WHAT: ${line.trim().slice(0, 70)}`);
           }
         }
       });
     }
   }
 
-  // Validator governance menangkap pola lintas-berkas (passthrough, unused export,
-  // duplikat) yang butuh AST — dijalankan sebagai subproses supaya satu sumber aturan.
+  // The governance validator catches cross-file patterns (passthrough, unused export,
+  // duplicates) that need an AST — run as a subprocess so there is one rule source.
   const validator = "/root/programming-governance/adapters/slop-validator.ts";
   if (exists(validator)) {
     const proc = Bun.spawn(["bun", validator, join(root, "apps"), join(root, "tools")], {
@@ -42,9 +42,11 @@ export async function findCodeSlop(root: string): Promise<string[]> {
   return findings;
 }
 
-const NARASI_BERKAS =
-  /^\s*(\/\/|\*)\s*(Satu-satunya tempat|Ini satu-satunya|Berkas ini (berisi|menyimpan|mengatur)|File ini)\b/i;
-const ULANG_TIPE = /^\s*\*\s*(Entry Vite yang dimuat|Nilai .+ yang dipakai|Tipe .+ untuk)\b/i;
+// Comments must be English (see AGENTS.md), so the patterns are English too. The alternatives
+// without a language marker (path-like header comments) are the ones that survive translation.
+const FILE_NARRATION =
+  /^\s*(\/\/|\*)\s*(This file (contains|holds|manages)|The only place|This is the only|Path to the|Entry point|Renders the)\b/i;
+const TYPE_RESTATEMENT = /^\s*\*\s*(Vite entry .* loaded|Value .* used for|Type .* for the)\b/i;
 
 function exists(path: string): boolean {
   try {

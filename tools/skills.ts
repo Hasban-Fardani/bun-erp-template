@@ -2,8 +2,8 @@ import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
- * F1.13 — skills gate. Setiap skill harus punya frontmatter yang bisa dibaca agent:
- * `name` + `description` dengan pemicu jelas. Skill tanpa pemicu = tidak akan termuat.
+ * F1.13 — skills gate. Every skill must carry frontmatter an agent can read:
+ * `name` + `description` with a clear trigger. A skill without a trigger never loads.
  */
 export type SkillFinding = { file: string; message: string };
 

@@ -11,15 +11,15 @@ import { registerRoutes } from "./routes.ts";
 export type AppVariables = { requestId: string };
 
 /**
- * `ctx` disuntikkan lewat closure, `organizationId` diberikan saat bootstrap — Phase 2
- * menggantinya dengan organisasi milik session (per-request), bukan nilai tetap.
+ * `ctx` is injected via closure, `organizationId` is set at bootstrap — Phase 2
+ * replaces it with the session's own organization (per-request), not a fixed value.
  */
 export function createApp(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   const app = new Hono<{ Variables: AppVariables }>();
 
   /**
-   * Spesifikasi dihasilkan dari router itu sendiri: path dan skema dibaca dari route nyata,
-   * jadi dokumentasi tak bisa menyimpang dari implementasi.
+   * The spec is generated from the router itself: paths and schemas are read from real routes,
+   * so docs cannot drift from the implementation.
    */
   app.get(
     "/api/openapi.json",
@@ -38,8 +38,8 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
 
   app.use(requestIdMiddleware({ limitLength: 128, headerName: "X-Request-Id" }));
 
-  // Deployment hybrid (ADR-0011): web di domain sendiri, jadi klinta lintas origin.
-  // Allowlist = AUTH_TRUSTED_ORIGINS — origin lain tak mendapat header CORS sama sekali.
+  // Hybrid deployment (ADR-0011): web lives on its own domain, so the client crosses origins.
+  // Allowlist = AUTH_TRUSTED_ORIGINS — any other origin gets no CORS headers at all.
   app.use(
     "/api/*",
     cors({
@@ -55,7 +55,7 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
     const started = performance.now();
     await next();
     const elapsed = performance.now() - started;
-    // Hanya request gagal/lambat yang dicatat — log per-request sukses = alarm fog.
+    // Only failed/slow requests are logged — per-request success logs drown the signal.
     if (c.res.status >= 400 || elapsed > 1000) {
       ctx.logger.warn({
         event: "http.request.slow_or_failed",
@@ -84,7 +84,7 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
       return c.json(body, err.status as 400);
     }
 
-    // Kegagalan tak terduga: jejak penuh di log server, pesan aman untuk klien.
+    // Unexpected failure: full trace in the server log, safe message for the client.
     ctx.logger.error({
       event: "http.request.failed",
       trace_id: id,

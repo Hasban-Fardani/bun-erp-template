@@ -4,8 +4,8 @@ import type { Database } from "./index.ts";
 import { organizations } from "./schema.ts";
 
 /**
- * Seed idempotent. Hanya data infrastruktur — tidak ada domain client yang dikarang
- * (governance: zero domain fabrication). Modul bisnis menambah seed-nya sendiri.
+ * Idempotent seed. Infrastructure data only — no invented client domain
+ * (governance: zero domain fabrication). Business modules add their own seed.
  */
 export async function seed(db: Database): Promise<{ organizations: number; roles: number; permissions: number }> {
   const rows = await db
@@ -16,8 +16,8 @@ export async function seed(db: Database): Promise<{ organizations: number; roles
 
   await db.execute(sql`select 1`);
 
-  // Organisasi dibaca ulang, bukan diambil dari `rows`: pada seed kedua,
-  // `onConflictDoNothing` tidak mengembalikan apa pun.
+  // The organization is read back, not taken from `rows`: on the second seed,
+  // `onConflictDoNothing` returns nothing.
   const existing = await db
     .select({ id: organizations.id })
     .from(organizations)
@@ -26,8 +26,8 @@ export async function seed(db: Database): Promise<{ organizations: number; roles
   const organizationId = existing[0]?.id;
   if (!organizationId) throw new Error("Default organization missing after seed");
 
-  // RBAC ikut di-seed karena role sistem adalah infrastruktur, bukan data bisnis:
-  // tanpa role `owner`, tidak ada seorang pun yang bisa memberi izin pertama.
+  // RBAC is seeded too because system roles are infrastructure, not business data:
+  // without the `owner` role, nobody can grant the first permission.
   const rbac = await seedRbac(db, organizationId);
 
   return { organizations: rows.length, roles: rbac.roles, permissions: rbac.permissions };

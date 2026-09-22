@@ -1,6 +1,6 @@
 /**
- * CLI thin wrapper (PRD §11). Perintah memanggil modul yang sama dengan runtime —
- * CLI tidak menyimpan logika sendiri.
+ * Thin CLI wrapper (PRD §11). Commands call the same modules as the runtime —
+ * the CLI keeps no logic of its own.
  */
 import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -13,7 +13,7 @@ import { createUser, hashPassword } from "./apps/server/modules/identity/service
 import { assignRole, findRoleByKey, rolesForUser } from "./apps/server/modules/rbac/service.ts";
 import { loadEnv, strayKeyWarnings } from "./apps/server/platform/config/index.ts";
 import type { Database } from "./apps/server/platform/database/index.ts";
-import { migrate } from "./apps/server/platform/database/migrate.ts";
+import { migrate, rowsOf } from "./apps/server/platform/database/migrate.ts";
 import { organizations } from "./apps/server/platform/database/schema.ts";
 import { seed } from "./apps/server/platform/database/seed.ts";
 import { checkScope } from "./tools/scope.ts";
@@ -25,7 +25,7 @@ const MIGRATIONS_DIR = resolve(repoRoot, "apps/server/migrations");
 const TASKS_DIR = resolve(repoRoot, "docs/tasks");
 const SKILLS_DIR = resolve(repoRoot, "skills");
 
-/** Subproses yang gagal harus menghentikan gate — bukan sekadar dicatat lalu dilewati. */
+/** A failing subprocess must stop the gate — not merely be logged and skipped. */
 async function run(argv: readonly string[], label: string): Promise<void> {
   const proc = Bun.spawn([...argv], { cwd: repoRoot, stdout: "inherit", stderr: "inherit" });
   const code = await proc.exited;
@@ -55,7 +55,7 @@ class GateFailure extends Error {
   }
 }
 
-/** Gate membaca file repo langsung — dipakai `check` dan bisa dipanggil sendiri. */
+/** Gates read repo files directly — used by `check` and callable on their own. */
 async function runGate(kind: "skills" | "task" | "scope" | "slop"): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
@@ -129,7 +129,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "route:list": async () => {
-    // Route dibaca dari app yang benar-benar dibentuk — bukan daftar hardcode yang bisa basi.
+    // Routes are read from the app as actually assembled — not a hardcoded list that can go stale.
     const ctx = await createContext({ migrateOnStart: false });
     const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
     const routes = app.routes
@@ -141,7 +141,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await ctx.close();
   },
 
-  // Jalur keluar ayam-telur: owner pertama tak bisa dibuat via HTTP yang butuh role.
+  // Chicken-and-egg escape hatch: the first owner cannot be created over HTTP that requires a role.
   "user:create": async (args) => {
     const [email, password, roleKey = "staff", name] = args;
     if (!email || !password) {
@@ -196,7 +196,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await ctx.close();
   },
 
-  // Sandi reset via CLI: jalur pemulihan saat e-mail driver belum ada. Audit tetap dicatat.
+  // Password reset via CLI: the recovery path while no e-mail driver exists. Audit is still recorded.
   "user:passwd": async (args) => {
     const [email, newPassword] = args;
     if (!email) {
@@ -261,16 +261,14 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await ctx.close();
   },
 
-  // Exit 1 bila ada pending — dipakai CI untuk memaksa db:migrate sebelum deploy.
+  // Exit 1 when any migration is pending — CI uses it to force db:migrate before deploy.
 
   "db:status": async () => {
     const ctx = await createContext({ migrateOnStart: false });
     const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
-    const applied = new Set(
-      await ctx.db
-        .execute(sql`select name from _migrations`)
-        .then((r) => (Array.isArray(r) ? r : (r as { rows: { name: string }[] }).rows).map((row) => row.name)),
-    );
+    // Same unwrapping as the runner: PGlite returns `{ rows }`, postgres-js an array.
+    const rows = rowsOf<{ name: string }>(await ctx.db.execute(sql`select name from _migrations`));
+    const applied = new Set(rows.map((row) => row.name));
     const pending = files.filter((f) => !applied.has(f));
     for (const f of files) {
       process.stdout.write(`  ${applied.has(f) ? "applied " : "PENDING"} ${f}\n`);

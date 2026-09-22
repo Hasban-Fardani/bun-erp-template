@@ -1,4 +1,4 @@
-/** Tipe respons publik user — disamakan dengan `toPublicUser` di server, bukan dikarang. */
+/** Public user response type — matched to `toPublicUser` on the server, not invented. */
 export type PublicUser = {
   id: string;
   name: string;

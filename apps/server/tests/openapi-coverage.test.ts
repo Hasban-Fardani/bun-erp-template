@@ -25,8 +25,8 @@ const spec = async (): Promise<Spec> => {
 };
 
 /**
- * Route yang bukan kontrak bisnis: handler Better Auth (`/auth/*`) dimiliki library dan
- * operasinya didokumentasikan eksplisit di `http/openapi.ts`, jadi wildcard-nya diabaikan.
+ * Routes that are not business contracts: Better Auth handlers (`/auth/*`) are owned by the
+ * library and their operations are documented explicitly in `http/openapi.ts`, so the wildcard is skipped.
  */
 const IGNORED = [
   /^ALL \/\*/,
@@ -89,7 +89,7 @@ test("skema body diturunkan dari zod — bukan salinan yang bisa basi", async ()
     (paths[path]?.[method] as { requestBody?: { content?: Record<string, { schema?: Record<string, unknown> }> } })
       ?.requestBody?.content?.["application/json"]?.schema;
 
-  // Batasan zod asli harus muncul apa adanya: password min 10, key role ber-pola.
+  // The real zod constraints must appear verbatim: password min 10, role key patterned.
   const createUser = bodyOf("/api/v1/users", "post") as { properties?: Record<string, { minLength?: number }> };
   expect(createUser.properties?.password?.minLength).toBe(10);
 

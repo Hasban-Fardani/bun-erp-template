@@ -1,4 +1,4 @@
-/** Bentuk respons API admin — disamakan dengan service server, bukan dikarang. */
+/** Shape of the admin API response — matched to the server service, not invented. */
 export type Role = {
   id: string;
   key: string;
@@ -9,7 +9,7 @@ export type Role = {
   permissions: string[];
 };
 
-/** Katalog statemen dari kode (`/roles/statements`) — sumber layar izin, tidak disalin. */
+/** Statement catalog from code (`/roles/statements`) — the source for the permission screen, not copied. */
 export type RoleStatements = {
   statements: Record<string, string[]>;
   permissions: string[];

@@ -5,13 +5,13 @@ import type { Database } from "../../platform/database/index.ts";
 import { resolveDefaultOrganizationId } from "../../platform/database/organizations.ts";
 import { accounts, sessions, users, verifications } from "./data.ts";
 
-/** Instance Better Auth; dipisah agar CLI/test bisa memakainya tanpa server. */
+/** Better Auth instance; split out so CLI/tests can use it without a server. */
 export function createAuth(env: Env, db: Database) {
   const googleEnabled = env.GOOGLE_CLIENT_ID !== "" && env.GOOGLE_CLIENT_SECRET !== "";
 
   return betterAuth({
-    // Diselaraskan dengan API_PREFIX supaya tidak ada dua awalan berbeda di satu API.
-    // Bawaan library adalah `/api/auth`.
+    // Aligned with API_PREFIX so one API never carries two different prefixes.
+    // The library default is `/api/auth`.
     basePath: "/api/v1/auth",
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
@@ -28,11 +28,11 @@ export function createAuth(env: Env, db: Database) {
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 10,
-      // Reset sandi lewat email belum ada (mail driver Phase 3). Membiarkannya menyala
-      // akan memberi pengguna tombol yang tidak pernah mengirim apa pun.
+      // Email password reset does not exist yet (mail driver, Phase 3). Leaving it on
+      // would hand users a button that never sends anything.
       sendResetPassword: undefined,
     },
-    // Google OAuth dorman: provider hanya terdaftar kalau dua env-nya terisi.
+    // Google OAuth dormant: the provider registers only when both of its env vars are set.
     ...(googleEnabled
       ? {
           socialProviders: {
@@ -42,15 +42,15 @@ export function createAuth(env: Env, db: Database) {
       : {}),
     user: {
       additionalFields: {
-        // Nama property harus sama dengan definisi tabel; pemetaan ke kolom fisik
-        // dikerjakan Drizzle. Menambah fieldName lain membuat pemeriksaan skema gagal.
+        // The property name must match the table definition; mapping to physical columns
+        // is Drizzle's job. Adding another fieldName makes the schema check fail.
         organizationId: { type: "string", required: false },
       },
     },
     databaseHooks: {
       user: {
         create: {
-          // Tanpa ini organization_id user baru NULL — tak terlihat admin mana pun.
+          // Without this the new user's organization_id is NULL — invisible to every admin.
           before: async (user) => {
             const organizationId = await resolveDefaultOrganizationId(db);
             return { data: { ...user, organizationId } };

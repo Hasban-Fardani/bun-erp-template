@@ -1,5 +1,5 @@
--- Format: satu file = satu langkah forward-only, dijalankan berurutan.
--- Semua tabel bisnis membawa organization_id sejak awal (ADR-0004).
+-- Format: one file = one forward-only step, run in order.
+-- Every business table carries organization_id from the start (ADR-0004).
 
 create table if not exists organizations (
   id uuid primary key default uuidv7(),

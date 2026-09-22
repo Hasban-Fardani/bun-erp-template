@@ -3,9 +3,9 @@ import { allPermissions, statements, systemRoles } from "../modules/rbac/stateme
 import type { Env } from "../platform/config/index.ts";
 
 /**
- * Bagian spesifikasi yang BERSAMA: info, keamanan, dan skema TIPE RESPONS. Skema body
- * tidak di sini — ia diturunkan langsung dari zod di route-nya (`http/api-docs.ts`),
- * jadi tak ada salinan yang bisa berbeda dari validator sesungguhnya.
+ * The SHARED part of the spec: info, security, and RESPONSE TYPE schemas. Body schemas
+ * are not here — they derive straight from zod at the route (`http/api-docs.ts`),
+ * so no copy can differ from the real validator.
  */
 
 type Documentation = NonNullable<NonNullable<Parameters<typeof openAPIRouteHandler>[1]>["documentation"]>;
@@ -121,9 +121,9 @@ export const BETTER_AUTH_TAGS: NonNullable<Documentation["tags"]> = [
 ];
 
 /**
- * Handler Better Auth tidak melewati `describeRoute`, jadi operasi yang dipakai aplikasi
- * ditulis satu kali di sini — bukan seluruh permukaan Better Auth, hanya yang relevan
- * bagi reviewer. Jalur ini tidak bisa dibaca dari router karena dimiliki library.
+ * Better Auth handlers do not pass through `describeRoute`, so the operations the app uses
+ * are written once here — not the whole Better Auth surface, only what a reviewer cares
+ * about. These paths cannot be read from the router because the library owns them.
  */
 export const BETTER_AUTH_PATHS: NonNullable<Documentation["paths"]> = {
   "/api/v1/auth/sign-in/email": {

@@ -4,7 +4,7 @@ export type NavItem = {
   title: string;
   url: string;
   icon: LucideIcon;
-  /** Item hanya tampil bila sesi memegang izin ini; kosong = selalu tampil. */
+  /** Item shows only when the session holds this permission; empty = always visible. */
   permission?: string;
 };
 
@@ -13,7 +13,7 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-/** Sumber tunggal navigasi — halaman baru menambah baris di sini, bukan mengubah sidebar. */
+/** Single source of navigation — a new page adds a row here, not a sidebar edit. */
 export const navGroups: NavGroup[] = [
   {
     items: [{ title: "Pengguna", url: "/users", icon: Users, permission: "user.read" }],

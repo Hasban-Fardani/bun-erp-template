@@ -6,7 +6,7 @@ import { Sheet } from "../../shared/ui/sheet.tsx";
 import { useRoleStatements } from "../admin/api.ts";
 import type { Role } from "../admin/types.ts";
 
-/** Form peran dipakai bersama oleh mode tambah dan ubah — field-nya identik. */
+/** Role form shared by create and edit modes — the fields are identical. */
 export function RoleSheet({
   open,
   onOpenChange,
@@ -91,7 +91,7 @@ export function RoleSheet({
   );
 }
 
-/** Editor izin: kotak centang dibangun dari katalog statemen server, bukan daftar salinan. */
+/** Permission editor: checkboxes built from the server statement catalog, not a copied list. */
 export function RolePermissionSheet({
   open,
   onOpenChange,

@@ -1,12 +1,12 @@
--- Tabel identitas Better Auth (PRD §17 Phase 2 "Identity", ADR-0009).
+-- Better Auth identity tables (PRD §17 Phase 2 "Identity", ADR-0009).
 --
--- Nama tabel dan kolom mengikuti kontrak Better Auth apa adanya (snake_case), bukan
--- selera kita: adapter Drizzle membandingkan skema fisik dengan `getAuthTables()` dan
--- menolak jalan kalau tidak cocok. Mengganti nama berarti mematikan pemeriksaan itu.
+-- Table and column names follow the Better Auth contract verbatim (snake_case), not
+-- our own taste: the Drizzle adapter compares the physical schema against `getAuthTables()` and
+-- refuses to run when they differ. Renaming means switching that check off.
 --
--- `organization_id` di tabel user sengaja NULLABLE. Pendaftaran terjadi sebelum admin
--- menetapkan organisasi, jadi memaksa NOT NULL akan membuat sign-up pertama mustahil.
--- Kolom tetap ada sejak awal (ADR-0004) supaya tidak perlu expand-contract belakangan.
+-- `organization_id` on the user table is deliberately NULLABLE. Sign-up happens before an admin
+-- assigns an organization, so forcing NOT NULL would make the first sign-up impossible.
+-- The column exists from the start (ADR-0004) so no expand-contract is needed later.
 
 create table if not exists "user" (
   id uuid primary key default uuidv7(),

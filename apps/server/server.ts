@@ -8,7 +8,7 @@ async function main(): Promise<void> {
   try {
     ctx = await createContext();
   } catch (err) {
-    // Config invalid harus terlihat saat bootstrap, bukan saat request pertama.
+    // Invalid config must surface at bootstrap, not on the first request.
     if (err instanceof ConfigError) {
       process.stderr.write(`${err.message}\n`);
       process.exit(78); // EX_CONFIG
@@ -16,7 +16,7 @@ async function main(): Promise<void> {
     throw err;
   }
 
-  // Idempotent: fresh clone tanpa `db:seed` tetap punya organisasi default.
+  // Idempotent: a fresh clone without `db:seed` still has a default organization.
   await seed(ctx.db);
 
   const organizationId = await resolveDefaultOrganizationId(ctx.db);

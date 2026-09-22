@@ -4,8 +4,8 @@ import pino, { type Logger } from "pino";
 import type { Env } from "../config/index.ts";
 
 /**
- * Redaction terpusat: rahasia tidak pernah masuk log (FAILURE-TRACEABILITY-GOVERNANCE §12).
- * Ditulis di satu tempat supaya modul tidak perlu mengingat aturannya.
+ * Central redaction: secrets never reach the log (FAILURE-TRACEABILITY-GOVERNANCE §12).
+ * Written in one place so modules do not have to remember the rule.
  */
 const REDACT_PATHS = [
   "password",
@@ -34,7 +34,7 @@ function destination(env: Env): pino.DestinationStream {
   return pino.destination({ dest: env.LOG_PATH, sync: false, mkdir: true });
 }
 
-/** Satu logger untuk API, worker, scheduler, dan CLI (PRD §13). */
+/** One logger for the API, worker, scheduler, and CLI (PRD §13). */
 export function createLogger(env: Env): Logger {
   return pino(
     {

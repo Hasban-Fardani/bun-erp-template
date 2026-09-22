@@ -103,7 +103,7 @@ describe("roles CRUD", () => {
     );
     expect(bogus.status).toBe(422);
 
-    // Role kustom yang sedang dipakai: hapus = mencabut akses orang, jadi harus ditolak.
+    // A custom role in use: deleting it revokes people's access, so it must be refused.
     const users = await app.request("/api/v1/users?limit=5", { headers: { cookie } });
     const target = ((await users.json()) as { data: { items: { id: string }[] } }).data.items[0];
     const assigned = await app.request(`/api/v1/users/${target?.id}/roles`, json({ roleKey: "auditor" }));

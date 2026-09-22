@@ -1,8 +1,8 @@
 import { join } from "node:path";
 
 /**
- * F1.10 — scope gate. Menjaga agar repo template tidak berubah menjadi repo client:
- * nama client, aturan bisnis, atau direktori liar ditolak sebelum commit.
+ * F1.10 — scope gate. Keeps this template repo from drifting into a client repo:
+ * client names, business rules, or stray directories are rejected before commit.
  */
 type Scope = {
   allowed: { topLevelDirs: string[]; apps: string[] };
@@ -28,7 +28,7 @@ export async function loadScope(root: string): Promise<Scope> {
   return (await Bun.file(join(root, "template.scope.json")).json()) as Scope;
 }
 
-/** `**` cocok lintas direktori, `*` tidak. Ditulis manual supaya tidak menambah dependency glob. */
+/** `**` matches across directories, `*` does not. Hand-rolled so no glob dependency is added. */
 function matchesAny(path: string, globs: readonly string[]): boolean {
   return globs.some((glob) => {
     const pattern = glob
@@ -80,7 +80,7 @@ export async function checkScope(root: string): Promise<ScopeFinding[]> {
   return findings;
 }
 
-/** Hanya file yang dilacak git — artefak build lokal bukan urusan scope. */
+/** Git-tracked files only — local build artifacts are none of scope's business. */
 async function gitFiles(root: string): Promise<string[]> {
   const proc = Bun.spawn(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
     cwd: root,

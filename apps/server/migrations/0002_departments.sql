@@ -1,4 +1,4 @@
--- Module departments (reference module, PRD §6).
+-- departments module (reference module, PRD §6).
 
 create table if not exists departments (
   id uuid primary key default uuidv7(),
