@@ -1,43 +1,29 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { type AppContext, resolveDefaultOrganizationId } from "../context.ts";
-import { createApp } from "../http/app.ts";
-import { seed } from "../platform/database/seed.ts";
-import { createTestContext, loginOwner, truncateAll } from "./helpers.ts";
+import { createHttpFixture, type HttpFixture } from "./helpers.ts";
 
-let ctx: AppContext;
-let orgId: string;
-let app: ReturnType<typeof createApp>;
-let cookie = "";
+let api: HttpFixture;
 
-const json = (body: unknown, method = "POST"): RequestInit => ({
-  method,
-  headers: { "content-type": "application/json", cookie },
-  body: JSON.stringify(body),
-});
+const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
 
 beforeEach(async () => {
-  ctx ??= await createTestContext();
-  await truncateAll(ctx);
-  await seed(ctx.db);
-  orgId = await resolveDefaultOrganizationId(ctx.db);
-  app = createApp(ctx, orgId);
-  cookie = await loginOwner(app, ctx.db);
+  api = await createHttpFixture();
+  await api.signInAsOwner();
 });
 
 afterAll(async () => {
-  await ctx?.close();
+  await api?.close();
 });
 
 describe("departments", () => {
   test("anonymous caller is rejected before any business logic runs", async () => {
-    const res = await app.request("/api/v1/departments", { method: "GET" });
+    const res = await api.app.request("/api/v1/departments", { method: "GET" });
     expect(res.status).toBe(401);
     const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
   test("create returns envelope with requestId and uuidv7 id", async () => {
-    const res = await app.request("/api/v1/departments", json({ name: "Keuangan", code: "KEU" }));
+    const res = await api.app.request("/api/v1/departments", json({ name: "Keuangan", code: "KEU" }));
     expect(res.status).toBe(200);
     const body = (await res.json()) as { data: { id: string; code: string }; meta: { requestId: string } };
     expect(body.data.code).toBe("KEU");
@@ -48,53 +34,53 @@ describe("departments", () => {
   });
 
   test("duplicate code is 409 conflict, not 422", async () => {
-    await app.request("/api/v1/departments", json({ name: "A", code: "AAA" }));
-    const res = await app.request("/api/v1/departments", json({ name: "B", code: "AAA" }));
+    await api.app.request("/api/v1/departments", json({ name: "A", code: "AAA" }));
+    const res = await api.app.request("/api/v1/departments", json({ name: "B", code: "AAA" }));
     expect(res.status).toBe(409);
     const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("CONFLICT");
   });
 
   test("invalid payload is 422 with field paths", async () => {
-    const res = await app.request("/api/v1/departments", json({ name: "", code: "lower" }));
+    const res = await api.app.request("/api/v1/departments", json({ name: "", code: "lower" }));
     expect(res.status).toBe(422);
     const body = (await res.json()) as { error: { fields: { path: string }[] } };
     expect(body.error.fields.map((f) => f.path).sort()).toEqual(["code", "name"]);
   });
 
   test("unknown key is rejected (strictObject)", async () => {
-    const res = await app.request("/api/v1/departments", json({ name: "A", code: "AA", organizationId: "spoof" }));
+    const res = await api.app.request("/api/v1/departments", json({ name: "A", code: "AA", organizationId: "spoof" }));
     expect(res.status).toBe(422);
   });
 
   test("missing id is 404 (not 403)", async () => {
-    const res = await app.request("/api/v1/departments/0199aaaa-0000-7000-8000-000000000000", {
-      headers: { cookie },
+    const res = await api.app.request("/api/v1/departments/0199aaaa-0000-7000-8000-000000000000", {
+      headers: { cookie: api.cookie },
     });
     expect(res.status).toBe(404);
   });
 
   test("list is scoped to organization", async () => {
-    await app.request("/api/v1/departments", json({ name: "A", code: "AA" }));
-    const res = await app.request("/api/v1/departments?perPage=10", { headers: { cookie } });
+    await api.app.request("/api/v1/departments", json({ name: "A", code: "AA" }));
+    const res = await api.app.request("/api/v1/departments?perPage=10", { headers: { cookie: api.cookie } });
     const body = (await res.json()) as { data: { items: { organizationId: string }[]; total: number } };
     expect(body.data.total).toBe(1);
-    expect(body.data.items[0]?.organizationId).toBe(orgId);
+    expect(body.data.items[0]?.organizationId).toBe(api.organizationId);
   });
 
   test("unknown route returns NOT_FOUND envelope", async () => {
-    const res = await app.request("/api/v1/nope");
+    const res = await api.app.request("/api/v1/nope");
     expect(res.status).toBe(404);
     const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("NOT_FOUND");
   });
 
   test("patch updates and returns 404 when absent", async () => {
-    const created = await app.request("/api/v1/departments", json({ name: "A", code: "AA" }));
+    const created = await api.app.request("/api/v1/departments", json({ name: "A", code: "AA" }));
     const { data } = (await created.json()) as { data: { id: string } };
-    const patched = await app.request(`/api/v1/departments/${data.id}`, json({ name: "B" }, "PATCH"));
+    const patched = await api.app.request(`/api/v1/departments/${data.id}`, json({ name: "B" }, "PATCH"));
     expect(patched.status).toBe(200);
-    const missing = await app.request(
+    const missing = await api.app.request(
       "/api/v1/departments/0199aaaa-0000-7000-8000-000000000000",
       json({ name: "B" }, "PATCH"),
     );

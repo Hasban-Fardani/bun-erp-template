@@ -28,13 +28,14 @@ export function Sheet({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-stone-950/40 backdrop-blur-[2px]" />
+        <Dialog.Overlay data-slot="overlay" className="fixed inset-0 z-40 bg-stone-950/40 backdrop-blur-[2px]" />
         <Dialog.Content
           aria-describedby={undefined}
+          data-slot="panel"
+          data-side={side}
           className={cn(
             "fixed inset-y-0 z-50 flex w-full max-w-sm flex-col border-border bg-surface shadow-lg outline-none",
             side === "left" ? "left-0 w-64 border-r" : "right-0 border-l",
-            "data-[state=open]:animate-in data-[state=closed]:animate-out",
             className,
           )}
         >

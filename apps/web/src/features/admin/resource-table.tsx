@@ -13,7 +13,7 @@ type ResourceTableProps<T> = {
   /** Rendered into the query string, so the endpoint and the table agree by construction. */
   state: ReturnType<typeof useTableState>;
   searchPlaceholder?: string;
-  empty: { filtered: boolean; message?: string };
+  empty: { filtered: boolean; message?: string; action?: ReactNode };
   pending?: boolean;
   error?: string;
   actions?: (row: T) => ReactNode;

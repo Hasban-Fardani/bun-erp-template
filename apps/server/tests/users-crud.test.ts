@@ -2,15 +2,12 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { createHttpFixture, type HttpFixture } from "./helpers.ts";
 
 let api: HttpFixture;
-let { app } = {} as HttpFixture;
-let cookie = "";
 
 const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
 
 beforeEach(async () => {
   api = await createHttpFixture();
-  ({ app } = api);
-  cookie = await api.signInAsOwner();
+  await api.signInAsOwner();
 });
 
 afterAll(async () => {
@@ -19,12 +16,12 @@ afterAll(async () => {
 
 describe("users CRUD", () => {
   test("anonymous caller is rejected before any business logic runs", async () => {
-    const res = await app.request("/api/v1/users", { method: "POST" });
+    const res = await api.app.request("/api/v1/users", { method: "POST" });
     expect(res.status).toBe(401);
   });
 
   test("owner creates a user with initial password and role; new user can sign in", async () => {
-    const res = await app.request(
+    const res = await api.app.request(
       "/api/v1/users",
       json({ name: "Ayu", email: "Ayu@Example.test", password: "sandi-yang-panjang", roleKey: "staff" }),
     );
@@ -33,7 +30,7 @@ describe("users CRUD", () => {
     expect(body.data.email).toBe("ayu@example.test");
     expect(body.data.roles.map((r) => r.key)).toContain("staff");
 
-    const signIn = await app.request(
+    const signIn = await api.app.request(
       "/api/v1/auth/sign-in/email",
       json({ email: "ayu@example.test", password: "sandi-yang-panjang" }),
     );
@@ -41,12 +38,12 @@ describe("users CRUD", () => {
   });
 
   test("duplicate email is a conflict, not a 500", async () => {
-    const first = await app.request(
+    const first = await api.app.request(
       "/api/v1/users",
       json({ name: "A", email: "dup@test.dev", password: "sandi-yang-panjang" }),
     );
     expect(first.status).toBe(200);
-    const second = await app.request(
+    const second = await api.app.request(
       "/api/v1/users",
       json({ name: "B", email: "dup@test.dev", password: "sandi-yang-panjang" }),
     );
@@ -54,7 +51,7 @@ describe("users CRUD", () => {
   });
 
   test("unknown roleKey is a 404 with a clear message", async () => {
-    const res = await app.request(
+    const res = await api.app.request(
       "/api/v1/users",
       json({ name: "A", email: "role-missing@test.dev", password: "sandi-yang-panjang", roleKey: "tidak-ada" }),
     );
@@ -64,7 +61,7 @@ describe("users CRUD", () => {
   });
 
   test("validation rejects short password and unknown fields", async () => {
-    const res = await app.request(
+    const res = await api.app.request(
       "/api/v1/users",
       json({ name: "A", email: "x@test.dev", password: "pendek", extra: 1 }),
     );
@@ -72,34 +69,37 @@ describe("users CRUD", () => {
   });
 
   test("owner updates a user name via PATCH", async () => {
-    const created = await app.request(
+    const created = await api.app.request(
       "/api/v1/users",
       json({ name: "Lama", email: "lama@test.dev", password: "sandi-yang-panjang" }),
     );
     const { data } = (await created.json()) as { data: { id: string } };
-    const res = await app.request(`/api/v1/users/${data.id}`, json({ name: "Baru" }, "PATCH"));
+    const res = await api.app.request(`/api/v1/users/${data.id}`, json({ name: "Baru" }, "PATCH"));
     expect(res.status).toBe(200);
     const body = (await res.json()) as { data: { name: string } };
     expect(body.data.name).toBe("Baru");
   });
 
   test("owner deletes a user; sessions die with them; audit keeps the trail", async () => {
-    const created = await app.request(
+    const created = await api.app.request(
       "/api/v1/users",
       json({ name: "Hapus", email: "hapus@test.dev", password: "sandi-yang-panjang" }),
     );
     const { data } = (await created.json()) as { data: { id: string } };
 
-    const del = await app.request(`/api/v1/users/${data.id}`, { method: "DELETE", headers: { cookie } });
+    const del = await api.app.request(`/api/v1/users/${data.id}`, {
+      method: "DELETE",
+      headers: { cookie: api.cookie },
+    });
     expect(del.status).toBe(200);
 
-    const signIn = await app.request(
+    const signIn = await api.app.request(
       "/api/v1/auth/sign-in/email",
       json({ email: "hapus@test.dev", password: "sandi-yang-panjang" }),
     );
     expect(signIn.status).toBe(401);
 
-    const audit = await app.request("/api/v1/audit-logs?perPage=50", { headers: { cookie } });
+    const audit = await api.app.request("/api/v1/audit-logs?perPage=50", { headers: { cookie: api.cookie } });
     const list = (await audit.json()) as { data: { items: { event: string; subjectId: string | null }[] } };
     const events = list.data.items.filter((i) => i.subjectId === data.id).map((i) => i.event);
     expect(events).toContain("user.created");
@@ -107,9 +107,12 @@ describe("users CRUD", () => {
   });
 
   test("deleting yourself is rejected", async () => {
-    const me = await app.request("/api/v1/me", { headers: { cookie } });
+    const me = await api.app.request("/api/v1/me", { headers: { cookie: api.cookie } });
     const { data } = (await me.json()) as { data: { userId: string } };
-    const res = await app.request(`/api/v1/users/${data.userId}`, { method: "DELETE", headers: { cookie } });
+    const res = await api.app.request(`/api/v1/users/${data.userId}`, {
+      method: "DELETE",
+      headers: { cookie: api.cookie },
+    });
     expect(res.status).toBe(409);
   });
 });

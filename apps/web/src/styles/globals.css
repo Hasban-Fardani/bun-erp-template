@@ -11,6 +11,14 @@
   --color-accent-soft: #ecfdf5;
   --color-danger: #b91c1c;
   --color-danger-soft: #fef2f2;
+
+  /**
+   * Motion tokens. Durations stay short: a UI that is felt as "smooth" is one where nothing
+   * snaps into place, not one where things take their time.
+   */
+  --duration-quick: 120ms;
+  --duration-base: 180ms;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body {
@@ -19,4 +27,93 @@ body {
   font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   font-size: 14px;
   line-height: 1.45;
+}
+
+/**
+ * Content arriving should fade and rise slightly instead of appearing between two frames.
+ * Applied to table bodies and page containers; kept off layout-affecting properties so it
+ * cannot cause reflow.
+ */
+@keyframes enter-soft {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility enter-soft {
+  animation: enter-soft var(--duration-base) var(--ease-out-soft) both;
+}
+
+/**
+ * A spinner that has nothing to show yet. Prefer skeletons for known shapes; this is for the
+ * gap where the shape is not known.
+ */
+@utility pending-soft {
+  transition: opacity var(--duration-base) var(--ease-out-soft);
+}
+
+/**
+ * The sheet/overlay pair from Radix. These replace `animate-in`/`animate-out`, which are
+ * utility classes from a plugin this project does not install — they were dead classes that
+ * made every drawer snap open with no transition at all.
+ */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes panel-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes panel-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@layer components {
+  [data-slot="overlay"][data-state="open"] {
+    animation: overlay-in var(--duration-base) var(--ease-out-soft);
+  }
+
+  [data-slot="panel"][data-side="right"][data-state="open"] {
+    animation: panel-in-right var(--duration-base) var(--ease-out-soft);
+  }
+
+  [data-slot="panel"][data-side="left"][data-state="open"] {
+    animation: panel-in-left var(--duration-base) var(--ease-out-soft);
+  }
+}
+
+/**
+ * Non-negotiable: motion is decoration. Anything that moves must stop for people who asked
+ * for less of it, and a pulsing skeleton must not pulse forever.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

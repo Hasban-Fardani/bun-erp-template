@@ -1,6 +1,4 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import type { AppContext } from "../context.ts";
@@ -21,11 +19,14 @@ afterAll(async () => {
   await ctx?.close();
 });
 
-/** Fresh directory per test: a migration run must be reproducible, not order-dependent. */
+/**
+ * Fresh directory per test: a migration run must be reproducible, not order-dependent.
+ * `mktemp -d` stands in for `mkdtemp` — Bun exposes no temp-directory API of its own.
+ */
 async function scopedDir(files: Record<string, string>): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "erp-migrations-"));
+  const dir = (await Bun.$`mktemp -d -t erp-migrations-XXXXXX`.text()).trim();
   for (const [name, body] of Object.entries(files)) {
-    await writeFile(join(dir, name), body, "utf8");
+    await Bun.write(join(dir, name), body);
   }
   return dir;
 }
@@ -61,7 +62,7 @@ describe("migration runner", () => {
     expect(await migrate(ctx.db, dir)).toEqual(["0001_probe.sql", "0002_more.sql"]);
 
     // Same directory, one file richer: only the newcomer should run.
-    await writeFile(join(dir, "0003_late.sql"), "alter table probe_widgets add column note text;", "utf8");
+    await Bun.write(join(dir, "0003_late.sql"), "alter table probe_widgets add column note text;");
     expect(await migrate(ctx.db, dir)).toEqual(["0003_late.sql"]);
     expect(await appliedNames(ctx)).toEqual(["0001_probe.sql", "0002_more.sql", "0003_late.sql"]);
   });
@@ -88,7 +89,7 @@ describe("migration runner", () => {
     expect(entries.length).toBeGreaterThan(0);
     for (const name of entries) {
       expect(name).toMatch(/^\d{4}_[a-z0-9_]+\.sql$/);
-      expect((await readFile(join(dir, name), "utf8")).trim().length).toBeGreaterThan(0);
+      expect((await Bun.file(join(dir, name)).text()).trim().length).toBeGreaterThan(0);
     }
   });
 });

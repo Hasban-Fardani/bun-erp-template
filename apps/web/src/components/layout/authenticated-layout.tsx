@@ -164,7 +164,7 @@ function Topbar({ session }: { session: SessionData }) {
             </UserMenu.Root>
           </div>
         </header>
-        <main className="flex-1">
+        <main className="enter-soft flex-1">
           <Outlet />
         </main>
       </div>

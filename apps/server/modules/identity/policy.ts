@@ -13,6 +13,9 @@ export type Actor = {
   organizationId: string | null;
   permissions: readonly PermissionKey[];
   traceId: string;
+  /** Display name, so `/me` can answer the whole identity question in one request. */
+  name: string;
+  email: string;
   /** Actor name as frozen text for the audit — names can change, records cannot. */
   label: string;
 };
@@ -36,6 +39,8 @@ export async function resolveActor(c: Context, ctx: AppContext): Promise<Actor |
     organizationId: user.organizationId ?? null,
     permissions: await permissionsForUser(ctx.db, user.id),
     traceId: (c.get("requestId") as string | undefined) ?? "",
+    name: user.name ?? "",
+    email: user.email ?? "",
     // Email outlives the display name, and stays readable during an investigation.
     label: user.email ?? user.name ?? "",
   };

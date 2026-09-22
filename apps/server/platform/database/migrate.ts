@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import type { Database } from "./index.ts";
@@ -23,7 +22,7 @@ export async function migrate(db: Database, dir: string): Promise<string[]> {
 
   for (const file of files) {
     if (applied.has(file)) continue;
-    const body = await readFile(join(dir, file), "utf8");
+    const body = await Bun.file(join(dir, file)).text();
     // One file = one transaction: a failed migration leaves no half-built schema.
     await db.transaction(async (tx) => {
       for (const statement of splitStatements(body)) {

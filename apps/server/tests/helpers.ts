@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { type AppContext, createContext, resolveDefaultOrganizationId } from "../context.ts";
 import { createApp } from "../http/app.ts";
+import { resetPermissionCache } from "../modules/rbac/cache.ts";
 import { roles } from "../modules/rbac/data.ts";
 import { assignRole } from "../modules/rbac/service.ts";
 import type { Env } from "../platform/config/index.ts";
@@ -71,6 +72,9 @@ export type HttpFixture = Awaited<ReturnType<typeof createHttpFixture>>;
 
 export async function createHttpFixture() {
   const ctx = await createTestContext();
+  // The permission cache is process-wide, so a fixture from a previous file could otherwise
+  // hand this file a stale permission set for the same user id.
+  resetPermissionCache();
   await truncateAll(ctx);
   await seed(ctx.db);
   const organizationId = await resolveDefaultOrganizationId(ctx.db);

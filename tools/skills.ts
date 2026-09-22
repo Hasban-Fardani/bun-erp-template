@@ -1,4 +1,3 @@
-import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
@@ -10,7 +9,7 @@ export type SkillFinding = { file: string; message: string };
 export async function validateSkills(dir: string): Promise<SkillFinding[]> {
   let names: string[] = [];
   try {
-    names = (await readdir(dir)).sort();
+    names = [...new Bun.Glob("*/SKILL.md").scanSync({ cwd: dir })].map((p) => p.split("/")[0] as string).sort();
   } catch {
     return [];
   }
@@ -18,10 +17,7 @@ export async function validateSkills(dir: string): Promise<SkillFinding[]> {
   const findings: SkillFinding[] = [];
 
   for (const name of names) {
-    const path = join(dir, name);
-    if (!(await stat(path)).isDirectory()) continue;
-
-    const skillFile = join(path, "SKILL.md");
+    const skillFile = join(dir, name, "SKILL.md");
     if (!(await Bun.file(skillFile).exists())) {
       findings.push({ file: name, message: "missing SKILL.md" });
       continue;

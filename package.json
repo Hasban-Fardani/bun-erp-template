@@ -8,7 +8,13 @@
     "apps/web"
   ],
   "scripts": {
-    "erp": "bun erp.ts"
+    "erp": "bun erp.ts",
+    "dev": "bun erp dev",
+    "build": "bun erp build",
+    "start": "bun apps/server/server.ts",
+    "check": "bun erp check",
+    "check:prod": "bun erp check:prod",
+    "test": "bun erp test"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2"

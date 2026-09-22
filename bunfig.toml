@@ -1,0 +1,4 @@
+[test]
+# Default is 5s. These are integration tests: each file builds a PGlite database and runs the
+# real migrations, so a cold run on a small VPS can exceed 5s and fail for no real reason.
+timeout = 30000

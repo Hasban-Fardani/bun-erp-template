@@ -4,20 +4,33 @@ import { ApiError, api, apiUrl } from "../../lib/api.ts";
 import type { Paged } from "../../shared/lib/list-types.ts";
 import type { PublicUser, SessionView } from "./types.ts";
 
+/**
+ * One request, not two: `/me` already answers "who am I and what may I do" in the app's own
+ * envelope. A 401 there means no session; a 403 means a valid session whose role grants
+ * nothing — both are normal states to render, not errors to throw.
+ */
 export function useSession() {
   return useQuery({
     queryKey: ["session"],
     queryFn: async (): Promise<SessionView> => {
-      // Better Auth responses do NOT go through the API's {data,meta} envelope — read raw.
-      const res = await fetch(apiUrl("/api/v1/auth/get-session"), { credentials: "include" });
-      if (!res.ok) throw new Error(`Gagal memeriksa sesi (HTTP ${res.status})`);
-      const auth = (await res.json()) as { user?: { id: string; name: string; email: string } | null } | null;
-      if (!auth?.user) return { authenticated: false, user: null, permissions: [] };
-      // 403 on /me = valid identity without permission (not a dead session) — do not throw it as an error.
       const me = await api
-        .get<{ userId: string; organizationId: string | null; permissions: string[] }>("/api/v1/me")
-        .catch((err) => (err instanceof ApiError && err.status === 403 ? null : Promise.reject(err)));
-      return { authenticated: true, user: auth.user, permissions: me?.permissions ?? [] };
+        .get<{
+          userId: string;
+          name: string;
+          email: string;
+          organizationId: string | null;
+          permissions: string[];
+        }>("/api/v1/me")
+        .catch((err: unknown) => {
+          if (err instanceof ApiError && (err.status === 401 || err.status === 403)) return null;
+          throw err;
+        });
+      if (!me) return { authenticated: false, user: null, permissions: [] };
+      return {
+        authenticated: true,
+        user: { id: me.userId, name: me.name, email: me.email },
+        permissions: me.permissions,
+      };
     },
     staleTime: 30_000,
   });

@@ -1,5 +1,4 @@
-import { mkdirSync } from "node:fs";
-import { dirname, isAbsolute } from "node:path";
+import { isAbsolute } from "node:path";
 import pino, { type Logger } from "pino";
 import type { Env } from "../config/index.ts";
 
@@ -30,7 +29,7 @@ function destination(env: Env): pino.DestinationStream {
   if (!isAbsolute(env.LOG_PATH)) {
     throw new Error("LOG_PATH must be absolute when LOG_DRIVER=daily");
   }
-  mkdirSync(dirname(env.LOG_PATH), { recursive: true });
+  // pino creates the directory itself when `mkdir` is set — no filesystem call needed here.
   return pino.destination({ dest: env.LOG_PATH, sync: false, mkdir: true });
 }
 

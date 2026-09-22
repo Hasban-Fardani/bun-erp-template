@@ -2,7 +2,6 @@
  * Thin CLI wrapper (PRD §11). Commands call the same modules as the runtime —
  * the CLI keeps no logic of its own.
  */
-import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { createContext, resolveDefaultOrganizationId } from "./apps/server/context.ts";
@@ -56,7 +55,7 @@ class GateFailure extends Error {
 }
 
 /** Gates read repo files directly — used by `check` and callable on their own. */
-async function runGate(kind: "skills" | "task" | "scope" | "slop"): Promise<void> {
+async function runGate(kind: "skills" | "task" | "scope" | "slop" | "platform"): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
     findings = (await validateSkills(SKILLS_DIR)).map((f) => `${f.file}: ${f.message}`);
@@ -67,6 +66,9 @@ async function runGate(kind: "skills" | "task" | "scope" | "slop"): Promise<void
   } else if (kind === "slop") {
     const { findCodeSlop } = await import("./tools/slop.ts");
     findings = await findCodeSlop(repoRoot);
+  } else if (kind === "platform") {
+    const { checkPlatform } = await import("./tools/platform.ts");
+    findings = (await checkPlatform(repoRoot)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`);
   } else {
     const { findReactDoctorIssues } = await import("./tools/react-doctor.ts");
     findings = await findReactDoctorIssues(repoRoot);
@@ -82,6 +84,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await guard("task", () => runGate("task"));
     await guard("scope", () => runGate("scope"));
     await guard("slop", () => runGate("slop"));
+    await guard("platform", () => runGate("platform"));
     await guard("react", () => runGate("react"));
     process.stdout.write("check: OK\n");
   },
@@ -114,6 +117,22 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
   dev: async () => {
     await run(["bun", "--watch", "apps/server/server.ts"], "server (watch)");
+  },
+
+  /** Production build: web only. The API ships as source, run by `bun server.ts`. */
+  build: async () => {
+    await run(["bun", "run", "--cwd", "apps/web", "build"], "web build (vite)");
+    process.stdout.write("build: OK — output in apps/web/dist\n");
+  },
+
+  /** Readiness gate: the checks that only matter when this stops being a laptop project. */
+  "check:prod": async () => {
+    await guard("readiness", async () => {
+      const { checkReadiness } = await import("./tools/readiness.ts");
+      const findings = (await checkReadiness(repoRoot)).map((f) => `${f.rule}: ${f.detail}`);
+      if (findings.length > 0) throw new GateFailure(findings);
+    });
+    process.stdout.write("check:prod: OK\n");
   },
   "env:list": async () => {
     const env = loadEnv();
@@ -265,7 +284,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
   "db:status": async () => {
     const ctx = await createContext({ migrateOnStart: false });
-    const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
+    const files = [...new Bun.Glob("*.sql").scanSync({ cwd: MIGRATIONS_DIR })].sort();
     // Same unwrapping as the runner: PGlite returns `{ rows }`, postgres-js an array.
     const rows = rowsOf<{ name: string }>(await ctx.db.execute(sql`select name from _migrations`));
     const applied = new Set(rows.map((row) => row.name));
@@ -305,8 +324,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "check:migrations": async () => {
-    const files = await readdir(MIGRATIONS_DIR);
-    const sql = files.filter((f) => f.endsWith(".sql")).sort();
+    const sql = [...new Bun.Glob("*.sql").scanSync({ cwd: MIGRATIONS_DIR })].sort();
     const bad = sql.filter((f) => !/^\d{4}_[a-z0-9_]+\.sql$/.test(f));
     if (bad.length > 0) {
       process.stderr.write(`Migration names must be NNNN_snake_case.sql: ${bad.join(", ")}\n`);

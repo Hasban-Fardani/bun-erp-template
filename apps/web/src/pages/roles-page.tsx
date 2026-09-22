@@ -16,6 +16,7 @@ import { ApiError } from "../lib/api.ts";
 import { useTableState } from "../shared/lib/use-table-state.ts";
 import type { Column } from "../shared/ui/data-table.tsx";
 import { Badge, Button, Card, ConfirmDelete, EmptyState, IconButton } from "../shared/ui/primitives.tsx";
+import { PageLoading } from "../shared/ui/table-states.tsx";
 
 const columns: Column<Role>[] = [
   {
@@ -66,7 +67,7 @@ export function RolesPage() {
   const [notice, setNotice] = useState("");
 
   if (session.isPending) {
-    return <div className="flex min-h-dvh items-center justify-center text-[13px] text-ink-muted">Memuat…</div>;
+    return <PageLoading label="Memuat sesi…" />;
   }
   if (!session.data?.authenticated) return <Navigate to="/login" replace />;
 

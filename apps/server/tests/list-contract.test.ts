@@ -2,8 +2,6 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { createHttpFixture, type HttpFixture } from "./helpers.ts";
 
 let api: HttpFixture;
-let { app } = {} as HttpFixture;
-let cookie = "";
 
 const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
 
@@ -14,7 +12,7 @@ type ListBody<T> = {
 type Named = { id: string; name: string; email: string };
 
 const get = async <T>(path: string): Promise<ListBody<T>> => {
-  const res = await app.request(path, { headers: { cookie } });
+  const res = await api.app.request(path, { headers: { cookie: api.cookie } });
   expect(res.status).toBe(200);
   return (await res.json()) as ListBody<T>;
 };
@@ -22,7 +20,7 @@ const get = async <T>(path: string): Promise<ListBody<T>> => {
 /** The owner created by `loginOwner` is already a row, so counts start at one. */
 const seedUsers = async (...names: string[]) => {
   for (const name of names) {
-    const res = await app.request(
+    const res = await api.app.request(
       "/api/v1/users",
       json({ name, email: `${name.toLowerCase()}@example.test`, password: "sandi-panjang" }),
     );
@@ -32,8 +30,7 @@ const seedUsers = async (...names: string[]) => {
 
 beforeEach(async () => {
   api = await createHttpFixture();
-  ({ app } = api);
-  cookie = await api.signInAsOwner();
+  await api.signInAsOwner();
 });
 
 afterAll(async () => {
@@ -58,7 +55,7 @@ describe("list contract", () => {
   });
 
   test("roles are paginated too, and report a stable total", async () => {
-    const res = await app.request("/api/v1/roles?perPage=1", { headers: { cookie } });
+    const res = await api.app.request("/api/v1/roles?perPage=1", { headers: { cookie: api.cookie } });
     expect(res.status).toBe(200);
     const body = (await res.json()) as ListBody<{ key: string }>;
     expect(body.data.items).toHaveLength(1);
@@ -86,7 +83,7 @@ describe("list contract", () => {
   });
 
   test("an unknown sort column is rejected, not silently ignored", async () => {
-    const res = await app.request("/api/v1/users?sort=password", { headers: { cookie } });
+    const res = await api.app.request("/api/v1/users?sort=password", { headers: { cookie: api.cookie } });
     expect(res.status).toBe(422);
     const body = (await res.json()) as { error: { code: string; fields: { path: string }[] } };
     expect(body.error.code).toBe("VALIDATION_FAILED");

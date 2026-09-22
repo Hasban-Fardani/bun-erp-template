@@ -7,26 +7,6 @@ export function Card({ className, children }: { className?: string; children: Re
   return <div className={cn("rounded-lg border border-border bg-surface", className)}>{children}</div>;
 }
 
-export function CardHeader({
-  title,
-  description,
-  action,
-}: {
-  title: string;
-  description?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border/70">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        {description ? <p className="text-[13px] text-ink-muted">{description}</p> : null}
-      </div>
-      {action}
-    </div>
-  );
-}
-
 export function Badge({ tone = "neutral", children }: { tone?: "neutral" | "accent"; children: ReactNode }) {
   return (
     <span

@@ -10,6 +10,7 @@ import { relativeTime } from "../shared/lib/format.ts";
 import { useTableState } from "../shared/lib/use-table-state.ts";
 import type { Column } from "../shared/ui/data-table.tsx";
 import { Badge, Button, Card, ConfirmDelete, IconButton } from "../shared/ui/primitives.tsx";
+import { PageLoading } from "../shared/ui/table-states.tsx";
 
 const columns: Column<PublicUser>[] = [
   { key: "name", header: "Nama", sortable: true, cell: (u) => <span className="font-medium">{u.name}</span> },
@@ -171,5 +172,5 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function Loading() {
-  return <div className="flex min-h-dvh items-center justify-center text-[13px] text-ink-muted">Memuat…</div>;
+  return <PageLoading label="Memuat sesi…" />;
 }

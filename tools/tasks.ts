@@ -1,4 +1,3 @@
-import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 /** F1.11 — ready/done require approved_by + evidence; an agent cannot raise them silently. */
@@ -35,7 +34,7 @@ function parseFrontMatter(body: string): Record<string, string> {
 export async function loadTasks(dir: string): Promise<Task[]> {
   let files: string[] = [];
   try {
-    files = (await readdir(dir)).filter((f) => f.endsWith(".md")).sort();
+    files = [...new Bun.Glob("*.md").scanSync({ cwd: dir })].sort();
   } catch {
     return [];
   }

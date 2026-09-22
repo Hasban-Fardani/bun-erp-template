@@ -4,6 +4,7 @@ import { toOffset } from "../../http/list-query.ts";
 import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { recordAudit, snapshot } from "../audit/service.ts";
+import { invalidateAll, invalidateUser, readCachedPermissions, writeCachedPermissions } from "./cache.ts";
 import { permissions, rolePermissions, roles, userRoles } from "./data.ts";
 import type { ListRolesInput } from "./schema.ts";
 import { allPermissions, type PermissionKey, type SystemRoleKey, systemRoles } from "./statements.ts";
@@ -79,6 +80,9 @@ export async function seedRbac(db: Database, organizationId: string): Promise<{ 
 
 /** Union of permissions across all of a user's roles. Per-record filtering is the module policy's job. */
 export async function permissionsForUser(db: Database, userId: string): Promise<PermissionKey[]> {
+  const cached = readCachedPermissions(userId);
+  if (cached) return [...cached];
+
   const rows = await db
     .selectDistinct({ key: permissions.key })
     .from(userRoles)
@@ -86,7 +90,9 @@ export async function permissionsForUser(db: Database, userId: string): Promise<
     .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
     .where(eq(userRoles.userId, userId));
 
-  return rows.map((r) => r.key) as PermissionKey[];
+  const resolved = rows.map((r) => r.key) as PermissionKey[];
+  writeCachedPermissions(userId, resolved);
+  return resolved;
 }
 
 /** Roles a user holds along with their scopes — the UI uses this to show context. */
@@ -284,6 +290,8 @@ export async function setRolePermissions(
       after: { entity: "role", id, permissions: [...keys].sort() },
       traceId: actor.traceId,
     });
+    // Permission edits affect an unknown set of users, so the whole cache goes.
+    invalidateAll();
     return { permissions: [...keys].sort() };
   });
 }
@@ -326,6 +334,7 @@ export async function assignRole(
   if (existing.length > 0) return;
 
   await db.insert(userRoles).values({ userId: input.userId, roleId: input.roleId, scopeType, scopeId });
+  invalidateUser(input.userId);
 }
 
 export async function revokeRole(db: Database, userId: string, roleId: string): Promise<boolean> {
@@ -333,5 +342,6 @@ export async function revokeRole(db: Database, userId: string, roleId: string): 
     .delete(userRoles)
     .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)))
     .returning({ id: userRoles.id });
+  if (rows.length > 0) invalidateUser(userId);
   return rows.length > 0;
 }

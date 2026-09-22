@@ -60,6 +60,8 @@ export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppC
         type: "object",
         properties: {
           userId: { type: "string" },
+          name: { type: "string" },
+          email: { type: "string" },
           organizationId: { type: ["string", "null"] },
           permissions: { type: "array", items: { type: "string" } },
         },
@@ -69,6 +71,8 @@ export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppC
       const actor = await requireActor(c, ctx);
       return ok(c, {
         userId: actor.userId,
+        name: actor.name,
+        email: actor.email,
         organizationId: actor.organizationId,
         permissions: actor.permissions,
       });

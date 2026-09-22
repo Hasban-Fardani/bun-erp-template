@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRi
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 import { IconButton } from "./primitives.tsx";
+import { TableEmpty, TableSkeleton } from "./table-states.tsx";
 
 export type Column<T> = {
   key: string;
@@ -23,7 +24,8 @@ type DataTableProps<T> = {
   dir: "asc" | "desc";
   onSort: (key: string) => void;
   /** Rendered when there is no data at all; `filtered` distinguishes "empty" from "no match". */
-  empty: { filtered: boolean; message?: string };
+  /** `action` is the way out: an empty table with no next step is a dead end. */
+  empty: { filtered: boolean; message?: string; action?: ReactNode };
   pending?: boolean;
   error?: string;
   /** Actions column, rendered as icons. */
@@ -52,29 +54,33 @@ export function DataTable<T>({
   actions,
   caption,
 }: DataTableProps<T>) {
-  if (error) return <TableNotice tone="danger" message={error} />;
-  if (pending && rows.length === 0) return <TableNotice message="Memuat…" />;
+  // Skeletons, not a sentence: the table keeps its shape while data lands, so the page does
+  // not jump between "Memuat…" and thirty rows.
+  if (pending && rows.length === 0) return <TableSkeleton columns={columns.length + (actions ? 1 : 0)} />;
+  if (error) return <TableEmpty cause="error" message={error} />;
   if (rows.length === 0) {
     return (
-      <TableNotice
-        message={empty.filtered ? (empty.message ?? "Tidak ada yang cocok dengan pencarian.") : "Belum ada data."}
+      <TableEmpty
+        cause={empty.filtered ? "no-match" : "no-data"}
+        message={empty.filtered ? empty.message : undefined}
+        action={empty.filtered ? undefined : empty.action}
       />
     );
   }
 
   return (
     <>
-      <div className="relative hidden md:block">
+      <div className="enter-soft relative hidden md:block" key={`desktop-${rowKey(rows[0] as T)}`}>
         <table className="w-full text-[13.5px]">
           {caption ? <caption className="sr-only">{caption}</caption> : null}
           <thead>
-            <tr className="border-b border-border text-left text-[12px] font-medium text-ink-muted">
+            <tr className="border-b border-border text-left text-xs font-medium tracking-wide text-ink-soft">
               {columns.map((column) => (
                 <th
                   key={column.key}
                   scope="col"
                   aria-sort={sort === column.key ? (dir === "asc" ? "ascending" : "descending") : "none"}
-                  className={cn("px-4 py-2.5", column.align === "right" && "text-right")}
+                  className={cn("px-4 py-3", column.align === "right" && "text-right")}
                 >
                   {column.sortable ? (
                     <SortButton column={column} active={sort === column.key} dir={dir} onSort={onSort} />
@@ -84,7 +90,7 @@ export function DataTable<T>({
                 </th>
               ))}
               {actions ? (
-                <th scope="col" className="px-4 py-2.5 text-right">
+                <th scope="col" className="px-4 py-3 text-right">
                   Aksi
                 </th>
               ) : null}
@@ -92,12 +98,15 @@ export function DataTable<T>({
           </thead>
           <tbody className={cn(pending && "opacity-60")}>
             {rows.map((row) => (
-              <tr key={rowKey(row)} className="border-b border-border/50 last:border-0">
+              <tr
+                key={rowKey(row)}
+                className="border-b border-border transition-colors last:border-0 hover:bg-background"
+              >
                 {columns.map((column) => (
                   <td
                     key={column.key}
                     className={cn(
-                      "px-4 py-2.5",
+                      "px-4 py-3",
                       column.secondary && "hidden lg:table-cell",
                       column.align === "right" && "text-right",
                     )}
@@ -106,7 +115,7 @@ export function DataTable<T>({
                   </td>
                 ))}
                 {actions ? (
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">{actions(row)}</div>
                   </td>
                 ) : null}
@@ -117,14 +126,17 @@ export function DataTable<T>({
       </div>
 
       {/* Mobile: one card per row. Same data, same actions, no horizontal scroll. */}
-      <ul className={cn("divide-y divide-border/60 md:hidden", pending && "opacity-60")}>
+      <ul
+        key={`mobile-${rowKey(rows[0] as T)}`}
+        className={cn("enter-soft divide-y divide-border md:hidden", pending && "opacity-60")}
+      >
         {rows.map((row) => (
           <li key={rowKey(row)} className="flex items-start gap-3 px-4 py-3">
             <div className="min-w-0 flex-1 space-y-1">
               {columns.map((column, index) => (
                 <div
                   key={column.key}
-                  className={cn(index === 0 ? "text-[14px] font-medium" : "flex gap-2 text-[12.5px] text-ink-soft")}
+                  className={cn(index === 0 ? "text-sm font-medium text-ink" : "flex gap-2 text-xs text-ink-soft")}
                 >
                   {index === 0 ? (
                     column.cell(row)
@@ -162,7 +174,7 @@ function SortButton<T>({
       type="button"
       onClick={() => onSort(column.key)}
       className={cn(
-        "inline-flex items-center gap-1 rounded-sm outline-none transition-colors",
+        "inline-flex items-center gap-1 rounded-sm -mx-1 px-1 py-0.5 outline-none transition-colors",
         "hover:text-ink focus-visible:ring-2 focus-visible:ring-accent/40",
         active ? "text-ink" : "text-ink-muted",
       )}
@@ -170,19 +182,8 @@ function SortButton<T>({
       {column.header}
       {/* Only the active column shows an arrow: a faded arrow on every header reads as if
           the table were sorted by all of them at once. */}
-      {active ? <Icon size={12} aria-hidden="true" /> : null}
+      {active ? <Icon size={14} aria-hidden="true" /> : null}
     </button>
-  );
-}
-
-function TableNotice({ message, tone = "muted" }: { message: string; tone?: "muted" | "danger" }) {
-  return (
-    <p
-      role={tone === "danger" ? "alert" : undefined}
-      className={cn("px-4 py-10 text-center text-[13px]", tone === "danger" ? "text-danger" : "text-ink-muted")}
-    >
-      {message}
-    </p>
   );
 }
 

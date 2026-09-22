@@ -1,4 +1,3 @@
-import { mkdirSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
@@ -10,10 +9,13 @@ export type Database = ReturnType<typeof drizzlePglite<typeof schema>>;
 
 type Handle = { db: Database; close: () => Promise<void> };
 
-/** PGlite only creates the deepest directory, not its parents (`.data/pglite`). */
-function ensurePgliteDir(path: string): void {
+/**
+ * PGlite creates only the deepest directory, not its parents (`.data/pglite`), and Bun has no
+ * `mkdir` API, so this shells out. `Bun.write` would create parents but also leaves a file.
+ */
+async function ensurePgliteDir(path: string): Promise<void> {
   if (path === "memory://") return;
-  mkdirSync(path, { recursive: true });
+  await Bun.$`mkdir -p ${path}`.quiet();
 }
 
 /** The driver stays hidden here; other modules receive the same `db` (ADR-0010). */
