@@ -1,5 +1,7 @@
 import { and, eq, ilike, sql } from "drizzle-orm";
 import { ApiError } from "../../http/errors.ts";
+import { toOffset } from "../../http/list-query.ts";
+import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { departments } from "./data.ts";
 import type { CreateDepartmentInput, ListDepartmentsInput, UpdateDepartmentInput } from "./schema.ts";
@@ -21,7 +23,13 @@ export async function listDepartments(
   );
 
   const [items, count] = await Promise.all([
-    db.select().from(departments).where(where).orderBy(departments.name).limit(input.limit).offset(input.offset),
+    db
+      .select()
+      .from(departments)
+      .where(where)
+      .orderBy(...orderByColumn(departments, input.sort, input.dir))
+      .limit(input.perPage)
+      .offset(toOffset(input).offset),
     db.select({ total: sql<number>`count(*)::int` }).from(departments).where(where),
   ]);
 

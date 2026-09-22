@@ -3,8 +3,9 @@ import type { AppContext } from "../../context.ts";
 import { doc } from "../../http/api-docs.ts";
 import type { AppVariables } from "../../http/app.ts";
 import { ok, parseInput } from "../../http/errors.ts";
+import { listMeta, listMetaSchemaProperties } from "../../http/list-query.ts";
 import { requirePermission } from "../identity/policy.ts";
-import { CreateRoleInput, SetRolePermissionsInput, UpdateRoleInput } from "./schema.ts";
+import { CreateRoleInput, ListRolesInput, SetRolePermissionsInput, UpdateRoleInput } from "./schema.ts";
 import { createRole, deleteRole, listRoles, permissionsForRole, setRolePermissions, updateRole } from "./service.ts";
 import { allPermissions, statements, systemRoles } from "./statements.ts";
 
@@ -32,19 +33,18 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
           summary: "Daftar role organisasi beserta izinnya",
           data: {
             type: "object",
-            properties: { items: { type: "array", items: roleRef }, total: { type: "integer" } },
+            properties: { items: { type: "array", items: roleRef }, ...listMetaSchemaProperties },
           },
         }),
         async (c) => {
           const actor = await requirePermission(c, ctx, "role.read");
           const orgId = actor.organizationId ?? organizationId;
-          const items = await Promise.all(
-            (await listRoles(ctx.db, orgId)).map(async (role) => ({
-              ...role,
-              permissions: await permissionsForRole(ctx.db, role.id),
-            })),
+          const input = parseInput(ListRolesInput, c.req.query());
+          const { items, total } = await listRoles(ctx.db, orgId, input);
+          const withPermissions = await Promise.all(
+            items.map(async (role) => ({ ...role, permissions: await permissionsForRole(ctx.db, role.id) })),
           );
-          return ok(c, { items, total: items.length });
+          return ok(c, { items: withPermissions, ...listMeta(input, total) });
         },
       )
       .post(

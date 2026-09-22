@@ -76,7 +76,7 @@ describe("departments", () => {
 
   test("list is scoped to organization", async () => {
     await app.request("/api/v1/departments", json({ name: "A", code: "AA" }));
-    const res = await app.request("/api/v1/departments?limit=10", { headers: { cookie } });
+    const res = await app.request("/api/v1/departments?perPage=10", { headers: { cookie } });
     const body = (await res.json()) as { data: { items: { organizationId: string }[]; total: number } };
     expect(body.data.total).toBe(1);
     expect(body.data.items[0]?.organizationId).toBe(orgId);

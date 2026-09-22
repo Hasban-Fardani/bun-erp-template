@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { listQueryParts } from "../../http/list-query.ts";
 
 /**
  * HTTP input contract for user management. Authentication (sign-up/sign-in) is handled by
@@ -6,8 +7,7 @@ import * as z from "zod";
  */
 
 export const listUsersSchema = z.strictObject({
-  limit: z.coerce.number().int().min(1).max(100).default(25),
-  offset: z.coerce.number().int().min(0).default(0),
+  ...listQueryParts({ sortable: ["name", "email", "createdAt"], defaultSort: "name" }),
   search: z.string().trim().max(120).optional(),
 });
 

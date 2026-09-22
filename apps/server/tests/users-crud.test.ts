@@ -110,7 +110,7 @@ describe("users CRUD", () => {
     );
     expect(signIn.status).toBe(401);
 
-    const audit = await app.request("/api/v1/audit-logs?limit=50", { headers: { cookie } });
+    const audit = await app.request("/api/v1/audit-logs?perPage=50", { headers: { cookie } });
     const list = (await audit.json()) as { data: { items: { event: string; subjectId: string | null }[] } };
     const events = list.data.items.filter((i) => i.subjectId === data.id).map((i) => i.event);
     expect(events).toContain("user.created");

@@ -1,7 +1,10 @@
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { toOffset } from "../../http/list-query.ts";
+import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { auditLogs } from "./data.ts";
 import { redactEntity } from "./redact.ts";
+import type { ListAuditInput } from "./schema.ts";
 
 export { redactEntity as snapshot };
 
@@ -38,15 +41,7 @@ export async function recordAudit(db: Database, entry: AuditEvent): Promise<void
 export async function listAuditLogs(
   db: Database,
   organizationId: string,
-  input: {
-    limit: number;
-    offset: number;
-    event?: string;
-    subjectType?: string;
-    subjectId?: string;
-    since?: Date;
-    until?: Date;
-  },
+  input: ListAuditInput,
 ): Promise<{ items: AuditLog[]; total: number }> {
   const where = and(
     eq(auditLogs.organizationId, organizationId),
@@ -58,7 +53,13 @@ export async function listAuditLogs(
   );
 
   const [items, count] = await Promise.all([
-    db.select().from(auditLogs).where(where).orderBy(desc(auditLogs.createdAt)).limit(input.limit).offset(input.offset),
+    db
+      .select()
+      .from(auditLogs)
+      .where(where)
+      .orderBy(...orderByColumn(auditLogs, input.sort, input.dir))
+      .limit(input.perPage)
+      .offset(toOffset(input).offset),
     db.select({ total: sql<number>`count(*)::int` }).from(auditLogs).where(where),
   ]);
 

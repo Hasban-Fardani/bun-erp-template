@@ -3,6 +3,7 @@ import type { AppContext } from "../../context.ts";
 import { doc } from "../../http/api-docs.ts";
 import type { AppVariables } from "../../http/app.ts";
 import { ApiError, ok, parseInput } from "../../http/errors.ts";
+import { listMeta, listMetaSchemaProperties } from "../../http/list-query.ts";
 import { requirePermission } from "../identity/policy.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
 import { CreateDepartmentInput, ListDepartmentsInput, UpdateDepartmentInput } from "./schema.ts";
@@ -12,12 +13,7 @@ const departmentRef = { $ref: "#/components/schemas/Department" } as const;
 
 const listData = {
   type: "object",
-  properties: {
-    items: { type: "array", items: departmentRef },
-    total: { type: "integer" },
-    limit: { type: "integer" },
-    offset: { type: "integer" },
-  },
+  properties: { items: { type: "array", items: departmentRef }, ...listMetaSchemaProperties },
 };
 
 /**
@@ -39,7 +35,7 @@ export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string
         const actor = await requirePermission(c, ctx, ACTION_PERMISSION.list);
         const input = parseInput(ListDepartmentsInput, c.req.query());
         const { items, total } = await listDepartments(ctx.db, actor.organizationId ?? fallbackOrganizationId, input);
-        return ok(c, { items, total, limit: input.limit, offset: input.offset });
+        return ok(c, { items, ...listMeta(input, total) });
       },
     )
     .get(

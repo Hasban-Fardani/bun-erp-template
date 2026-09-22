@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { listQueryParts } from "../../http/list-query.ts";
 
 /**
  * The module's HTTP input contract. Raw definitions are exported so the parity test (F1.16)
@@ -26,8 +27,7 @@ export const updateDepartmentSchema = z.strictObject({
 });
 
 export const listDepartmentsSchema = z.strictObject({
-  limit: z.coerce.number().int().min(1).max(100).default(25),
-  offset: z.coerce.number().int().min(0).default(0),
+  ...listQueryParts({ sortable: ["name", "code", "createdAt"], defaultSort: "name" }),
   search: z.string().trim().max(120).optional(),
 });
 

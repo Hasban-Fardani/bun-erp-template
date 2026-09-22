@@ -3,6 +3,7 @@ import type { AppContext } from "../../context.ts";
 import { doc } from "../../http/api-docs.ts";
 import type { AppVariables } from "../../http/app.ts";
 import { ApiError, ok, parseInput } from "../../http/errors.ts";
+import { listMeta, listMetaSchemaProperties } from "../../http/list-query.ts";
 import { requirePermission } from "./policy.ts";
 import { AssignRoleInput, CreateUserInput, ListUsersInput, listUsersSchema, UpdateUserInput } from "./schema.ts";
 import { assignUserRole, createUser, deleteUser, findUser, listUsers, revokeUserRole, updateUser } from "./service.ts";
@@ -11,12 +12,7 @@ const userRef = { $ref: "#/components/schemas/PublicUser" } as const;
 
 const listData = {
   type: "object",
-  properties: {
-    items: { type: "array", items: userRef },
-    total: { type: "integer" },
-    limit: { type: "integer" },
-    offset: { type: "integer" },
-  },
+  properties: { items: { type: "array", items: userRef }, ...listMetaSchemaProperties },
 };
 
 const actorOf = (actor: { userId: string; traceId: string; label: string }) => ({
@@ -41,7 +37,7 @@ export function identityRoutes(ctx: AppContext, organizationId: string): Hono<{ 
         const actor = await requirePermission(c, ctx, "user.read");
         const input = parseInput(ListUsersInput, c.req.query());
         const { items, total } = await listUsers(ctx.db, actor.organizationId ?? organizationId, input);
-        return ok(c, { items, total, limit: input.limit, offset: input.offset });
+        return ok(c, { items, ...listMeta(input, total) });
       },
     )
     .get(

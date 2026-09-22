@@ -1,9 +1,9 @@
 import * as z from "zod";
+import { listQueryParts } from "../../http/list-query.ts";
 
 /** Audit log filters. The time range uses ISO strings so it stays URL-friendly. */
 export const listAuditSchema = z.strictObject({
-  limit: z.coerce.number().int().min(1).max(100).default(25),
-  offset: z.coerce.number().int().min(0).default(0),
+  ...listQueryParts({ sortable: ["createdAt", "event", "actorLabel"], defaultSort: "createdAt", defaultDir: "desc" }),
   event: z.string().trim().max(120).optional(),
   subjectType: z.string().trim().max(60).optional(),
   subjectId: z.string().trim().max(120).optional(),

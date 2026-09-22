@@ -104,7 +104,7 @@ describe("roles CRUD", () => {
     expect(bogus.status).toBe(422);
 
     // A custom role in use: deleting it revokes people's access, so it must be refused.
-    const users = await app.request("/api/v1/users?limit=5", { headers: { cookie } });
+    const users = await app.request("/api/v1/users?perPage=5", { headers: { cookie } });
     const target = ((await users.json()) as { data: { items: { id: string }[] } }).data.items[0];
     const assigned = await app.request(`/api/v1/users/${target?.id}/roles`, json({ roleKey: "auditor" }));
     expect(assigned.status).toBe(200);
@@ -122,7 +122,7 @@ describe("roles CRUD", () => {
     await app.request(`/api/v1/roles/${role.id}/permissions`, json({ permissions: ["audit.read"] }, "PUT"));
     await app.request(`/api/v1/roles/${role.id}`, { method: "DELETE", headers: { cookie } });
 
-    const res = await app.request("/api/v1/audit-logs?limit=50", { headers: { cookie } });
+    const res = await app.request("/api/v1/audit-logs?perPage=50", { headers: { cookie } });
     const body = (await res.json()) as { data: { items: { event: string; subjectId: string }[] } };
     const events = body.data.items.filter((l) => l.subjectId === role.id).map((l) => l.event);
     expect(events).toContain("role.created");

@@ -1,8 +1,11 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ApiError } from "../../http/errors.ts";
+import { toOffset } from "../../http/list-query.ts";
+import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { recordAudit, snapshot } from "../audit/service.ts";
 import { permissions, rolePermissions, roles, userRoles } from "./data.ts";
+import type { ListRolesInput } from "./schema.ts";
 import { allPermissions, type PermissionKey, type SystemRoleKey, systemRoles } from "./statements.ts";
 
 export type Role = typeof roles.$inferSelect;
@@ -86,8 +89,28 @@ export async function rolesForUser(db: Database, userId: string) {
     .where(eq(userRoles.userId, userId));
 }
 
-export async function listRoles(db: Database, organizationId: string): Promise<Role[]> {
-  return db.select().from(roles).where(eq(roles.organizationId, organizationId)).orderBy(roles.key);
+/**
+ * Roles stay small in practice, but the contract is the same as every other collection so a
+ * client never has to special-case this endpoint. Permissions are attached by the route.
+ */
+export async function listRoles(
+  db: Database,
+  organizationId: string,
+  input: ListRolesInput,
+): Promise<{ items: Role[]; total: number }> {
+  const where = eq(roles.organizationId, organizationId);
+  const [items, count] = await Promise.all([
+    db
+      .select()
+      .from(roles)
+      .where(where)
+      .orderBy(...orderByColumn(roles, input.sort, input.dir))
+      .limit(input.perPage)
+      .offset(toOffset(input).offset),
+    db.select({ total: sql<number>`count(*)::int` }).from(roles).where(where),
+  ]);
+
+  return { items, total: count[0]?.total ?? 0 };
 }
 
 /** Permission catalogue a role holds, used by the UI to render checkboxes. */

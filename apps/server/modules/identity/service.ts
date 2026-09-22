@@ -5,6 +5,8 @@ import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 export { hashPassword };
 
 import { ApiError } from "../../http/errors.ts";
+import { toOffset } from "../../http/list-query.ts";
+import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { recordAudit, snapshot } from "../audit/service.ts";
 import { permissions as rbacPermissions, roles as rbacRoles, rolePermissions, userRoles } from "../rbac/data.ts";
@@ -100,7 +102,13 @@ export async function listUsers(
   );
 
   const [rows, count] = await Promise.all([
-    db.select().from(users).where(where).orderBy(users.name).limit(input.limit).offset(input.offset),
+    db
+      .select()
+      .from(users)
+      .where(where)
+      .orderBy(...orderByColumn(users, input.sort, input.dir))
+      .limit(input.perPage)
+      .offset(toOffset(input).offset),
     db.select({ total: sql<number>`count(*)::int` }).from(users).where(where),
   ]);
 
