@@ -1,19 +1,14 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { type AppContext, resolveDefaultOrganizationId } from "../context.ts";
-import { createApp } from "../http/app.ts";
-import { seed } from "../platform/database/seed.ts";
-import { createTestContext, truncateAll } from "./helpers.ts";
+import { createSeededApp, type SeededApp } from "./helpers.ts";
 
-let ctx: AppContext;
+let fixture: SeededApp;
 
 beforeEach(async () => {
-  ctx ??= await createTestContext();
-  await truncateAll(ctx);
-  await seed(ctx.db);
+  fixture = await createSeededApp();
 });
 
 afterAll(async () => {
-  await ctx?.close();
+  await fixture?.close();
 });
 
 /**
@@ -22,7 +17,7 @@ afterAll(async () => {
  * so adding a new verb cannot silently break production.
  */
 test("CORS mengizinkan setiap method yang benar-benar dipakai route", async () => {
-  const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
+  const app = fixture.app;
   const used = new Set(app.routes.map((r) => r.method.toUpperCase()).filter((m) => m !== "ALL"));
   // Trusted origin from the test env; any endpoint will do — only the preflight headers are under test.
   const res = await app.request("/api/v1/users", {
@@ -44,7 +39,7 @@ test("CORS mengizinkan setiap method yang benar-benar dipakai route", async () =
 });
 
 test("CORS menolak method di luar daftar", async () => {
-  const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
+  const app = fixture.app;
   const res = await app.request("/api/v1/users", {
     method: "OPTIONS",
     headers: { origin: "http://localhost:5173", "access-control-request-method": "TRACE" },

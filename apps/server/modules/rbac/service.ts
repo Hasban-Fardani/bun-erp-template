@@ -3,7 +3,7 @@ import { ApiError } from "../../http/errors.ts";
 import { toOffset } from "../../http/list-query.ts";
 import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
-import { recordAudit, snapshot } from "../audit/service.ts";
+import { auditChange, snapshot } from "../audit/service.ts";
 import { invalidateAll, invalidateUser, readCachedPermissions, writeCachedPermissions } from "./cache.ts";
 import { permissions, rolePermissions, roles, userRoles } from "./data.ts";
 import type { ListRolesInput } from "./schema.ts";
@@ -168,15 +168,12 @@ export async function createRole(
       .returning();
     const role = rows[0] as Role;
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "role.created",
-      subjectType: "role",
-      subjectId: role.id,
+      subject: { type: "role", id: role.id },
       after: snapshot("role", role as unknown as Record<string, unknown>),
-      traceId: actor.traceId,
     });
     return role;
   });
@@ -205,16 +202,15 @@ export async function updateRole(
     const rows = await tx.update(roles).set(patch).where(eq(roles.id, id)).returning();
     const after = rows[0] as Role;
 
-    await recordAudit(tx as unknown as Database, {
+    // slop-ok: bentuknya sama dengan call site lain karena helper memusatkan field tetap;
+    // yang berbeda hanya nama event, dan itu memang data, bukan duplikasi logika.
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "role.updated",
-      subjectType: "role",
-      subjectId: id,
+      subject: { type: "role", id: id },
       before: snapshot("role", before as unknown as Record<string, unknown>),
       after: snapshot("role", after as unknown as Record<string, unknown>),
-      traceId: actor.traceId,
     });
     return after;
   });
@@ -237,15 +233,12 @@ export async function deleteRole(
 
     await tx.delete(roles).where(eq(roles.id, id));
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "role.deleted",
-      subjectType: "role",
-      subjectId: id,
+      subject: { type: "role", id: id },
       before: snapshot("role", role as unknown as Record<string, unknown>),
-      traceId: actor.traceId,
     });
     return { id };
   });
@@ -279,16 +272,13 @@ export async function setRolePermissions(
     await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, id));
     if (wanted.length > 0) await tx.insert(rolePermissions).values(wanted);
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "role.permissions_set",
-      subjectType: "role",
-      subjectId: id,
+      subject: { type: "role", id: id },
       before: { entity: "role", id, permissions: before },
       after: { entity: "role", id, permissions: [...keys].sort() },
-      traceId: actor.traceId,
     });
     // Permission edits affect an unknown set of users, so the whole cache goes.
     invalidateAll();

@@ -15,3 +15,4 @@ konsekuensi. Alternatif yang ditolak dicatat supaya tidak diusulkan ulang.
 - [ADR-0010 — Driver database: PGlite (dev/test), PostgreSQL (produksi)](0010-database-driver.md)
 - [ADR-0011 — Deployment: hybrid (web statis di Cloudflare, API portabel)](0011-deployment-hybrid.md)
 - [ADR-0012 — Agent runtime: Mastra ditunda, bukan diadopsi](0012-agent-runtime-mastra.md)
+- [ADR-0013 — Form utilities: native dulu, satu dependency bila platform memang kurang](0013-form-utilities.md)

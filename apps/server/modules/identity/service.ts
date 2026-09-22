@@ -8,7 +8,7 @@ import { ApiError } from "../../http/errors.ts";
 import { toOffset } from "../../http/list-query.ts";
 import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
-import { recordAudit, snapshot } from "../audit/service.ts";
+import { auditChange, snapshot } from "../audit/service.ts";
 import { permissions as rbacPermissions, roles as rbacRoles, rolePermissions, userRoles } from "../rbac/data.ts";
 import { assignRole, findRoleByKey, revokeRole } from "../rbac/service.ts";
 import { accounts, users } from "./data.ts";
@@ -172,16 +172,13 @@ export async function updateUser(
     const rows = await tx.update(users).set(patch).where(eq(users.id, id)).returning();
     const after = rows[0] as User;
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "user.updated",
-      subjectType: "user",
-      subjectId: id,
+      subject: { type: "user", id: id },
       before: snapshot("user", before as unknown as Record<string, unknown>),
       after: snapshot("user", after as unknown as Record<string, unknown>),
-      traceId: actor.traceId,
     });
 
     return toPublicUser(tx as unknown as Database, after);
@@ -226,15 +223,12 @@ export async function createUser(
       await assignRole(tx as unknown as Database, { userId: user.id, roleId: role.id });
     }
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "user.created",
-      subjectType: "user",
-      subjectId: user.id,
+      subject: { type: "user", id: user.id },
       after: snapshot("user", user as unknown as Record<string, unknown>),
-      traceId: actor.traceId,
     });
 
     return toPublicUser(tx as unknown as Database, user);
@@ -257,15 +251,12 @@ export async function deleteUser(
 
     await tx.delete(users).where(eq(users.id, id));
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "user.deleted",
-      subjectType: "user",
-      subjectId: id,
+      subject: { type: "user", id: id },
       before: snapshot("user", before as unknown as Record<string, unknown>),
-      traceId: actor.traceId,
     });
     return { id };
   });
@@ -306,20 +297,17 @@ export async function assignUserRole(
       scopeId: input.scopeId,
     });
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "user.role_assigned",
-      subjectType: "user",
-      subjectId: userId,
+      subject: { type: "user", id: userId },
       after: snapshot("userRole", {
         userId,
         roleId: role.id,
         scopeType: input.scopeType ?? null,
         scopeId: input.scopeId ?? null,
       }),
-      traceId: actor.traceId,
     });
 
     return toPublicUser(tx as unknown as Database, user);
@@ -342,15 +330,12 @@ export async function revokeUserRole(
     const removed = await revokeRole(tx as unknown as Database, userId, role.id);
     if (!removed) throw ApiError.notFound("User does not hold this role");
 
-    await recordAudit(tx as unknown as Database, {
+    await auditChange(tx as unknown as Database, {
       organizationId,
-      actorId: actor.userId,
-      actorLabel: actor.label,
+      actor,
       event: "user.role_revoked",
-      subjectType: "user",
-      subjectId: userId,
+      subject: { type: "user", id: userId },
       before: snapshot("userRole", { userId, roleId: role.id, scopeType: null, scopeId: null }),
-      traceId: actor.traceId,
     });
 
     return toPublicUser(tx as unknown as Database, user);

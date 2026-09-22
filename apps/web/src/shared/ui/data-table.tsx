@@ -54,16 +54,16 @@ export function DataTable<T>({
   actions,
   caption,
 }: DataTableProps<T>) {
-  // Skeletons, not a sentence: the table keeps its shape while data lands, so the page does
-  // not jump between "Memuat…" and thirty rows.
-  if (pending && rows.length === 0) return <TableSkeleton columns={columns.length + (actions ? 1 : 0)} />;
-  if (error) return <TableEmpty cause="error" message={error} />;
-  if (rows.length === 0) {
+  const hasRows = rows.length > 0;
+  if (!hasRows || error) {
     return (
-      <TableEmpty
-        cause={empty.filtered ? "no-match" : "no-data"}
-        message={empty.filtered ? empty.message : undefined}
-        action={empty.filtered ? undefined : empty.action}
+      <TableState
+        columns={columns.length + (actions ? 1 : 0)}
+        error={error}
+        pending={pending}
+        filtered={empty.filtered}
+        message={empty.message}
+        action={empty.action}
       />
     );
   }
@@ -249,5 +249,37 @@ export function Pagination({ page, perPage, total, totalPages, onPage, onPerPage
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The state a list shows when it has no rows to draw: loading, failed, or empty for one of two
+ * reasons. Kept out of `DataTable` so the table body stays a single, readable render path.
+ */
+function TableState({
+  columns,
+  error,
+  pending,
+  filtered,
+  message,
+  action,
+}: {
+  columns: number;
+  error?: string;
+  pending?: boolean;
+  filtered: boolean;
+  message?: string;
+  action?: ReactNode;
+}) {
+  // Skeletons, not a sentence: the table keeps its shape while data lands, so the page does
+  // not jump between "Memuat…" and thirty rows.
+  if (pending && !error) return <TableSkeleton columns={columns} />;
+  if (error) return <TableEmpty cause="error" message={error} />;
+  return (
+    <TableEmpty
+      cause={filtered ? "no-match" : "no-data"}
+      message={filtered ? message : undefined}
+      action={filtered ? undefined : action}
+    />
   );
 }

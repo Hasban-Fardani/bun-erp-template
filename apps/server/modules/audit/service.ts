@@ -65,3 +65,32 @@ export async function listAuditLogs(
 
   return { items, total: count[0]?.total ?? 0 };
 }
+
+/**
+ * Records an audited change from inside a transaction. Every call site used to repeat the same
+ * six fields around the event-specific ones; this keeps the shape in one place so a new write
+ * path cannot forget `traceId` or `actorLabel`.
+ */
+export async function auditChange(
+  tx: Database,
+  input: {
+    organizationId: string;
+    actor: { userId: string | null; traceId: string; label?: string };
+    event: string;
+    subject: { type: string; id: string };
+    before?: Record<string, unknown> | null;
+    after?: Record<string, unknown> | null;
+  },
+): Promise<void> {
+  await recordAudit(tx, {
+    organizationId: input.organizationId,
+    actorId: input.actor.userId,
+    actorLabel: input.actor.label,
+    event: input.event,
+    subjectType: input.subject.type,
+    subjectId: input.subject.id,
+    before: input.before,
+    after: input.after,
+    traceId: input.actor.traceId,
+  });
+}

@@ -1,26 +1,21 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { type AppContext, resolveDefaultOrganizationId } from "../context.ts";
-import { createApp } from "../http/app.ts";
-import { seed } from "../platform/database/seed.ts";
-import { createTestContext, truncateAll } from "./helpers.ts";
+import { createSeededApp, type SeededApp } from "./helpers.ts";
 
-let ctx: AppContext;
+let fixture: SeededApp;
 
 beforeEach(async () => {
-  ctx ??= await createTestContext();
-  await truncateAll(ctx);
-  await seed(ctx.db);
+  fixture = await createSeededApp();
 });
 
 afterAll(async () => {
-  await ctx?.close();
+  await fixture?.close();
 });
 
 type Operation = { responses?: Record<string, unknown>; summary?: string };
 type Spec = { paths: Record<string, Record<string, Operation>>; components: { schemas: Record<string, unknown> } };
 
 const spec = async (): Promise<Spec> => {
-  const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
+  const app = fixture.app;
   return (await (await app.request("/api/openapi.json")).json()) as Spec;
 };
 
@@ -39,7 +34,7 @@ const IGNORED = [
 const normalize = (path: string) => path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
 
 test("setiap route bisnis terdaftar punya operasi di spesifikasi", async () => {
-  const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
+  const app = fixture.app;
   const dokumentasi = await spec();
 
   const missing = app.routes

@@ -1,5 +1,3 @@
-import { join } from "node:path";
-
 /**
  * Production-readiness gate: things that must be true before this template is deployed, and
  * that are easy to forget because nothing breaks locally. Every check is a fact about the
@@ -27,7 +25,7 @@ export async function checkReadiness(root: string): Promise<ReadinessFinding[]> 
 
 /** A production deploy needs a build step and a way to verify it, both runnable without memory. */
 async function checkScripts(root: string): Promise<Check> {
-  const pkg = (await Bun.file(join(root, "package.json")).json()) as { scripts?: Record<string, string> };
+  const pkg = (await Bun.file(`${root}/package.json`).json()) as { scripts?: Record<string, string> };
   const scripts = pkg.scripts ?? {};
   const required = ["erp", "build", "check:prod"];
   const missing = required.filter((name) => !(name in scripts));
@@ -68,7 +66,7 @@ async function checkNoRealDomains(root: string): Promise<Check> {
   const suspicious = /danarifamily|\.web\.id\b/i;
   for (const file of out.split("\n").filter(Boolean)) {
     if (/\.(png|jpg|lock)$/.test(file)) continue;
-    const body = await Bun.file(join(root, file))
+    const body = await Bun.file(`${root}/${file}`)
       .text()
       .catch(() => "");
     if (suspicious.test(body)) {
@@ -107,7 +105,7 @@ function checkProductionGuards(env: string): Check {
 
 /** Migrations run in filename order; a gap makes the order ambiguous during a manual deploy. */
 async function checkMigrationsNumbered(root: string): Promise<Check> {
-  const dir = join(root, "apps/server/migrations");
+  const dir = `${root}/apps/server/migrations`;
   const names = [...new Bun.Glob("*.sql").scanSync({ cwd: dir })].sort();
   if (names.length === 0) return { id: "MIGRATIONS", ok: false, detail: "no migrations found" };
 
@@ -123,7 +121,7 @@ async function checkMigrationsNumbered(root: string): Promise<Check> {
 
 /** The API contract is a document, not folklore: the envelope and status codes must be written down. */
 async function checkDocsDeclareContract(root: string): Promise<Check> {
-  const path = join(root, "docs/api-contract.md");
+  const path = `${root}/docs/api-contract.md`;
   if (!(await Bun.file(path).exists())) {
     return { id: "API_CONTRACT", ok: false, detail: "docs/api-contract.md is missing — the envelope is undocumented" };
   }
@@ -139,7 +137,7 @@ async function checkDocsDeclareContract(root: string): Promise<Check> {
 
 async function readEnvExample(root: string): Promise<string> {
   try {
-    return await Bun.file(join(root, ".env.example")).text();
+    return await Bun.file(`${root}/.env.example`).text();
   } catch {
     return "";
   }

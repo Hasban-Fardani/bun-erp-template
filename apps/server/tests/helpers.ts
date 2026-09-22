@@ -69,6 +69,20 @@ export async function truncateAll(ctx: AppContext): Promise<void> {
  * Returns a `json()` helper that carries the cookie so request bodies stay one-liners.
  */
 export type HttpFixture = Awaited<ReturnType<typeof createHttpFixture>>;
+export type SeededApp = Awaited<ReturnType<typeof createSeededApp>>;
+
+/**
+ * For tests that exercise the app itself (routes, CORS, the OpenAPI document) rather than
+ * permissions: a clean, seeded database and an app instance, with no session.
+ */
+export async function createSeededApp() {
+  const ctx = await createTestContext();
+  await truncateAll(ctx);
+  await seed(ctx.db);
+  resetPermissionCache();
+  const organizationId = await resolveDefaultOrganizationId(ctx.db);
+  return { ctx, app: createApp(ctx, organizationId), organizationId, close: () => ctx.close() };
+}
 
 export async function createHttpFixture() {
   const ctx = await createTestContext();
