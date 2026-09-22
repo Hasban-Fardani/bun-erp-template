@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api.ts";
+import type { Paged } from "../../shared/lib/list-types.ts";
 import type { AuditLog, Role, RoleStatements } from "./types.ts";
 
-export function useRoleList(enabled: boolean) {
+export function useRoleList(query: string, enabled: boolean) {
   return useQuery({
-    queryKey: ["roles"],
-    queryFn: () => api.get<{ items: Role[]; total: number }>("/api/v1/roles"),
-    select: (d) => d.items,
+    queryKey: ["roles", query],
+    queryFn: () => api.get<Paged<Role>>(`/api/v1/roles?${query}`),
     enabled,
   });
 }
@@ -21,13 +21,10 @@ export function useRoleStatements(enabled: boolean) {
   });
 }
 
-export function useAuditLogs(search: string, enabled: boolean) {
+export function useAuditLogs(query: string, enabled: boolean) {
   return useQuery({
-    queryKey: ["audit", search],
-    queryFn: () =>
-      api.get<{ items: AuditLog[]; total: number }>(
-        `/api/v1/audit-logs?limit=50${search ? `&event=${encodeURIComponent(search)}` : ""}`,
-      ),
+    queryKey: ["audit", query],
+    queryFn: () => api.get<Paged<AuditLog>>(`/api/v1/audit-logs?${query}`),
     enabled,
   });
 }

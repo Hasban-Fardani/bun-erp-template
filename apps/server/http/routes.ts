@@ -47,8 +47,8 @@ export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppC
     },
   );
 
-  // Auth handlers belong to Better Auth: the library owns the contents, so they skip `describeRoute`.
-  // The operations the app uses are documented in `http/openapi.ts`.
+  // Auth handlers belong to Better Auth, so their routes are not built here and cannot carry
+  // per-route docs; the operations the app uses are documented in `http/openapi.ts`.
   app.on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => ctx.auth.handler(c.req.raw));
 
   app.get(

@@ -1,7 +1,14 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-/** Slop gate: narrative comments + AST findings from the governance validator. slop-ok bypasses it. */
+/**
+ * Slop gate: stale narrative comments, oversized page components, plus AST findings from the
+ * governance validator. `slop-ok: <reason>` exempts the next line.
+ */
+
+/** A page that keeps growing mixes data access, layout and forms in one file. */
+const PAGE_MAX_LINES = 220;
+
 export async function findCodeSlop(root: string): Promise<string[]> {
   const findings: string[] = [];
   const sourceDirs = [join(root, "apps"), join(root, "tools")].filter((dir) => exists(dir));
@@ -13,16 +20,22 @@ export async function findCodeSlop(root: string): Promise<string[]> {
 
       lines.forEach((line, i) => {
         if (/slop-ok/.test(line)) return;
-        for (const rule of [FILE_NARRATION, TYPE_RESTATEMENT]) {
+        for (const rule of NARRATIVE_RULES) {
           if (rule.test(line)) {
             findings.push(`${rel}:${i + 1} narrative comment — explain WHY, not WHAT: ${line.trim().slice(0, 70)}`);
           }
         }
       });
+
+      // Page size is checked here rather than by eye: the list pages grew past 400 lines
+      // before anyone noticed, and a gate is the only thing that notices early.
+      if (rel.startsWith("apps/web/src/pages/") && lines.length > PAGE_MAX_LINES) {
+        findings.push(`${rel}: ${lines.length} lines exceeds ${PAGE_MAX_LINES} — extract hooks and row components`);
+      }
     }
   }
 
-  // The governance validator catches cross-file patterns (passthrough, unused export,
+  // The governance validator catches cross-file patterns (passthrough, unused exports,
   // duplicates) that need an AST — run as a subprocess so there is one rule source.
   const validator = "/root/programming-governance/adapters/slop-validator.ts";
   if (exists(validator)) {
@@ -42,11 +55,11 @@ export async function findCodeSlop(root: string): Promise<string[]> {
   return findings;
 }
 
-// Comments must be English (see AGENTS.md), so the patterns are English too. The alternatives
-// without a language marker (path-like header comments) are the ones that survive translation.
-const FILE_NARRATION =
-  /^\s*(\/\/|\*)\s*(This file (contains|holds|manages)|The only place|This is the only|Path to the|Entry point|Renders the)\b/i;
-const TYPE_RESTATEMENT = /^\s*\*\s*(Vite entry .* loaded|Value .* used for|Type .* for the)\b/i;
+/** "This file stores X" restates the file name and rots as soon as the file changes. */
+const NARRATIVE_RULES = [
+  /^\s*(\/\/|\*)\s*(This file|The only place|This is the only|Sole source)\b/i,
+  /^\s*\*\s*(The .+ entry point|The .+ value used by|The .+ type for)\b/i,
+];
 
 function exists(path: string): boolean {
   try {

@@ -8,16 +8,53 @@ import {
   useSetRolePermissions,
   useUpdateRole,
 } from "../features/admin/api.ts";
+import { ResourceTable } from "../features/admin/resource-table.tsx";
 import { RolePermissionSheet, RoleSheet } from "../features/admin/role-sheet.tsx";
 import type { Role } from "../features/admin/types.ts";
 import { useSession } from "../features/users/api.ts";
 import { ApiError } from "../lib/api.ts";
-import { Badge, Button, Card, CardHeader, ConfirmDelete, EmptyState, IconButton } from "../shared/ui/primitives.tsx";
+import { useTableState } from "../shared/lib/use-table-state.ts";
+import type { Column } from "../shared/ui/data-table.tsx";
+import { Badge, Button, Card, ConfirmDelete, EmptyState, IconButton } from "../shared/ui/primitives.tsx";
+
+const columns: Column<Role>[] = [
+  {
+    key: "name",
+    header: "Peran",
+    sortable: true,
+    cell: (role) => (
+      <span className="flex items-center gap-2">
+        <span className="font-medium">{role.name}</span>
+        {role.isSystem ? <Badge tone="accent">Sistem</Badge> : <Badge>Kustom</Badge>}
+      </span>
+    ),
+  },
+  {
+    key: "key",
+    header: "Kunci",
+    sortable: true,
+    cell: (role) => <span className="font-mono text-[12.5px] text-ink-soft">{role.key}</span>,
+  },
+  {
+    key: "description",
+    header: "Deskripsi",
+    secondary: true,
+    cell: (role) => <span className="text-ink-soft">{role.description || "—"}</span>,
+  },
+  {
+    key: "isSystem",
+    header: "Izin",
+    sortable: true,
+    align: "right",
+    cell: (role) => <span className="text-ink-soft">{role.permissions.length}</span>,
+  },
+];
 
 /** Role management: create, edit, delete, and set permissions — all of it writes to the server. */
 export function RolesPage() {
   const session = useSession();
-  const roles = useRoleList(Boolean(session.data?.authenticated));
+  const table = useTableState({ defaultSort: "key" });
+  const roles = useRoleList(table.queryString, Boolean(session.data?.authenticated));
   const createRole = useCreateRole();
   const updateRole = useUpdateRole();
   const deleteRole = useDeleteRole();
@@ -46,112 +83,83 @@ export function RolesPage() {
     return createRole.mutateAsync(input);
   };
 
-  const remove = (id: string, name: string) => {
-    setNotice("");
-    deleteRole.mutate(id, {
-      onError: (err) => setNotice(err instanceof ApiError ? err.message : `Gagal menghapus peran ${name}`),
-    });
-  };
-
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-6 lg:px-8">
+      {notice ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] text-danger"
+        >
+          {notice}
+        </p>
+      ) : null}
+
       <Card>
-        <CardHeader
-          title="Peran & Izin"
-          description={
-            canRead
-              ? `${roles.data?.length ?? 0} peran; role sistem dikunci dari penghapusan`
-              : "Izin baca tidak dimiliki"
-          }
-          action={
-            canCreate ? (
-              <Button
-                icon={ShieldPlus}
-                onClick={() => {
-                  setEditing(null);
-                  setFormOpen(true);
-                }}
-              >
-                Tambah
-              </Button>
-            ) : null
-          }
-        />
-
-        {notice ? (
-          <p role="alert" className="border-b border-danger/20 bg-danger-soft px-4 py-2 text-[12.5px] text-danger">
-            {notice}
-          </p>
-        ) : null}
-
         {!canRead ? (
           <EmptyState icon={ShieldCheck} message="Peran Anda tidak memiliki izin role.read." />
-        ) : roles.isPending ? (
-          <EmptyState message="Memuat peran…" />
-        ) : roles.isError ? (
-          <EmptyState message={`Gagal memuat: ${(roles.error as Error).message}`} />
-        ) : roles.data.length === 0 ? (
-          <EmptyState icon={ShieldCheck} message="Belum ada peran." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13.5px]">
-              <thead>
-                <tr className="border-b border-border text-left text-[12px] font-medium text-ink-muted">
-                  <th className="px-4 py-2.5">Peran</th>
-                  <th className="px-4 py-2.5">Kunci</th>
-                  <th className="px-4 py-2.5">Deskripsi</th>
-                  <th className="px-4 py-2.5 text-right">Izin</th>
-                  {hasRowActions ? <th className="px-4 py-2.5 text-right">Aksi</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {roles.data.map((role) => (
-                  <tr key={role.id} className="border-b border-border/50 last:border-0 hover:bg-background/60">
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{role.name}</span>
-                        {role.isSystem ? <Badge tone="accent">Sistem</Badge> : <Badge>Kustom</Badge>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-[12.5px] text-ink-soft">{role.key}</td>
-                    <td className="px-4 py-2.5 text-ink-soft">{role.description || "—"}</td>
-                    <td className="px-4 py-2.5 text-right text-ink-soft">{role.permissions.length}</td>
-                    {hasRowActions ? (
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-end gap-0.5">
-                          {canUpdate ? (
-                            <IconButton
-                              icon={KeyRound}
-                              label={`Atur izin ${role.name}`}
-                              onClick={() => setPermRole(role)}
-                            />
-                          ) : null}
-                          {canUpdate ? (
-                            <IconButton
-                              icon={Pencil}
-                              label={`Ubah ${role.name}`}
-                              onClick={() => {
-                                setEditing(role);
-                                setFormOpen(true);
-                              }}
-                            />
-                          ) : null}
-                          {/* System roles come from code: deleting one only lets the seed revive it. */}
-                          {canDelete && !role.isSystem ? (
-                            <ConfirmDelete
-                              label={role.name}
-                              disabled={deleteRole.isPending}
-                              onConfirm={() => remove(role.id, role.name)}
-                            />
-                          ) : null}
-                        </div>
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResourceTable
+            caption="Daftar peran organisasi"
+            columns={columns}
+            rowKey={(role) => role.id}
+            result={roles.data}
+            state={table}
+            pending={roles.isPending}
+            error={roles.isError ? (roles.error as Error).message : undefined}
+            searchPlaceholder="Cari peran…"
+            empty={{ filtered: false, message: "Belum ada peran." }}
+            headerExtra={
+              canCreate ? (
+                <Button
+                  icon={ShieldPlus}
+                  onClick={() => {
+                    setEditing(null);
+                    setFormOpen(true);
+                  }}
+                >
+                  Tambah
+                </Button>
+              ) : null
+            }
+            actions={
+              hasRowActions
+                ? (role) => (
+                    <>
+                      {canUpdate ? (
+                        <IconButton
+                          icon={KeyRound}
+                          label={`Atur izin ${role.name}`}
+                          onClick={() => setPermRole(role)}
+                        />
+                      ) : null}
+                      {canUpdate ? (
+                        <IconButton
+                          icon={Pencil}
+                          label={`Ubah ${role.name}`}
+                          onClick={() => {
+                            setEditing(role);
+                            setFormOpen(true);
+                          }}
+                        />
+                      ) : null}
+                      {/* System roles come from code: deleting one only lets the seed revive it. */}
+                      {canDelete && !role.isSystem ? (
+                        <ConfirmDelete
+                          label={role.name}
+                          disabled={deleteRole.isPending}
+                          onConfirm={() =>
+                            deleteRole.mutate(role.id, {
+                              onError: (err) =>
+                                setNotice(err instanceof ApiError ? err.message : `Gagal menghapus peran ${role.name}`),
+                            })
+                          }
+                        />
+                      ) : null}
+                    </>
+                  )
+                : undefined
+            }
+          />
         )}
       </Card>
 

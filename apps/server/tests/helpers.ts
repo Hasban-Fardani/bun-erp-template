@@ -1,11 +1,13 @@
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
-import { type AppContext, createContext } from "../context.ts";
-import type { createApp } from "../http/app.ts";
+import { type AppContext, createContext, resolveDefaultOrganizationId } from "../context.ts";
+import { createApp } from "../http/app.ts";
 import { roles } from "../modules/rbac/data.ts";
 import { assignRole } from "../modules/rbac/service.ts";
 import type { Env } from "../platform/config/index.ts";
 import { loadEnv } from "../platform/config/index.ts";
+import { rowsOf } from "../platform/database/migrate.ts";
+import { seed } from "../platform/database/seed.ts";
 
 const MIGRATIONS_DIR = resolve(import.meta.dir, "../migrations");
 
@@ -53,11 +55,56 @@ export async function truncateAll(ctx: AppContext): Promise<void> {
   const rows = await ctx.db.execute<{ tablename: string }>(
     sql`select tablename from pg_tables where schemaname = 'public' and tablename <> '_migrations'`,
   );
-  const tables = (Array.isArray(rows) ? rows : (rows as { rows: { tablename: string }[] }).rows).map(
-    (r) => r.tablename,
-  );
+  const tables = rowsOf<{ tablename: string }>(rows).map((r) => r.tablename);
   if (tables.length === 0) return;
   await ctx.db.execute(sql.raw(`truncate table ${tables.map((t) => `"${t}"`).join(", ")} restart identity cascade`));
+}
+
+/**
+ * Standard fixture for HTTP tests: clean database, seeded RBAC, an app instance and an
+ * owner cookie. Extracted because five test files had grown byte-identical copies — the
+ * slop gate flagged them, and a fix to one copy could silently miss the others.
+ *
+ * Returns a `json()` helper that carries the cookie so request bodies stay one-liners.
+ */
+export type HttpFixture = Awaited<ReturnType<typeof createHttpFixture>>;
+
+export async function createHttpFixture() {
+  const ctx = await createTestContext();
+  await truncateAll(ctx);
+  await seed(ctx.db);
+  const organizationId = await resolveDefaultOrganizationId(ctx.db);
+
+  let cookie = "";
+  const app = createApp(ctx, organizationId);
+
+  const api = {
+    ctx,
+    app,
+    organizationId,
+    get cookie() {
+      return cookie;
+    },
+    /** Signs in as the seeded owner. Call after seeding org-specific data if order matters. */
+    async signInAsOwner() {
+      cookie = await loginOwner(app, ctx.db);
+      return cookie;
+    },
+    json(body: unknown, method = "POST"): RequestInit {
+      return {
+        method,
+        headers: { "content-type": "application/json", cookie },
+        body: JSON.stringify(body),
+      };
+    },
+    async get<T>(path: string): Promise<{ data: T }> {
+      const res = await app.request(path, { headers: { cookie } });
+      return (await res.json()) as { data: T };
+    },
+    close: () => ctx.close(),
+  };
+
+  return api;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ApiError, api, apiUrl } from "../../lib/api.ts";
+import type { Paged } from "../../shared/lib/list-types.ts";
 import type { PublicUser, SessionView } from "./types.ts";
 
 export function useSession() {
@@ -40,13 +41,10 @@ export function useLogin() {
   });
 }
 
-export function useUsers(search: string) {
+export function useUsers(query: string) {
   return useQuery({
-    queryKey: ["users", search],
-    queryFn: () =>
-      api.get<{ items: PublicUser[]; total: number }>(
-        `/api/v1/users?limit=50${search ? `&search=${encodeURIComponent(search)}` : ""}`,
-      ),
+    queryKey: ["users", query],
+    queryFn: () => api.get<Paged<PublicUser>>(`/api/v1/users?${query}`),
   });
 }
 

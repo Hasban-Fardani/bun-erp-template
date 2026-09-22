@@ -10,6 +10,21 @@ import { allPermissions, type PermissionKey, type SystemRoleKey, systemRoles } f
 
 export type Role = typeof roles.$inferSelect;
 
+/**
+ * Loads one role inside a transaction, scoped to the organization. Shared by delete and
+ * permission-set so the lookup cannot drift between the two write paths.
+ */
+async function requireRoleInTx(tx: Pick<Database, "select">, organizationId: string, id: string): Promise<Role> {
+  const rows = await tx
+    .select()
+    .from(roles)
+    .where(and(eq(roles.organizationId, organizationId), eq(roles.id, id)))
+    .limit(1);
+  const role = rows[0];
+  if (!role) throw ApiError.notFound("Role not found");
+  return role;
+}
+
 /** Syncs the permission catalogue + system roles from code; idempotent. */
 export async function seedRbac(db: Database, organizationId: string): Promise<{ permissions: number; roles: number }> {
   await db
@@ -207,13 +222,7 @@ export async function deleteRole(
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ id: string }> {
   return db.transaction(async (tx) => {
-    const rows = await tx
-      .select()
-      .from(roles)
-      .where(and(eq(roles.organizationId, organizationId), eq(roles.id, id)))
-      .limit(1);
-    const role = rows[0];
-    if (!role) throw ApiError.notFound("Role not found");
+    const role = await requireRoleInTx(tx, organizationId, id);
     if (role.isSystem) throw ApiError.conflict("Role sistem tidak bisa dihapus");
 
     // The FK would cascade `user_roles`; that silently revokes people's access. Refuse first.
@@ -248,13 +257,7 @@ export async function setRolePermissions(
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ permissions: string[] }> {
   return db.transaction(async (tx) => {
-    const rows = await tx
-      .select()
-      .from(roles)
-      .where(and(eq(roles.organizationId, organizationId), eq(roles.id, id)))
-      .limit(1);
-    const role = rows[0];
-    if (!role) throw ApiError.notFound("Role not found");
+    await requireRoleInTx(tx, organizationId, id);
 
     const known = await tx.select({ id: permissions.id, key: permissions.key }).from(permissions);
     const idByKey = new Map(known.map((r) => [r.key, r.id]));
@@ -331,35 +334,4 @@ export async function revokeRole(db: Database, userId: string, roleId: string): 
     .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)))
     .returning({ id: userRoles.id });
   return rows.length > 0;
-}
-
-/** Grants a permission to a non-system role. Idempotent. */
-export async function grantRolePermissions(
-  db: Database,
-  roleId: string,
-  keys: readonly PermissionKey[],
-): Promise<void> {
-  const rows = await db.select({ id: permissions.id, key: permissions.key }).from(permissions);
-  const idByKey = new Map(rows.map((r) => [r.key, r.id]));
-  for (const key of keys) {
-    const permissionId = idByKey.get(key);
-    if (!permissionId) throw ApiError.notFound(`Permission not found: ${key}`);
-    const existing = await db
-      .select({ roleId: rolePermissions.roleId })
-      .from(rolePermissions)
-      .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)))
-      .limit(1);
-    if (existing.length > 0) continue;
-    await db.insert(rolePermissions).values({ roleId, permissionId });
-  }
-}
-
-/** Revokes a permission from a role. */
-export async function revokeRolePermission(db: Database, roleId: string, key: PermissionKey): Promise<void> {
-  const rows = await db.select({ id: permissions.id }).from(permissions).where(eq(permissions.key, key)).limit(1);
-  const permissionId = rows[0]?.id;
-  if (!permissionId) return;
-  await db
-    .delete(rolePermissions)
-    .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)));
 }

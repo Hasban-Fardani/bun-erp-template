@@ -1,19 +1,11 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { type AppContext, resolveDefaultOrganizationId } from "../context.ts";
-import { createApp } from "../http/app.ts";
-import { seed } from "../platform/database/seed.ts";
-import { createTestContext, loginOwner, truncateAll } from "./helpers.ts";
+import { createHttpFixture, type HttpFixture } from "./helpers.ts";
 
-let ctx: AppContext;
-let orgId: string;
-let app: ReturnType<typeof createApp>;
+let api: HttpFixture;
+let { app } = {} as HttpFixture;
 let cookie = "";
 
-const json = (body: unknown, method = "POST"): RequestInit => ({
-  method,
-  headers: { "content-type": "application/json", cookie },
-  body: JSON.stringify(body),
-});
+const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
 
 type ListBody<T> = {
   data: { items: T[]; page: number; perPage: number; total: number; totalPages: number };
@@ -39,16 +31,13 @@ const seedUsers = async (...names: string[]) => {
 };
 
 beforeEach(async () => {
-  ctx ??= await createTestContext();
-  await truncateAll(ctx);
-  await seed(ctx.db);
-  orgId = await resolveDefaultOrganizationId(ctx.db);
-  app = createApp(ctx, orgId);
-  cookie = await loginOwner(app, ctx.db);
+  api = await createHttpFixture();
+  ({ app } = api);
+  cookie = await api.signInAsOwner();
 });
 
 afterAll(async () => {
-  await ctx?.close();
+  await api?.close();
 });
 
 describe("list contract", () => {
