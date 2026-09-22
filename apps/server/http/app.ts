@@ -1,27 +1,14 @@
+import { apiReference } from "@scalar/hono-api-reference";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { requestId as requestIdMiddleware } from "hono/request-id";
+import { openAPIRouteHandler } from "hono-openapi";
 import type { AppContext } from "../context.ts";
 import { ApiError, type ApiErrorBody, ErrorCode, requestId } from "./errors.ts";
-import { buildOpenApi } from "./openapi.ts";
+import { BETTER_AUTH_PATHS, BETTER_AUTH_TAGS, DOCUMENTATION, SCHEMAS, SECURITY_SCHEMES, SERVERS } from "./openapi.ts";
 import { registerRoutes } from "./routes.ts";
 
 export type AppVariables = { requestId: string };
-
-/** Halaman /api/docs — Scalar menyajikan openapi.json agar review API bisa dari browser. */
-const docsHtml = `<!doctype html>
-<html lang="id">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>API Reference</title>
-    <style>body { margin: 0; }</style>
-  </head>
-  <body>
-    <script id="api-reference" data-url="/api/openapi.json"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-  </body>
-</html>`;
 
 /**
  * `ctx` disuntikkan lewat closure, `organizationId` diberikan saat bootstrap — Phase 2
@@ -30,9 +17,24 @@ const docsHtml = `<!doctype html>
 export function createApp(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
   const app = new Hono<{ Variables: AppVariables }>();
 
-  // Dokumentasi API untuk review manusia. Kredensial tak pernah masuk spesifikasi.
-  app.get("/api/openapi.json", (c) => c.json(buildOpenApi(ctx.env)));
-  app.get("/api/docs", (c) => c.html(docsHtml));
+  /**
+   * Spesifikasi dihasilkan dari router itu sendiri: path dan skema dibaca dari route nyata,
+   * jadi dokumentasi tak bisa menyimpang dari implementasi.
+   */
+  app.get(
+    "/api/openapi.json",
+    openAPIRouteHandler(app, {
+      documentation: {
+        openapi: "3.1.0",
+        info: DOCUMENTATION(ctx.env),
+        servers: SERVERS(ctx.env),
+        tags: BETTER_AUTH_TAGS,
+        paths: BETTER_AUTH_PATHS,
+        components: { securitySchemes: SECURITY_SCHEMES, schemas: SCHEMAS },
+      },
+    }),
+  );
+  app.get("/api/docs", apiReference({ url: "/api/openapi.json", pageTitle: "Bun ERP Template API" }));
 
   app.use(requestIdMiddleware({ limitLength: 128, headerName: "X-Request-Id" }));
 

@@ -6,6 +6,7 @@ import { departmentRoutes } from "../modules/departments/route.ts";
 import { requireActor } from "../modules/identity/policy.ts";
 import { identityRoutes } from "../modules/identity/route.ts";
 import { rbacRoutes } from "../modules/rbac/route.ts";
+import { doc } from "./api-docs.ts";
 import type { AppVariables } from "./app.ts";
 import { ok } from "./errors.ts";
 
@@ -13,28 +14,66 @@ export const API_PREFIX = "/api/v1";
 
 /** `http/routes.ts` hanya mendaftarkan route — tidak berisi business logic (PRD §6). */
 export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppContext, organizationId: string): void {
-  app.get("/health", (c) => c.json({ status: "ok" }));
+  app.get(
+    "/health",
+    doc({
+      public: true,
+      summary: "Status proses",
+      data: { type: "object", properties: { status: { type: "string", enum: ["ok"] } } },
+    }),
+    (c) => c.json({ status: "ok" }),
+  );
 
-  app.get("/ready", async (c) => {
-    const started = performance.now();
-    await ctx.db.execute(sql`select 1`);
-    return c.json({
-      status: "ready",
-      checks: { database: { ok: true, ms: Math.round(performance.now() - started) } },
-    });
-  });
+  app.get(
+    "/ready",
+    doc({
+      public: true,
+      summary: "Status kesiapan + cek database",
+      data: {
+        type: "object",
+        properties: {
+          status: { type: "string" },
+          checks: { type: "object", properties: { database: { type: "object" } } },
+        },
+      },
+    }),
+    async (c) => {
+      const started = performance.now();
+      await ctx.db.execute(sql`select 1`);
+      return c.json({
+        status: "ready",
+        checks: { database: { ok: true, ms: Math.round(performance.now() - started) } },
+      });
+    },
+  );
 
-  // Handler auth milik Better Auth — cookie/session tidak diduplikasi di sini.
+  // Handler auth milik Better Auth: isinya milik library, jadi tak melewati `describeRoute`.
+  // Operasi yang dipakai aplikasi didokumentasikan di `http/openapi.ts`.
   app.on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => ctx.auth.handler(c.req.raw));
 
-  app.get(`${API_PREFIX}/me`, async (c) => {
-    const actor = await requireActor(c, ctx);
-    return ok(c, {
-      userId: actor.userId,
-      organizationId: actor.organizationId,
-      permissions: actor.permissions,
-    });
-  });
+  app.get(
+    `${API_PREFIX}/me`,
+    doc({
+      tag: "auth",
+      summary: "Identitas + izin sesi aktif",
+      data: {
+        type: "object",
+        properties: {
+          userId: { type: "string" },
+          organizationId: { type: ["string", "null"] },
+          permissions: { type: "array", items: { type: "string" } },
+        },
+      },
+    }),
+    async (c) => {
+      const actor = await requireActor(c, ctx);
+      return ok(c, {
+        userId: actor.userId,
+        organizationId: actor.organizationId,
+        permissions: actor.permissions,
+      });
+    },
+  );
 
   app.route(`${API_PREFIX}/users`, identityRoutes(ctx, organizationId));
   app.route(`${API_PREFIX}/roles`, rbacRoutes(ctx, organizationId));
