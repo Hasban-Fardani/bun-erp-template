@@ -15,7 +15,7 @@ export const API_PREFIX = "/api/v1";
 /** `http/routes.ts` only registers routes — it holds no business logic (PRD §6). */
 export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppContext, organizationId: string): void {
   app.get(
-    "/health",
+    `${API_PREFIX}/health`,
     doc({
       public: true,
       summary: "Status proses",
@@ -25,7 +25,7 @@ export function registerRoutes(app: Hono<{ Variables: AppVariables }>, ctx: AppC
   );
 
   app.get(
-    "/ready",
+    `${API_PREFIX}/ready`,
     doc({
       public: true,
       summary: "Status kesiapan + cek database",

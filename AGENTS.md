@@ -81,3 +81,6 @@ error becomes `{ error: { code, message, fields? }, meta }`.
   seed data.*
 - `skills/testing/` — test context per file, real HTTP via `app.request()`, no heavy mocks.
   *Use when writing tests or debugging a failure in `apps/server/tests`.*
+- `skills/template-guardrails/` — the mistakes this repo has already paid for: unverified
+  claims, dead CSS classes, silencing a gate without checking, `node:` imports, writing outside
+  the allowed directories. *Use before reporting any work as finished.*

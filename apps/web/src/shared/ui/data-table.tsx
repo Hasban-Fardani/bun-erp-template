@@ -175,7 +175,7 @@ function SortButton<T>({
       onClick={() => onSort(column.key)}
       className={cn(
         "inline-flex items-center gap-1 rounded-sm -mx-1 px-1 py-0.5 outline-none transition-colors",
-        "hover:text-ink focus-visible:ring-2 focus-visible:ring-accent/40",
+        "hover:text-ink focus-visible:ring-2 focus-visible:ring-accent",
         active ? "text-ink" : "text-ink-muted",
       )}
     >
@@ -211,7 +211,7 @@ export function Pagination({ page, perPage, total, totalPages, onPage, onPerPage
           data-testid="per-page"
           value={perPage}
           onChange={(e) => onPerPage(Number(e.target.value))}
-          className="h-8 rounded-md border border-border bg-surface px-2 text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+          className="h-8 rounded-md border border-border bg-surface px-2 text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           {[10, 25, 50, 100].map((size) => (
             <option key={size} value={size}>

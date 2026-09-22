@@ -73,7 +73,7 @@ function NavContent({
                       aria-current={active ? "page" : undefined}
                       className={cn(
                         "flex items-center rounded-md text-[13.5px] font-medium outline-none transition-colors",
-                        "focus-visible:ring-2 focus-visible:ring-accent/40",
+                        "focus-visible:ring-2 focus-visible:ring-accent",
                         collapsed ? "h-9 justify-center" : "gap-2.5 px-2 py-2",
                         active ? "bg-accent-soft text-accent-ink" : "text-ink-soft hover:bg-background",
                       )}
@@ -130,7 +130,7 @@ function Topbar({ session }: { session: SessionData }) {
             type="button"
             onClick={() => setMobileOpen(true)}
             aria-label="Buka menu"
-            className="rounded-md p-1.5 text-ink-soft outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent/40 lg:hidden"
+            className="rounded-md p-1.5 text-ink-soft outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
           >
             <Menu className="size-5" />
           </button>
@@ -140,14 +140,14 @@ function Topbar({ session }: { session: SessionData }) {
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? "Perluas sidebar" : "Ringkas sidebar"}
             aria-expanded={!collapsed}
-            className="hidden rounded-md p-1.5 text-ink-soft outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent/40 lg:inline-flex"
+            className="hidden rounded-md p-1.5 text-ink-soft outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent lg:inline-flex"
           >
             {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           </button>
 
           <div className="ml-auto flex items-center">
             <UserMenu.Root>
-              <UserMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent/40">
+              <UserMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent">
                 <span className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-ink">
                   {(session?.user?.name ?? "?").slice(0, 1).toUpperCase()}
                 </span>

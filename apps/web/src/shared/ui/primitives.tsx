@@ -43,7 +43,7 @@ export function IconButton({
       className={cn(
         "inline-flex size-11 shrink-0 items-center justify-center rounded-md transition-colors sm:size-8",
         "disabled:opacity-40 disabled:pointer-events-none",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         variant === "primary" && "bg-accent text-white hover:bg-accent/90",
         variant === "ghost" && "text-ink-soft hover:bg-background hover:text-ink",
         variant === "danger" && "text-ink-soft hover:bg-danger-soft hover:text-danger",
@@ -71,7 +71,7 @@ export function Button({
       className={cn(
         "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
         "disabled:opacity-50 disabled:pointer-events-none",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         variant === "primary" && "bg-accent text-white hover:bg-accent/90",
         variant === "ghost" && "text-ink-soft hover:bg-background",
         variant === "danger" && "text-danger hover:bg-danger-soft",
@@ -90,7 +90,7 @@ export function Input({ className, ...rest }: React.InputHTMLAttributes<HTMLInpu
     <input
       className={cn(
         "h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[13px] outline-none",
-        "placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-accent/40",
+        "placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-accent",
         className,
       )}
       {...rest}
@@ -103,7 +103,7 @@ export function Textarea({ className, ...rest }: React.TextareaHTMLAttributes<HT
     <textarea
       className={cn(
         "min-h-20 w-full rounded-md border border-border bg-surface px-2.5 py-2 text-[13px] outline-none",
-        "placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-accent/40",
+        "placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-accent",
         className,
       )}
       {...rest}
@@ -116,7 +116,7 @@ export function Select({ className, ...rest }: React.SelectHTMLAttributes<HTMLSe
     <select
       className={cn(
         "h-8 w-full rounded-md border border-border bg-surface px-2 text-[13px] outline-none",
-        "focus-visible:ring-2 focus-visible:ring-accent/40",
+        "focus-visible:ring-2 focus-visible:ring-accent",
         className,
       )}
       {...rest}

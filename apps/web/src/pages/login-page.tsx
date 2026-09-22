@@ -4,19 +4,14 @@ import { type FormEvent, useState } from "react";
 import { uiConfig } from "../config/ui.ts";
 import { useLogin } from "../features/users/api.ts";
 import { Button, Input } from "../shared/ui/primitives.tsx";
+import { SystemStatusStrip } from "../shared/ui/system-status-strip.tsx";
 
 /**
  * The app's single entry gate. The session after it is managed by the Better Auth cookie.
  *
- * Authored device: **destination headline**. The heading names where the user is going
- * (`Masuk ke <app>`) instead of pairing a neutral "Masuk" with a grey subtitle beneath it.
- * That pairing is a listed generic composition, and it also wastes the one line that can tell
- * someone they are on the right system. The brand mark above the card carries the rest of the
- * orientation without borrowing a second line of text.
- *
- * Scale follows measured logins rather than this repo's dense-table defaults: inputs are 40px
- * with 16px text. The font size is not cosmetic — anything under 16px makes mobile Safari zoom
- * the viewport on focus.
+ * Scale follows measurement, not taste: eight comparable entry screens sit at 40–53px inputs
+ * with 16–18px text while this page used 32px/13px — a table's density applied to a form. The
+ * 16px text is also load-bearing: below it, mobile Safari zooms the viewport on focus.
  */
 export function LoginPage() {
   const login = useLogin();
@@ -31,7 +26,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-5 px-4 py-10">
       <div className="enter-soft flex items-center gap-2.5">
         <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-white">
           <UsersIcon className="size-5" aria-hidden="true" />
@@ -46,17 +41,19 @@ export function LoginPage() {
       >
         <h1 className="text-xl font-semibold tracking-tight">Masuk ke {uiConfig.appName}</h1>
 
-        <label htmlFor="email" className="mt-6 block text-[13px] font-medium text-ink-soft">
+        <SystemStatusStrip />
+
+        <label htmlFor="email" className="mt-5 block text-[13px] font-medium text-ink-soft">
           Email
         </label>
         <Input
           id="email"
-          className="mt-1.5 h-10 rounded-lg px-3 text-base"
+          className="mt-1.5 h-11 rounded-lg px-3 text-base"
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
+          autoComplete="username"
           placeholder="nama@organisasi.id"
           autoFocus
         />
@@ -67,7 +64,7 @@ export function LoginPage() {
         <div className="relative mt-1.5">
           <Input
             id="password"
-            className="h-10 w-full rounded-lg pr-11 text-base"
+            className="h-11 w-full rounded-lg pr-12 text-base"
             type={showPassword ? "text" : "password"}
             required
             value={password}
@@ -79,9 +76,9 @@ export function LoginPage() {
             onClick={() => setShowPassword((v) => !v)}
             aria-pressed={showPassword}
             aria-label={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
-            className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted outline-none hover:bg-background hover:text-ink focus-visible:ring-2 focus-visible:ring-accent/40"
+            className="absolute top-1/2 right-1.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted outline-none hover:bg-background hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
           >
-            {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye aria-hidden="true" size={16} />}
+            {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
           </button>
         </div>
 
@@ -94,7 +91,11 @@ export function LoginPage() {
           </p>
         ) : null}
 
-        <Button className="mt-6 h-10 w-full justify-center rounded-lg text-sm" type="submit" disabled={login.isPending}>
+        <Button
+          className="mt-6 h-11 w-full justify-center rounded-lg text-[15px]"
+          type="submit"
+          disabled={login.isPending}
+        >
           {login.isPending ? (
             <>
               <Loader2 size={16} className="animate-spin" aria-hidden="true" />

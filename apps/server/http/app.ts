@@ -40,8 +40,11 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
 
   // Hybrid deployment (ADR-0011): web lives on its own domain, so the client crosses origins.
   // Allowlist = AUTH_TRUSTED_ORIGINS — any other origin gets no CORS headers at all.
+  // Applied to every path, not just `/api/*`: the login screen reads `/health` and `/ready`
+  // before a session exists, and a preflight that 404s would hide a degraded backend from the
+  // person best placed to notice it.
   app.use(
-    "/api/*",
+    "*",
     cors({
       origin: (origin) => (ctx.env.trustedOrigins.includes(origin) ? origin : null),
       credentials: true,
