@@ -11,6 +11,7 @@ import { useTableState } from "../shared/lib/use-table-state.ts";
 import type { Column } from "../shared/ui/data-table.tsx";
 import { Badge, Button, Card, ConfirmDelete, IconButton } from "../shared/ui/primitives.tsx";
 import { PageLoading } from "../shared/ui/table-states.tsx";
+import { useToast } from "../shared/ui/toast.tsx";
 
 const columns: Column<PublicUser>[] = [
   { key: "name", header: "Nama", sortable: true, cell: (u) => <span className="font-medium">{u.name}</span> },
@@ -61,7 +62,7 @@ export function UsersPage() {
   const updateUser = useUpdateUser();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<PublicUser | null>(null);
-  const [notice, setNotice] = useState("");
+  const toast = useToast();
 
   if (session.isPending) return <Loading />;
   if (!session.data?.authenticated) return <Navigate to="/login" replace />;
@@ -89,12 +90,6 @@ export function UsersPage() {
 
   return (
     <Shell>
-      {notice ? (
-        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
-          {notice}
-        </p>
-      ) : null}
-
       <Card>
         <ResourceTable
           caption="Daftar pengguna organisasi"
@@ -133,8 +128,9 @@ export function UsersPage() {
                         disabled={deleteUser.isPending}
                         onConfirm={() =>
                           deleteUser.mutate(u.id, {
+                            onSuccess: () => toast.success("Pengguna dihapus"),
                             onError: (err) =>
-                              setNotice(err instanceof ApiError ? err.message : "Gagal menghapus pengguna"),
+                              toast.error(err instanceof ApiError ? err.message : "Gagal menghapus pengguna"),
                           })
                         }
                       />
@@ -157,7 +153,7 @@ export function UsersPage() {
             { id: editing.id, ...input },
             {
               onSuccess: () => setFormOpen(false),
-              onError: (err) => setNotice(err instanceof ApiError ? err.message : "Gagal menyimpan"),
+              onError: (err) => toast.error(err instanceof ApiError ? err.message : "Gagal menyimpan"),
             },
           );
         }}

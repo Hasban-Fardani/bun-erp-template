@@ -26,6 +26,7 @@ export const setRolePermissionsSchema = z.strictObject({
 
 export const listRolesSchema = z.strictObject({
   ...listQueryParts({ sortable: ["key", "name", "isSystem"], defaultSort: "key" }),
+  search: z.string().trim().max(120).optional(),
 });
 
 export const ListRolesInput = z.compile(listRolesSchema);

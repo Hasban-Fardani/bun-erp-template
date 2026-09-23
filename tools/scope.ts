@@ -52,14 +52,18 @@ export async function checkScope(root: string): Promise<ScopeFinding[]> {
       findings.push({ rule: "forbidden-path", path: file, detail: "must never be committed" });
     }
 
-    const top = file.split("/")[0] ?? "";
-    if (!file.includes("/")) continue;
-    if (!scope.allowed.topLevelDirs.includes(top)) {
-      findings.push({
-        rule: "unknown-top-level",
-        path: file,
-        detail: `"${top}/" is not an allowed top-level directory`,
-      });
+    // The top-level directory check only makes sense for nested paths; the content scan below
+    // must still run for files at the repo root (LICENSE, README, AGENTS.md, erp.ts). It used to
+    // `continue` here, which skipped every root file's contents — a hole the size of the repo root.
+    if (file.includes("/")) {
+      const top = file.split("/")[0] ?? "";
+      if (!scope.allowed.topLevelDirs.includes(top)) {
+        findings.push({
+          rule: "unknown-top-level",
+          path: file,
+          detail: `"${top}/" is not an allowed top-level directory`,
+        });
+      }
     }
 
     let body = "";

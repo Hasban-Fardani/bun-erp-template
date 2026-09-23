@@ -17,14 +17,14 @@
         "id": "client-name",
         "regex": "\\b(flora|idar|danari|daness|hasban)\\b",
         "reason": "Nama client/owner tidak boleh bocor ke repo template publik",
-        "allowIn": ["docs/tasks/**", "*.local", ".gitignore"],
+        "allowIn": ["docs/tasks/**", "docs/riset/**", "*.local", ".gitignore", "LICENSE", "template.scope.json"],
         "flags": "i"
       },
       {
         "id": "business-domain",
         "regex": "\\b(payroll|absensi|attendance|procurement|inventory-stock|pos-cashier)\\b",
-        "reason": "Aturan bisnis client dibuat dari product spec terpisah (PRD §2 non-goals)",
-        "allowIn": ["docs/**"],
+        "reason": "Aturan bisnis client dibuat dari product spec terpisah (PRD \u00a72 non-goals)",
+        "allowIn": ["docs/**", "README.md", "AGENTS.md", "template.scope.json"],
         "flags": "i"
       }
     ]

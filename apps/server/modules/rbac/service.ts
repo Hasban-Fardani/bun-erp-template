@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { ApiError } from "../../http/errors.ts";
 import { toOffset } from "../../http/list-query.ts";
 import { orderByColumn } from "../../http/sort.ts";
@@ -119,7 +119,10 @@ export async function listRoles(
   organizationId: string,
   input: ListRolesInput,
 ): Promise<{ items: Role[]; total: number }> {
-  const where = eq(roles.organizationId, organizationId);
+  const where = and(
+    eq(roles.organizationId, organizationId),
+    input.search ? or(ilike(roles.key, `%${input.search}%`), ilike(roles.name, `%${input.search}%`)) : undefined,
+  );
   const [items, count] = await Promise.all([
     db
       .select()

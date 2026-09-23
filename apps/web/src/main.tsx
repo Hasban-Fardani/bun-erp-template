@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { uiConfig } from "./config/ui.ts";
 import { routeTree } from "./routes/route-tree.tsx";
+import { ToastProvider } from "./shared/ui/toast.tsx";
 import "./styles/globals.css";
 
 const queryClient = new QueryClient({
@@ -23,7 +24,9 @@ if (!rootElement) throw new Error("element #root tidak ditemukan");
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

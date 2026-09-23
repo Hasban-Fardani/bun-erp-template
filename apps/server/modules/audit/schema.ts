@@ -4,6 +4,8 @@ import { listQueryParts } from "../../http/list-query.ts";
 /** Audit log filters. The time range uses ISO strings so it stays URL-friendly. */
 export const listAuditSchema = z.strictObject({
   ...listQueryParts({ sortable: ["createdAt", "event", "actorLabel"], defaultSort: "createdAt", defaultDir: "desc" }),
+  /** Free-text filter. The UI has one search box, so it matches across the readable columns. */
+  search: z.string().trim().max(120).optional(),
   event: z.string().trim().max(120).optional(),
   subjectType: z.string().trim().max(60).optional(),
   subjectId: z.string().trim().max(120).optional(),

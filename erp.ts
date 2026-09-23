@@ -56,7 +56,7 @@ class GateFailure extends Error {
 
 /** Gates read repo files directly — used by `check` and callable on their own. */
 async function runGate(
-  kind: "skills" | "task" | "scope" | "slop" | "platform" | "readiness" | "react" | "copy" | "design",
+  kind: "skills" | "task" | "scope" | "slop" | "platform" | "readiness" | "react" | "copy" | "design" | "surface",
 ): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
@@ -74,6 +74,9 @@ async function runGate(
   } else if (kind === "copy") {
     const { checkUserCopy } = await import("./tools/copy-guard.ts");
     findings = (await checkUserCopy(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — "${f.text}" (${f.why})`);
+  } else if (kind === "surface") {
+    const { checkInteractiveSurface } = await import("./tools/interactive-surface.ts");
+    findings = (await checkInteractiveSurface(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
   } else if (kind === "design") {
     const { checkDesign } = await import("./tools/design-gate.ts");
     findings = (await checkDesign(repoRoot)).map((f) => `${f.screen} ${f.code}/${f.severity} — ${f.detail}`);
@@ -96,6 +99,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await guard("react", () => runGate("react"));
     await guard("copy", () => runGate("copy"));
     await guard("design", () => runGate("design"));
+    await guard("surface", () => runGate("surface"));
     process.stdout.write("check: OK\n");
   },
 

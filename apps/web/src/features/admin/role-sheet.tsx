@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { ApiError } from "../../lib/api.ts";
 import { Button, Field, Input, Textarea } from "../../shared/ui/primitives.tsx";
 import { Sheet } from "../../shared/ui/sheet.tsx";
+import { useToast } from "../../shared/ui/toast.tsx";
 import { useRoleStatements } from "../admin/api.ts";
 import type { Role } from "../admin/types.ts";
 
@@ -21,17 +22,19 @@ export function RoleSheet({
   pending: boolean;
 }) {
   const editing = Boolean(role);
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [key, setKey] = useState(role?.key ?? "");
   const [name, setName] = useState(role?.name ?? "");
   const [description, setDescription] = useState(role?.description ?? "");
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     onSubmit({ key, name, description: description || undefined }).then(
-      () => onOpenChange(false),
-      (err) => setError(err instanceof ApiError ? err.message : "Gagal menyimpan peran"),
+      () => {
+        toast.success(editing ? "Peran diperbarui" : "Peran dibuat");
+        onOpenChange(false);
+      },
+      (err) => toast.error(err instanceof ApiError ? err.message : "Gagal menyimpan peran"),
     );
   };
 
@@ -69,15 +72,6 @@ export function RoleSheet({
           />
         </Field>
 
-        {error ? (
-          <p
-            role="alert"
-            className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] text-danger"
-          >
-            {error}
-          </p>
-        ) : null}
-
         <div className="flex items-center justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Batal
@@ -107,7 +101,7 @@ export function RolePermissionSheet({
 }) {
   const statements = useRoleStatements(open);
   const [draft, setDraft] = useState<string[]>(role.permissions);
-  const [error, setError] = useState("");
+  const toast = useToast();
   const chosen = new Set(draft);
 
   const toggle = (permission: string) => {
@@ -116,10 +110,12 @@ export function RolePermissionSheet({
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     onSubmit(draft).then(
-      () => onOpenChange(false),
-      (err) => setError(err instanceof ApiError ? err.message : "Gagal menyimpan izin"),
+      () => {
+        toast.success("Izin peran disimpan");
+        onOpenChange(false);
+      },
+      (err) => toast.error(err instanceof ApiError ? err.message : "Gagal menyimpan izin"),
     );
   };
 
@@ -156,15 +152,6 @@ export function RolePermissionSheet({
             </fieldset>
           ))
         )}
-
-        {error ? (
-          <p
-            role="alert"
-            className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] text-danger"
-          >
-            {error}
-          </p>
-        ) : null}
 
         <div className="flex items-center justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

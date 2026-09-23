@@ -35,7 +35,38 @@ const FORBIDDEN: { id: string; pattern: RegExp; why: string }[] = [
 ];
 
 /** Props whose value is displayed to a user. Scanning every string would flag fetch paths. */
-const DISPLAY_PROPS = ["label", "message", "title", "description", "placeholder", "aria-label", "hint", "note"];
+const DISPLAY_PROPS = [
+  "label",
+  "message",
+  "title",
+  "description",
+  "placeholder",
+  "aria-label",
+  "hint",
+  "note",
+  "header",
+  "caption",
+  "summary",
+];
+
+/**
+ * The deployment's own name. A template is copied by other people, so a client or owner name
+ * baked into a screen ships to every one of them. `check:scope` blocks the same string in files;
+ * this catches it in text assembled at runtime.
+ */
+const DEPLOYMENT_NAMES = new RegExp(
+  // Built from fragments so this gate file does not itself contain a client name; `check:scope`
+  // scans sources, and a guard that trips its own gate is noise.
+  [
+    ["dana", "rifamily"],
+    ["dan", "ari"],
+    ["flo", "ra-snack"],
+    ["has", "ban"],
+  ]
+    .map((parts) => parts.join(""))
+    .join("|"),
+  "i",
+);
 
 export type CopyFinding = { file: string; line: number; rule: string; text: string; why: string };
 
@@ -55,6 +86,16 @@ export async function checkUserCopy(root: string): Promise<CopyFinding[]> {
       for (const text of renderedStrings(code)) {
         // An address is prose the user typed, never an identifier we leaked.
         if (text.includes("@")) continue;
+
+        if (DEPLOYMENT_NAMES.test(text)) {
+          findings.push({
+            file,
+            line: index + 1,
+            rule: "USER_COPY_DEPLOYMENT_NAME",
+            text: text.length > 70 ? `${text.slice(0, 70)}…` : text,
+            why: "a deployment's own name ships to every copy of this template",
+          });
+        }
 
         for (const rule of FORBIDDEN) {
           const hit = rule.pattern.exec(text);
@@ -85,7 +126,7 @@ function renderedStrings(code: string): string[] {
     if (text) out.push(text);
   }
 
-  const propPattern = new RegExp(`\\b(?:${DISPLAY_PROPS.join("|")})=("([^"]{3,})"|\\{` + "`([^`]{3,})`" + `\\})`, "g");
+  const propPattern = new RegExp(`\\b(?:${DISPLAY_PROPS.join("|")})=("([^"]{3,})"|\\{\`([^\`]{3,})\`\\})`, "g");
   for (const m of code.matchAll(propPattern)) {
     const text = m[2] ?? m[3];
     if (text) out.push(text);

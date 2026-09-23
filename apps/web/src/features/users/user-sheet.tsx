@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { ApiError } from "../../lib/api.ts";
 import { Button, Field, Input, Select } from "../../shared/ui/primitives.tsx";
 import { Sheet } from "../../shared/ui/sheet.tsx";
+import { useToast } from "../../shared/ui/toast.tsx";
 import { useCreateUser, useRoles } from "./api.ts";
 import type { PublicUser } from "./types.ts";
 
@@ -22,8 +23,8 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserShee
   const roles = useRoles();
   const createUser = useCreateUser();
   const editing = Boolean(user);
+  const toast = useToast();
 
-  const [formError, setFormError] = useState("");
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
@@ -40,15 +41,21 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserShee
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    setFormError("");
-    const fail = (err: unknown) => setFormError(err instanceof ApiError ? err.message : "Gagal menyimpan pengguna");
+    toast.error("");
+    const fail = (err: unknown) => toast.error(err instanceof ApiError ? err.message : "Gagal menyimpan pengguna");
     const values: UserFormValues = { name, email, password, roleKey: roleKey || undefined };
 
     if (editing) {
       onSave?.(values);
       return;
     }
-    createUser.mutate(values, { onSuccess: () => onOpenChange(false), onError: fail });
+    createUser.mutate(values, {
+      onSuccess: () => {
+        toast.success("Pengguna ditambahkan");
+        onOpenChange(false);
+      },
+      onError: fail,
+    });
   };
 
   const heading = editing ? "Ubah Pengguna" : "Tambah Pengguna";
@@ -96,15 +103,6 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserShee
             ))}
           </Select>
         </Field>
-
-        {formError ? (
-          <p
-            role="alert"
-            className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] text-danger"
-          >
-            {formError}
-          </p>
-        ) : null}
 
         <div className="flex items-center justify-end gap-2 pt-1">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

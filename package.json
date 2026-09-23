@@ -14,7 +14,8 @@
     "start": "bun apps/server/server.ts",
     "check": "bun erp check",
     "check:prod": "bun erp check:prod",
-    "test": "bun erp test"
+    "test": "bun erp test",
+    "qa": "bun scripts/qa-e2e.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2"
@@ -22,7 +23,8 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@types/bun": "1.4.2",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "playwright-core": "1.63.0"
   },
   "engines": {
     "bun": "1.4.2"

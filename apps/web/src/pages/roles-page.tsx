@@ -17,6 +17,7 @@ import { useTableState } from "../shared/lib/use-table-state.ts";
 import type { Column } from "../shared/ui/data-table.tsx";
 import { Badge, Button, Card, ConfirmDelete, EmptyState, IconButton } from "../shared/ui/primitives.tsx";
 import { PageLoading } from "../shared/ui/table-states.tsx";
+import { useToast } from "../shared/ui/toast.tsx";
 
 const columns: Column<Role>[] = [
   {
@@ -64,7 +65,7 @@ export function RolesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
   const [permRole, setPermRole] = useState<Role | null>(null);
-  const [notice, setNotice] = useState("");
+  const toast = useToast();
 
   if (session.isPending) {
     return <PageLoading label="Menyiapkan…" />;
@@ -79,22 +80,12 @@ export function RolesPage() {
   const hasRowActions = canUpdate || canDelete;
 
   const save = (input: { key: string; name: string; description?: string }) => {
-    setNotice("");
     if (editing) return updateRole.mutateAsync({ id: editing.id, name: input.name, description: input.description });
     return createRole.mutateAsync(input);
   };
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-6 lg:px-8">
-      {notice ? (
-        <p
-          role="alert"
-          className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] text-danger"
-        >
-          {notice}
-        </p>
-      ) : null}
-
       <Card>
         {!canRead ? (
           <EmptyState icon={ShieldCheck} message="Hanya pemilik yang dapat mengatur peran dan izin." />
@@ -151,7 +142,9 @@ export function RolesPage() {
                           onConfirm={() =>
                             deleteRole.mutate(role.id, {
                               onError: (err) =>
-                                setNotice(err instanceof ApiError ? err.message : `Gagal menghapus peran ${role.name}`),
+                                toast.error(
+                                  err instanceof ApiError ? err.message : `Gagal menghapus peran ${role.name}`,
+                                ),
                             })
                           }
                         />

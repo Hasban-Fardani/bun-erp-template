@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import { toOffset } from "../../http/list-query.ts";
 import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
@@ -45,6 +45,13 @@ export async function listAuditLogs(
 ): Promise<{ items: AuditLog[]; total: number }> {
   const where = and(
     eq(auditLogs.organizationId, organizationId),
+    input.search
+      ? or(
+          ilike(auditLogs.event, `%${input.search}%`),
+          ilike(auditLogs.actorLabel, `%${input.search}%`),
+          ilike(auditLogs.subjectType, `%${input.search}%`),
+        )
+      : undefined,
     input.event ? eq(auditLogs.event, input.event) : undefined,
     input.subjectType ? eq(auditLogs.subjectType, input.subjectType) : undefined,
     input.subjectId ? eq(auditLogs.subjectId, input.subjectId) : undefined,

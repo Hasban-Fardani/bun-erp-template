@@ -26,8 +26,6 @@ export function TableSkeleton({ rows = 5, columns }: { rows?: number; columns: n
   );
 }
 
-type Tone = "neutral" | "danger";
-
 /**
  * One empty-state shape for every reason a list can be empty. `action` is not decoration: an
  * empty table with no way out is a dead end, and the two causes need different fixes (clear the
@@ -67,18 +65,6 @@ export function TableEmpty({
       <p className="max-w-sm text-xs text-ink-muted">{preset.detail}</p>
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
-  );
-}
-
-/** Inline failure for a row-level action, where a full empty state would be too loud. */
-export function TableNotice({ message, tone = "neutral" }: { message: string; tone?: Tone }) {
-  return (
-    <p
-      role={tone === "danger" ? "alert" : undefined}
-      className={cn("px-4 py-10 text-center text-[13px]", tone === "danger" ? "text-danger" : "text-ink-muted")}
-    >
-      {message}
-    </p>
   );
 }
 
