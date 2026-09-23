@@ -47,9 +47,25 @@ export const testEnv: Env = loadEnv({
   FEATURE_ADVANCED_REPORTS: "false",
 });
 
-/** Each test file gets its own clean database — migrations run at the start. */
+/**
+ * One migrated database per test *process*, reused by every file.
+ *
+ * Creating a context runs all migrations from scratch: ~3.1s. Eleven files meant the suite
+ * spent ~35s building identical schemas. A fresh context per file bought nothing — every
+ * fixture already truncates and reseeds — so the schema is built once and the data is reset.
+ */
+let shared: Promise<AppContext> | undefined;
+
 export async function createTestContext(): Promise<AppContext> {
-  return createContext({ env: testEnv, migrationsDir: MIGRATIONS_DIR });
+  shared ??= createContext({ env: testEnv, migrationsDir: MIGRATIONS_DIR });
+  return shared;
+}
+
+/** Drops the shared database. Only the migration tests need this, to build their own schema. */
+export async function disposeTestContext(): Promise<void> {
+  if (!shared) return;
+  await (await shared).close();
+  shared = undefined;
 }
 
 export async function truncateAll(ctx: AppContext): Promise<void> {
@@ -81,7 +97,7 @@ export async function createSeededApp() {
   await seed(ctx.db);
   resetPermissionCache();
   const organizationId = await resolveDefaultOrganizationId(ctx.db);
-  return { ctx, app: createApp(ctx, organizationId), organizationId, close: () => ctx.close() };
+  return { ctx, app: createApp(ctx, organizationId), organizationId, close: async () => {} };
 }
 
 export async function createHttpFixture() {
@@ -119,7 +135,8 @@ export async function createHttpFixture() {
       const res = await app.request(path, { headers: { cookie } });
       return (await res.json()) as { data: T };
     },
-    close: () => ctx.close(),
+    /** Data and cache are reset between tests; the shared schema is not. */
+    close: async () => {},
   };
 
   return api;

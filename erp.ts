@@ -107,17 +107,20 @@ async function runGate(
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
   check: async () => {
+    // biome and tsc run first: a type error explains most of the gate noise below, so seeing
+    // them first saves reading twelve reports to find the cause.
     await run(["bunx", "--bun", "biome", "check", "."], "biome check");
     await run(["bunx", "--bun", "tsc", "-p", "tsconfig.json"], "tsc");
-    await guard("skills", () => runGate("skills"));
-    await guard("task", () => runGate("task"));
-    await guard("scope", () => runGate("scope"));
-    await guard("slop", () => runGate("slop"));
-    await guard("platform", () => runGate("platform"));
-    await guard("react", () => runGate("react"));
-    await guard("copy", () => runGate("copy"));
-    await guard("design", () => runGate("design"));
-    await guard("surface", () => runGate("surface"));
+
+    const { runGatesParallel } = await import("./tools/parallel-gates.ts");
+    const results = await runGatesParallel(repoRoot);
+    for (const r of results) process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`);
+
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length > 0) {
+      for (const r of failed) process.stdout.write(`\n${r.name} failed:\n${r.output}\n`);
+      throw new GateFailure(failed.map((r) => r.name));
+    }
     process.stdout.write("check: OK\n");
   },
 

@@ -54,7 +54,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await ctx?.close();
+  // The context is shared with every other file; closing it here would break them.
 });
 
 describe("identity", () => {

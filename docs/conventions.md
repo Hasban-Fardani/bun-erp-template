@@ -7,6 +7,9 @@ Ditegakkan `bun erp check`; bila tidak lolos, commit tidak sah.
 - Komentar **berbahasa Inggris** dan menjelaskan **kenapa**, bukan mengulang kode di baris
   bawahnya. Berlaku juga untuk komentar SQL. Teks yang tampil ke pengguna tidak diatur ini —
   itu milik produk, bukan kode.
+- **Test per file memakai database bersama.** `bun test apps/server` ~27s. Setiap file yang
+  memanggil `createContext()` sendiri membayar ~3.1s untuk migrasi ulang — 11 file berarti ~35s
+  untuk skema identik. Fixture membagi satu schema dan me-reset datanya.
 - **Bun-first tanpa kecuali.** Dilarang impor `node:fs`, `node:os`, `node:crypto` — pakai
   `Bun.file`, `Bun.write`, `Bun.Glob`, `Bun.$`. `node:path` satu-satunya pengecualian (Bun
   tidak punya API path), dan itu harus terdaftar di `tools/platform.ts`. Ditegakkan gate.

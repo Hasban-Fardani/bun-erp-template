@@ -3,20 +3,22 @@ import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import type { AppContext } from "../context.ts";
 import { migrate, rowsOf } from "../platform/database/migrate.ts";
-import { createTestContext } from "./helpers.ts";
+import { createTestContext, disposeTestContext } from "./helpers.ts";
 
 let ctx: AppContext;
 
 beforeEach(async () => {
-  ctx ??= await createTestContext();
-  // `_migrations` persists across tests, so one test's "already applied" would silently
-  // skip the next test's files. Reset the ledger; shared context keeps the real schema.
+  // These tests inspect the ledger, so they need a schema of their own: closing the shared
+  // context first and rebuilding it leaves `_migrations` empty for a clean run.
+  await disposeTestContext();
+  ctx = await createTestContext();
   await ctx.db.execute(sql`drop table if exists _migrations`);
   await ctx.db.execute(sql`drop table if exists probe_widgets, probe_second`);
 });
 
 afterAll(async () => {
-  await ctx?.close();
+  // Drops the shared schema so the next file starts from a known state.
+  await disposeTestContext();
 });
 
 /**
