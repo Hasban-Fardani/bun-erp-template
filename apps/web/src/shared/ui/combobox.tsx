@@ -43,15 +43,6 @@ export function Combobox({
 }) {
   const [open, setOpen] = useState(false);
   const inputId = useId();
-  /**
-   * A Combobox is often rendered inside a Sheet, whose focus trap pulls focus back and leaves
-   * typing nowhere. Radix fires `onOpenAutoFocus` before the content's children mount, so the ref
-   * is still null at that point; focusing on the next effect is what actually lands on the field.
-   */
-  const popoverFocusProps = {
-    modal: true,
-    onOpenAutoFocus: (event: Event) => event.preventDefault(),
-  };
 
   /**
    * Focus must be moved after the popover has mounted and Radix has finished its own focus work.
@@ -88,7 +79,7 @@ export function Combobox({
         <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden="true" />
       </PopoverPrimitive.Trigger>
 
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" {...popoverFocusProps}>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         {/* Default cmdk filtering: fuzzy, case-insensitive, and already tuned. A hand-written
             `filter` replaced it and returned 0 results for every query. */}
         <CommandPrimitive className="flex flex-col overflow-hidden rounded-lg">

@@ -1,8 +1,8 @@
 import { Save, UserPlus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { ApiError } from "../../lib/api.ts";
+import { Combobox } from "../../shared/ui/combobox.tsx";
 import { Button, Field, Input } from "../../shared/ui/primitives.tsx";
-import { SimpleSelect } from "../../shared/ui/select.tsx";
 import { Sheet } from "../../shared/ui/sheet.tsx";
 import { useToast } from "../../shared/ui/toast.tsx";
 import { useCreateUser, useRoles } from "./api.ts";
@@ -97,11 +97,13 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserShee
 
         <Field id="user-role" label="Peran">
           {/* A role list grows with the organisation, so it is searchable rather than scrolled. */}
-          <SimpleSelect
+          <Combobox
             value={roleKey}
             onValueChange={setRoleKey}
             options={roleOptions.map((r) => ({ value: r.key, label: r.name }))}
+            placeholder="Pilih peran"
             label="Peran"
+            testId="user-role"
           />
         </Field>
 

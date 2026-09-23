@@ -84,6 +84,23 @@ for (const [label, path, term] of [
   check(`${label}: pencarian bekerja`, /\/ \d+/.test(await page.locator('[data-testid="table-info"]').innerText()));
 }
 
+// The role picker is a Combobox inside a Sheet: it opens, accepts typing and filters. This
+// broke once (focus was pulled back to the Sheet's scope) and shipped, so it is checked here.
+await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
+await page.waitForTimeout(800);
+await page.getByRole("button", { name: "Tambah" }).click();
+await page.waitForTimeout(700);
+await page.locator('[data-testid="user-role"]').click();
+await page.waitForTimeout(500);
+const before = await page.locator("[cmdk-item]").count();
+await page.locator("[cmdk-input]").fill("owner");
+await page.waitForTimeout(500);
+const after = await page.locator("[cmdk-item]").count();
+check("combobox peran: terbuka dan menyaring", before > 1 && after === 1);
+await page.keyboard.press("Escape");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(400);
+
 await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 const inlineAlerts = await page.locator("main [role='alert']").count();
