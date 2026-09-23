@@ -82,3 +82,39 @@ is a flake, and a flake in CI is a real defect. The timeout now lives in `bunfig
 
 `API_UNIT_TESTED` does not imply `UI_TESTED`. A `curl` returning 200 does not prove the UI
 renders. If the browser was not opened, say so.
+
+## Sample widely before calling a pattern "the standard"
+
+Measuring eight login pages and concluding "centred card is the norm" was wrong: the eight were
+the ones I already knew, and they happened to share a shape. `ui.shadcn.com/blocks/login` alone
+ships five variants, two of them two-column. A conclusion drawn from a convenience sample is a
+conclusion about the sample, not about the field.
+
+Before generalising: browse a catalogue, not a memory. shadcn blocks, shadcnblocks, 21st.dev.
+Name how many variants exist and which one you chose, and why.
+
+## A secret or an internal command never belongs on a pre-auth page
+
+The login screen once printed `bun erp user:passwd` as the recovery instruction. Anyone who loads
+that page — before authenticating — learns the tooling, the user model, and that password resets
+need shell access.
+
+Pre-auth surfaces leak by nature. Before shipping text on one, ask what it tells someone with no
+account. Recovery copy states who to contact, not what command to run.
+
+## Do not ship a state message that only ever reports good news
+
+A status strip that always reads "API active / database ready" is decoration: it cannot change a
+decision, and it competes with the primary action. The same information is worth showing only when
+it is bad, because then it explains a failure the user is about to hit.
+
+Rule: if a component can only say "everything is fine", delete it.
+
+## Verify colour claims with a contrast function, not with an impression
+
+Screenshots mislead about colour and spacing. A vision pass reported a 2.1:1 helper contrast that
+measured 7.3:1, a 2.6:1 icon that measured 4.8:1, and column gaps of 167/520 that measured 176/176.
+Each wrong claim would have caused a real regression if acted on.
+
+Measure computed styles in the browser and compute the ratio arithmetically. Screenshots are for
+finding candidates, never for confirming them.
