@@ -107,6 +107,7 @@ function Topbar({ session }: { session: SessionData }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useCollapsed();
   const signOut = useSignOut();
+  const location = useLocation();
 
   return (
     <>
@@ -164,7 +165,7 @@ function Topbar({ session }: { session: SessionData }) {
             </UserMenu.Root>
           </div>
         </header>
-        <main className="enter-soft flex-1">
+        <main key={location.pathname} className="enter-soft flex-1">
           <Outlet />
         </main>
       </div>

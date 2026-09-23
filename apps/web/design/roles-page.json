@@ -1,0 +1,122 @@
+{
+  "feature_id": "roles-page",
+  "surface_class": "operational_surface",
+  "status": "IMPLEMENTED",
+  "ui_code_requested": true,
+  "approved_by": "owner",
+  "approved_at": "2026-09-23",
+  "mock_paths": ["docs/riset/ui-tables.md"],
+  "style": {
+    "contrast_min_ratio": 4.8,
+    "unique_font_sizes": 6,
+    "unique_weights": 2,
+    "accent_hues": 1,
+    "nested_card_depth": 0,
+    "icon_libraries": 1,
+    "radius_styles": 3,
+    "browser_surfaces_themed": true,
+    "reduced_motion_respected": true,
+    "section_scaffolds_repeated": 0,
+    "hero_cliche_stack": false,
+    "kicker_above_heading": false,
+    "gradient_multistop": false,
+    "emoji_as_icon": false,
+    "motion_unmapped": false,
+    "invented_identity_assets": [],
+    "fabricated_portrait": false,
+    "copy_forbidden_hits": []
+  },
+  "options": [
+    {
+      "option_id": "shared-resource-table",
+      "role": "primary",
+      "reference_refs": ["shadcnspace table-01", "datatables"],
+      "patterns": ["operational:dense-table", "operational:server-pagination"],
+      "tradeoff": "The count of permissions is what an admin compares between roles; putting it in its own right-aligned column makes the scan a comparison instead of a hunt.",
+      "mock_path": "docs/riset/ui-tables.md",
+      "authored_device": "permission-count-as-the-load-bearing-column",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "measured_facts": {
+            "header_height": "44.5px",
+            "row_height": "57px",
+            "cell_padding": "p-3 ps-6",
+            "hover": "bg-muted/50"
+          },
+          "mechanism": "dense-table-with-visible-row-separators",
+          "application": "Header and body share one padding scale; rows carry a full-opacity border."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/riset/ui-tables.md",
+          "measured_facts": {
+            "info_format": "1-25 / 137",
+            "page_sizes": "10, 25, 50, 100"
+          },
+          "mechanism": "footer-with-page-size-selector-and-range-label",
+          "application": "One footer owned by ResourceTable, so a new list cannot omit it."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "copied": "44px header, full-opacity separators, hover on the row",
+          "deviated": "Mobile reflows to stacked cards instead of horizontal scroll",
+          "reason": "The reference is unusable at 390px; a card list keeps every column reachable without a scrollbar."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/riset/ui-tables.md",
+          "copied": "range label, page-size selector, first/prev/next/last",
+          "deviated": "No per-column filter row; the toolbar holds a single search box",
+          "reason": "Operators here run narrow org data; per-column filters add chrome without a use case."
+        }
+      ]
+    },
+    {
+      "option_id": "hand-rolled-table-per-page",
+      "role": "alternate",
+      "reference_refs": ["shadcnspace table-01"],
+      "patterns": ["operational:dense-table"],
+      "tradeoff": "Rejected: three pages had already drifted (one without pagination, two with hardcoded limits), which is what a per-page copy produces.",
+      "authored_device": "none",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "measured_facts": {
+            "header_height": "44.5px",
+            "row_height": "57px",
+            "cell_padding": "p-3 ps-6",
+            "hover": "bg-muted/50"
+          },
+          "mechanism": "dense-table-with-visible-row-separators",
+          "application": "Header and body share one padding scale; rows carry a full-opacity border."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/riset/ui-tables.md",
+          "measured_facts": {
+            "info_format": "1-25 / 137",
+            "page_sizes": "10, 25, 50, 100"
+          },
+          "mechanism": "footer-with-page-size-selector-and-range-label",
+          "application": "One footer owned by ResourceTable, so a new list cannot omit it."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "copied": "44px header, full-opacity separators, hover on the row",
+          "deviated": "Mobile reflows to stacked cards instead of horizontal scroll",
+          "reason": "The reference is unusable at 390px; a card list keeps every column reachable without a scrollbar."
+        }
+      ]
+    }
+  ],
+  "notes": "System roles are visually distinct and carry no delete action \u2014 removing them is code's job, not the operator's."
+}

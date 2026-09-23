@@ -9,38 +9,51 @@ import { type DesignDirectionSpec, DesignDirectionValidator } from "./governance
  * A screen that renders UI must carry a spec in `apps/web/design/<screen>.json`. The spec is
  * small on purpose: surface class, the option chosen, the references actually opened and
  * measured, and the named device that makes the screen not generic.
+ *
+ * The spec must also *exist for every screen*: requiring only one spec is what let the login page
+ * be reviewed while three other pages rendered without any declared direction.
  */
 
 export type DesignFinding = { screen: string; code: string; severity: string; detail: string };
+
+/** Screens a user navigates to. Every one of them needs a declared direction. */
+async function screenNames(root: string): Promise<string[]> {
+  const glob = new Bun.Glob("*.tsx");
+  const names: string[] = [];
+  for await (const file of glob.scan({ cwd: join(root, "apps/web/src/pages") })) {
+    const name = file.replace(/\.tsx$/, "");
+    // The layout and error shells have no visual direction of their own.
+    if (name === "not-found") continue;
+    names.push(name);
+  }
+  return names.sort();
+}
 
 export async function checkDesign(root: string): Promise<DesignFinding[]> {
   const findings: DesignFinding[] = [];
   const dir = join(root, "apps/web/design");
   const glob = new Bun.Glob("*.json");
+  const declared = new Set<string>();
 
-  let specs = 0;
   for await (const file of glob.scan({ cwd: dir })) {
-    specs += 1;
+    const screen = file.replace(/\.json$/, "");
+    declared.add(screen);
     const raw = (await Bun.file(join(dir, file)).json()) as DesignDirectionSpec;
     const result = DesignDirectionValidator.validate(raw);
     for (const v of result.violations) {
-      findings.push({
-        screen: file.replace(/\.json$/, ""),
-        code: v.code,
-        severity: v.severity,
-        detail: v.message,
-      });
+      findings.push({ screen, code: v.code, severity: v.severity, detail: v.message });
     }
   }
 
-  // A screen with no spec at all is the original problem, not a passing state.
-  if (specs === 0) {
-    findings.push({
-      screen: "(none)",
-      code: "NO_DESIGN_SPEC",
-      severity: "BLOCKER",
-      detail: "apps/web/design/ has no spec; a screen that renders UI must declare its direction",
-    });
+  for (const screen of await screenNames(root)) {
+    if (!declared.has(screen)) {
+      findings.push({
+        screen,
+        code: "SCREEN_WITHOUT_SPEC",
+        severity: "BLOCKER",
+        detail: `apps/web/src/pages/${screen}.tsx renders UI but has no direction in apps/web/design/${screen}.json`,
+      });
+    }
   }
 
   return findings;
