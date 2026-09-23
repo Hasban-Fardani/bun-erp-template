@@ -2,15 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { apiUrl } from "../../lib/api.ts";
 
 export type SystemStatus = {
-  /** The API answered at all. If false, the other fields are meaningless. */
+  /** The API answered at all. If false, the other field is meaningless. */
   api: boolean;
   /** `/ready` reports the database responding, not just the process being alive. */
   database: boolean;
 };
 
 /**
- * Reads the public readiness endpoint. Unauthenticated by design: the login screen has to know
- * whether signing in can possibly succeed before the user types a password.
+ * Reads the public readiness endpoint. Unauthenticated by design: whoever is about to sign in
+ * deserves to know whether signing in can work, and finding out by failing costs them a
+ * password round trip.
  */
 export function useSystemStatus() {
   return useQuery({
@@ -22,8 +23,8 @@ export function useSystemStatus() {
         const body = (await res.json()) as { status?: string; checks?: { database?: { ok?: boolean } } };
         return { api: true, database: body.checks?.database?.ok === true || body.status === "ready" };
       } catch {
-        // The API being unreachable is a state to display, not an error to throw: the login
-        // page's job is to tell the user, not to fail.
+        // An unreachable API is a state to display, not an error to throw: the login screen's
+        // job is to tell the person, not to fail.
         return { api: false, database: false };
       }
     },

@@ -26,3 +26,13 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+/**
+ * What this deployment actually opens, derived from `navGroups` rather than retyped. The login
+ * panel lists modules instead of client logos: a template has no customers to name, but it does
+ * know which modules this build ships, and that is the question "what am I signing into?"
+ * answers.
+ */
+export const shippedModules: { title: string; icon: LucideIcon }[] = navGroups.flatMap((group) =>
+  group.items.map((item) => ({ title: item.title, icon: item.icon })),
+);
