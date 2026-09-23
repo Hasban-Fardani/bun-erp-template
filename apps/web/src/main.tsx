@@ -32,3 +32,7 @@ createRoot(rootElement).render(
 );
 
 document.title = uiConfig.appName;
+
+// The palette is chosen at build time; applying it as an attribute lets globals.css hold both
+// token sets. Set on <html> so the background is correct before React paints anything.
+if (uiConfig.theme === "tinta-gelap") document.documentElement.dataset.theme = "tinta-gelap";

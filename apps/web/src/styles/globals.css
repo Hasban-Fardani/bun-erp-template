@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/*
+ * Two palettes, one set of token names. `kertas-tenang` is the light default; `tinta-gelap`
+ * is applied through `data-theme` so a deployment can pick one with `VITE_THEME` without a
+ * second stylesheet. Both are complete: a mode that only recolours half the tokens is worse
+ * than offering no choice (R-34).
+ */
 @theme {
   --color-background: #fafaf9;
   --color-surface: #ffffff;
@@ -11,28 +17,28 @@
   --color-accent-soft: #ecfdf5;
   --color-danger: #b91c1c;
   --color-danger-soft: #fef2f2;
-
-  /**
-   * Motion tokens. Durations stay short: a UI that is felt as "smooth" is one where nothing
-   * snaps into place, not one where things take their time.
-   */
-  --duration-quick: 120ms;
-  --duration-base: 180ms;
-  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --color-accent-ink: #ffffff;
 }
 
-body {
-  background: var(--color-background);
-  color: var(--color-ink);
-  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  font-size: 14px;
-  line-height: 1.45;
+[data-theme="tinta-gelap"] {
+  --color-background: #12100e;
+  --color-surface: #1c1917;
+  --color-border: #33302c;
+  --color-ink: #f5f5f4;
+  --color-ink-soft: #d6d3d1;
+  --color-ink-muted: #a8a29e;
+  --color-accent: #34d399;
+  --color-accent-soft: #052e26;
+  --color-danger: #f87171;
+  --color-danger-soft: #2a1010;
+  --color-accent-ink: #12100e;
+  color-scheme: dark;
 }
 
-/**
- * Content arriving should fade and rise slightly instead of appearing between two frames.
- * Applied to table bodies and page containers; kept off layout-affecting properties so it
- * cannot cause reflow.
+/*
+ * Motion: one authored entrance for content, a slide for the side panel, and nothing that
+ * animates on scroll. `prefers-reduced-motion` disables all three rather than each component
+ * remembering to ask.
  */
 @keyframes enter-soft {
   from {
@@ -45,32 +51,6 @@ body {
   }
 }
 
-@utility enter-soft {
-  animation: enter-soft var(--duration-base) var(--ease-out-soft) both;
-}
-
-/**
- * A spinner that has nothing to show yet. Prefer skeletons for known shapes; this is for the
- * gap where the shape is not known.
- */
-@utility pending-soft {
-  transition: opacity var(--duration-base) var(--ease-out-soft);
-}
-
-/**
- * The sheet/overlay pair from Radix. These replace `animate-in`/`animate-out`, which are
- * utility classes from a plugin this project does not install — they were dead classes that
- * made every drawer snap open with no transition at all.
- */
-@keyframes overlay-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @keyframes panel-in-right {
   from {
     transform: translateX(100%);
@@ -80,40 +60,49 @@ body {
   }
 }
 
-@keyframes panel-in-left {
+@keyframes fade-in {
   from {
-    transform: translateX(-100%);
+    opacity: 0;
   }
   to {
-    transform: none;
+    opacity: 1;
   }
 }
 
-@layer components {
-  [data-slot="overlay"][data-state="open"] {
-    animation: overlay-in var(--duration-base) var(--ease-out-soft);
-  }
-
-  [data-slot="panel"][data-side="right"][data-state="open"] {
-    animation: panel-in-right var(--duration-base) var(--ease-out-soft);
-  }
-
-  [data-slot="panel"][data-side="left"][data-state="open"] {
-    animation: panel-in-left var(--duration-base) var(--ease-out-soft);
-  }
+.enter-soft {
+  animation: enter-soft 180ms ease-out;
 }
 
-/**
- * Non-negotiable: motion is decoration. Anything that moves must stop for people who asked
- * for less of it, and a pulsing skeleton must not pulse forever.
- */
+[data-slot="sheet-panel"][data-state="open"] {
+  animation: panel-in-right 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-slot="sheet-overlay"][data-state="open"] {
+  animation: fade-in 150ms ease-out;
+}
+
+[data-slot="modal-panel"][data-state="open"] {
+  animation: enter-soft 160ms ease-out;
+}
+
+[data-slot="toast"] {
+  animation: enter-soft 160ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  .enter-soft,
+  [data-slot="sheet-panel"],
+  [data-slot="sheet-overlay"],
+  [data-slot="modal-panel"],
+  [data-slot="toast"] {
+    animation: none;
   }
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-ink);
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
 }

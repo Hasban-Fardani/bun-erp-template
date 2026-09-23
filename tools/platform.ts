@@ -27,6 +27,8 @@ const PATH_ALLOWED = new Set([
   "tools/governance",
   "tools/design-gate.ts",
   "tools/interactive-surface.ts",
+  "tools/shadcn-guard.ts",
+  "tools/ui-completeness.ts",
   "apps/web/vite.config.ts",
   "erp.ts",
   "tools/scope.ts",

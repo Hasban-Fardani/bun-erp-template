@@ -111,19 +111,6 @@ export function Textarea({ className, ...rest }: React.TextareaHTMLAttributes<HT
   );
 }
 
-export function Select({ className, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      className={cn(
-        "h-8 w-full rounded-md border border-border bg-surface px-2 text-[13px] outline-none",
-        "focus-visible:ring-2 focus-visible:ring-accent",
-        className,
-      )}
-      {...rest}
-    />
-  );
-}
-
 /** Label is always bound to `htmlFor`; an unlabeled input reads as blank to a screen reader. */
 export function Field({
   id,

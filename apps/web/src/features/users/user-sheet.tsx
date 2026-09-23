@@ -1,7 +1,8 @@
 import { Save, UserPlus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { ApiError } from "../../lib/api.ts";
-import { Button, Field, Input, Select } from "../../shared/ui/primitives.tsx";
+import { Button, Field, Input } from "../../shared/ui/primitives.tsx";
+import { SimpleSelect } from "../../shared/ui/select.tsx";
 import { Sheet } from "../../shared/ui/sheet.tsx";
 import { useToast } from "../../shared/ui/toast.tsx";
 import { useCreateUser, useRoles } from "./api.ts";
@@ -95,13 +96,13 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserShee
         )}
 
         <Field id="user-role" label="Peran">
-          <Select id="user-role" value={roleKey} onChange={(e) => setRoleKey(e.target.value)}>
-            {roleOptions.map((r) => (
-              <option key={r.key} value={r.key}>
-                {r.name}
-              </option>
-            ))}
-          </Select>
+          {/* A role list grows with the organisation, so it is searchable rather than scrolled. */}
+          <SimpleSelect
+            value={roleKey}
+            onValueChange={setRoleKey}
+            options={roleOptions.map((r) => ({ value: r.key, label: r.name }))}
+            label="Peran"
+          />
         </Field>
 
         <div className="flex items-center justify-end gap-2 pt-1">

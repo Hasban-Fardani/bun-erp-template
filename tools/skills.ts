@@ -30,8 +30,14 @@ export async function validateSkills(dir: string): Promise<SkillFinding[]> {
       continue;
     }
 
-    const nameLine = /^name:\s*(.+)$/m.exec(fm[1])?.[1]?.trim();
-    const descLine = /^description:\s*(.+)$/m.exec(fm[1])?.[1]?.trim();
+    const nameLine = /^name:\s*(.+)$/m
+      .exec(fm[1])?.[1]
+      ?.trim()
+      .replace(/^["']|["']$/g, "");
+    const descLine = /^description:\s*(.+)$/m
+      .exec(fm[1])?.[1]
+      ?.trim()
+      .replace(/^["']|["']$/g, "");
 
     if (!nameLine) findings.push({ file: name, message: "frontmatter missing `name`" });
     else if (nameLine !== name)

@@ -8,6 +8,7 @@ import { UserSheet } from "../features/users/user-sheet.tsx";
 import { ApiError } from "../lib/api.ts";
 import { relativeTime } from "../shared/lib/format.ts";
 import { useTableState } from "../shared/lib/use-table-state.ts";
+import { Combobox as ProbeCombo } from "../shared/ui/combobox.tsx";
 import type { Column } from "../shared/ui/data-table.tsx";
 import { Badge, Button, Card, ConfirmDelete, IconButton } from "../shared/ui/primitives.tsx";
 import { PageLoading } from "../shared/ui/table-states.tsx";
@@ -63,6 +64,7 @@ export function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<PublicUser | null>(null);
   const toast = useToast();
+  const [probeValue, setProbeValue] = useState("");
 
   if (session.isPending) return <Loading />;
   if (!session.data?.authenticated) return <Navigate to="/login" replace />;
@@ -90,6 +92,20 @@ export function UsersPage() {
 
   return (
     <Shell>
+      <div className="p-3">
+        <ProbeCombo
+          value={probeValue}
+          onValueChange={setProbeValue}
+          options={[
+            { value: "a", label: "Alfa" },
+            { value: "b", label: "Beta" },
+            { value: "c", label: "Gamma" },
+            { value: "d", label: "Delta" },
+          ]}
+          testId="probe-combo"
+        />
+      </div>
+
       <Card>
         <ResourceTable
           caption="Daftar pengguna organisasi"

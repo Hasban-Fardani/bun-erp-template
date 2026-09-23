@@ -56,7 +56,19 @@ class GateFailure extends Error {
 
 /** Gates read repo files directly — used by `check` and callable on their own. */
 async function runGate(
-  kind: "skills" | "task" | "scope" | "slop" | "platform" | "readiness" | "react" | "copy" | "design" | "surface",
+  kind:
+    | "skills"
+    | "task"
+    | "scope"
+    | "slop"
+    | "platform"
+    | "readiness"
+    | "react"
+    | "copy"
+    | "design"
+    | "surface"
+    | "shadcn"
+    | "ui",
 ): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
@@ -80,6 +92,12 @@ async function runGate(
   } else if (kind === "design") {
     const { checkDesign } = await import("./tools/design-gate.ts");
     findings = (await checkDesign(repoRoot)).map((f) => `${f.screen} ${f.code}/${f.severity} — ${f.detail}`);
+  } else if (kind === "shadcn") {
+    const { checkShadcn } = await import("./tools/shadcn-guard.ts");
+    findings = (await checkShadcn(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
+  } else if (kind === "ui") {
+    const { checkUiCompleteness } = await import("./tools/ui-completeness.ts");
+    findings = (await checkUiCompleteness(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
   } else {
     const { findReactDoctorIssues } = await import("./tools/react-doctor.ts");
     findings = await findReactDoctorIssues(repoRoot);
@@ -383,6 +401,15 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "check:surface": async () => {
     await guard("surface", () => runGate("surface"));
     process.stdout.write("Surface OK: feedback goes to toasts.\n");
+  },
+  "check:shadcn": async () => {
+    await guard("shadcn", () => runGate("shadcn"));
+    process.stdout.write("shadcn OK: components come from the design system.\n");
+  },
+
+  "check:ui": async () => {
+    await guard("ui", () => runGate("ui"));
+    process.stdout.write("UI completeness OK: states, focus, theme.\n");
   },
 
   "skills:validate": async () => {

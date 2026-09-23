@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRi
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 import { IconButton } from "./primitives.tsx";
+import { SimpleSelect } from "./select.tsx";
 import { TableEmpty, TableSkeleton } from "./table-states.tsx";
 
 export type Column<T> = {
@@ -203,24 +204,21 @@ export function Pagination({ page, perPage, total, totalPages, onPage, onPerPage
 
   return (
     <div className="flex flex-col gap-3 border-t border-border px-4 py-3 text-[12.5px] text-ink-soft sm:flex-row sm:items-center sm:justify-between">
-      <label className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <span data-testid="table-info" className="text-ink-muted">
           {first}-{last} / {total}
         </span>
-        <select
-          data-testid="per-page"
-          value={perPage}
-          onChange={(e) => onPerPage(Number(e.target.value))}
-          className="h-8 rounded-md border border-border bg-surface px-2 text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          {[10, 25, 50, 100].map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+        <SimpleSelect
+          size="sm"
+          className="w-[4.5rem]"
+          testId="per-page"
+          label="Baris per halaman"
+          value={String(perPage)}
+          onValueChange={(v) => onPerPage(Number(v))}
+          options={[10, 25, 50, 100].map((size) => ({ value: String(size), label: String(size) }))}
+        />
         <span className="text-ink-muted">per halaman</span>
-      </label>
+      </div>
 
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-0.5" aria-live="polite">
