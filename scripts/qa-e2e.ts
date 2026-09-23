@@ -42,7 +42,8 @@ page.on("console", (m) => {
 /** Tracking every non-2xx is how a rejected query shape gets caught instead of shrugged at. */
 const badResponses: string[] = [];
 page.on("response", (res) => {
-  if (res.url().includes("/api/") && res.status() >= 400) badResponses.push(`${res.status()} ${res.url().slice(0, 110)}`);
+  if (res.url().includes("/api/") && res.status() >= 400)
+    badResponses.push(`${res.status()} ${res.url().slice(0, 110)}`);
 });
 
 async function login(p: Page) {

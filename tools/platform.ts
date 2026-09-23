@@ -22,6 +22,9 @@ const PATH_ALLOWED = new Set([
   "apps/server/tests/migrations.test.ts",
   // Gate tools join paths; Bun has no path API, so node:path is the correct choice here.
   "tools/copy-guard.ts",
+  // Vendored verbatim from the governance repo, with only import extensions and null-checks
+  // touched. Rewriting them to Bun APIs would make future diffs against upstream unreadable.
+  "tools/governance",
   "tools/design-gate.ts",
   "tools/interactive-surface.ts",
   "apps/web/vite.config.ts",
@@ -44,6 +47,10 @@ export async function checkPlatform(root: string): Promise<PlatformFinding[]> {
       if (SKIP.some((re) => re.test(file)) || seen.has(file)) continue;
       seen.add(file);
       if (file.startsWith("apps/web/")) continue; // Vite/React build tooling runs under Node.
+      // Vendored governance validators: copied verbatim, so their Node imports are upstream's
+      // choice, not a decision made here. Rewriting them would make diffs against the source
+      // unreadable, and the exemption is directory-scoped on purpose.
+      if (file.startsWith("tools/governance/")) continue;
 
       const body = await Bun.file(`${root}/${file}`).text();
       for (const [index, line] of body.split("\n").entries()) {

@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.json", "!**/node_modules", "!**/dist", "!**/.data"]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.json", "!**/node_modules", "!**/dist", "!**/.data", "!tools/governance"]
   },
   "formatter": {
     "enabled": true,

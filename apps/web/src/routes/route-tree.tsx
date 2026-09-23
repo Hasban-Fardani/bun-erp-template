@@ -50,7 +50,20 @@ const routeTree = rootRoute.addChildren([
   appRoute.addChildren([indexRoute, usersRoute, rolesRoute, auditRoute]),
 ]);
 
-/** The paths actually registered in the router. A test keeps them in sync with nav. */
-export const registeredPaths: readonly string[] = ["/", "/login", "/users", "/roles", "/audit"];
+/**
+ * Paths derived from the router itself, not a hand-kept list.
+ *
+ * The list used to be written by hand, which meant a new nav entry plus one line in that array
+ * was enough to satisfy the nav test while the route did not exist — the gate could be edited
+ * into agreeing with the bug. Reading the tree removes that move entirely.
+ */
+function collectPaths(node: unknown, out: string[] = []): string[] {
+  const branch = node as { options?: { path?: string }; children?: unknown[] };
+  if (branch?.options?.path) out.push(branch.options.path);
+  for (const child of branch?.children ?? []) collectPaths(child, out);
+  return out;
+}
+
+export const registeredPaths: readonly string[] = [...new Set(collectPaths(routeTree))].sort();
 
 export { routeTree };

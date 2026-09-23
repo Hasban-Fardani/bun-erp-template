@@ -362,6 +362,29 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     process.stdout.write("Tasks valid.\n");
   },
 
+  // Gate yang sama dengan `check`, tapi bisa dijalankan sendiri saat mengerjakan satu bidang.
+  // Docs dan skills menunjuk perintah ini, jadi ia harus benar-benar ada.
+  "check:slop": async () => {
+    await guard("slop", () => runGate("slop"));
+    process.stdout.write("Slop OK.\n");
+  },
+  "check:platform": async () => {
+    await guard("platform", () => runGate("platform"));
+    process.stdout.write("Platform OK: Bun only, no stray Node built-ins.\n");
+  },
+  "check:copy": async () => {
+    await guard("copy", () => runGate("copy"));
+    process.stdout.write("Copy OK: no technical vocabulary on screen.\n");
+  },
+  "check:design": async () => {
+    await guard("design", () => runGate("design"));
+    process.stdout.write("Design OK: every screen declares its direction.\n");
+  },
+  "check:surface": async () => {
+    await guard("surface", () => runGate("surface"));
+    process.stdout.write("Surface OK: feedback goes to toasts.\n");
+  },
+
   "skills:validate": async () => {
     await guard("skills", () => runGate("skills"));
     process.stdout.write("Skills OK.\n");

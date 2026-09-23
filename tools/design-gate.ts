@@ -1,8 +1,5 @@
 import { join } from "node:path";
-import {
-  type DesignDirectionSpec,
-  DesignDirectionValidator,
-} from "/root/programming-governance/adapters/design-direction-validator.ts";
+import { type DesignDirectionSpec, DesignDirectionValidator } from "./governance/design-direction-validator.ts";
 
 /**
  * Design gate. `design-direction-validator.ts` existed in the governance repo with 20+ measured

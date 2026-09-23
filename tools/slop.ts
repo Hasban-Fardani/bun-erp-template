@@ -46,8 +46,11 @@ function sourceFiles(root: string): string[] {
  * that need an AST. It runs as a subprocess so there is a single source of rules.
  */
 async function governanceFindings(root: string): Promise<string[]> {
-  const validator = "/root/programming-governance/adapters/slop-validator.ts";
-  if (!(await Bun.file(validator).exists())) return [];
+  const validator = join(import.meta.dir, "governance/slop-validator.ts");
+  if (!(await Bun.file(validator).exists())) {
+    // The validator ships with the repo, so its absence is breakage, not a reason to skip silently.
+    return [`slop validator missing at ${validator} — the gate is bundled with the repo`];
+  }
 
   // Explicit source paths, not `apps`: a built `apps/web/dist` is output, and scanning it
   // produced hundreds of nonsense findings about minified bundles.

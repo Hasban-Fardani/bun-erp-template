@@ -20,5 +20,5 @@
     "noEmit": true
   },
   "include": ["apps/**/*.ts", "apps/**/*.tsx", "tools/**/*.ts"],
-  "exclude": ["node_modules", "dist", ".data"]
+  "exclude": ["node_modules", "dist", ".data", "tools/governance"]
 }
