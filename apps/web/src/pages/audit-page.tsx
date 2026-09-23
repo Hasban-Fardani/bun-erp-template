@@ -47,7 +47,7 @@ export function AuditPage() {
   const [selected, setSelected] = useState<AuditLog | null>(null);
 
   if (session.isPending) {
-    return <PageLoading label="Memuat sesi…" />;
+    return <PageLoading label="Menyiapkan…" />;
   }
   if (!session.data?.authenticated) return <Navigate to="/login" replace />;
 
@@ -89,7 +89,7 @@ export function AuditPage() {
     <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
       <Card>
         {!canRead ? (
-          <EmptyState icon={ScrollText} message="Peran Anda tidak memiliki izin audit.read." />
+          <EmptyState icon={ScrollText} message="Riwayat aktivitas hanya terbuka untuk pemilik dan pengelola." />
         ) : (
           <ResourceTable
             caption="Jejak audit organisasi"

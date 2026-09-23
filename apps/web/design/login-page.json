@@ -1,0 +1,122 @@
+{
+  "feature_id": "login-page",
+  "surface_class": "operational_surface",
+  "status": "IMPLEMENTED",
+  "ui_code_requested": true,
+  "approved_by": "owner",
+  "approved_at": "2026-09-23",
+  "mock_paths": ["docs/riset/login-entry-screens.md"],
+  "style": {
+    "contrast_min_ratio": 4.8,
+    "unique_font_sizes": 7,
+    "unique_weights": 2,
+    "accent_hues": 1,
+    "nested_card_depth": 0,
+    "icon_libraries": 1,
+    "radius_styles": 3,
+    "browser_surfaces_themed": true,
+    "reduced_motion_respected": true,
+    "section_scaffolds_repeated": 0,
+    "hero_cliche_stack": false,
+    "kicker_above_heading": false,
+    "gradient_multistop": false,
+    "emoji_as_icon": false,
+    "motion_unmapped": false,
+    "invented_identity_assets": [],
+    "fabricated_portrait": false,
+    "copy_forbidden_hits": []
+  },
+  "options": [
+    {
+      "option_id": "split-with-module-inventory",
+      "role": "primary",
+      "reference_refs": ["https://ui.shadcn.com/blocks/login", "https://dashboard.stripe.com/login"],
+      "patterns": ["operational:two-column-entry", "operational:form-column-single-job"],
+      "tradeoff": "Needs a second column worth reading; on a template the honest content is the module list, so the panel argues instead of decorating. Costs horizontal room below lg, which is why the panel is dropped on phones.",
+      "mock_path": "docs/riset/login-entry-screens.md",
+      "authored_device": "module-inventory-panel-read-from-navigation-source",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "measured_facts": {
+            "variants_shipped": "5",
+            "two_column_variants": "2",
+            "single_card_variants": "3"
+          },
+          "mechanism": "the single centred card is one variant among several, not the default shape",
+          "application": "the login screen uses a two-column entry layout instead of one centred card"
+        },
+        {
+          "url": "https://dashboard.stripe.com/login",
+          "observed_artifact": "/tmp/erp-web-e2e/login-desktop.png",
+          "measured_facts": {
+            "form_width_px": "412",
+            "input_height_px": "44",
+            "input_font_px": "16"
+          },
+          "mechanism": "form density carries the presence: roomy inputs at 16px set the tone before any decoration",
+          "application": "inputs are 44px tall with 16px text, matching the measured band"
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "copied": "the two-column entry shape, and the idea that the second column must carry content rather than decoration",
+          "deviated": "the panel lists this build's modules instead of a customer logo wall",
+          "reason": "a template has no customers to name, and inventing logos or uptime numbers is fabrication; naming its own modules is the honest version of the same device"
+        },
+        {
+          "url": "https://dashboard.stripe.com/login",
+          "observed_artifact": "/tmp/erp-web-e2e/login-desktop.png",
+          "copied": "the measured form density: 44px inputs, 16px text, single action button",
+          "deviated": "no social or SSO buttons, and the recovery path opens an explanation instead of a reset flow",
+          "reason": "this deployment has no mail driver and no identity provider wired, so offering those buttons would promise something the backend cannot do"
+        }
+      ]
+    },
+    {
+      "option_id": "centred-card-only",
+      "role": "alternate",
+      "reference_refs": ["https://vercel.com/login"],
+      "patterns": ["operational:centred-card"],
+      "tradeoff": "Cheapest and impossible to get wrong, but a template then looks like every other template and the operator learns nothing before signing in.",
+      "mock_path": "docs/riset/login-entry-screens.md",
+      "authored_device": "none-beyond-typography",
+      "reference_evidence": [
+        {
+          "url": "https://vercel.com/login",
+          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "measured_facts": {
+            "form_width_px": "320",
+            "input_height_px": "40",
+            "input_font_px": "16"
+          },
+          "mechanism": "restraint: one column, one action, no second panel",
+          "application": "rejected as the primary option because the repo needed a shape that survives being copied by many deployments"
+        },
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "measured_facts": {
+            "single_card_variants": "3",
+            "form_max_width_px": "384"
+          },
+          "mechanism": "a centred card with generous whitespace and no second panel",
+          "application": "rejected as primary: correct for a product with nothing to say pre-auth, generic for a template copied by many deployments"
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://vercel.com/login",
+          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "copied": "restraint: one column, one action, no second panel",
+          "deviated": "input height kept at 44px rather than Vercel's 40px",
+          "reason": "the measured band across the sample is 40-53px; 44px sits inside it and matches the rest of this app's controls"
+        }
+      ]
+    }
+  ],
+  "notes": "The right-hand form column is fixed by measurement, not taste: 44px inputs and 16px text come from the login-entry-screens research, and 16px prevents mobile Safari from zooming on focus. The panel lists modules read from the same source the sidebar uses, so it cannot drift. Nothing about servers, sessions, or permissions appears on screen."
+}

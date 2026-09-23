@@ -76,7 +76,7 @@ export function UsersPage() {
     return (
       <Shell>
         <p className="px-4 py-10 text-center text-[13px] text-ink-muted">
-          Peran Anda tidak memiliki izin user.read. Minta owner menjalankan: bun erp user:grant &lt;email&gt; owner
+          Daftar pengguna hanya terbuka untuk pemilik dan pengelola.
         </p>
       </Shell>
     );
@@ -172,5 +172,5 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function Loading() {
-  return <PageLoading label="Memuat sesi…" />;
+  return <PageLoading label="Menyiapkan…" />;
 }

@@ -118,3 +118,31 @@ Each wrong claim would have caused a real regression if acted on.
 
 Measure computed styles in the browser and compute the ratio arithmetically. Screenshots are for
 finding candidates, never for confirming them.
+
+## The operator is not a technician
+
+A screen said "API aktif / Basis data siap" and "Memuat sesi…" and "izin audit.read". The person
+using this tool approves orders; none of that vocabulary helps them decide anything, and each
+string costs attention they owe to their work.
+
+Screen text is judged by one question: **what decision can this text change?** A badge reading
+`Disetujui` changes whether they proceed. A badge reading `API aktif` changes nothing, ever — so
+it is decoration, and decoration that competes with the primary action.
+
+Two rules that settle most cases:
+
+- If a status element can only ever report good news, delete it. It cannot go red in a way the
+  operator can act on.
+- Never name a permission identifier (`user.read`). Name who can do the thing instead.
+
+`bun erp check:copy` enforces this on rendered strings only — identifiers, imports, and comments
+are not user-facing, so flagging them would train everyone to ignore the gate.
+
+## A rule nothing runs is documentation
+
+`design-direction-validator.ts` sat in the governance repo with 20+ measured rules, including the
+one banning `muted-subtitle-under-headline`. Nothing called it, so this repo shipped that exact
+violation twice while the rule sat one directory away.
+
+When a governance rule exists, wire it into `bun erp check` in the same change. Before that, the
+only thing enforcing it is the owner's patience.

@@ -67,7 +67,7 @@ export function RolesPage() {
   const [notice, setNotice] = useState("");
 
   if (session.isPending) {
-    return <PageLoading label="Memuat sesi…" />;
+    return <PageLoading label="Menyiapkan…" />;
   }
   if (!session.data?.authenticated) return <Navigate to="/login" replace />;
 
@@ -97,7 +97,7 @@ export function RolesPage() {
 
       <Card>
         {!canRead ? (
-          <EmptyState icon={ShieldCheck} message="Peran Anda tidak memiliki izin role.read." />
+          <EmptyState icon={ShieldCheck} message="Hanya pemilik yang dapat mengatur peran dan izin." />
         ) : (
           <ResourceTable
             caption="Daftar peran organisasi"

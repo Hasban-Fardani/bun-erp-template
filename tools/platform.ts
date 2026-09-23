@@ -20,6 +20,9 @@ const PATH_ALLOWED = new Set([
   "apps/server/platform/observability/logger.ts",
   "apps/server/tests/helpers.ts",
   "apps/server/tests/migrations.test.ts",
+  // Gate tools join paths; Bun has no path API, so node:path is the correct choice here.
+  "tools/copy-guard.ts",
+  "tools/design-gate.ts",
   "apps/web/vite.config.ts",
   "erp.ts",
   "tools/scope.ts",

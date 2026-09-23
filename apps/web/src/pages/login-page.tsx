@@ -6,7 +6,6 @@ import { uiConfig } from "../config/ui.ts";
 import { useLogin } from "../features/users/api.ts";
 import { Modal } from "../shared/ui/modal.tsx";
 import { Button, Input } from "../shared/ui/primitives.tsx";
-import { SystemStatusStrip } from "../shared/ui/system-status-strip.tsx";
 
 /**
  * The app's single entry gate; the Better Auth cookie owns the session after it.
@@ -54,7 +53,9 @@ export function LoginPage() {
             Peran dan izin menentukan apa yang terbuka setelah Anda masuk.
           </p>
 
-          <p className="mt-8 text-[12px] font-medium tracking-wider text-stone-500 uppercase">Modul dalam build ini</p>
+          <p className="mt-8 text-[12px] font-medium tracking-wider text-stone-500 uppercase">
+            Yang bisa Anda kelola di sini
+          </p>
           <ul className="mt-3 space-y-3">
             {shippedModules.map((item) => (
               <li key={item.title} className="flex items-center gap-3 text-[14.5px] text-stone-200">
@@ -65,7 +66,7 @@ export function LoginPage() {
           </ul>
         </div>
 
-        <p className="text-[12.5px] text-stone-400">Daftar di atas dibaca dari konfigurasi aplikasi ini.</p>
+        <p className="text-[12.5px] text-stone-400">Akses tiap bagian mengikuti peran akun Anda.</p>
       </aside>
 
       <div className="flex flex-col items-center justify-center px-4 py-10">
@@ -79,9 +80,7 @@ export function LoginPage() {
         <form className="enter-soft mx-auto w-full max-w-[23rem]" onSubmit={submit} aria-label="Form masuk">
           <h1 className="text-[22px] font-semibold tracking-tight">Selamat datang kembali</h1>
 
-          <SystemStatusStrip />
-
-          <label htmlFor="email" className="mt-7 block text-[13px] font-medium text-ink-soft">
+          <label htmlFor="email" className="mt-6 block text-[13px] font-medium text-ink-soft">
             Email
           </label>
           <Input
