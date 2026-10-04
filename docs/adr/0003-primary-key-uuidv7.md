@@ -1,17 +1,10 @@
-# ADR-0003 — Primary key: UUIDv7
+# ADR-0003 — UUIDv7
 
-**Status:** Diterima
+**Status:** Accepted; partially implemented.
 
-## Keputusan
+PostgreSQL uuid keys use UUIDv7 defaults for time-oriented indexes. ULID, UUIDv4 and serial
+keys were rejected. PG16/17 fresh migrations install a polyfill; PG18 uses native UUIDv7.
 
-UUIDv7 (RFC 9562) menaruh timestamp Unix milidetik di 48 bit pertama sehingga ID urut
-waktu dan ramah index — insert tidak menyebar acak seperti UUIDv4. Tipe `uuid` native
-Postgres = 16 byte.
-
-ULID juga time-sortable, tetapi di-encode Crockford base32 menjadi 26 karakter: bukan
-tipe native, disimpan sebagai char(26) = 26 byte. Keunggulannya hanya ID bisa dibaca
-manusia — bukan kebutuhan template ini.
-
-**Konsekuensi:** ID dihasilkan database lewat `uuidv7()`, bukan aplikasi.
-
-**Alternatif ditolak:** ULID, UUIDv4, bigserial.
+The selected ownership is database generation. Better Auth currently overrides IDs with
+Bun.randomUUIDv7(); removing that override is pending verification/decision, not completed work.
+See [deployment](../deployment.md) before moving an already-migrated database.

@@ -1,14 +1,7 @@
-# ADR-0004 — `organization_id` ada sejak migration pertama
+# ADR-0004 — Organization from the beginning
 
-**Status:** Diterima
+**Status:** Accepted; implemented in module schemas.
 
-## Keputusan
-
-Single-tenant tetap default (satu baris organisasi), tetapi kolom `organization_id` ada
-di tabel bisnis sejak awal. Menambahkannya setelah RBAC dan data produksi ada berarti
-expand-contract, backfill, dan risiko data loss. Menambah sekarang berbiaya nol.
-
-**Konsekuensi:** setiap modul bisnis menulis `organization_id`; nilainya berasal dari
-context server, tidak pernah dari input klien.
-
-**Alternatif ditolak:** menambah kolom saat sudah dibutuhkan.
+Single-tenant is the template default; business tables include organization_id from their
+first migration. Server context supplies it, never a client's body/query. Retrofitting it after
+production data was rejected because it adds backfill and migration risk.

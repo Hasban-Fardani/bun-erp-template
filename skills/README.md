@@ -1,8 +1,11 @@
-# Skills
+# Repository skills
 
-Instruksi operasional untuk agent. Divalidasi `bun erp skills:validate`.
+Load only the skill triggered by the task. Rules are implemented by source/gates where stated;
+prose alone does not prove enforcement.
 
-- `module-development` — menambah atau mengubah modul bisnis
-- `database-drizzle` — query, migrasi, seed
-- `testing` — harness pengujian
-- `template-guardrails` — kesalahan yang sudah pernah dibayar repo ini; baca sebelum melaporkan selesai
+- [Module development](module-development/SKILL.md): module boundaries and work order.
+- [Database](database-drizzle/SKILL.md): Drizzle, migrations and driver parity.
+- [Testing](testing/SKILL.md): shared fixtures and evidence.
+- [UI](antislop-ui/SKILL.md): existing components and operator feedback.
+- [Responsive layout](antislop-layoutmobile/SKILL.md): viewport/touch/native checks.
+- [Guardrails](template-guardrails/SKILL.md): gate diagnosis and truthful handoff.

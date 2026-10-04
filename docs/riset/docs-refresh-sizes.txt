@@ -1,0 +1,333 @@
+{
+  "existingFiles": 65,
+  "beforeBytes": 279876,
+  "afterBytes": 48178,
+  "reductionPercent": 82.8,
+  "files": [
+    {
+      "file": "AGENTS.md",
+      "beforeBytes": 4726,
+      "afterBytes": 2393
+    },
+    {
+      "file": "README.md",
+      "beforeBytes": 2070,
+      "afterBytes": 1274
+    },
+    {
+      "file": "docs/README.md",
+      "beforeBytes": 638,
+      "afterBytes": 1147
+    },
+    {
+      "file": "docs/adr/0001-web-router.md",
+      "beforeBytes": 344,
+      "afterBytes": 445
+    },
+    {
+      "file": "docs/adr/0002-broker-valkey.md",
+      "beforeBytes": 487,
+      "afterBytes": 353
+    },
+    {
+      "file": "docs/adr/0003-primary-key-uuidv7.md",
+      "beforeBytes": 605,
+      "afterBytes": 516
+    },
+    {
+      "file": "docs/adr/0004-organization-id-sejak-awal.md",
+      "beforeBytes": 550,
+      "afterBytes": 362
+    },
+    {
+      "file": "docs/adr/0005-spreadsheet-exceljs.md",
+      "beforeBytes": 436,
+      "afterBytes": 417
+    },
+    {
+      "file": "docs/adr/0006-deployment-target.md",
+      "beforeBytes": 691,
+      "afterBytes": 448
+    },
+    {
+      "file": "docs/adr/0007-audit-redaction.md",
+      "beforeBytes": 652,
+      "afterBytes": 333
+    },
+    {
+      "file": "docs/adr/0008-distribusi-template.md",
+      "beforeBytes": 469,
+      "afterBytes": 333
+    },
+    {
+      "file": "docs/adr/0009-auth-google-dorman.md",
+      "beforeBytes": 661,
+      "afterBytes": 454
+    },
+    {
+      "file": "docs/adr/0010-database-driver.md",
+      "beforeBytes": 995,
+      "afterBytes": 516
+    },
+    {
+      "file": "docs/adr/0011-deployment-hybrid.md",
+      "beforeBytes": 2120,
+      "afterBytes": 829
+    },
+    {
+      "file": "docs/adr/0012-agent-runtime-mastra.md",
+      "beforeBytes": 2692,
+      "afterBytes": 517
+    },
+    {
+      "file": "docs/adr/0013-form-utilities.md",
+      "beforeBytes": 2247,
+      "afterBytes": 650
+    },
+    {
+      "file": "docs/adr/README.md",
+      "beforeBytes": 1342,
+      "afterBytes": 1312
+    },
+    {
+      "file": "docs/api-contract.md",
+      "beforeBytes": 3007,
+      "afterBytes": 1583
+    },
+    {
+      "file": "docs/architecture.md",
+      "beforeBytes": 1615,
+      "afterBytes": 1485
+    },
+    {
+      "file": "docs/ci.md",
+      "beforeBytes": 1180,
+      "afterBytes": 1326
+    },
+    {
+      "file": "docs/conventions.md",
+      "beforeBytes": 1282,
+      "afterBytes": 1037
+    },
+    {
+      "file": "docs/deployment.md",
+      "beforeBytes": 1030,
+      "afterBytes": 998
+    },
+    {
+      "file": "docs/development.md",
+      "beforeBytes": 579,
+      "afterBytes": 782
+    },
+    {
+      "file": "docs/operations.md",
+      "beforeBytes": 409,
+      "afterBytes": 679
+    },
+    {
+      "file": "docs/riset/gate-audit.md",
+      "beforeBytes": 17348,
+      "afterBytes": 547
+    },
+    {
+      "file": "docs/riset/hardcoded-paths.md",
+      "beforeBytes": 28745,
+      "afterBytes": 611
+    },
+    {
+      "file": "docs/riset/login-entry-screens.md",
+      "beforeBytes": 3905,
+      "afterBytes": 516
+    },
+    {
+      "file": "docs/riset/metronic-utils.md",
+      "beforeBytes": 17177,
+      "afterBytes": 520
+    },
+    {
+      "file": "docs/riset/ui-tables.md",
+      "beforeBytes": 25645,
+      "afterBytes": 564
+    },
+    {
+      "file": "docs/riset/upgrade-report.md",
+      "beforeBytes": 83122,
+      "afterBytes": 727
+    },
+    {
+      "file": "docs/security.md",
+      "beforeBytes": 541,
+      "afterBytes": 1087
+    },
+    {
+      "file": "docs/tasks/F1.0-readme-lisensi.md",
+      "beforeBytes": 207,
+      "afterBytes": 337
+    },
+    {
+      "file": "docs/tasks/F1.1-adr.md",
+      "beforeBytes": 247,
+      "afterBytes": 377
+    },
+    {
+      "file": "docs/tasks/F1.10-scope-gate.md",
+      "beforeBytes": 366,
+      "afterBytes": 496
+    },
+    {
+      "file": "docs/tasks/F1.11-task-gate.md",
+      "beforeBytes": 298,
+      "afterBytes": 428
+    },
+    {
+      "file": "docs/tasks/F1.12-docs.md",
+      "beforeBytes": 266,
+      "afterBytes": 396
+    },
+    {
+      "file": "docs/tasks/F1.13-skills.md",
+      "beforeBytes": 306,
+      "afterBytes": 436
+    },
+    {
+      "file": "docs/tasks/F1.14-test-harness.md",
+      "beforeBytes": 258,
+      "afterBytes": 388
+    },
+    {
+      "file": "docs/tasks/F1.15-web-shell.md",
+      "beforeBytes": 388,
+      "afterBytes": 518
+    },
+    {
+      "file": "docs/tasks/F1.16-schema-parity.md",
+      "beforeBytes": 345,
+      "afterBytes": 475
+    },
+    {
+      "file": "docs/tasks/F1.17-mastra-smoke.md",
+      "beforeBytes": 1658,
+      "afterBytes": 594
+    },
+    {
+      "file": "docs/tasks/F1.18-user-crud-openapi-cli.md",
+      "beforeBytes": 1180,
+      "afterBytes": 1310
+    },
+    {
+      "file": "docs/tasks/F1.2-monorepo.md",
+      "beforeBytes": 367,
+      "afterBytes": 497
+    },
+    {
+      "file": "docs/tasks/F1.3-pin-versi.md",
+      "beforeBytes": 278,
+      "afterBytes": 408
+    },
+    {
+      "file": "docs/tasks/F1.4-biome-tsconfig.md",
+      "beforeBytes": 320,
+      "afterBytes": 450
+    },
+    {
+      "file": "docs/tasks/F1.5-config.md",
+      "beforeBytes": 370,
+      "afterBytes": 500
+    },
+    {
+      "file": "docs/tasks/F1.6-database.md",
+      "beforeBytes": 422,
+      "afterBytes": 552
+    },
+    {
+      "file": "docs/tasks/F1.7-http.md",
+      "beforeBytes": 350,
+      "afterBytes": 480
+    },
+    {
+      "file": "docs/tasks/F1.8-departments.md",
+      "beforeBytes": 262,
+      "afterBytes": 392
+    },
+    {
+      "file": "docs/tasks/F1.9-cli.md",
+      "beforeBytes": 342,
+      "afterBytes": 472
+    },
+    {
+      "file": "docs/tasks/F2.0-baseline.md",
+      "beforeBytes": 751,
+      "afterBytes": 881
+    },
+    {
+      "file": "docs/tasks/F2.1-ci.md",
+      "beforeBytes": 497,
+      "afterBytes": 627
+    },
+    {
+      "file": "docs/tasks/F2.2-database-docs.md",
+      "beforeBytes": 747,
+      "afterBytes": 877
+    },
+    {
+      "file": "docs/tasks/F2.3-server-rpc.md",
+      "beforeBytes": 605,
+      "afterBytes": 735
+    },
+    {
+      "file": "docs/tasks/F2.4-web-rpc.md",
+      "beforeBytes": 1040,
+      "afterBytes": 1170
+    },
+    {
+      "file": "docs/testing.md",
+      "beforeBytes": 1079,
+      "afterBytes": 1311
+    },
+    {
+      "file": "docs/ui-copy.md",
+      "beforeBytes": 2569,
+      "afterBytes": 587
+    },
+    {
+      "file": "docs/ui-states.md",
+      "beforeBytes": 3858,
+      "afterBytes": 950
+    },
+    {
+      "file": "skills/README.md",
+      "beforeBytes": 333,
+      "afterBytes": 626
+    },
+    {
+      "file": "skills/antislop-layoutmobile/SKILL.md",
+      "beforeBytes": 16293,
+      "afterBytes": 1277
+    },
+    {
+      "file": "skills/antislop-ui/SKILL.md",
+      "beforeBytes": 26810,
+      "afterBytes": 1307
+    },
+    {
+      "file": "skills/database-drizzle/SKILL.md",
+      "beforeBytes": 830,
+      "afterBytes": 788
+    },
+    {
+      "file": "skills/module-development/SKILL.md",
+      "beforeBytes": 1394,
+      "afterBytes": 884
+    },
+    {
+      "file": "skills/template-guardrails/SKILL.md",
+      "beforeBytes": 6857,
+      "afterBytes": 1132
+    },
+    {
+      "file": "skills/testing/SKILL.md",
+      "beforeBytes": 673,
+      "afterBytes": 759
+    }
+  ]
+}

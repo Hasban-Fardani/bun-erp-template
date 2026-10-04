@@ -1,17 +1,16 @@
 ---
 name: testing
-description: Use when writing tests with bun:test or debugging failures in apps/server/tests. Menjamin kontrak diuji, bukan asumsi.
+description: Use when writing bun:test tests or debugging server and web test failures.
 ---
 
 # Testing
 
-`bun:test`. Tidak ada framework tambahan, tidak ada mock berat.
+Read [testing](../../docs/testing.md). Backend fixtures share one migrated database per
+process through `tests/helpers.ts`; truncate/reseed and reset permission caches per case.
+Do not create a database per file or run those cases concurrently.
 
-## Aturan
-
-- Setiap test file memakai context sendiri dari `tests/helpers.ts` (PGlite `memory://`).
-- Panggil `truncateAll` di awal test supaya tidak bergantung urutan.
-- Test HTTP lewat `app.request()` — tidak membuka port.
-- Buktikan kegagalan dulu (RED) sebelum patch, lalu perbaikan (GREEN).
-- Klaim hanya sebatas yang dijalankan: 200 di test tidak membuktikan UI render.
-- Parity compiled vs uncompiled wajib saat mengubah schema Zod.
+Exercise HTTP with `app.request()`. Use actual database behavior, not heavy mocks.
+Add a failing regression case before fixing a defect; keep assertions meaningful.
+Compiled Zod schema changes require raw/compiled parity coverage.
+Run `bun erp test` and checks; record actual output. Browser/native claims require execution
+on those surfaces, rather than inferring success from an HTTP 200.

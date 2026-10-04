@@ -1,30 +1,19 @@
 ---
 name: module-development
-description: Use when adding or changing a business module in apps/server/modules. Menjaga pola schema-data-service-policy-route tetap seragam.
+description: Use when adding or changing a module under apps/server/modules.
 ---
 
 # Module development
 
-Modul baru meniru `apps/server/modules/departments` — tidak ada generator ajaib,
-tidak ada lapisan tambahan.
+Read [architecture](../../docs/architecture.md) and [API contract](../../docs/api-contract.md).
+Copy departments; keep schema/data/service/policy/route boundaries.
 
-## Urutan kerja
+1. Define raw Zod schema and compile once at module scope.
+2. Define Drizzle tables and forward-only numbered migration.
+3. Implement service transaction and audit where state changes.
+4. Define authorization; no policy means deny, not public access.
+5. Chain typed Hono routes: authorize → validate middleware → service → typed ok().
+6. Register routes without erasing inferred RPC types; update OpenAPI and HTTP tests.
 
-1. `schema.ts` — kontrak Zod. Definisikan schema mentah, kompilasi sekali dengan
-   `z.compile()` di module scope. Jangan parse di dalam handler.
-2. `data.ts` — tabel Drizzle. Selalu sertakan `organization_id`, `created_at`, `updated_at`.
-3. Migrasi SQL di `apps/server/migrations/` dengan nama `NNNN_snake_case.sql`.
-   Forward-only; perbaikan lewat file baru, bukan edit file lama.
-4. `service.ts` — business logic dan batas transaksi. Terima `(db, organizationId, input)`.
-5. `policy.ts` — authorization per aksi. Belum punya policy = `denyByDefault`, bukan terbuka.
-6. `route.ts` — HTTP tipis: validasi, policy, service, envelope. Tidak ada logic di sini.
-7. Daftarkan route di `apps/server/http/routes.ts`.
-8. Test di `apps/server/tests/<modul>.test.ts`.
-
-## Jebakan yang sudah terbukti
-
-- `db.execute()` mengembalikan array di postgres-js, tetapi `{ rows }` di PGlite.
-  Pakai helper `rowsOf()`.
-- `organization_id` tidak pernah berasal dari input klien.
-- Duplikat kode unik = 409 `CONFLICT`, bukan 422.
-- Entitas tidak ditemukan = 404, bukan 403.
+Organization comes from server context. Use rowsOf() for driver-neutral raw query results.
+Unique conflicts are 409; absent organization-scoped rows are 404.

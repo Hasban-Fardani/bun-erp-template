@@ -1,0 +1,3 @@
+{"appId":"test.example.template","webDir":"www","ios":"capacitor","android":"https"}
+
+exit_code=0

@@ -1,19 +1,15 @@
 # Deployment
 
-Satu artifact, dua cara menjalankan.
+API runs as Bun source on bare metal or Docker. Docker/systemd artifacts are not supplied.
+Deploy configuration externally; set APP_ENV=production and a release identifier. Run checks,
+tests, migration, seed and readiness checks. API startup also migrates today.
 
-- Bare metal: `bun erp db:migrate && bun apps/server/server.ts`, unit systemd.
-- Docker: image yang sama, perintah sama, `.env` disuntik dari luar image.
+Web is a separate Vite build (`apps/web/dist`), served by a static host. Set the absolute
+HTTPS API origin in VITE_API_BASE_URL before building; copying dist also copies that URL.
+No API static-file server is implemented. Cloudflare Worker API/Hyperdrive remains planned.
 
-Checklist sebelum rilis: `bun erp check`, `bun erp test`, jalankan `db:migrate`,
-pastikan `APP_ENV=production` lolos guard, catat `APP_RELEASE`, siapkan jalur rollback.
-
-Web disajikan terpisah sesuai ADR-0011; API tidak menyajikan aset web. Untuk VPS gunakan
-PostgreSQL 16–18. Migrasi 0001 memasang UUIDv7 hanya pada database baru PG16/17 dan
-membiarkan fungsi native PG18. Database yang sudah mencatat 0001 tidak menjalankannya ulang:
-periksa fungsi UUIDv7 sebelum memindahkan database lama ke server PG16/17. Jangan menghapus
-ledger agar migrasi lama dijalankan ulang.
-
-Audit menolak UPDATE/DELETE melalui trigger migrasi 0006. Akun aplikasi produksi bukan
-superuser dan tidak diberi hak TRUNCATE/DDL. Administrator database tetap dapat mengubah
-schema; trigger tidak menggantikan kontrol akses database maupun backup.
+PostgreSQL 16–18: fresh PG16/17 databases receive the UUIDv7 polyfill in migration 0001;
+PG18 keeps native UUIDv7. A database with 0001 already recorded will not replay it. Check the
+function before moving an existing database to PG16/17; never erase the migration ledger.
+Audit privileges and backup requirements are in [security](security.md) and [operations](operations.md).
+Native packaging/release prerequisites are in [mobile](mobile.md).

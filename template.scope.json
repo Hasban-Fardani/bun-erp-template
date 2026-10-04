@@ -7,7 +7,7 @@
   },
   "allowed": {
     "topLevelDirs": ["apps", "tools", "docs", "skills", "scripts", "platform", "tests", ".github"],
-    "apps": ["apps/server", "apps/web"],
+    "apps": ["apps/server", "apps/web", "apps/mobile"],
     "note": "Modul bisnis client tidak masuk repo template. Template hanya berisi fondasi + satu modul referensi."
   },
   "forbidden": {
@@ -23,7 +23,7 @@
       {
         "id": "business-domain",
         "regex": "\\b(payroll|absensi|attendance|procurement|inventory-stock|pos-cashier)\\b",
-        "reason": "Aturan bisnis client dibuat dari product spec terpisah (PRD \u00a72 non-goals)",
+        "reason": "Aturan bisnis client dibuat dari product spec terpisah (PRD §2 non-goals)",
         "allowIn": ["docs/**", "README.md", "AGENTS.md", "template.scope.json"],
         "flags": "i"
       }

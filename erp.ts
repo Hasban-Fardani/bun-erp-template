@@ -70,7 +70,8 @@ async function runGate(
     | "shadcn"
     | "ui"
     | "ci"
-    | "rpc",
+    | "rpc"
+    | "docs",
 ): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
@@ -100,6 +101,9 @@ async function runGate(
   } else if (kind === "ui") {
     const { checkUiCompleteness } = await import("./tools/ui-completeness.ts");
     findings = (await checkUiCompleteness(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  } else if (kind === "docs") {
+    const { checkDocs } = await import("./tools/docs-guard.ts");
+    findings = await checkDocs(repoRoot);
   } else if (kind === "rpc") {
     const { checkRpc } = await import("./tools/rpc-guard.ts");
     findings = await checkRpc(repoRoot);
@@ -114,6 +118,9 @@ async function runGate(
 }
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
+  "check:docs": async () => {
+    await guard("docs", () => runGate("docs"));
+  },
   "check:rpc": async () => {
     await guard("rpc", () => runGate("rpc"));
   },
@@ -129,17 +136,26 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "wait:http": async (args) => {
     await run(["bun", "scripts/wait-http.ts", ...args], "wait for HTTP");
   },
+  "mobile:build": async () => {
+    await run(["bun", "scripts/mobile.ts", "build"], "mobile build");
+  },
+  "mobile:add": async (args) => {
+    await run(["bun", "scripts/mobile.ts", "add", ...args], "add native project");
+  },
+  "mobile:sync": async (args) => {
+    await run(["bun", "scripts/mobile.ts", "sync", ...args], "sync mobile assets");
+  },
+  "mobile:open": async (args) => {
+    await run(["bun", "scripts/mobile.ts", "open", ...args], "open native project");
+  },
   preview: async () => {
     await run(["bun", "run", "--cwd", "apps/web", "preview", "--host", "127.0.0.1"], "web preview");
   },
   check: async () => {
     // biome and tsc run first: a type error explains most of the gate noise below, so seeing
     // them first saves reading twelve reports to find the cause.
-    await run(["bunx", "--bun", "biome", "check", "."], "biome check");
-    await run(["bunx", "--bun", "tsc", "-p", "tsconfig.json"], "tsc");
-
-    const { runGatesParallel } = await import("./tools/parallel-gates.ts");
-    const results = await runGatesParallel(repoRoot);
+    const { runProjectChecks } = await import("./tools/parallel-gates.ts");
+    const results = await runProjectChecks(repoRoot);
     for (const r of results) process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`);
 
     const failed = results.filter((r) => !r.ok);

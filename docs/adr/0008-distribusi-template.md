@@ -1,14 +1,7 @@
-# ADR-0008 — Distribusi: satu repo template, client menyalin
+# ADR-0008 — Copy or fork the template
 
-**Status:** Diterima
+**Status:** Accepted distribution model.
 
-## Keputusan
-
-Satu repo `bun-erp-template`. Proyek client dibuat dengan copy atau fork bersih.
-`template.scope.json` adalah allowlist di repo template; proyek client menambah
-manifest-nya sendiri di salinannya.
-
-**Konsekuensi:** nama client dan aturan bisnis dilarang masuk repo template —
-ditegakkan `bun erp check:scope`.
-
-**Alternatif ditolak:** multi-tenant di dalam template.
+Applications copy/fork a clean template. Client names, product data and business rules belong
+in those applications, not here. `template.scope.json` owns allowed directories/apps.
+A shared multi-client application inside this template was rejected.

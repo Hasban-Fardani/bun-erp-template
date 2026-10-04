@@ -1,0 +1,4 @@
+RED [ "README.md: missing link missing.md" ]
+GREEN []
+
+exit_code=0

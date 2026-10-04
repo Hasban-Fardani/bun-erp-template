@@ -60,6 +60,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: ./.github/actions/setup
       - run: bun erp build
+  mobile-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: ./.github/actions/setup
+      - run: bun erp mobile:build
+        env:
+          VITE_API_BASE_URL: https://api.example.test
   e2e:
     needs: [gates, test-postgres]
     runs-on: ubuntu-latest
@@ -103,7 +112,7 @@ jobs:
             .data/qa/*.png
   ci-ok:
     if: always()
-    needs: [gates, test-pglite, test-postgres, build-web, e2e]
+    needs: [gates, test-pglite, test-postgres, build-web, mobile-build, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

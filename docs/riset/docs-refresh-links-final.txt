@@ -1,0 +1,3 @@
+$ bun erp.ts check:docs
+
+exit_code=0

@@ -1,12 +1,8 @@
-# ADR-0001 — Web router: TanStack Router
+# ADR-0001 — TanStack Router
 
-**Status:** Diterima
+**Status:** Accepted; partially implemented.
 
-## Keputusan
-
-Satu vendor dengan TanStack Query/Table yang sudah di stack. Typed routes + search-param
-schema berbasis Zod, sejalan dengan prinsip explicit over magic.
-
-**Konsekuensi:** file-based route generation; tidak ada React Router.
-
-**Alternatif ditolak:** React Router.
+TanStack Router is selected with Query and typed search validation; React Router was rejected.
+File-based generation/loaders are the selected direction but are not implemented: current source
+is `apps/web/src/routes/route-tree.tsx`, with component guards and manual table URL state.
+Do not report generated routes as available until code and checks demonstrate them.

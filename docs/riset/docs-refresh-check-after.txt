@@ -1,0 +1,252 @@
+  FAIL biome (2002ms)
+  ok   types (6757ms)
+  ok   docs (3732ms)
+  ok   rpc (3635ms)
+  ok   ci (3453ms)
+  ok   scope (3648ms)
+  ok   slop (4132ms)
+  ok   platform (3748ms)
+  ok   copy (3505ms)
+  ok   design (3476ms)
+  ok   ui (3516ms)
+  ok   shadcn (3521ms)
+  ok   surface (3494ms)
+  ok   react (11055ms)
+  ok   migrations (3522ms)
+  ok   skills (3696ms)
+  ok   task (3422ms)
+  ok   readiness (3652ms)
+
+biome failed:
+Checked 137 files in 1514ms. No fixes applied.
+Found 1 error.
+Found 3 infos.
+scripts/mobile.ts:36:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    34 │     : [
+    35 │         "bun",
+  > 36 │         Bun.resolveSync("@capacitor/cli/bin/capacitor", import.meta.dir + "/../apps/mobile"),
+       │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    37 │         command ?? "",
+    38 │         platform ?? "",
+  
+  i Unsafe fix: Use a template literal.
+  
+    34 34 │       : [
+    35 35 │           "bun",
+    36    │ - ········Bun.resolveSync("@capacitor/cli/bin/capacitor",·import.meta.dir·+·"/../apps/mobile"),
+       36 │ + ········Bun.resolveSync("@capacitor/cli/bin/capacitor",·`${import.meta.dir}/../apps/mobile`),
+    37 37 │           command ?? "",
+    38 38 │           platform ?? "",
+  
+
+scripts/mobile.ts:41:30 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    39 │       ];
+    40 │ const child = Bun.spawn(argv, {
+  > 41 │   cwd: command === "build" ? import.meta.dir + "/.." : import.meta.dir + "/../apps/mobile",
+       │                              ^^^^^^^^^^^^^^^^^^^^^^^
+    42 │   stdout: "inherit",
+    43 │   stderr: "inherit",
+  
+  i Unsafe fix: Use a template literal.
+  
+    39 39 │         ];
+    40 40 │   const child = Bun.spawn(argv, {
+    41    │ - ··cwd:·command·===·"build"·?·import.meta.dir·+·"/.."·:·import.meta.dir·+·"/../apps/mobile",
+       41 │ + ··cwd:·command·===·"build"·?·`${import.meta.dir}/..`·:·import.meta.dir·+·"/../apps/mobile",
+    42 42 │     stdout: "inherit",
+    43 43 │     stderr: "inherit",
+  
+
+scripts/mobile.ts:41:56 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    39 │       ];
+    40 │ const child = Bun.spawn(argv, {
+  > 41 │   cwd: command === "build" ? import.meta.dir + "/.." : import.meta.dir + "/../apps/mobile",
+       │                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    42 │   stdout: "inherit",
+    43 │   stderr: "inherit",
+  
+  i Unsafe fix: Use a template literal.
+  
+    39 39 │         ];
+    40 40 │   const child = Bun.spawn(argv, {
+    41    │ - ··cwd:·command·===·"build"·?·import.meta.dir·+·"/.."·:·import.meta.dir·+·"/../apps/mobile",
+       41 │ + ··cwd:·command·===·"build"·?·import.meta.dir·+·"/.."·:·`${import.meta.dir}/../apps/mobile`,
+    42 42 │     stdout: "inherit",
+    43 43 │     stderr: "inherit",
+  
+
+docs/riset/docs-refresh-size-intermediate.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1  1 │   [
+      2    │ - ··[
+      3    │ - ····"README.md",
+      4    │ - ····1273
+      5    │ - ··],
+      6    │ - ··[
+      7    │ - ····"AGENTS.md",
+      8    │ - ····2381
+      9    │ - ··],
+     10    │ - ··[
+     11    │ - ····"docs/architecture.md",
+     12    │ - ····1477
+     13    │ - ··],
+     14    │ - ··[
+     15    │ - ····"docs/operations.md",
+     16    │ - ····679
+     17    │ - ··],
+     18    │ - ··[
+     19    │ - ····"docs/ui-copy.md",
+     20    │ - ····587
+     21    │ - ··],
+     22    │ - ··[
+     23    │ - ····"docs/conventions.md",
+     24    │ - ····1037
+     25    │ - ··],
+     26    │ - ··[
+     27    │ - ····"docs/api-contract.md",
+     28    │ - ····1579
+     29    │ - ··],
+     30    │ - ··[
+     31    │ - ····"docs/testing.md",
+     32    │ - ····1311
+     33    │ - ··],
+     34    │ - ··[
+     35    │ - ····"docs/README.md",
+     36    │ - ····1147
+     37    │ - ··],
+     38    │ - ··[
+     39    │ - ····"docs/deployment.md",
+     40    │ - ····996
+     41    │ - ··],
+     42    │ - ··[
+     43    │ - ····"docs/ui-states.md",
+     44    │ - ····950
+     45    │ - ··],
+     46    │ - ··[
+     47    │ - ····"docs/development.md",
+     48    │ - ····782
+     49    │ - ··],
+     50    │ - ··[
+     51    │ - ····"docs/ci.md",
+     52    │ - ····1180
+     53    │ - ··],
+     54    │ - ··[
+     55    │ - ····"docs/security.md",
+     56    │ - ····1087
+     57    │ - ··],
+     58    │ - ··[
+     59    │ - ····"skills/README.md",
+     60    │ - ····626
+     61    │ - ··],
+     62    │ - ··[
+     63    │ - ····"skills/database-drizzle/SKILL.md",
+     64    │ - ····788
+     65    │ - ··],
+     66    │ - ··[
+     67    │ - ····"skills/module-development/SKILL.md",
+     68    │ - ····878
+     69    │ - ··],
+     70    │ - ··[
+     71    │ - ····"skills/testing/SKILL.md",
+     72    │ - ····759
+     73    │ - ··],
+     74    │ - ··[
+     75    │ - ····"skills/antislop-layoutmobile/SKILL.md",
+     76    │ - ····1277
+     77    │ - ··],
+     78    │ - ··[
+     79    │ - ····"skills/template-guardrails/SKILL.md",
+     80    │ - ····1132
+     81    │ - ··],
+     82    │ - ··[
+     83    │ - ····"skills/antislop-ui/SKILL.md",
+     84    │ - ····1307
+     85    │ - ··],
+     86    │ - ··[
+     87    │ - ····"docs/tasks/F1.6-database.md",
+     88    │ - ····550
+     89    │ - ··],
+     90    │ - ··[
+     91    │ - ····"docs/tasks/F1.7-http.md",
+     92    │ - ····478
+     93    │ - ··],
+     94    │ - ··[
+     95    │ - ····"docs/tasks/F2.0-baseline.md",
+     96    │ - ····881
+     97    │ - ··],
+     98    │ - ··[
+     99    │ - ····"docs/tasks/F1.4-biome-tsconfig.md",
+    100    │ - ····448
+    101    │ - ··],
+    102    │ - ··[
+    103    │ - ····"docs/tasks/F1.1-adr.md",
+    104    │ - ····375
+    105    │ - ··],
+    106    │ - ··[
+    107    │ - ····"docs/tasks/F2.2-database-docs.md",
+    108    │ - ····875
+    109    │ - ··],
+    110    │ - ··[
+    111    │ - ····"docs/tasks/F1.2-monorepo.md",
+    112    │ - ····495
+    113    │ - ··],
+    114    │ - ··[
+    115    │ - ····"docs/tasks/F1.10-scope-gate.md",
+    116    │ - ····494
+    117    │ - ··],
+    118    │ - ··[
+    119    │ - ····"docs/tasks/F1.17-mastra-smoke.md",
+    120    │ - ····1782
+    121    │ - ··],
+    122    │ - ··[
+    123    │ - ····"docs/tasks/F1.12-docs.md",
+    124    │ - ····394
+    125    │ - ··],
+    126    │ - ··[
+    127    │ - ····"docs/tasks/F2.4-web-rpc.md",
+    128    │ - ····1170
+    129    │ - ··],
+    130    │ - ··[
+    131    │ - ····"docs/tasks/F1.5-config.md",
+    132    │ - ····498
+    133    │ - ··],
+    134    │ - ··[
+    135    │ - ····"docs/tasks/F2.3-server-rpc.md",
+    136    │ - ····735
+    137    │ - ··],
+    138    │ - ··[
+    139    │ - ····"docs/tasks/F1.11-task-gate.md",
+    140    │ - ····426
+    141    │ - ··],
+    142    │ - ··[
+    143    │ - ····"docs/tasks/F1.0-readme-lisensi.md",
+    144    │ - ····335
+    145    │ - ··],
+    146    │ - ··[
+    147    │ - ····"docs/tasks/F1.16-schema-parity.md",
+    148    │ - ····473
+    149    │ - ··],
+    150    │ - ··[
+  178 more lines truncated
+  
+
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+1 finding(s)
+real 11.48
+user 21.55
+sys 6.44
+
+exit_code=1

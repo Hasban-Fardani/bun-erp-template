@@ -1,0 +1,10 @@
+$ bun erp.ts mobile:add android
+[error] Parsing capacitor.config.ts failed.
+        
+        Error: Set MOBILE_APP_ID to the reverse-domain identifier owned by your application
+        at /Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/apps/mobile/capacitor.config.ts:6:13
+        at processTicksAndRejections (native:7:39)
+add native project failed with exit 1
+error: script "erp" exited with code 1
+
+exit_code=1

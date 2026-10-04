@@ -1,16 +1,8 @@
-# ADR-0009 — Auth: email+password, Google OAuth dorman
+# ADR-0009 — Email/password; dormant Google
 
-**Status:** Diterima
+**Status:** Accepted; email/password and conditional provider implemented.
 
-## Keputusan
-
-Email+password aktif. Google OAuth terpasang tetapi tidak aktif secara default:
-provider hanya diregistrasikan kalau `GOOGLE_CLIENT_ID` **dan** `GOOGLE_CLIENT_SECRET`
-terisi. Kalau kosong, tidak ada tombol dan tidak ada route.
-
-**Konsekuensi:** schema Zod kondisional (keduanya opsional, tetapi salah satu terisi
-berarti keduanya wajib). Menyalakan OAuth = mengisi env dan restart, bukan menulis kode.
-Satu aplikasi memilih satu jalur login — SSO Cloudflare dan OAuth Google tidak dipasang
-berdampingan di satu UI.
-
-**Alternatif ditolak:** Google-only, SSO campur.
+Google provider is registered only when both credentials are populated. No Google UI button
+is supplied. Current schema defaults each credential to empty; it does not enforce paired
+presence. Do not claim env configuration alone supplies a full OAuth interface.
+Google-only and mixed SSO paths in one template login were rejected.

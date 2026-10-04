@@ -1,20 +1,24 @@
 # Development
 
 ```bash
+bun install --frozen-lockfile
 cp .env.example .env
-bun install
-bun erp key:generate     # opsional di development
+bun erp key:generate
 bun erp db:migrate
 bun erp db:seed
 bun erp dev
 ```
 
-Tiga perintah setelah env terisi sudah cukup untuk menjalankan server (indikator
-keberhasilan PRD §2). `bun erp doctor` memeriksa semuanya sekaligus.
+PGlite is the default local database. Start web separately with `bun run --cwd apps/web dev`.
+The proxy forwards `/api` to port 3000; `API_PORT` changes the proxy target.
+`VITE_API_BASE_URL` is empty locally; a remote deployment sets an API origin without `/api/v1`.
 
-Perintah lain:
+Create the first owner after seeding:
 
-- `bun erp env:list` — daftar config tanpa pernah mencetak nilai rahasia
-- `bun erp route:list` — route dibaca dari aplikasi yang benar-benar dibentuk
-- `bun erp test` — harness `bun:test`
-- `bun erp check` — lint, tipe, gate skills/task/scope
+```bash
+bun erp user:create <email> <password> owner <name>
+```
+
+Replace placeholders locally; credentials must not enter Git or shared evidence.
+`bun erp doctor` verifies environment, connection and seed; `bun erp --help` lists commands.
+See [mobile](mobile.md) for native packaging and [testing](testing.md) for verification.

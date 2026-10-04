@@ -1,0 +1,6 @@
+[0.06ms] ".env"
+bun install v1.4.2 (744846f84)
+
+Checked 306 installs across 452 packages (no changes) [37.00ms]
+
+exit_code=0

@@ -1,13 +1,7 @@
-# ADR-0005 — Spreadsheet: ExcelJS saja
+# ADR-0005 — ExcelJS for future spreadsheets
 
-**Status:** Diterima
+**Status:** Accepted direction; no spreadsheet dependency or feature is installed.
 
-## Keputusan
-
-Paket `xlsx` di npm sudah ditinggalkan (pengembangan pindah ke distribusi CDN SheetJS)
-dan versi npm-nya terpapar CVE-2023-30533 serta CVE-2024-22363 tanpa versi aman di
-registry. SheetJS CE dihapus dari daftar dependency.
-
-**Konsekuensi:** import/export XLSX memakai ExcelJS; tidak ada dependency ber-CVE terbuka.
-
-**Alternatif ditolak:** SheetJS (`xlsx`).
+Use ExcelJS when a real XLSX requirement arrives. Registry-distributed SheetJS xlsx was rejected
+on maintenance/security grounds during the original evaluation. Recheck package/security state
+before adding any dependency; historical assessments are not current vulnerability evidence.

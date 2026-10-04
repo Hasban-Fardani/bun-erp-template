@@ -1,14 +1,8 @@
-/**
- * Runs the independent gates in parallel and reports every failure at once.
- *
- * Sequential `check` took long enough that people skipped it; the gates themselves are
- * independent (each reads the tree, none writes), so they run concurrently. The two slow
- * whole-project tools (biome, tsc) go first because a type error explains most gate noise.
- */
 export type GateResult = { name: string; ok: boolean; output: string; ms: number };
+export type CheckJob = { name: string; argv: readonly string[] };
 
-/** `command` must match a real `bun erp` command; the name is only for the report. */
 const GATES: readonly { name: string; command: string }[] = [
+  { name: "docs", command: "check:docs" },
   { name: "rpc", command: "check:rpc" },
   { name: "ci", command: "check:ci" },
   { name: "scope", command: "check:scope" },
@@ -26,28 +20,35 @@ const GATES: readonly { name: string; command: string }[] = [
   { name: "readiness", command: "check:prod" },
 ];
 
-async function runOne(root: string, gate: { name: string; command: string }): Promise<GateResult> {
+async function runOne(root: string, job: CheckJob): Promise<GateResult> {
   const started = performance.now();
-  const proc = Bun.spawn(["bun", "erp.ts", gate.command], {
-    cwd: root,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const [out, err, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  return {
-    name: gate.name,
-    ok: code === 0,
-    output: `${out}${err}`.trim(),
-    ms: Math.round(performance.now() - started),
-  };
+  try {
+    const proc = Bun.spawn([...job.argv], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    const [out, err, code] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+    return {
+      name: job.name,
+      ok: code === 0,
+      output: `${out}${err}`.trim(),
+      ms: Math.round(performance.now() - started),
+    };
+  } catch (error) {
+    return { name: job.name, ok: false, output: String(error), ms: Math.round(performance.now() - started) };
+  }
 }
 
-export async function runGatesParallel(root: string): Promise<GateResult[]> {
-  // `readiness` shells out to git and the others read the same tree, but none of them mutates
-  // state, so running all twelve at once is safe.
-  return Promise.all(GATES.map((gate) => runOne(root, gate)));
+/** Read-only checks settle together so one failure cannot hide another check's evidence. */
+export function runChecksParallel(root: string, jobs: readonly CheckJob[]): Promise<GateResult[]> {
+  return Promise.all(jobs.map((job) => runOne(root, job)));
+}
+
+export function runProjectChecks(root: string): Promise<GateResult[]> {
+  return runChecksParallel(root, [
+    { name: "biome", argv: ["bunx", "--bun", "biome", "check", "."] },
+    { name: "types", argv: ["bunx", "--bun", "tsc", "-p", "tsconfig.json"] },
+    ...GATES.map(({ name, command }) => ({ name, argv: ["bun", "erp.ts", command] })),
+  ]);
 }

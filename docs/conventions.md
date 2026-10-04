@@ -1,20 +1,16 @@
-# Konvensi
+# Conventions
 
-Ditegakkan `bun erp check`; bila tidak lolos, commit tidak sah.
+- Bun only; exact package versions. Do not add dependencies for available Web/Bun APIs.
+- Strict TypeScript, meaningful types; no `as any` to bypass a contract.
+- Comments use English and explain why. User-facing copy follows [UI copy](ui-copy.md).
+- Share identical logic; do not suppress a gate before checking its finding.
+- Input schemas compile once at module scope. HTTP validation uses middleware after authorization.
+- A service owns its transaction and transactional audit; route code stays thin.
+- New ADRs use the next available number; old proposals do not reserve or overwrite decisions.
+- Forward-only `NNNN_snake_case.sql` migrations; never reset an applied ledger.
+- Logger redaction and audit field allowlists are separate safeguards; never log secrets.
+- Node built-ins are restricted by `tools/platform.ts`; exceptions are explicit per path.
 
-- TypeScript strict, tanpa `any` yang tidak beralasan.
-- Satu file dahulu; pecah saat ada tanggung jawab nyata.
-- Komentar **berbahasa Inggris** dan menjelaskan **kenapa**, bukan mengulang kode di baris
-  bawahnya. Berlaku juga untuk komentar SQL. Teks yang tampil ke pengguna tidak diatur ini —
-  itu milik produk, bukan kode.
-- **Test per file memakai database bersama.** `bun test apps/server` ~27s. Setiap file yang
-  memanggil `createContext()` sendiri membayar ~3.1s untuk migrasi ulang — 11 file berarti ~35s
-  untuk skema identik. Fixture membagi satu schema dan me-reset datanya.
-- **Bun-first tanpa kecuali.** Dilarang impor `node:fs`, `node:os`, `node:crypto` — pakai
-  `Bun.file`, `Bun.write`, `Bun.Glob`, `Bun.$`. `node:path` satu-satunya pengecualian (Bun
-  tidak punya API path), dan itu harus terdaftar di `tools/platform.ts`. Ditegakkan gate.
-- Blok logika identik diangkat menjadi satu fungsi; ekspor mati dihapus.
-- `catch` tidak boleh menelan error tanpa catatan atau `no-log: <alasan>`.
-- Rahasia tidak pernah masuk log maupun output CLI.
-- Nama migrasi `NNNN_snake_case.sql`, forward-only.
-- Peristiwa normal berfrekuensi tinggi tidak dicatat; hanya kegagalan dan yang lambat.
+`bun erp check` verifies lint, types and the registered gates in parallel.
+It does not mechanically enforce every sentence here. Run the appropriate tests as well.
+Use [testing](testing.md) for fixtures and [architecture](architecture.md) for boundaries.

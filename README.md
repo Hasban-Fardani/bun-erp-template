@@ -1,49 +1,39 @@
 # Bun ERP Template
 
-Fondasi aplikasi internal dengan Bun + TypeScript dan modular monolith. Ini template;
-modul bisnis dikembangkan dari product spec terpisah.
+Foundation for internal applications: Hono API, Drizzle/PostgreSQL, Better Auth, RBAC,
+transactional audit, generated OpenAPI, React admin UI and Capacitor mobile packaging.
+Business features belong in applications copied from this template.
 
-## Menjalankan lokal
+## Run locally
 
-```sh
-cp .env.example .env
+```bash
 bun install --frozen-lockfile
+cp .env.example .env
 bun erp key:generate
 bun erp db:migrate
 bun erp db:seed
-bun erp user:create <email> <password> owner <name>
 bun erp dev
 ```
 
-Web dijalankan terpisah: `bun run --cwd apps/web dev`. Vite mem-proxy `/api` ke API;
-`VITE_API_BASE_URL` kosong untuk proxy lokal dan berisi origin API untuk deployment hybrid.
-`bun erp --help` adalah daftar perintah yang berlaku.
+In another terminal: `bun run --cwd apps/web dev`. The web proxy targets the API on port 3000.
+Create an owner following [development](docs/development.md). Never commit `.env`.
 
-## Yang tersedia
+## Verify
 
-- Config tervalidasi dan production guard: `apps/server/platform/config/`.
-- Satu dialek Postgres: PGlite dev/test, PostgreSQL 16–18 melalui postgres.js di produksi.
-  Migrasi 0001 memasang polyfill UUIDv7 pada PG16/17; PG18 memakai fungsi native.
-- API Hono dengan request ID, authorization, envelope, health dan readiness: `apps/server/http/`.
-- Better Auth email/password dan Google OAuth dorman: `modules/identity/auth.ts`.
-- Pengguna, RBAC, audit serta modul acuan departments: `apps/server/modules/`.
-- OpenAPI dari route dan Scalar: `/api/openapi.json` dan `/api/docs`.
-- Web React: login, pengguna, peran/izin dan audit: `apps/web/src/pages/`.
-- Gate kualitas, test PGlite/Postgres dan browser QA: `tools/`, `.github/workflows/ci.yml`.
+```bash
+bun erp check
+bun erp test
+bun erp build
+```
 
-## Yang belum tersedia
+Checks run concurrently; tests run sequentially because backend fixtures share state.
+Browser QA additionally needs a running API, built web preview and test credentials.
+CI is configured; actual CI results belong to each run, not this README.
 
-Modul bisnis, queue/worker background, notifikasi, pengiriman email reset password,
-implementasi storage, reporting dan AI ops. Konfigurasi untuk kebutuhan berikutnya bukan
-bukti fitur sudah diimplementasikan. PostgreSQL tetap satu-satunya dialek.
+## Mobile
 
-## Verifikasi
+`apps/mobile` packages the same React UI for Capacitor Android/iOS; no duplicated screens.
+See [mobile setup](docs/mobile.md) for API URL, application identity and native toolchains.
+Mobile assets can be built separately; native authentication and device/release validation remain unimplemented.
 
-`bun erp check`, `bun erp test`, `bun erp build`, `bun erp doctor`.
-Status task dan bukti ada di `docs/tasks/`; hanya manusia menaikkan status ke ready/done.
-Keberadaan workflow tidak membuktikan run GitHub maupun branch protection sudah aktif.
-
-## Stack dan lisensi
-
-Bun 1.4.2, TypeScript, Hono, Zod, Drizzle, Pino, React, Vite, Tailwind,
-TanStack Router + Query. Versi eksak ada di manifest dan bun.lock. Lisensi MIT.
+[Documentation index](docs/README.md) · [Agent guide](AGENTS.md)

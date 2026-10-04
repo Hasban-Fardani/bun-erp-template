@@ -1,13 +1,23 @@
-# Dokumentasi
+# Documentation map
 
-Peta dokumen. Setiap dokumen menunjuk ke sumber kode yang benar-benar ada — bukan salinan.
+Reviewed against source on 2026-10-04. Read only the branch needed for the task.
+Package manifests and `bun erp --help` own versions and available commands.
 
-- `architecture.md` — bentuk repo, alur request, batas modul
-- `conventions.md` — aturan kode yang ditegakkan `bun erp check`
-- `development.md` — menyalakan proyek dari clone bersih
-- `testing.md` — harness `bun:test`, PGlite vs Postgres
-- `security.md` — auth, authorization, audit, rahasia
-- `operations.md` — log, health, migrasi, backup
-- `deployment.md` — bare metal + Docker, artifact sama
-- `adr/` — keputusan arsitektur bernomor
-- `tasks/` — status task; hanya manusia yang menaikkan ke `ready`/`done`
+| Need | Canonical document |
+|---|---|
+| Repo boundaries and request flow | [Architecture](architecture.md) |
+| Code rules | [Conventions](conventions.md) |
+| Local setup and owner | [Development](development.md) |
+| API envelopes and pagination | [API contract](api-contract.md) |
+| Auth, audit and secrets | [Security](security.md) |
+| Checks, test database and QA | [Testing](testing.md) |
+| Running services | [Operations](operations.md) |
+| Shipping API/web | [Deployment](deployment.md) |
+| React + Capacitor | [Mobile](mobile.md) |
+| Copy and UI feedback | [UI copy](ui-copy.md), [UI states](ui-states.md) |
+| CI and branch protection | [CI](ci.md) |
+| Selected architecture versus implemented features | [ADRs](adr/README.md) |
+
+`tasks/` stores work and review evidence, not a live feature list.
+[Research](riset/README.md) is historical context; consult only for a specific investigation.
+Do not treat an accepted ADR as proof its implementation exists.

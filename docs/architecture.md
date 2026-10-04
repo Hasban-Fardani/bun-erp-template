@@ -1,37 +1,26 @@
-# Arsitektur
+# Architecture
 
-## Bentuk repo
+## Current structure
 
-```
-apps/server/            entrypoint API Bun; background worker belum diimplementasikan
-  http/                 Hono: middleware, error envelope, pendaftaran route
-  platform/             fondasi lintas modul: config, database, observability
-  modules/<nama>/       satu modul = satu domain
-    schema.ts           kontrak input (Zod, dikompilasi)
-    data.ts             tabel Drizzle
-    service.ts          business logic + batas transaksi
-    policy.ts           authorization
-    route.ts            HTTP tipis
-  migrations/           SQL forward-only, berurutan lintas modul
-apps/web/               React + Vite, web statis terpisah sesuai ADR-0011
-tools/                  CLI `bun erp` dan gate (scope, task, skills)
-docs/                   dokumentasi ini
-skills/                 instruksi agent
-```
+- `apps/server/server.ts`: Bun entry, context, migrations and infrastructure seed.
+- `apps/server/http`: Hono middleware, routes, validation, typed envelopes and OpenAPI.
+- `apps/server/modules/{identity,rbac,audit,departments}`: schema, data, service, policy, route.
+- `apps/server/platform`: config, database drivers and logging.
+- `apps/server/migrations`: one sequence of forward-only PostgreSQL SQL files.
+- `apps/web`: React + Vite, Hono RPC and TanStack Query/Router.
+- `apps/mobile`: Capacitor configuration and native packaging of the same web source.
+- `tools`: read-only checks; `scripts`: setup, build and QA orchestration.
 
-## Alur satu request
+Request: middleware → authorize → validate → service transaction → JSON envelope.
+Use [API contract](api-contract.md) for exceptions and status codes.
+Routes return typed Hono chains; server code reaches web only through type imports.
 
-1. `server.ts` membentuk context, menjalankan migrasi, seed infrastruktur.
-2. Web lokal memakai proxy Vite; deployment hybrid memakai origin API dari VITE_API_BASE_URL.
-3. Hono memberi `X-Request-Id`, meneruskan ke route.
-4. Route memvalidasi input, memanggil policy, lalu service.
-5. Service menyentuh `ctx.db` dan mengembalikan data domain.
-6. Route membungkus hasil sebagai `{ data, meta: { requestId } }`.
-7. Error apa pun menjadi `{ error: { code, message, fields? }, meta }`.
+Configuration is parsed in `platform/config`; organization is resolved on the server.
+Cross-module access uses public services. New domain modules follow departments.
 
-## Batas yang ditegakkan
+## Selected but not implemented
 
-- Modul tidak mengimpor modul lain secara langsung; lewat service publiknya bila perlu.
-- Hanya `platform/config` yang membaca `Bun.env`.
-- Tabel bisnis selalu membawa `organization_id`.
-- Tidak ada route privat tanpa authorization eksplisit.
+File-based routing/loaders, a Cloudflare API Worker, background queues and agent runtime
+are not present. Current Router uses `routes/route-tree.tsx`; auth guards are still components
+and table URL state still uses `use-table-state.ts`. See the [ADR index](adr/README.md).
+The API serves HTTP, not web assets. Native packaging is not proof of native login support.
