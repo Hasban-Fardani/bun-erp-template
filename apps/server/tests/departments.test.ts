@@ -5,10 +5,11 @@ let api: HttpFixture;
 
 const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
 
+// Cold WASM startup belongs to the fixture budget, not Bun's 5-second hook default.
 beforeEach(async () => {
   api = await createHttpFixture();
   await api.signInAsOwner();
-});
+}, 30_000);
 
 afterAll(async () => {
   await api?.close();
