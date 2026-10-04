@@ -1,11 +1,20 @@
 import type { Hono } from "hono";
 import { cors } from "hono/cors";
 import { requestId as requestIdMiddleware } from "hono/request-id";
+import { secureHeaders } from "hono/secure-headers";
 import type { AppContext } from "../context.ts";
 import { requestId } from "./errors.ts";
 import type { AppVariables } from "./types.ts";
 
 export function registerMiddleware(app: Hono<{ Variables: AppVariables }>, ctx: AppContext) {
+  app.use(
+    "*",
+    secureHeaders({
+      referrerPolicy: "strict-origin-when-cross-origin",
+      strictTransportSecurity: ctx.env.isProduction ? "max-age=15552000" : false,
+      xFrameOptions: "DENY",
+    }),
+  );
   app.use(requestIdMiddleware({ limitLength: 128, headerName: "X-Request-Id" }));
 
   // Credentialed requests receive CORS headers only for explicitly trusted origins.

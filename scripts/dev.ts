@@ -35,7 +35,7 @@ const processes: { name: string; child: Bun.Subprocess }[] = [];
 try {
   processes.push({
     name: "API",
-    child: Bun.spawn([process.execPath, "--no-env-file", "--watch", "server.ts"], {
+    child: Bun.spawn([process.execPath, "--no-env-file", "--watch", "server.ts", "--api-only"], {
       cwd: resolve(root, "apps/server"),
       env: serverEnvironment,
       stdin: "inherit",
@@ -49,8 +49,7 @@ try {
       [
         process.execPath,
         "--no-env-file",
-        "run",
-        "vite",
+        resolve(root, "apps/web/node_modules/vite/bin/vite.js"),
         "--host",
         "localhost",
         "--port",
@@ -71,10 +70,16 @@ try {
   throw error;
 }
 
-process.stdout.write("Hono routes share this origin under /api (health: /api/v1/health, docs: /api/docs).\n");
+process.stdout.write(`Web app: ${webUrl}\n`);
+process.stdout.write(`Hono API: ${webUrl}/api (health: ${webUrl}/api/v1/health, docs: ${webUrl}/api/docs).\n`);
+process.stdout.write(`Internal API listener: http://localhost:${apiPort}\n`);
 process.stdout.write("Development uses an isolated local PGlite database; repository .env values are not loaded.\n");
 
-const stopOnSignal = () => stopProcesses();
+let stopping = false;
+const stopOnSignal = () => {
+  stopping = true;
+  stopProcesses();
+};
 process.once("SIGINT", stopOnSignal);
 process.once("SIGTERM", stopOnSignal);
 
@@ -84,7 +89,7 @@ await Promise.all(processes.map(({ child }) => child.exited));
 process.off("SIGINT", stopOnSignal);
 process.off("SIGTERM", stopOnSignal);
 
-if (firstExit.code !== 0) {
+if (firstExit.code !== 0 && !stopping) {
   process.stderr.write(
     `${firstExit.name} process exited with code ${firstExit.code}. Check whether its configured port is already in use.\n`,
   );

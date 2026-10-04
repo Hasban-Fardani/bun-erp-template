@@ -287,7 +287,11 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await run(["bun", "scripts/dev.ts"], "local web and API development");
   },
 
-  /** Production build: web only. The API ships as source, run by `bun server.ts`. */
+  "server:api": async () => {
+    await run(["bun", "apps/server/server.ts", "--api-only"], "API-only server");
+  },
+
+  /** Build the client assets served by the default Bun web-and-API server. */
   build: async () => {
     await run(["bun", "run", "--cwd", "apps/web", "build"], "web build (vite)");
     process.stdout.write("build: OK — output in apps/web/dist\n");

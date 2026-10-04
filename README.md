@@ -16,6 +16,10 @@ share that origin; `/api/*` is proxied to the internal API process. Local develo
 seeds an isolated PGlite database under `.data/development` and ignores repository `.env` values.
 See [development setup](docs/development.md) for port overrides and non-local configuration.
 
+For a local production-shaped run, build the web assets with `bun erp build`, then run `bun start`.
+One Bun server serves the built React app at `/` and the versioned Hono API at `/api/*`. Use
+`bun erp server:api` only when deploying the frontend separately.
+
 Run `bun erp init` once after cloning or copying the template to index the project and install the
 required agent skills. Development commands do not refresh or install agent tooling.
 See docs/agent-init.md and docs/README.md.

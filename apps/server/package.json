@@ -5,7 +5,7 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "bun ../../scripts/init-agents.ts && bun --watch server.ts",
+    "dev": "bun --watch server.ts --api-only",
     "start": "bun server.ts",
     "lint": "bunx --bun biome check .",
     "format": "bunx --bun biome format --write ."

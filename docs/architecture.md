@@ -6,7 +6,7 @@ a convention.
 
 | Change | Start here | Ownership |
 |---|---|---|
-| Run the Bun API | apps/server/server.ts | Bun entrypoint and lifecycle |
+| Run web + API on Bun | apps/server/server.ts | Production listener and request dispatch |
 | Build application dependencies | apps/server/bootstrap.ts | Environment, database, migrations, logger and auth |
 | Compose HTTP behavior | apps/server/http/app.ts | Middleware, version prefix, feature routes, docs and error envelope |
 | Add an API feature | apps/server/features/<name> | route.ts, validation.ts, service.ts, policy.ts, schema.ts; optional jobs.ts |
@@ -22,6 +22,18 @@ a convention.
 | Localize shared app copy and formats | packages/i18n | Typed catalogs, locale resolution and React provider |
 | Add rich text editing UI | packages/editor | Lazy React entry, composable Lexical UI and JSON value |
 | Compose email or PDF documents | packages/email, packages/pdf | Opt-in rendering components with separate runtime boundaries |
+
+## Runtime modes
+
+`bun dev` starts Vite with HMR and an internal API-only Bun process. Vite provides the browser
+origin and proxies `/api/*` to Hono. Production Bun uses `bun erp build` followed by `bun start`:
+one Hono listener dispatches `/api/*` to the API and serves `apps/web/dist` for web routes. Startup
+checks the web build before opening the database. `bun erp server:api` preserves API-only hosting
+for a separately deployed frontend or an upstream reverse proxy.
+
+Cloudflare uses the same API path boundary in one Worker deployment. Workers Static Assets serves
+the Vite build directly; only `/api` and `/api/*` invoke Worker code. This keeps static requests
+outside the Worker request quota. See [deployment](deployment.md) for host and asset details.
 
 ## Backend request flow
 

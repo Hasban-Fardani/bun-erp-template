@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import type { WorkerBindings } from "../../cloudflare-context.ts";
-import { isApiPath, requiresOrganizationId } from "../../platform/cloudflare/routing.ts";
+import { isApiPath } from "../../http/routing.ts";
+import { requiresOrganizationId } from "../../platform/cloudflare/routing.ts";
 import worker from "../../worker.ts";
 
 test("Cloudflare sends only the API namespace through the Worker", () => {

@@ -7,10 +7,17 @@ migration against the target PostgreSQL version before application.
 
 ## Bun host
 
-apps/server/server.ts runs the Hono API. apps/web is a separate Vite build; configure its HTTPS API
-origin through VITE_API_BASE_URL at build time and deploy the output to a static asset host. Run a
-separate bun erp jobs:work process for durable jobs. Use PostgreSQL for API and queue state; local
-PGlite files are not a production data store.
+Build and run the default semi-monolith with `bun erp build` then `bun start`. One Bun listener serves
+the Vite build from `apps/web/dist` at `/` and Hono routes under `/api/*`; client-side routes fall
+back to `index.html`, hashed assets get immutable caching, and the entry HTML is revalidated. The
+server fails before database bootstrap when the web build is missing. Put it behind a TLS-terminating
+reverse proxy on a VPS and keep the application port private to that proxy.
+
+For a separately hosted frontend, use `bun erp server:api` and set `VITE_API_BASE_URL` to the public
+HTTPS API origin at web build time. Run a separate `bun erp jobs:work` process for durable jobs. Use
+PostgreSQL for API and queue state; local PGlite files are not a production data store. Hono applies
+secure response headers to API and Bun-hosted web responses. Production responses enable six-month
+HSTS without `includeSubDomains`; serve the app over HTTPS through the VPS reverse proxy.
 
 ## Cloudflare Workers
 
@@ -54,6 +61,11 @@ exceed a limit can fail until the quota resets. Check Cloudflare's live
 [Static Assets billing](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/)
 before a production launch. Hyperdrive's Free query quota is documented in its
 [pricing guide](https://developers.cloudflare.com/hyperdrive/platform/pricing/).
+
+The static build includes `apps/web/public/_headers` for browser security headers and asset caching.
+Cloudflare serves those assets directly; the Worker applies Hono security headers to API responses.
+This keeps the single-deployment shape aligned with the Bun semi-monolith without routing web assets
+through Worker CPU or request quotas.
 
 Cloudflare Free does not provide this template's PostgreSQL database. Hyperdrive is the free
 connection pool/proxy; the PostgreSQL 16, 17, or 18 origin must be provisioned with a provider that

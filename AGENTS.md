@@ -22,6 +22,9 @@ rules without a separate product spec.
 - Runtime and package manager are Bun 1.4.2. Do not use npm, yarn, or pnpm.
 - Server domain code lives in apps/server/features/<feature>; copy the departments feature and
   skills/feature-development/SKILL.md. Drizzle declarations are named schema.ts.
+- `bun dev` runs Vite HMR and proxies `/api/*` to the internal API-only server. For a production-shaped
+  Bun host, run `bun erp build` then `bun start`: one Hono listener serves web assets and `/api/*`.
+  Use `bun erp server:api` only when the frontend is deployed separately.
 - Web URLs are TanStack file routes in apps/web/src/pages; route files are small wrappers and
   screens live in web features. Do not register pages in a second route list or add -page suffixes.
 - Mobile owns apps/mobile/src/main.tsx, screens and features. It must not import web source.

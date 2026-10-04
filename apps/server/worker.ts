@@ -3,8 +3,9 @@ import { createCloudflareContext, createCloudflareInfrastructure, type WorkerBin
 import { resolveDefaultOrganizationId } from "./context.ts";
 import { createJobRegistry } from "./features/jobs.ts";
 import { createApp } from "./http/app.ts";
+import { isApiPath } from "./http/routing.ts";
 import { usingWorkerContext } from "./platform/cloudflare/lifecycle.ts";
-import { isApiPath, requiresOrganizationId } from "./platform/cloudflare/routing.ts";
+import { requiresOrganizationId } from "./platform/cloudflare/routing.ts";
 import { runJobBatch } from "./platform/jobs/queue.ts";
 
 const CLOUDFLARE_JOB_BATCH_SIZE = 1;
