@@ -4,17 +4,20 @@
  */
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
-import { createContext, resolveDefaultOrganizationId } from "./apps/server/context.ts";
+import { createContext } from "./apps/server/bootstrap.ts";
+import { resolveDefaultOrganizationId } from "./apps/server/context.ts";
+import { recordAudit, snapshot } from "./apps/server/features/audit/service.ts";
+import { accounts, users } from "./apps/server/features/identity/schema.ts";
+import { createUser, hashPassword } from "./apps/server/features/identity/service.ts";
+import { createJobRegistry } from "./apps/server/features/jobs.ts";
+import { assignRole, findRoleByKey, rolesForUser } from "./apps/server/features/rbac/service.ts";
 import { createApp } from "./apps/server/http/app.ts";
-import { recordAudit, snapshot } from "./apps/server/modules/audit/service.ts";
-import { accounts, users } from "./apps/server/modules/identity/data.ts";
-import { createUser, hashPassword } from "./apps/server/modules/identity/service.ts";
-import { assignRole, findRoleByKey, rolesForUser } from "./apps/server/modules/rbac/service.ts";
 import { loadEnv, strayKeyWarnings } from "./apps/server/platform/config/index.ts";
 import type { Database } from "./apps/server/platform/database/index.ts";
 import { migrate, rowsOf } from "./apps/server/platform/database/migrate.ts";
 import { organizations } from "./apps/server/platform/database/schema.ts";
 import { seed } from "./apps/server/platform/database/seed.ts";
+import { requeueDeadJob, runJobBatch } from "./apps/server/platform/jobs/queue.ts";
 import { checkScope } from "./tools/scope.ts";
 import { validateSkills } from "./tools/skills.ts";
 import { loadTasks, validateTasks } from "./tools/tasks.ts";
@@ -57,6 +60,7 @@ class GateFailure extends Error {
 /** Gates read repo files directly — used by `check` and callable on their own. */
 async function runGate(
   kind:
+    | "agents"
     | "skills"
     | "task"
     | "scope"
@@ -71,10 +75,17 @@ async function runGate(
     | "ui"
     | "ci"
     | "rpc"
-    | "docs",
+    | "docs"
+    | "architecture"
+    | "language"
+    | "mobile"
+    | "versioning",
 ): Promise<void> {
   let findings: string[];
-  if (kind === "skills") {
+  if (kind === "agents") {
+    const { checkAgentReadiness } = await import("./tools/agent-readiness.ts");
+    findings = await checkAgentReadiness(repoRoot);
+  } else if (kind === "skills") {
     findings = (await validateSkills(SKILLS_DIR)).map((f) => `${f.file}: ${f.message}`);
   } else if (kind === "task") {
     findings = validateTasks(await loadTasks(TASKS_DIR)).map((f) => `${f.file}: ${f.message}`);
@@ -101,6 +112,23 @@ async function runGate(
   } else if (kind === "ui") {
     const { checkUiCompleteness } = await import("./tools/ui-completeness.ts");
     findings = (await checkUiCompleteness(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  } else if (kind === "architecture") {
+    const { checkArchitecture } = await import("./tools/architecture-guard.ts");
+    findings = await checkArchitecture(repoRoot);
+  } else if (kind === "language") {
+    const { checkTechnicalLanguage } = await import("./tools/language-guard.ts");
+    findings = (await checkTechnicalLanguage(repoRoot)).map(
+      (f) =>
+        `${f.file}: Indonesian term "${f.term}" in ${f.location}; use English for technical names and closed values`,
+    );
+  } else if (kind === "mobile") {
+    const { checkMobile } = await import("./tools/mobile-gate.ts");
+    findings = (await checkMobile(repoRoot)).map((f) => `${f.rule}: ${f.detail}`);
+  } else if (kind === "versioning") {
+    const { checkWorkspaceVersions } = await import("./tools/versioning.ts");
+    findings = (await checkWorkspaceVersions(repoRoot)).map(
+      (f) => `${f.packageName}: ${f.detail} Found ${f.version}; expected ${f.expected}.`,
+    );
   } else if (kind === "docs") {
     const { checkDocs } = await import("./tools/docs-guard.ts");
     findings = await checkDocs(repoRoot);
@@ -118,6 +146,28 @@ async function runGate(
 }
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
+  init: async () => {
+    await run(["bun", "scripts/init-agents.ts"], "initialize project agent tooling");
+  },
+  "check:mobile": async () => {
+    await guard("mobile", () => runGate("mobile"));
+    process.stdout.write("Mobile contract OK.\n");
+  },
+  "check:agents": async () => {
+    await guard("agent prerequisites", () => runGate("agents"));
+    process.stdout.write("Agent skills and CodeGraph index OK.\n");
+  },
+  "check:versioning": async () => {
+    await guard("versioning", () => runGate("versioning"));
+    process.stdout.write("Workspace versions OK.\n");
+  },
+  "check:language": async () => {
+    await guard("language", () => runGate("language"));
+    process.stdout.write("Technical language OK.\n");
+  },
+  "check:architecture": async () => {
+    await guard("architecture", () => runGate("architecture"));
+  },
   "check:docs": async () => {
     await guard("docs", () => runGate("docs"));
   },
@@ -136,8 +186,20 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "wait:http": async (args) => {
     await run(["bun", "scripts/wait-http.ts", ...args], "wait for HTTP");
   },
+  "mobile:dev": async () => {
+    await run(["bun", "run", "--cwd", "apps/mobile", "dev"], "mobile dev");
+  },
+  "mobile:preview": async () => {
+    await run(["bun", "run", "--cwd", "apps/mobile", "preview"], "mobile preview");
+  },
   "mobile:build": async () => {
     await run(["bun", "scripts/mobile.ts", "build"], "mobile build");
+  },
+  "mobile:package": async (args) => {
+    await run(["bun", "scripts/mobile.ts", "package", ...args], "mobile native package");
+  },
+  "mobile:version": async (args) => {
+    await run(["bun", "scripts/mobile-version.ts", ...args], "stamp mobile version");
   },
   "mobile:add": async (args) => {
     await run(["bun", "scripts/mobile.ts", "add", ...args], "add native project");
@@ -148,6 +210,25 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "mobile:open": async (args) => {
     await run(["bun", "scripts/mobile.ts", "open", ...args], "open native project");
   },
+  "cloudflare:dev": async () => {
+    await run(["bun", "run", "--cwd", "apps/web", "dev:cloudflare"], "Cloudflare Workers dev");
+  },
+  "cloudflare:build": async () => {
+    const generatedLocalBindings = resolve(repoRoot, "apps/web/dist/bun_erp_template/.dev.vars");
+    try {
+      await run(["bun", "run", "--cwd", "apps/web", "build:cloudflare"], "Cloudflare Worker build");
+    } finally {
+      // The Vite plugin can materialize values from a local .env for development; they never belong in deploy output.
+      await Bun.$`rm -f ${generatedLocalBindings}`.quiet();
+    }
+  },
+  "cloudflare:deploy": async () => {
+    await run(["bun", "erp.ts", "cloudflare:build"], "Cloudflare Worker build");
+    await run(
+      ["bun", "run", "--cwd", "apps/web", "wrangler", "deploy", "--config", "dist/bun_erp_template/wrangler.json"],
+      "Cloudflare deploy",
+    );
+  },
   preview: async () => {
     await run(["bun", "run", "--cwd", "apps/web", "preview", "--host", "127.0.0.1"], "web preview");
   },
@@ -155,8 +236,10 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     // biome and tsc run first: a type error explains most of the gate noise below, so seeing
     // them first saves reading twelve reports to find the cause.
     const { runProjectChecks } = await import("./tools/parallel-gates.ts");
-    const results = await runProjectChecks(repoRoot);
-    for (const r of results) process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`);
+    process.stdout.write("Running project checks (up to 6 in parallel)…\n");
+    const results = await runProjectChecks(repoRoot, {
+      onResult: (r) => process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`),
+    });
 
     const failed = results.filter((r) => !r.ok);
     if (failed.length > 0) {
@@ -169,6 +252,14 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   test: async () => {
     await run(["bun", "apps/server/test-runner.ts"], "bun test server");
     await run(["bun", "test", "apps/web"], "bun test web");
+    await run(["bun", "test", "apps/mobile"], "bun test mobile");
+    await run(["bun", "test", "packages/utils/tests"], "bun test shared utilities");
+    await run(["bun", "test", "packages/data-table/tests"], "bun test shared data table");
+    await run(["bun", "test", "packages/charts/tests"], "bun test shared charts");
+    await run(["bun", "test", "packages/i18n/tests"], "bun test i18n");
+    await run(["bun", "test", "packages/editor/tests"], "bun test rich-text editor");
+    await run(["bun", "test", "packages/email/tests"], "bun test email components");
+    await run(["bun", "test", "packages/pdf/tests"], "bun test PDF components");
   },
 
   doctor: async () => {
@@ -193,7 +284,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   dev: async () => {
-    await run(["bun", "--watch", "apps/server/server.ts"], "server (watch)");
+    await run(["bun", "scripts/dev.ts"], "local web and API development");
   },
 
   /** Production build: web only. The API ships as source, run by `bun server.ts`. */
@@ -361,13 +452,15 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
   "db:status": async () => {
     const ctx = await createContext({ migrateOnStart: false });
-    const files = [...new Bun.Glob("*.sql").scanSync({ cwd: MIGRATIONS_DIR })].sort();
+    const files = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })]
+      .filter((file) => /^\d{4}_[a-z0-9_]+\.ts$/.test(file))
+      .sort();
     // Same unwrapping as the runner: PGlite returns `{ rows }`, postgres-js an array.
     const rows = rowsOf<{ name: string }>(await ctx.db.execute(sql`select name from _migrations`));
-    const applied = new Set(rows.map((row) => row.name));
-    const pending = files.filter((f) => !applied.has(f));
+    const appliedIds = new Set(rows.map((row) => row.name.match(/^(\d{4})_/)?.[1] ?? row.name));
+    const pending = files.filter((file) => !appliedIds.has(file.slice(0, 4)));
     for (const f of files) {
-      process.stdout.write(`  ${applied.has(f) ? "applied " : "PENDING"} ${f}\n`);
+      process.stdout.write(`  ${appliedIds.has(f.slice(0, 4)) ? "applied " : "PENDING"} ${f}\n`);
     }
     process.stdout.write(`\n${files.length - pending.length}/${files.length} applied, ${pending.length} pending\n`);
     await ctx.close();
@@ -381,6 +474,103 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
       `Seeded ${result.organizations} organization(s), ${result.permissions} permission(s), ${result.roles} role(s).\n`,
     );
     await ctx.close();
+  },
+
+  "jobs:work": async () => {
+    const ctx = await createContext({ migrateOnStart: false });
+    const registry = createJobRegistry();
+    let stopping = false;
+    const stop = () => {
+      stopping = true;
+    };
+    process.on("SIGINT", stop);
+    process.on("SIGTERM", stop);
+    ctx.logger.info({ event: "jobs.worker.started", pollIntervalMs: 1_000 });
+    try {
+      while (!stopping) {
+        try {
+          const processed = await runJobBatch(ctx.db, registry, ctx.logger, { limit: 10 });
+          if (processed === 0) await Bun.sleep(1_000);
+        } catch {
+          ctx.logger.error({ event: "jobs.worker.poll_failed" });
+          await Bun.sleep(2_000);
+        }
+      }
+    } finally {
+      process.off("SIGINT", stop);
+      process.off("SIGTERM", stop);
+      await ctx.close();
+      ctx.logger.info({ event: "jobs.worker.stopped" });
+    }
+  },
+
+  "jobs:run-once": async () => {
+    const ctx = await createContext({ migrateOnStart: false });
+    try {
+      const processed = await runJobBatch(ctx.db, createJobRegistry(), ctx.logger, { limit: 20 });
+      process.stdout.write(`Processed ${processed} background job(s).\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "jobs:status": async () => {
+    const ctx = await createContext({ migrateOnStart: false });
+    try {
+      const rows = rowsOf<{ status: string; count: string | number }>(
+        await ctx.db.execute(
+          sql`select status, count(*) as count from background_jobs group by status order by status`,
+        ),
+      );
+      for (const row of rows) process.stdout.write(`${row.status.padEnd(12)} ${row.count}\n`);
+      if (rows.length === 0) process.stdout.write("No background jobs.\n");
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "jobs:dead": async () => {
+    const ctx = await createContext({ migrateOnStart: false });
+    try {
+      const rows = rowsOf<{
+        id: string;
+        name: string;
+        queue: string;
+        attemptCount: number;
+        lastErrorCode: string | null;
+        updatedAt: Date;
+      }>(
+        await ctx.db.execute(sql`
+        select id, job_name as name, queue_name as queue, attempt_count as "attemptCount",
+          last_error_code as "lastErrorCode", updated_at as "updatedAt"
+        from background_jobs where status = 'dead' order by updated_at desc limit 100
+      `),
+      );
+      for (const row of rows) {
+        process.stdout.write(
+          `${row.id}  ${row.name}  ${row.queue}  attempts=${row.attemptCount}  ${row.lastErrorCode ?? "unknown"}\n`,
+        );
+      }
+      if (rows.length === 0) process.stdout.write("No dead jobs.\n");
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "jobs:retry": async (args) => {
+    const [id] = args;
+    if (!id) {
+      process.stderr.write("Usage: bun erp jobs:retry <job-id>\n");
+      process.exit(1);
+    }
+    const ctx = await createContext({ migrateOnStart: false });
+    try {
+      if (!(await requeueDeadJob(ctx.db, id))) throw new Error("No dead job found with that ID.");
+      ctx.logger.warn({ event: "jobs.operator_requeued", jobId: id });
+      process.stdout.write(`Requeued ${id}.\n`);
+    } finally {
+      await ctx.close();
+    }
   },
 
   "key:generate": async () => {
@@ -401,13 +591,13 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "check:migrations": async () => {
-    const sql = [...new Bun.Glob("*.sql").scanSync({ cwd: MIGRATIONS_DIR })].sort();
-    const bad = sql.filter((f) => !/^\d{4}_[a-z0-9_]+\.sql$/.test(f));
+    const files = [...new Bun.Glob("*").scanSync({ cwd: MIGRATIONS_DIR })].sort();
+    const bad = files.filter((file) => !/^\d{4}_[a-z0-9_]+\.ts$/.test(file));
     if (bad.length > 0) {
-      process.stderr.write(`Migration names must be NNNN_snake_case.sql: ${bad.join(", ")}\n`);
+      process.stderr.write(`Migration modules must be NNNN_snake_case.ts: ${bad.join(", ")}\n`);
       process.exit(1);
     }
-    process.stdout.write(`${sql.length} migration(s) named correctly.\n`);
+    process.stdout.write(`${files.length} TypeScript migration module(s) named correctly.\n`);
   },
 
   "check:scope": async () => {
@@ -445,7 +635,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
   "check:surface": async () => {
     await guard("surface", () => runGate("surface"));
-    process.stdout.write("Surface OK: feedback goes to toasts.\n");
+    process.stdout.write("Surface OK: transient feedback and contextual errors follow the reviewed contract.\n");
   },
   "check:shadcn": async () => {
     await guard("shadcn", () => runGate("shadcn"));

@@ -17,44 +17,56 @@ import { type DesignDirectionSpec, DesignDirectionValidator } from "./governance
 export type DesignFinding = { screen: string; code: string; severity: string; detail: string };
 
 /** Screens a user navigates to. Every one of them needs a declared direction. */
-async function screenNames(root: string): Promise<string[]> {
-  const glob = new Bun.Glob("*.tsx");
+async function screenNames(root: string, sourceDir: string): Promise<string[]> {
+  const glob = new Bun.Glob("**/*.tsx");
   const names: string[] = [];
-  for await (const file of glob.scan({ cwd: join(root, "apps/web/src/pages") })) {
-    const name = file.replace(/\.tsx$/, "");
-    // The layout and error shells have no visual direction of their own.
-    if (name === "not-found") continue;
-    names.push(name);
+  for await (const file of glob.scan({ cwd: join(root, sourceDir) })) {
+    if (sourceDir === "apps/web/src/pages") {
+      const routeScreens: Record<string, string> = {
+        "login.tsx": "login",
+        "_authenticated/users.tsx": "users",
+        "_authenticated/roles.tsx": "roles",
+        "_authenticated/audit.tsx": "audit",
+      };
+      const screen = routeScreens[file];
+      if (screen) names.push(screen);
+      continue;
+    }
+    if (file === "home.tsx") names.push("home");
   }
   return names.sort();
 }
 
 export async function checkDesign(root: string): Promise<DesignFinding[]> {
   const findings: DesignFinding[] = [];
-  const dir = join(root, "apps/web/design");
-  const glob = new Bun.Glob("*.json");
-  const declared = new Set<string>();
+  for (const [sourceDir, designDir] of [
+    ["apps/web/src/pages", "apps/web/design"],
+    ["apps/mobile/src/pages", "apps/mobile/design"],
+  ]) {
+    const dir = join(root, designDir ?? "");
+    const glob = new Bun.Glob("*.json");
+    const declared = new Set<string>();
 
-  for await (const file of glob.scan({ cwd: dir })) {
-    const screen = file.replace(/\.json$/, "");
-    declared.add(screen);
-    const raw = (await Bun.file(join(dir, file)).json()) as DesignDirectionSpec;
-    const result = DesignDirectionValidator.validate(raw);
-    for (const v of result.violations) {
-      findings.push({ screen, code: v.code, severity: v.severity, detail: v.message });
+    for await (const file of glob.scan({ cwd: dir })) {
+      const screen = file.replace(/\.json$/, "");
+      declared.add(screen);
+      const raw = (await Bun.file(join(dir, file)).json()) as DesignDirectionSpec;
+      const result = DesignDirectionValidator.validate(raw);
+      for (const v of result.violations) {
+        findings.push({ screen, code: v.code, severity: v.severity, detail: v.message });
+      }
+    }
+
+    for (const screen of await screenNames(root, sourceDir ?? "")) {
+      if (!declared.has(screen)) {
+        findings.push({
+          screen,
+          code: "SCREEN_WITHOUT_SPEC",
+          severity: "BLOCKER",
+          detail: `${sourceDir}/${screen}.tsx renders UI but has no direction in ${designDir}/${screen}.json`,
+        });
+      }
     }
   }
-
-  for (const screen of await screenNames(root)) {
-    if (!declared.has(screen)) {
-      findings.push({
-        screen,
-        code: "SCREEN_WITHOUT_SPEC",
-        severity: "BLOCKER",
-        detail: `apps/web/src/pages/${screen}.tsx renders UI but has no direction in apps/web/design/${screen}.json`,
-      });
-    }
-  }
-
   return findings;
 }

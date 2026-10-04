@@ -1,0 +1,241 @@
+name: Mobile Store Release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to release to its private testing channel
+        required: true
+        type: choice
+        options: [both, android, ios]
+        default: both
+permissions:
+  contents: read
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  android-play-internal:
+    if: github.event_name == 'push' || inputs.platform == 'both' || inputs.platform == 'android'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: mobile-release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: ./.github/actions/setup
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # verified with git ls-remote
+        with:
+          ruby-version: "3.4"
+      - name: Validate release settings
+        env:
+          MOBILE_API_URL: ${{ vars.MOBILE_API_URL }}
+          MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
+          MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$MOBILE_API_URL"
+          test -n "$MOBILE_APP_ID"
+          test -n "$MOBILE_APP_NAME"
+          test "$MOBILE_APP_ID" != "com.example.erptemplate"
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          test -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"
+      - name: Build web assets
+        run: bun erp mobile:build
+        env:
+          VITE_API_BASE_URL: ${{ vars.MOBILE_API_URL }}
+      - name: Generate Android project
+        run: bun erp mobile:add android
+        env:
+          MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
+          MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
+      - name: Derive native build number
+        id: android-version
+        run: echo "value=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))" >> "$GITHUB_OUTPUT"
+      - name: Stamp Android release version
+        run: bun erp mobile:version android
+        env:
+          MOBILE_BUILD_NUMBER: ${{ steps.android-version.outputs.value }}
+      - name: Sync Android assets
+        run: bun erp mobile:sync android
+        env:
+          MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
+          MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
+      - name: Prepare signing and Play credentials
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/google-play.json"
+      - name: Build signed Android App Bundle
+        run: >-
+          bun erp mobile:package android
+          --androidreleasetype AAB
+          --keystorepath "$RUNNER_TEMP/release.keystore"
+          --keystorepass "$ANDROID_KEYSTORE_PASSWORD"
+          --keystorealias "$ANDROID_KEY_ALIAS"
+          --keystorealiaspass "$ANDROID_KEY_PASSWORD"
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: Upload to Google Play internal testing
+        run: |
+          gem install fastlane --version 2.240.1 --no-document
+          fastlane supply \
+            --aab apps/mobile/android/app/build/outputs/bundle/release/app-release.aab \
+            --json_key "$RUNNER_TEMP/google-play.json" \
+            --package_name "$MOBILE_APP_ID" \
+            --track internal \
+            --release_status completed \
+            --skip_upload_metadata true \
+            --skip_upload_images true \
+            --skip_upload_screenshots true
+        env:
+          MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-release-aab
+          path: apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+
+  ios-testflight:
+    if: github.event_name == 'push' || inputs.platform == 'both' || inputs.platform == 'ios'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    environment: mobile-release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: ./.github/actions/setup
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # verified with git ls-remote
+        with:
+          ruby-version: "3.4"
+      - name: Validate release settings
+        env:
+          MOBILE_API_URL: ${{ vars.MOBILE_API_URL }}
+          MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
+          MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
+          IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          test -n "$MOBILE_API_URL"
+          test -n "$MOBILE_APP_ID"
+          test -n "$MOBILE_APP_NAME"
+          test "$MOBILE_APP_ID" != "com.example.erptemplate"
+          test -n "$IOS_DISTRIBUTION_CERTIFICATE_BASE64"
+          test -n "$IOS_DISTRIBUTION_CERTIFICATE_PASSWORD"
+          test -n "$IOS_PROVISIONING_PROFILE_BASE64"
+          test -n "$IOS_TEAM_ID"
+          test -n "$APP_STORE_CONNECT_KEY_ID"
+          test -n "$APP_STORE_CONNECT_ISSUER_ID"
+          test -n "$APP_STORE_CONNECT_PRIVATE_KEY_BASE64"
+          test -n "$IOS_KEYCHAIN_PASSWORD"
+      - name: Build web assets
+        run: bun erp mobile:build
+        env:
+          VITE_API_BASE_URL: ${{ vars.MOBILE_API_URL }}
+      - name: Generate iOS project
+        run: bun erp mobile:add ios
+        env:
+          MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
+          MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
+      - name: Derive native build number
+        id: ios-version
+        run: echo "value=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))" >> "$GITHUB_OUTPUT"
+      - name: Stamp iOS release version
+        run: bun erp mobile:version ios
+        env:
+          MOBILE_BUILD_NUMBER: ${{ steps.ios-version.outputs.value }}
+      - name: Sync iOS assets
+        run: bun erp mobile:sync ios
+        env:
+          MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
+          MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
+      - name: Install Apple signing assets
+        id: signing
+        env:
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/mobile-release.keychain-db"
+          CERTIFICATE_PATH="$RUNNER_TEMP/distribution.p12"
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          printf '%s' "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          printf '%s' "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -k "$KEYCHAIN_PATH" -P "$IOS_DISTRIBUTION_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" "$HOME/Library/Keychains/login.keychain-db"
+          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          echo "profile_uuid=$PROFILE_UUID" >> "$GITHUB_OUTPUT"
+      - name: Build signed iOS app
+        run: >-
+          bun erp mobile:package ios
+          --configuration Release
+          --xcode-team-id "$IOS_TEAM_ID"
+          --xcode-export-method app-store-connect
+          --xcode-signing-style manual
+          --xcode-signing-certificate "Apple Distribution"
+          --xcode-provisioning-profile "${{ steps.signing.outputs.profile_uuid }}"
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+      - name: Locate signed IPA
+        id: ipa
+        run: |
+          IPA_PATH=$(find apps/mobile/ios -name '*.ipa' -print -quit)
+          test -n "$IPA_PATH"
+          echo "path=$IPA_PATH" >> "$GITHUB_OUTPUT"
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
+        run: |
+          gem install fastlane --version 2.240.1 --no-document
+          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          cat > "$RUNNER_TEMP/app-store-connect-key.json" <<EOF
+          {
+            "key_id": "$APP_STORE_CONNECT_KEY_ID",
+            "issuer_id": "$APP_STORE_CONNECT_ISSUER_ID",
+            "key_filepath": "$RUNNER_TEMP/AuthKey.p8",
+            "duration": 1200,
+            "in_house": false
+          }
+          EOF
+          fastlane pilot upload \
+            --ipa "${{ steps.ipa.outputs.path }}" \
+            --api_key_path "$RUNNER_TEMP/app-store-connect-key.json" \
+            --skip_waiting_for_build_processing true \
+            --distribute_external false
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ios-release-ipa
+          path: ${{ steps.ipa.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30

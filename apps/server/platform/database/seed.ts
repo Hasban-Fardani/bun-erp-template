@@ -1,5 +1,5 @@
 import { eq, sql } from "drizzle-orm";
-import { seedRbac } from "../../modules/rbac/service.ts";
+import { seedRbac } from "../../features/rbac/service.ts";
 import type { Database } from "./index.ts";
 import { organizations } from "./schema.ts";
 

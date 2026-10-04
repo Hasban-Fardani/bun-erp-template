@@ -1,0 +1,101 @@
+.bun-data-table__root {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.bun-data-table__scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.bun-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.bun-data-table th,
+.bun-data-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--bun-data-table-border, #dedede);
+  vertical-align: middle;
+}
+
+.bun-data-table th {
+  font-weight: 600;
+}
+
+.bun-data-table tbody tr:hover {
+  background: var(--bun-data-table-hover, #f5f5f5);
+}
+
+.bun-data-table th button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.bun-data-table__filter,
+.bun-data-table__page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bun-data-table__filter input,
+.bun-data-table__page-size select,
+.bun-data-table__pagination button {
+  min-height: 2.25rem;
+  border: 1px solid var(--bun-data-table-border, #dedede);
+  border-radius: 0.25rem;
+  color: inherit;
+  background: transparent;
+}
+
+.bun-data-table__filter input,
+.bun-data-table__page-size select {
+  padding-inline: 0.5rem;
+}
+
+.bun-data-table__pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bun-data-table__summary {
+  margin: 0;
+}
+
+.bun-data-table__pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bun-data-table__pagination button {
+  min-width: 2.25rem;
+  cursor: pointer;
+}
+
+.bun-data-table button:focus-visible,
+.bun-data-table__filter input:focus-visible,
+.bun-data-table__page-size select:focus-visible,
+.bun-data-table__pagination button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.bun-data-table__pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

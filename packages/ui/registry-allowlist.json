@@ -1,0 +1,29 @@
+{
+  "allowed": [
+    {
+      "name": "@shadcn",
+      "url": "https://ui.shadcn.com/r/styles/new-york-v4/{name}.json",
+      "purpose": "Official shadcn/ui component source"
+    },
+    {
+      "name": "@dashboardcn",
+      "url": "https://dashboardcn.com/r/{name}.json",
+      "purpose": "Reviewed MIT dashboard components"
+    },
+    {
+      "name": "@dashboardblocks",
+      "url": "https://www.dashboardblocks.com/r/{name}.json",
+      "purpose": "Reviewed MIT dashboard blocks"
+    },
+    {
+      "name": "@emailcn",
+      "url": "https://emailcn.run/r/{name}.json",
+      "purpose": "Reviewed MIT email components"
+    },
+    {
+      "name": "@pdfcn",
+      "url": "https://pdfcn.dev/r/{name}.json",
+      "purpose": "Reviewed MIT PDF components"
+    }
+  ]
+}

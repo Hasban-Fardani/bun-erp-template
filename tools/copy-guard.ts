@@ -72,9 +72,11 @@ export type CopyFinding = { file: string; line: number; rule: string; text: stri
 
 export async function checkUserCopy(root: string): Promise<CopyFinding[]> {
   const findings: CopyFinding[] = [];
-  const glob = new Bun.Glob("apps/web/src/**/*.tsx");
+  const files = ["apps/web/src", "apps/mobile/src", "packages/ui/src"].flatMap((dir) => [
+    ...new Bun.Glob(`${dir}/**/*.tsx`).scanSync({ cwd: root }),
+  ]);
 
-  for await (const file of glob.scan({ cwd: root })) {
+  for (const file of files) {
     const raw = await Bun.file(join(root, file)).text();
     const lines = raw.split("\n");
 
@@ -121,14 +123,15 @@ export async function checkUserCopy(root: string): Promise<CopyFinding[]> {
 function renderedStrings(code: string): string[] {
   const out: string[] = [];
 
-  for (const m of code.matchAll(/>([^<>{}]{3,})</g)) {
+  for (const m of code.matchAll(/(?<![=])>([^<>{}]{3,})</g)) {
     const text = m[1]?.trim();
     if (text) out.push(text);
   }
 
   const propPattern = new RegExp(`\\b(?:${DISPLAY_PROPS.join("|")})=("([^"]{3,})"|\\{\`([^\`]{3,})\`\\})`, "g");
   for (const m of code.matchAll(propPattern)) {
-    const text = m[2] ?? m[3];
+    // Expressions such as `${record.label}` are runtime data, not authored interface copy.
+    const text = (m[2] ?? m[3])?.replace(/\$\{[^}]*\}/g, "").trim();
     if (text) out.push(text);
   }
 

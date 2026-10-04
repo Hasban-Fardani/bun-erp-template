@@ -6,17 +6,30 @@
   "workspaces": [
     "apps/server",
     "apps/web",
-    "apps/mobile"
+    "apps/mobile",
+    "packages/ui",
+    "packages/utils",
+    "packages/email",
+    "packages/pdf",
+    "packages/i18n",
+    "packages/editor",
+    "packages/charts",
+    "packages/data-table"
   ],
   "scripts": {
     "erp": "bun erp.ts",
+    "prepare": "bun scripts/install-git-hooks.ts",
     "dev": "bun erp dev",
     "build": "bun erp build",
     "start": "bun apps/server/server.ts",
+    "lint": "bunx --bun biome check .",
+    "check:biome": "bunx --bun biome check .",
+    "format": "bunx --bun biome format --write .",
+    "format:check": "bunx --bun biome format .",
     "check": "bun erp check",
     "check:prod": "bun erp check:prod",
     "test": "bun erp test",
-    "qa": "bun scripts/qa-e2e.ts"
+    "qa": "bun apps/web/tests/browser/admin-workflow.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2"
@@ -24,8 +37,9 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@types/bun": "1.4.2",
-    "typescript": "7.0.2",
-    "playwright-core": "1.63.0"
+    "playwright-core": "1.63.0",
+    "react-doctor": "0.9.14",
+    "typescript": "7.0.2"
   },
   "engines": {
     "bun": "1.4.2"

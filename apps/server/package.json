@@ -1,13 +1,17 @@
 {
   "name": "@bun-erp/server",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "bun --watch server.ts",
-    "start": "bun server.ts"
+    "dev": "bun ../../scripts/init-agents.ts && bun --watch server.ts",
+    "start": "bun server.ts",
+    "lint": "bunx --bun biome check .",
+    "format": "bunx --bun biome format --write ."
   },
   "dependencies": {
+    "@bun-erp/utils": "workspace:*",
     "@electric-sql/pglite": "0.5.8",
     "@scalar/hono-api-reference": "0.12.3",
     "better-auth": "1.7.5",

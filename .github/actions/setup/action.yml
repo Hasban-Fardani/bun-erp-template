@@ -12,3 +12,5 @@ runs:
         key: ${{ runner.os }}-bun-1.4.2-${{ hashFiles('bun.lock') }}
     - shell: bash
       run: bun install --frozen-lockfile
+    - shell: bash
+      run: bun erp init

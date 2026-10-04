@@ -43,7 +43,7 @@ const rawSchema = z
 
     // Database
     DATABASE_DRIVER: z.enum(["pglite", "postgres"]),
-    PGLITE_PATH: z.string().trim().min(1).default(".data/pglite"),
+    DATABASE_PATH: z.string().trim().min(1).default(".data/database"),
     DATABASE_URL: z.string().trim().default(""),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
     DATABASE_SSL_MODE: z.enum(["disable", "require", "verify-full"]).default("disable"),
@@ -131,7 +131,6 @@ export function findStrayKeys(env: Record<string, string | undefined>): string[]
     "APP_",
     "LOG_",
     "DATABASE_",
-    "PGLITE_",
     "BETTER_AUTH_",
     "AUTH_",
     "GOOGLE_",

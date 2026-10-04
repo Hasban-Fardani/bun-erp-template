@@ -1,0 +1,19 @@
+# @bun-erp/pdf
+
+> Optional, composable React PDF primitives and themes for client-side document generation.
+
+## Start here
+- [Package exports](./package.json)
+- [PDF element types](./src/types/)
+- [Atomic PDF components](./src/atoms/)
+- [Composed components](./src/molecules/)
+- [Page components](./src/organisms/)
+- [Themes](./src/themes/)
+- [Renderer](./src/render.ts)
+- [Tests](./tests/)
+
+## Rules for agents
+- Load PDF rendering code only from a user-triggered browser flow; keep it out of the Cloudflare Worker entry and initial web route bundle.
+- Use the package's explicit subpath exports and existing theme/primitive helpers.
+- Keep PDF data generic and supplied by the application feature. Do not invent ERP records or customer-specific copy.
+- Verify generated documents in the browser; a successful TypeScript build alone does not confirm layout correctness.

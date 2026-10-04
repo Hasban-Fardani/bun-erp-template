@@ -1,0 +1,257 @@
+{
+  "upstreamCommit": "39c75c1abbbad7b89ad1d8d3ea740ef635818a4b",
+  "components": {
+    "src/atoms/text.tsx": {
+      "registry": "@pdfcn",
+      "component": "text",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/text/text.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/heading.tsx": {
+      "registry": "@pdfcn",
+      "component": "heading",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/heading/heading.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/link.tsx": {
+      "registry": "@pdfcn",
+      "component": "link",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/link/link.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/divider.tsx": {
+      "registry": "@pdfcn",
+      "component": "divider",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/divider/divider.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/page-number.tsx": {
+      "registry": "@pdfcn",
+      "component": "page-number",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/page-number/page-number.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/page-break.tsx": {
+      "registry": "@pdfcn",
+      "component": "page-break",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/page-break/page-break.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/pdf-image.tsx": {
+      "registry": "@pdfcn",
+      "component": "pdf-image",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/pdf-image/pdf-image.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/badge.tsx": {
+      "registry": "@pdfcn",
+      "component": "badge",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/badge/badge.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/stack.tsx": {
+      "registry": "@pdfcn",
+      "component": "stack",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/stack/stack.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/atoms/keep-together.tsx": {
+      "registry": "@pdfcn",
+      "component": "keep-together",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/keep-together/keep-together.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/card.tsx": {
+      "registry": "@pdfcn",
+      "component": "card",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/card/card.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/key-value.tsx": {
+      "registry": "@pdfcn",
+      "component": "key-value",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/key-value/key-value.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/list.tsx": {
+      "registry": "@pdfcn",
+      "component": "list",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/list/list.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/list.styles.ts": {
+      "registry": "@pdfcn",
+      "component": "list.styles",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/list/list.styles.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/list.types.ts": {
+      "registry": "@pdfcn",
+      "component": "list.types",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/list/list.types.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/section.tsx": {
+      "registry": "@pdfcn",
+      "component": "section",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/section/section.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/signature.tsx": {
+      "registry": "@pdfcn",
+      "component": "signature",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/signature/signature.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/molecules/watermark.tsx": {
+      "registry": "@pdfcn",
+      "component": "watermark",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/watermark/watermark.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/organisms/page-header.tsx": {
+      "registry": "@pdfcn",
+      "component": "page-header",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/page-header/page-header.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/organisms/page-footer.tsx": {
+      "registry": "@pdfcn",
+      "component": "page-footer",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/page-footer/page-footer.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/lib/maybe-fixed.tsx": {
+      "registry": "@pdfcn",
+      "component": "maybe-fixed",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/lib/maybe-fixed.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/lib/pdf-primitives.tsx": {
+      "registry": "@pdfcn",
+      "component": "pdf-primitives",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/lib/pdf-primitives.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/lib/resolve-color.ts": {
+      "registry": "@pdfcn",
+      "component": "resolve-color",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/lib/resolve-color.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/providers/theme-provider.tsx": {
+      "registry": "@pdfcn",
+      "component": "theme-provider",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/bases/forme/components/theme-provider.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/types/pdf-themes.ts": {
+      "registry": "@pdfcn",
+      "component": "pdf-themes",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/types/pdf-themes.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/types/pdf-components.ts": {
+      "registry": "@pdfcn",
+      "component": "pdf-components",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/types/pdf-components.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/modern.ts": {
+      "registry": "@pdfcn",
+      "component": "modern",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/modern.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/forest.ts": {
+      "registry": "@pdfcn",
+      "component": "forest",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/forest.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/minimal.ts": {
+      "registry": "@pdfcn",
+      "component": "minimal",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/minimal.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/executive.ts": {
+      "registry": "@pdfcn",
+      "component": "executive",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/executive.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/corporate.ts": {
+      "registry": "@pdfcn",
+      "component": "corporate",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/corporate.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/primitives.ts": {
+      "registry": "@pdfcn",
+      "component": "primitives",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/primitives.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/blueprint.ts": {
+      "registry": "@pdfcn",
+      "component": "blueprint",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/blueprint.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/elegant.ts": {
+      "registry": "@pdfcn",
+      "component": "elegant",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/elegant.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/professional.ts": {
+      "registry": "@pdfcn",
+      "component": "professional",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/professional.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    },
+    "src/themes/vivid.ts": {
+      "registry": "@pdfcn",
+      "component": "vivid",
+      "source": "https://github.com/shadcn-labs/pdfcn/blob/39c75c1abbbad7b89ad1d8d3ea740ef635818a4b/apps/web/registry/themes/vivid.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; generic Forme components only."
+    }
+  }
+}

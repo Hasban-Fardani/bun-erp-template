@@ -1,0 +1,601 @@
+{
+  "components": {
+    "packages/ui/src/atoms/badge.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/badge",
+      "rationale": "Retains the existing compact status-tone API used by both applications."
+    },
+    "packages/ui/src/atoms/button.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/button",
+      "rationale": "Retains the existing primary, ghost and danger variants and optional icon contract."
+    },
+    "packages/ui/src/atoms/card.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/card",
+      "rationale": "Retains the existing minimal Card wrapper used by shared application surfaces."
+    },
+    "packages/ui/src/atoms/icon-button.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/button",
+      "rationale": "Adds the shared accessible icon-only button contract used by table actions."
+    },
+    "packages/ui/src/atoms/input.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/input",
+      "rationale": "Retains the existing form-control styling contract for current consumers."
+    },
+    "packages/ui/src/atoms/textarea.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/textarea",
+      "rationale": "Retains the existing form-control styling contract for current consumers."
+    },
+    "packages/ui/src/molecules/confirm-delete.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/alert-dialog",
+      "rationale": "Combines a confirmation dialog with the shared destructive-action copy and focus behavior."
+    },
+    "packages/ui/src/molecules/empty-state.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/card",
+      "rationale": "A project-wide empty-state composition with one message and an optional recovery action."
+    },
+    "packages/ui/src/molecules/field.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/input",
+      "rationale": "Keeps labels, descriptions and field errors in one accessible wrapper without choosing a form library."
+    },
+    "packages/ui/src/molecules/popover.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/popover",
+      "rationale": "Keeps Radix focus behavior scoped for use inside the package’s dialogs and sheets."
+    },
+    "packages/ui/src/molecules/select.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/select",
+      "rationale": "Adapts the official Select composition to the repo’s direct Radix dependency convention."
+    },
+    "packages/ui/src/molecules/table-states.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/skeleton",
+      "rationale": "Defines consistent loading, empty and failure feedback shapes for data surfaces."
+    },
+    "packages/ui/src/molecules/tooltip.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/tooltip",
+      "rationale": "Retains the no-provider CSS tooltip contract used by the collapsed navigation rail."
+    },
+    "packages/ui/src/organisms/combobox.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/combobox",
+      "rationale": "Retains the Radix Popover and cmdk implementation instead of adopting the registry’s Base UI dependency."
+    },
+    "packages/ui/src/organisms/data-table.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/data-table",
+      "rationale": "Adapts the upstream table pattern for server-side paging, mobile cards and explicit query states."
+    },
+    "packages/ui/src/organisms/dropdown-menu.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/dropdown-menu",
+      "rationale": "Retains the compact Radix compound API used by existing application menus."
+    },
+    "packages/ui/src/organisms/modal.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/dialog",
+      "rationale": "Provides a small app-facing Modal wrapper around Radix Dialog."
+    },
+    "packages/ui/src/organisms/resource-table.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/data-table",
+      "rationale": "Provides a shared server-data table frame while each feature supplies columns and query behavior."
+    },
+    "packages/ui/src/organisms/sheet.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/sheet",
+      "rationale": "Retains the controlled convenience drawer contract used by mobile navigation."
+    },
+    "packages/ui/src/organisms/toast.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/sonner",
+      "rationale": "Provides a small app-wide feedback queue compatible with the existing theme and live region."
+    },
+    "packages/ui/src/templates/page-shell.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/card",
+      "rationale": "Defines page heading, description, actions and content slots used by both React applications."
+    },
+    "packages/ui/src/molecules/accordion.tsx": {
+      "registry": "@shadcn",
+      "component": "accordion",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/accordion.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/accordion.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/alert.tsx": {
+      "registry": "@shadcn",
+      "component": "alert",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/alert.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/alert.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/alert-dialog.tsx": {
+      "registry": "@shadcn",
+      "component": "alert-dialog",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/alert-dialog.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/alert-dialog.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/aspect-ratio.tsx": {
+      "registry": "@shadcn",
+      "component": "aspect-ratio",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/aspect-ratio.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/aspect-ratio.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/attachment.tsx": {
+      "registry": "@shadcn",
+      "component": "attachment",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/attachment.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/attachment.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/avatar.tsx": {
+      "registry": "@shadcn",
+      "component": "avatar",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/avatar.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/avatar.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/badge-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "badge",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/badge.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/badge.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/breadcrumb.tsx": {
+      "registry": "@shadcn",
+      "component": "breadcrumb",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/breadcrumb.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/breadcrumb.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/bubble.tsx": {
+      "registry": "@shadcn",
+      "component": "bubble",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/bubble.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/bubble.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/button-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "button",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/button.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/button.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/button-group.tsx": {
+      "registry": "@shadcn",
+      "component": "button-group",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/button-group.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/button-group.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/calendar.tsx": {
+      "registry": "@shadcn",
+      "component": "calendar",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/calendar.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/calendar.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/card-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "card",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/card.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/card.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/carousel.tsx": {
+      "registry": "@shadcn",
+      "component": "carousel",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/carousel.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/carousel.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/checkbox.tsx": {
+      "registry": "@shadcn",
+      "component": "checkbox",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/checkbox.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/checkbox.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/collapsible.tsx": {
+      "registry": "@shadcn",
+      "component": "collapsible",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/collapsible.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/collapsible.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/command.tsx": {
+      "registry": "@shadcn",
+      "component": "command",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/command.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/command.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/context-menu.tsx": {
+      "registry": "@shadcn",
+      "component": "context-menu",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/context-menu.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/context-menu.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/dialog.tsx": {
+      "registry": "@shadcn",
+      "component": "dialog",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/dialog.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/dialog.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/direction.tsx": {
+      "registry": "@shadcn",
+      "component": "direction",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/direction.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/direction.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/drawer.tsx": {
+      "registry": "@shadcn",
+      "component": "drawer",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/drawer.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/drawer.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/dropdown-menu-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "dropdown-menu",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/dropdown-menu.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/dropdown-menu.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/empty.tsx": {
+      "registry": "@shadcn",
+      "component": "empty",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/empty.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/empty.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/field-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "field",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/field.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/field.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/hover-card.tsx": {
+      "registry": "@shadcn",
+      "component": "hover-card",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/hover-card.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/hover-card.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/input-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "input",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/input.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/input.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/input-group.tsx": {
+      "registry": "@shadcn",
+      "component": "input-group",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/input-group.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/input-group.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/input-otp.tsx": {
+      "registry": "@shadcn",
+      "component": "input-otp",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/input-otp.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/input-otp.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/item.tsx": {
+      "registry": "@shadcn",
+      "component": "item",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/item.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/item.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/kbd.tsx": {
+      "registry": "@shadcn",
+      "component": "kbd",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/kbd.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/kbd.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/label.tsx": {
+      "registry": "@shadcn",
+      "component": "label",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/label.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/label.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/marker.tsx": {
+      "registry": "@shadcn",
+      "component": "marker",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/marker.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/marker.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/menubar.tsx": {
+      "registry": "@shadcn",
+      "component": "menubar",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/menubar.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/menubar.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/message.tsx": {
+      "registry": "@shadcn",
+      "component": "message",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/message.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/message.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/message-scroller.tsx": {
+      "registry": "@shadcn",
+      "component": "message-scroller",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/message-scroller.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/message-scroller.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/native-select.tsx": {
+      "registry": "@shadcn",
+      "component": "native-select",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/native-select.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/native-select.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/navigation-menu.tsx": {
+      "registry": "@shadcn",
+      "component": "navigation-menu",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/navigation-menu.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/navigation-menu.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/pagination.tsx": {
+      "registry": "@shadcn",
+      "component": "pagination",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/pagination.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/pagination.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/popover-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "popover",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/popover.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/popover.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/progress.tsx": {
+      "registry": "@shadcn",
+      "component": "progress",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/progress.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/progress.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/radio-group.tsx": {
+      "registry": "@shadcn",
+      "component": "radio-group",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/radio-group.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/radio-group.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/resizable.tsx": {
+      "registry": "@shadcn",
+      "component": "resizable",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/resizable.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/resizable.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/scroll-area.tsx": {
+      "registry": "@shadcn",
+      "component": "scroll-area",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/scroll-area.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/scroll-area.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/separator.tsx": {
+      "registry": "@shadcn",
+      "component": "separator",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/separator.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/separator.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/sheet-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "sheet",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/sheet.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/sheet.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/sidebar.tsx": {
+      "registry": "@shadcn",
+      "component": "sidebar",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/sidebar.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/sidebar.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/skeleton.tsx": {
+      "registry": "@shadcn",
+      "component": "skeleton",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/skeleton.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/skeleton.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/slider.tsx": {
+      "registry": "@shadcn",
+      "component": "slider",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/slider.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/slider.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/spinner.tsx": {
+      "registry": "@shadcn",
+      "component": "spinner",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/spinner.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/spinner.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/switch.tsx": {
+      "registry": "@shadcn",
+      "component": "switch",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/switch.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/switch.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/table.tsx": {
+      "registry": "@shadcn",
+      "component": "table",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/table.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/table.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/tabs.tsx": {
+      "registry": "@shadcn",
+      "component": "tabs",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/tabs.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/tabs.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/textarea-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "textarea",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/textarea.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/textarea.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/atoms/toggle.tsx": {
+      "registry": "@shadcn",
+      "component": "toggle",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/toggle.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/toggle.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/toggle-group.tsx": {
+      "registry": "@shadcn",
+      "component": "toggle-group",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/toggle-group.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/toggle-group.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/molecules/tooltip-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "tooltip",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/tooltip.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/tooltip.tsx",
+      "adaptation": "Keeps the official component API and behavior; package imports point to shared UI source paths."
+    },
+    "packages/ui/src/organisms/date-picker.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/date-picker",
+      "rationale": "Composes the shared Popover and Calendar APIs as the documented date-picker pattern without adding a duplicate root primitive."
+    },
+    "packages/ui/src/organisms/questionnaire.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/questionnaire",
+      "rationale": "Provides an app-neutral multi-step questionnaire composition with controlled answers and reusable step parts."
+    },
+    "packages/ui/src/organisms/toast-primitives.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/components/base/toast",
+      "rationale": "Implements the documented toast singleton and Toaster pattern while preserving the package’s existing provider API."
+    },
+    "packages/ui/src/atoms/typography.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/docs/typeset",
+      "rationale": "Implements the official semantic typography examples as small individually importable React primitives."
+    },
+    "packages/ui/src/templates/login-block.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/blocks/authentication",
+      "rationale": "Provides the requested reusable login layout and reports credentials through a caller-owned submit callback."
+    },
+    "packages/ui/src/templates/signup-block.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/blocks/authentication",
+      "rationale": "Provides the requested reusable signup layout and reports credentials through a caller-owned submit callback."
+    },
+    "packages/ui/src/templates/sidebar-block.tsx": {
+      "registry": "custom",
+      "reference": "https://ui.shadcn.com/blocks/sidebar",
+      "rationale": "Composes the official Sidebar primitives into a navigation shell while leaving routes and permissions to the consuming app."
+    },
+    "packages/ui/src/molecules/select-primitives.tsx": {
+      "registry": "@shadcn",
+      "component": "select",
+      "reference": "https://ui.shadcn.com/r/styles/new-york-v4/select.json",
+      "license": "MIT",
+      "upstream": "https://github.com/shadcn-ui/ui/blob/295a1f114a138f23b5dfee0e0c6812394dfeb90c/apps/v4/registry/new-york-v4/ui/select.tsx",
+      "adaptation": "Keeps the official component API; only the package-local class utility import is rewritten."
+    }
+  },
+  "upstreamCommit": "295a1f114a138f23b5dfee0e0c6812394dfeb90c"
+}

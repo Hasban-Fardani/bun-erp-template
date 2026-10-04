@@ -1,14 +1,14 @@
 import { sql } from "drizzle-orm";
 import type { Hono } from "hono";
 import type { AppContext } from "../context.ts";
-import { auditRoutes } from "../modules/audit/route.ts";
-import { departmentRoutes } from "../modules/departments/route.ts";
-import { requireActor } from "../modules/identity/policy.ts";
-import { identityRoutes } from "../modules/identity/route.ts";
-import { rbacRoutes } from "../modules/rbac/route.ts";
+import { auditRoutes } from "../features/audit/route.ts";
+import { departmentRoutes } from "../features/departments/route.ts";
+import { requireActor } from "../features/identity/policy.ts";
+import { identityRoutes } from "../features/identity/route.ts";
+import { rbacRoutes } from "../features/rbac/route.ts";
 import { doc } from "./api-docs.ts";
-import type { AppVariables } from "./app.ts";
 import { ok } from "./errors.ts";
+import type { AppVariables } from "./types.ts";
 
 export const API_PREFIX = "/api/v1";
 

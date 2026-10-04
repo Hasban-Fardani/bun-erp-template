@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bun-erp-template",
+  "main": "apps/server/cloudflare-entry.ts",
+  "compatibility_date": "2026-10-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "limits": { "cpu_ms": 10 },
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "assets": {
+    "directory": "./apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api", "/api/*"]
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+  "vars": {
+    "APP_NAME": "Bun ERP Template",
+    "APP_ENV": "production",
+    "APP_URL": "https://bun-erp-template.example.workers.dev",
+    "APP_PORT": "8787",
+    "APP_RELEASE": "0.1.0",
+    "APP_TIMEZONE": "UTC",
+    "LOG_DRIVER": "console",
+    "LOG_LEVEL": "info",
+    "LOG_PATH": "stdout",
+    "LOG_RETENTION_DAYS": "30",
+    "LOG_MAX_SIZE_MB": "50",
+    "TRUST_PROXY": "true",
+    "DATABASE_DRIVER": "postgres",
+    "DATABASE_POOL_MAX": "5",
+    "DATABASE_SSL_MODE": "require",
+    "BETTER_AUTH_URL": "https://bun-erp-template.example.workers.dev",
+    "AUTH_TRUSTED_ORIGINS": "https://bun-erp-template.example.workers.dev",
+    "STORAGE_DRIVER": "s3",
+    "STORAGE_LOCAL_ROOT": ".data/storage",
+    "MAIL_DRIVER": "log",
+    "MAIL_FROM_ADDRESS": "no-reply@example.test",
+    "MAIL_FROM_NAME": "Bun ERP Template",
+    "SMTP_HOST": "",
+    "SMTP_PORT": "587",
+    "SMTP_SECURE": "false",
+    "SMTP_USERNAME": "",
+    "SMTP_PASSWORD": "",
+    "FEATURE_ADVANCED_REPORTS": "false"
+  }
+}

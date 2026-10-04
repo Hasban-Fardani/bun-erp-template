@@ -1,5 +1,5 @@
 import type { openAPIRouteHandler } from "hono-openapi";
-import { allPermissions, statements, systemRoles } from "../modules/rbac/statements.ts";
+import { allPermissions, statements, systemRoles } from "../features/rbac/statements.ts";
 import type { Env } from "../platform/config/index.ts";
 
 /**

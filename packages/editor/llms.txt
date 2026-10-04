@@ -1,0 +1,17 @@
+# @bun-erp/editor
+
+> Shared, accessible rich-text editing components for React apps. Persist editor values as Lexical JSON.
+
+## Start here
+- [Package exports](./package.json)
+- [Core public API](./src/index.ts)
+- [React bindings](./src/react.tsx)
+- [Client editor and toolbar](./src/client.tsx)
+- [Editor JSON types](./src/types.ts)
+- [Tests](./tests/)
+
+## Rules for agents
+- Store and exchange `EditorJSON`; this package does not promise HTML serialization.
+- Prefer direct package subpath imports. Import the client entry only from client-side React code.
+- Keep toolbar controls accessible and composable; do not add application-specific menus or business rules here.
+- Lexical is the editor engine. Do not replace it with a second document model.

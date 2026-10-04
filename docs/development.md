@@ -1,24 +1,35 @@
 # Development
 
-```bash
-bun install --frozen-lockfile
-cp .env.example .env
-bun erp key:generate
-bun erp db:migrate
-bun erp db:seed
-bun erp dev
-```
+From a clean clone:
 
-PGlite is the default local database. Start web separately with `bun run --cwd apps/web dev`.
-The proxy forwards `/api` to port 3000; `API_PORT` changes the proxy target.
-`VITE_API_BASE_URL` is empty locally; a remote deployment sets an API origin without `/api/v1`.
+    bun install --frozen-lockfile
+    bun erp init
+    bun dev
+
+Run `bun erp init` once after copying the template. It configures project-local CodeGraph and copies
+the approved agent skills; see agent-init.md. Development commands do not sync or install agent
+tooling. Never commit `.env` or credentials.
+
+`bun dev` starts the app behind one local entry point: `http://localhost:5173`. Vite proxies `/api/*`
+to the Hono server listening internally on port 3000, so frontend requests and API routes use the
+same origin. Open only the Vite URL. The internal API port does not serve the UI at `/`; direct
+requests to its `/` path return the API's not-found response. Production Cloudflare uses the same
+origin model for built static assets and API routes.
+
+The local API uses an isolated PGlite database at `.data/development`, applies migrations, and seeds
+the reference organization at startup. It deliberately ignores repository `.env` values so local
+development cannot connect to a deployment database or reuse production credentials. Configure
+production-like service integrations with a separate, explicitly reviewed workflow. If a port is
+already in use, the dev command reports which process failed; set `DEV_API_PORT` or `DEV_WEB_PORT` to
+use different local ports. The matching URLs and proxy target are configured together.
+
+PGlite is the default local/test Postgres-compatible server driver. `DATABASE_PATH` names the local
+database directory; production uses PostgreSQL through `DATABASE_URL`. Server SQLite is not a
+configured driver; mobile's SQLite store is independent.
 
 Create the first owner after seeding:
 
-```bash
-bun erp user:create <email> <password> owner <name>
-```
+    bun erp user:create <email> <password> owner <name>
 
-Replace placeholders locally; credentials must not enter Git or shared evidence.
-`bun erp doctor` verifies environment, connection and seed; `bun erp --help` lists commands.
-See [mobile](mobile.md) for native packaging and [testing](testing.md) for verification.
+bun erp doctor verifies configuration, database connectivity and the seed. Use bun erp --help for
+the current command list. See mobile.md for native packaging and testing.md for test prerequisites.

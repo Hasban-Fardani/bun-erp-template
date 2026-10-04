@@ -1,0 +1,26 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles.css",
+    "baseColor": "slate",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@bun-erp/ui",
+    "utils": "@bun-erp/ui/lib/cn",
+    "ui": "@bun-erp/ui/atoms",
+    "lib": "@bun-erp/ui/lib",
+    "hooks": "@bun-erp/ui/lib"
+  },
+  "registries": {
+    "@shadcn": "https://ui.shadcn.com/r/styles/new-york-v4/{name}.json",
+    "@dashboardcn": "https://dashboardcn.com/r/{name}.json",
+    "@dashboardblocks": "https://www.dashboardblocks.com/r/{name}.json",
+    "@emailcn": "https://emailcn.run/r/{name}.json",
+    "@pdfcn": "https://pdfcn.dev/r/{name}.json"
+  }
+}

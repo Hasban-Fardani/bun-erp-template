@@ -1,5 +1,5 @@
 import { isAbsolute } from "node:path";
-import pino, { type Logger } from "pino";
+import pino from "pino";
 import type { Env } from "../config/index.ts";
 
 /**
@@ -46,4 +46,11 @@ export function createLogger(env: Env): Logger {
   );
 }
 
-export type { Logger };
+export type Logger = {
+  trace: (fields: Record<string, unknown>) => void;
+  debug: (fields: Record<string, unknown>) => void;
+  info: (fields: Record<string, unknown>) => void;
+  warn: (fields: Record<string, unknown>) => void;
+  error: (fields: Record<string, unknown>) => void;
+  fatal: (fields: Record<string, unknown>) => void;
+};

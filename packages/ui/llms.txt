@@ -1,0 +1,76 @@
+# @bun-erp/ui
+
+Shared atomic React UI for the web and mobile apps. Import a component from its layer subpath. There
+is no eager package barrel; each subpath points to one source module and can be tree-shaken. Only
+`@bun-erp/ui/styles.css` has package side effects. Components do not read routes, permissions, RPC
+clients, or feature state. Shared, reduced-motion-aware list animation is exposed from
+`@bun-erp/ui/lib/use-auto-animate.ts`.
+
+## Layers
+
+- `atoms`: aspect ratio, badge, button, card, checkbox, input, input OTP slots, keyboard key, label,
+  marker, native select, progress, separator, skeleton, slider, spinner, switch, textarea, toggle,
+  typography, and small display primitives.
+- `molecules`: accordion, alert, attachment, avatar, breadcrumb, bubble, button group, calendar,
+  collapsible, command, empty, field, hover card, input group, item, message, pagination, popover,
+  radio group, scroll area, select, Table primitive, tabs, toggle group, tooltip, and form helpers.
+- `organisms`: alert dialog, carousel, context menu, dialog, direction provider, drawer, dropdown
+  menu, date picker, menubar, message scroller, navigation menu, questionnaire, resizable panels,
+  sheet, sidebar, toast, and application compositions.
+- `templates`: login, signup, and sidebar layout blocks plus the shared page shell.
+
+## Import examples
+
+```tsx
+import { Button } from "@bun-erp/ui/atoms/button-primitives";
+import { useSoftAutoAnimate } from "@bun-erp/ui/lib/use-auto-animate.ts";
+import { Table, TableBody, TableCell, TableRow } from "@bun-erp/ui/molecules/table";
+import { DatePicker } from "@bun-erp/ui/organisms/date-picker";
+import { SidebarBlock } from "@bun-erp/ui/templates/sidebar-block";
+```
+
+Use `useSoftAutoAnimate` on the parent of a short collection whose children are inserted, removed
+or reordered. It sets the shared 180 ms motion preset and honors `prefers-reduced-motion`. The hook
+also accepts an AutoAnimate keyframe plugin for a component with a deliberate custom motion need.
+Give mapped React children stable, unique keys. Do not animate every page or a table's rows by
+default; add motion only where it helps users track a state change.
+
+Explicit `.tsx` imports are supported too. Existing app-facing modules keep their current API paths;
+where those overlap an upstream API, import the complete shadcn component from the sibling
+`*-primitives` module. Do not add a package root export that eagerly loads every component.
+
+## Official shadcn catalog
+
+The 57 vendored registry components are pinned to commit
+`295a1f114a138f23b5dfee0e0c6812394dfeb90c` from the official New York v4 registry. Their source URLs,
+registry item references, MIT license and package import adaptations are recorded in
+`component-sources.json`; the upstream MIT notice is in `LICENSE.upstream`.
+
+The catalog includes Accordion, Alert, Alert Dialog, Aspect Ratio, Attachment, Avatar, Badge,
+Breadcrumb, Bubble, Button, Button Group, Calendar, Card, Carousel, Checkbox, Collapsible, Command,
+Context Menu, Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input, Input Group,
+Input OTP, Item, Kbd, Label, Marker, Menubar, Message, Message Scroller, Native Select, Navigation
+Menu, Pagination, Popover, Progress, Radio Group, Resizable, Scroll Area, Select, Separator, Sheet,
+Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toggle, Toggle Group and Tooltip.
+
+Combobox continues to use the repository’s Radix and cmdk composition because the current official
+registry source uses Base UI. Date Picker, Questionnaire, Toast and Typography are implemented from
+the official documentation patterns because those docs do not publish registry JSON items. Chart
+and Data Table patterns have separate package ownership and are not duplicated here.
+
+## Blocks and custom patterns
+
+`LoginBlock` and `SignupBlock` return submitted fields through callbacks; the app owns identity,
+validation policy and submission. `SidebarBlock` composes the shadcn Sidebar and leaves links,
+permissions and routing to the app. Date Picker composes Calendar and Popover. Questionnaire is a
+multi-step controlled-answer composition. Custom source references and rationale are recorded in
+`component-sources.json`.
+
+## Migration notes
+
+`organisms/data-table.tsx`, `organisms/resource-table.tsx` and the existing dashboard chart and
+sparkline modules remain legacy compatibility exports until their dedicated packages land. New
+Data Table usage belongs in `@bun-erp/data-table`; chart examples and renderers belong in the lazy,
+runtime-isolated `@bun-erp/charts` package. `molecules/table` is the shadcn Table primitive and stays
+in this package. The existing TanStack Table and Recharts dependency pins remain only for those
+legacy modules during migration.

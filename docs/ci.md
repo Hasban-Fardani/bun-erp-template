@@ -14,6 +14,7 @@ and `QA_BASE_URL`, `QA_EMAIL`, `QA_PASSWORD`. Preview proxies `/api` to the API.
 screenshots and server logs go in `.data/qa/`; credentials never belong in artifacts.
 
 The mobile build uses a reserved example API origin solely to verify packaging; it does not test native authentication or devices.
+`.github/workflows/mobile-release.yml` is separate from pull-request CI. A `v*` tag or manual dispatch uploads a signed Android bundle to Play internal testing and a signed iOS app to TestFlight after the copied application configures its `mobile-release` environment credentials.
 
 Owner action: enable branch protection for master with **ci-ok** required. A workflow file
 does not enable that setting. The first GitHub run and branch protection are NOT_RUN until

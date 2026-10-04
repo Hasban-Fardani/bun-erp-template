@@ -1,0 +1,71 @@
+name: Cloudflare Deploy
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: ./.github/actions/setup
+      - name: Validate deployment configuration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          CLOUDFLARE_APP_URL: ${{ vars.CLOUDFLARE_APP_URL }}
+        run: bun scripts/cloudflare-preflight.ts
+      - run: bun erp check
+      - run: bun erp test
+      - run: bun erp cloudflare:build
+      - name: Apply database migrations
+        run: bun erp db:migrate
+        env: &production-env
+          APP_NAME: Bun ERP Template
+          APP_ENV: production
+          APP_URL: ${{ vars.CLOUDFLARE_APP_URL }}
+          APP_PORT: "8787"
+          APP_RELEASE: ${{ github.sha }}
+          APP_TIMEZONE: UTC
+          LOG_DRIVER: console
+          LOG_LEVEL: info
+          LOG_PATH: stdout
+          LOG_RETENTION_DAYS: "30"
+          LOG_MAX_SIZE_MB: "50"
+          TRUST_PROXY: "true"
+          DATABASE_DRIVER: postgres
+          DATABASE_PATH: .data/database
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_POOL_MAX: "5"
+          DATABASE_SSL_MODE: require
+          BETTER_AUTH_URL: ${{ vars.CLOUDFLARE_APP_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          AUTH_TRUSTED_ORIGINS: ${{ vars.CLOUDFLARE_APP_URL }}
+          STORAGE_DRIVER: s3
+          STORAGE_LOCAL_ROOT: .data/storage
+          MAIL_DRIVER: log
+          MAIL_FROM_ADDRESS: no-reply@example.test
+          MAIL_FROM_NAME: Bun ERP Template
+          SMTP_HOST: ""
+          SMTP_PORT: "587"
+          SMTP_SECURE: "false"
+          SMTP_USERNAME: ""
+          SMTP_PASSWORD: ""
+          FEATURE_ADVANCED_REPORTS: "false"
+      - name: Seed base records
+        run: bun erp db:seed
+        env: *production-env
+      - name: Deploy API and web assets
+        run: |
+          printf '%s' "$BETTER_AUTH_SECRET" | bun run --cwd apps/web wrangler secret put BETTER_AUTH_SECRET --config dist/bun_erp_template/wrangler.json
+          bun run --cwd apps/web wrangler deploy --config dist/bun_erp_template/wrangler.json
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}

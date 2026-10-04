@@ -27,12 +27,27 @@ export async function checkReadiness(root: string): Promise<ReadinessFinding[]> 
 async function checkScripts(root: string): Promise<Check> {
   const pkg = (await Bun.file(`${root}/package.json`).json()) as { scripts?: Record<string, string> };
   const scripts = pkg.scripts ?? {};
-  const required = ["erp", "build", "check:prod"];
+  const required = ["erp", "build", "check:prod", "lint", "check:biome", "format", "format:check", "prepare"];
   const missing = required.filter((name) => !(name in scripts));
+  const missingWorkspaceScripts: string[] = [];
+  for (const directory of ["apps/web", "apps/server", "apps/mobile"]) {
+    const workspace = (await Bun.file(`${root}/${directory}/package.json`).json()) as {
+      scripts?: Record<string, string>;
+    };
+    for (const name of ["lint", "format"]) {
+      if (!(name in (workspace.scripts ?? {}))) missingWorkspaceScripts.push(`${directory}:${name}`);
+    }
+  }
+  const hook = await Bun.file(`${root}/.githooks/pre-push`).text();
+  if (!hook.includes("check:biome")) missingWorkspaceScripts.push(".githooks/pre-push:check:biome");
+  const details = [
+    missing.length > 0 ? `root scripts: ${missing.join(", ")}` : "",
+    missingWorkspaceScripts.length > 0 ? `workspace/hook requirements: ${missingWorkspaceScripts.join(", ")}` : "",
+  ].filter(Boolean);
   return {
     id: "SCRIPTS",
-    ok: missing.length === 0,
-    detail: missing.length === 0 ? "" : `package.json is missing scripts: ${missing.join(", ")}`,
+    ok: details.length === 0,
+    detail: details.length === 0 ? "" : `Required Biome and pre-push checks are missing (${details.join("; ")}).`,
   };
 }
 
@@ -109,7 +124,7 @@ function checkProductionGuards(env: string): Check {
 /** Migrations run in filename order; a gap makes the order ambiguous during a manual deploy. */
 async function checkMigrationsNumbered(root: string): Promise<Check> {
   const dir = `${root}/apps/server/migrations`;
-  const names = [...new Bun.Glob("*.sql").scanSync({ cwd: dir })].sort();
+  const names = [...new Bun.Glob("*.ts").scanSync({ cwd: dir })].sort();
   if (names.length === 0) return { id: "MIGRATIONS", ok: false, detail: "no migrations found" };
 
   const numbers = names.map((n) => Number(n.slice(0, 4)));

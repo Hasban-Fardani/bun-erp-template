@@ -1,4 +1,5 @@
-import { createContext, resolveDefaultOrganizationId } from "./context.ts";
+import { createContext } from "./bootstrap.ts";
+import { resolveDefaultOrganizationId } from "./context.ts";
 import { createApp } from "./http/app.ts";
 import { ConfigError } from "./platform/config/index.ts";
 import { seed } from "./platform/database/seed.ts";
@@ -26,7 +27,9 @@ async function main(): Promise<void> {
   ctx.logger.info({
     event: "server.started",
     port: server.port,
-    url: ctx.env.APP_URL,
+    api_prefix: "/api/v1",
+    health_path: "/api/v1/health",
+    docs_path: "/api/docs",
     environment: ctx.env.APP_ENV,
     release: ctx.env.APP_RELEASE,
     database_driver: ctx.env.DATABASE_DRIVER,

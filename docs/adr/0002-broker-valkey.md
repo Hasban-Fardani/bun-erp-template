@@ -1,7 +1,9 @@
-# ADR-0002 — Valkey for VPS queues
+# ADR-0002 — Valkey queue direction
 
-**Status:** Accepted direction; not implemented.
+**Status:** Superseded by ADR-0015.
 
-Use Valkey's Redis-compatible protocol when VPS queue/cache work is required. Redis-only was
-rejected. Do not add a broker dependency or REDIS_URL before a concrete feature needs it.
-Workers require another queue adapter; see [ADR-0011](0011-deployment-hybrid.md).
+The original VPS direction selected Valkey's Redis-compatible protocol and rejected Redis-only
+features. It was not implemented. The template now uses a PostgreSQL-backed durable jobs table to
+share transactional enqueue behavior between Bun and Cloudflare Workers. Keep this record as the
+history of the rejected deployment-specific direction; use ADR-0015 and docs/operations.md for the
+active queue contract.

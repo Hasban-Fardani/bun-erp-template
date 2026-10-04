@@ -1,0 +1,35 @@
+{
+  "name": "@bun-erp/charts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./src/styles.css"
+  ],
+  "scripts": {
+    "check": "bunx --bun tsc --noEmit -p tsconfig.json",
+    "test": "bun test tests"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./primitives": "./src/primitives.ts",
+    "./atoms/chart-frame": "./src/atoms/chart-frame.tsx",
+    "./area": "./src/organisms/area-chart.tsx",
+    "./bar": "./src/organisms/bar-chart.tsx",
+    "./line": "./src/organisms/line-chart.tsx",
+    "./pie": "./src/organisms/pie-chart.tsx",
+    "./radar": "./src/organisms/radar-chart.tsx",
+    "./radial": "./src/organisms/radial-chart.tsx"
+  },
+  "peerDependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "dependencies": {
+    "recharts": "3.10.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

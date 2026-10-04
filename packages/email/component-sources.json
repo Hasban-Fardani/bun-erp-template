@@ -1,0 +1,355 @@
+{
+  "upstreamCommit": "d65201fd6601da0736592c96feedc5898ed9c8c7",
+  "components": {
+    "src/atoms/action-link.tsx": {
+      "registry": "@emailcn",
+      "component": "button",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/buttons/button.tsx",
+      "license": "MIT",
+      "adaptation": "Shared atomic adapter preserves the upstream action styling while rendering non-linked content when a caller omits its destination."
+    },
+    "src/templates/button.tsx": {
+      "registry": "@emailcn",
+      "component": "button",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/buttons/button.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/grid.tsx": {
+      "registry": "@emailcn",
+      "component": "grid",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/grids/grid.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/pills.tsx": {
+      "registry": "@emailcn",
+      "component": "pills",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/pills/pills.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/spacer.tsx": {
+      "registry": "@emailcn",
+      "component": "spacer",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/spacing/spacer.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/divider.tsx": {
+      "registry": "@emailcn",
+      "component": "divider",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/spacing/divider.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/container.tsx": {
+      "registry": "@emailcn",
+      "component": "container",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/containers/container.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/avatar-details.tsx": {
+      "registry": "@emailcn",
+      "component": "avatar-details",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/avatars/avatar-details.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/avatar-group.tsx": {
+      "registry": "@emailcn",
+      "component": "avatar-group",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/avatars/avatar-group.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/top-image-call-to-action.tsx": {
+      "registry": "@emailcn",
+      "component": "top-image-call-to-action",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/cta/top-image-call-to-action.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/call-to-action.tsx": {
+      "registry": "@emailcn",
+      "component": "call-to-action",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/cta/call-to-action.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/content.tsx": {
+      "registry": "@emailcn",
+      "component": "content",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/content/content.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/header-with-logo.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/header-with-logo-and-social-icons.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-social-icons",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-social-icons.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/header-with-logo-and-badge.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-badge",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-badge.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/header-with-user-details.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-user-details",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-user-details.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/header-with-logo-and-menu.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-menu",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-menu.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/header-with-logo-and-finance-stats.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-finance-stats",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-finance-stats.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/image-feature.tsx": {
+      "registry": "@emailcn",
+      "component": "image-feature",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/feature/image-feature.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/image-grid-hero.tsx": {
+      "registry": "@emailcn",
+      "component": "image-grid-hero",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/hero/image-grid-hero.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/stacked-stats.tsx": {
+      "registry": "@emailcn",
+      "component": "stacked-stats",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/stats/stacked-stats.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/templates/milestone-stats.tsx": {
+      "registry": "@emailcn",
+      "component": "milestone-stats",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/stats/milestone-stats.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/atoms/font-default.tsx": {
+      "registry": "@emailcn",
+      "component": "font-default",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/fonts/font-default.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/atoms/font-collage.tsx": {
+      "registry": "@emailcn",
+      "component": "font-collage",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/fonts/font-collage.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/atoms/font-skin.tsx": {
+      "registry": "@emailcn",
+      "component": "font-skin",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/fonts/font-skin.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/atoms/font-tech.tsx": {
+      "registry": "@emailcn",
+      "component": "font-tech",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/fonts/font-tech.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/atoms/font-dither.tsx": {
+      "registry": "@emailcn",
+      "component": "font-dither",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/fonts/font-dither.tsx",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/themes/email-theme.ts": {
+      "registry": "@emailcn",
+      "component": "email-theme",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/themes/email-theme.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/themes/default.ts": {
+      "registry": "@emailcn",
+      "component": "default",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/themes/default.ts",
+      "license": "MIT",
+      "adaptation": "Relative package imports; exported composable email sections and removed preview metadata."
+    },
+    "src/organisms/header-with-logo.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/header-with-logo-and-social-icons.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-social-icons",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-social-icons.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/spacer.tsx": {
+      "registry": "@emailcn",
+      "component": "spacer",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/spacing/spacer.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/avatar-details.tsx": {
+      "registry": "@emailcn",
+      "component": "avatar-details",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/avatars/avatar-details.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/top-image-call-to-action.tsx": {
+      "registry": "@emailcn",
+      "component": "top-image-call-to-action",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/cta/top-image-call-to-action.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/container.tsx": {
+      "registry": "@emailcn",
+      "component": "container",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/containers/container.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/content.tsx": {
+      "registry": "@emailcn",
+      "component": "content",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/content/content.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/stacked-stats.tsx": {
+      "registry": "@emailcn",
+      "component": "stacked-stats",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/stats/stacked-stats.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/grid.tsx": {
+      "registry": "@emailcn",
+      "component": "grid",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/grids/grid.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/divider.tsx": {
+      "registry": "@emailcn",
+      "component": "divider",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/spacing/divider.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/header-with-logo-and-badge.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-badge",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-badge.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/avatar-group.tsx": {
+      "registry": "@emailcn",
+      "component": "avatar-group",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/avatars/avatar-group.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/header-with-user-details.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-user-details",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-user-details.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/pills.tsx": {
+      "registry": "@emailcn",
+      "component": "pills",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/pills/pills.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/header-with-logo-and-menu.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-menu",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-menu.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/image-feature.tsx": {
+      "registry": "@emailcn",
+      "component": "image-feature",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/feature/image-feature.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/image-grid-hero.tsx": {
+      "registry": "@emailcn",
+      "component": "image-grid-hero",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/hero/image-grid-hero.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/molecules/button.tsx": {
+      "registry": "@emailcn",
+      "component": "button",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/ui-elements/buttons/button.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/milestone-stats.tsx": {
+      "registry": "@emailcn",
+      "component": "milestone-stats",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/stats/milestone-stats.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/header-with-logo-and-finance-stats.tsx": {
+      "registry": "@emailcn",
+      "component": "header-with-logo-and-finance-stats",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/headers/header-with-logo-and-finance-stats.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    },
+    "src/organisms/call-to-action.tsx": {
+      "registry": "@emailcn",
+      "component": "call-to-action",
+      "source": "https://github.com/shadcn-labs/emailcn/blob/d65201fd6601da0736592c96feedc5898ed9c8c7/registry/bases/react-email/components/marketing/cta/call-to-action.tsx",
+      "license": "MIT",
+      "adaptation": "Direct named content-section exports for composition inside a single email document."
+    }
+  }
+}

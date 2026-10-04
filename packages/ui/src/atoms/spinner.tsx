@@ -1,0 +1,8 @@
+import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { Loader2Icon } from "lucide-react";
+
+function Spinner({ className }: { className?: string }) {
+  return <Loader2Icon role="status" aria-label="Loading" className={cn("size-4 animate-spin", className)} />;
+}
+
+export { Spinner };

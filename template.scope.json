@@ -1,14 +1,26 @@
 {
-  "$comment": "Batas template: apa yang BOLEH ada di repo template vs apa yang milik instance client. Dijaga `bun erp check:scope` (F1.10).",
+  "$comment": "Defines the boundary between reusable template files and deployment-specific files. Enforced by `bun erp check:scope`.",
   "version": 1,
   "template": {
     "name": "bun-erp-template",
     "license": "MIT"
   },
   "allowed": {
-    "topLevelDirs": ["apps", "tools", "docs", "skills", "scripts", "platform", "tests", ".github"],
+    "topLevelDirs": [
+      "apps",
+      "tools",
+      "docs",
+      "skills",
+      "scripts",
+      ".githooks",
+      "platform",
+      "tests",
+      ".github",
+      ".agents",
+      "packages"
+    ],
     "apps": ["apps/server", "apps/web", "apps/mobile"],
-    "note": "Modul bisnis client tidak masuk repo template. Template hanya berisi fondasi + satu modul referensi."
+    "note": "Deployment-specific business features stay out of this template. The template contains reusable foundations and reference features."
   },
   "forbidden": {
     "paths": [".env", ".env.local", ".env.production", ".data"],
@@ -23,13 +35,13 @@
       {
         "id": "business-domain",
         "regex": "\\b(payroll|absensi|attendance|procurement|inventory-stock|pos-cashier)\\b",
-        "reason": "Aturan bisnis client dibuat dari product spec terpisah (PRD §2 non-goals)",
+        "reason": "Aturan bisnis client dibuat dari product spec terpisah (PRD \u00a72 non-goals)",
         "allowIn": ["docs/**", "README.md", "AGENTS.md", "template.scope.json"],
         "flags": "i"
       }
     ]
   },
-  "moduleReferenceExample": "apps/server/modules/identity",
-  "coreModules": ["apps/server/modules/identity", "apps/server/modules/rbac", "apps/server/modules/audit"],
-  "moduleSecondaryExamples": ["apps/server/modules/departments"]
+  "featureReferenceExample": "apps/server/features/identity",
+  "coreFeatures": ["apps/server/features/identity", "apps/server/features/rbac", "apps/server/features/audit"],
+  "featureSecondaryExamples": ["apps/server/features/departments"]
 }

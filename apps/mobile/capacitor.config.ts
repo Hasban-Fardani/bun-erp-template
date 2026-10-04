@@ -13,6 +13,14 @@ const config: CapacitorConfig = {
   webDir: "www",
   loggingBehavior: "debug",
   server: { iosScheme: "capacitor", androidScheme: "https" },
+  plugins: {
+    CapacitorSQLite: {
+      iosDatabaseLocation: "Library/CapacitorDatabase",
+      iosIsEncryption: true,
+      iosKeychainPrefix: appId.replaceAll(".", "_"),
+      androidIsEncryption: true,
+    },
+  },
 };
 
 export default config;

@@ -18,10 +18,13 @@ const NODE_BUILTIN = /from\s+["']node:([a-z/]+)["']/;
 const PATH_ALLOWED = new Set([
   "apps/server/platform/database/migrate.ts",
   "apps/server/platform/observability/logger.ts",
-  "apps/server/tests/helpers.ts",
-  "apps/server/tests/migrations.test.ts",
+  "apps/server/tests/support/fixtures.ts",
+  "apps/server/tests/features/database/migrations.test.ts",
   // Gate tools join paths; Bun has no path API, so node:path is the correct choice here.
   "tools/copy-guard.ts",
+  "tools/architecture-guard.ts",
+  "tools/mobile-gate.ts",
+  "tools/versioning.ts",
   // Vendored verbatim from the governance repo, with only import extensions and null-checks
   // touched. Rewriting them to Bun APIs would make future diffs against upstream unreadable.
   "tools/governance",
@@ -37,7 +40,7 @@ const PATH_ALLOWED = new Set([
   "tools/tasks.ts",
 ]);
 
-const SCAN_GLOBS = ["apps/**/*.ts", "apps/**/*.tsx", "tools/**/*.ts", "*.ts"];
+const SCAN_GLOBS = ["apps/**/*.ts", "apps/**/*.tsx", "tools/**/*.ts", "packages/**/*.ts", "packages/**/*.tsx", "*.ts"];
 const SKIP = [/node_modules\//, /\.d\.ts$/, /dist\//];
 
 export async function checkPlatform(root: string): Promise<PlatformFinding[]> {

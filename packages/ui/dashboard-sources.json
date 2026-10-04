@@ -1,0 +1,122 @@
+{
+  "src/atoms/delta-badge.tsx": {
+    "registry": "@dashboardcn",
+    "component": "delta-badge",
+    "reference": "https://dashboardcn.com/r/delta-badge.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/atoms/corner-frame.tsx": {
+    "registry": "@dashboardcn",
+    "component": "corner-frame",
+    "reference": "https://dashboardcn.com/r/corner-frame.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/molecules/tick-bar.tsx": {
+    "registry": "@dashboardcn",
+    "component": "tick-bar",
+    "reference": "https://dashboardcn.com/r/tick-bar.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/bar-list.tsx": {
+    "registry": "@dashboardcn",
+    "component": "bar-list",
+    "reference": "https://dashboardcn.com/r/bar-list.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/molecules/distribution-bar.tsx": {
+    "registry": "@dashboardcn",
+    "component": "distribution-bar",
+    "reference": "https://dashboardcn.com/r/distribution-bar.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/molecules/segmented-meter.tsx": {
+    "registry": "@dashboardcn",
+    "component": "segmented-meter",
+    "reference": "https://dashboardcn.com/r/segmented-meter.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/timeline.tsx": {
+    "registry": "@dashboardcn",
+    "component": "timeline",
+    "reference": "https://dashboardcn.com/r/timeline.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/dot-plot.tsx": {
+    "registry": "@dashboardcn",
+    "component": "dot-plot",
+    "reference": "https://dashboardcn.com/r/dot-plot.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/radial-gauge.tsx": {
+    "registry": "@dashboardcn",
+    "component": "radial-gauge",
+    "reference": "https://dashboardcn.com/r/radial-gauge.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/activity-rings.tsx": {
+    "registry": "@dashboardcn",
+    "component": "activity-rings",
+    "reference": "https://dashboardcn.com/r/activity-rings.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/funnel-chart.tsx": {
+    "registry": "@dashboardcn",
+    "component": "funnel-chart",
+    "reference": "https://dashboardcn.com/r/funnel-chart.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/sparkline-renderer.tsx": {
+    "registry": "@dashboardcn",
+    "component": "sparkline",
+    "reference": "https://dashboardcn.com/r/sparkline.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/metric-list.tsx": {
+    "registry": "@dashboardcn",
+    "component": "metric-list",
+    "reference": "https://dashboardcn.com/r/metric-list.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/molecules/metric-value.tsx": {
+    "registry": "@dashboardcn",
+    "component": "metric-value",
+    "reference": "https://dashboardcn.com/r/metric-value.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn"
+  },
+  "src/organisms/sparkline.tsx": {
+    "registry": "@dashboardcn",
+    "component": "sparkline",
+    "reference": "https://dashboardcn.com/r/sparkline.json",
+    "license": "MIT",
+    "upstream": "https://github.com/NoahGdev/dashboardcn",
+    "customComposition": "Lazy renderer boundary with a dimension-preserving accessible skeleton."
+  },
+  "src/organisms/comparison.tsx": {
+    "registry": "@dashboardblocks",
+    "component": "comparison",
+    "reference": "https://www.dashboardblocks.com/r/comparison.json",
+    "license": "MIT",
+    "upstream": "https://github.com/LGLabGreg/dashboardblocks"
+  },
+  "src/organisms/breakdown.tsx": {
+    "registry": "@dashboardblocks",
+    "component": "breakdown",
+    "reference": "https://www.dashboardblocks.com/r/breakdown.json",
+    "license": "MIT",
+    "upstream": "https://github.com/LGLabGreg/dashboardblocks"
+  }
+}

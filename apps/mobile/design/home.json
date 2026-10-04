@@ -1,0 +1,29 @@
+{
+  "feature_id": "home",
+  "surface_class": "operational_surface",
+  "status": "INHERITED",
+  "ui_code_requested": true,
+  "mock_paths": ["docs/riset/ui-tables.md"],
+  "style": {
+    "contrast_min_ratio": 4.8,
+    "unique_font_sizes": 7,
+    "unique_weights": 2,
+    "accent_hues": 1,
+    "nested_card_depth": 0,
+    "icon_libraries": 1,
+    "radius_styles": 3,
+    "browser_surfaces_themed": true,
+    "reduced_motion_respected": true,
+    "section_scaffolds_repeated": 0,
+    "hero_cliche_stack": false,
+    "kicker_above_heading": false,
+    "gradient_multistop": false,
+    "emoji_as_icon": false,
+    "motion_unmapped": false,
+    "invented_identity_assets": [],
+    "fabricated_portrait": false,
+    "copy_forbidden_hits": []
+  },
+  "options": [],
+  "notes": "Inherits the existing shared tokens, Card and EmptyState. Separate mobile composition uses PageShell; no product data or actions are fabricated. Device verification remains NOT_RUN."
+}

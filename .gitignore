@@ -9,6 +9,7 @@ dist/
 .wrangler/
 .dev.vars
 .riset/
+.codegraph/
 
 # Capacitor build output and local native tooling
 apps/mobile/www/

@@ -1,23 +1,36 @@
 /**
- * React Doctor gate for apps/web. `errorCount` always blocks. Some rules are reported as
+ * React Doctor gate for web, mobile and shared UI. `errorCount` always blocks. Some rules are reported as
  * warnings upstream but are treated as blocking here: page complexity is exactly what made
  * the list pages unmaintainable, so it must fail the build rather than scroll past.
  */
 const BLOCKING_WARNING_RULES = new Set(["no-high-complexity-react-function"]);
 
 export async function findReactDoctorIssues(root: string): Promise<string[]> {
-  const webDir = `${root}/apps/web`;
+  const results = await Promise.all(
+    ["apps/web", "apps/mobile", "packages/ui"].map((directory) => inspectReact(root, directory)),
+  );
+  return results.flat();
+}
+
+async function inspectReact(root: string, directory: string): Promise<string[]> {
+  const webDir = `${root}/${directory}`;
   if (!(await Bun.file(`${webDir}/package.json`).exists())) return [];
 
-  const proc = Bun.spawn(["bunx", "react-doctor@latest", ".", "--no-score", "--json", "--json-compact"], {
+  // Scan authored source only. `dist` also contains the Cloudflare Worker entry,
+  // which necessarily includes server environment names and is not browser code.
+  const proc = Bun.spawn(["bunx", "react-doctor", "src", "--no-score", "--json", "--json-compact"], {
     cwd: webDir,
     stdout: "pipe",
     stderr: "pipe",
   });
-  const [out, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
 
   if (code !== 0 || !out.trim()) {
-    return [`react-doctor failed to run (exit ${code}) — check the output above`];
+    return [`react-doctor failed to run (exit ${code}) — ${err.trim() || out.trim() || "no output"}`];
   }
 
   const report = JSON.parse(out) as {
@@ -27,11 +40,11 @@ export async function findReactDoctorIssues(root: string): Promise<string[]> {
 
   for (const d of diagnostics) {
     if (d.severity === "warning" && !BLOCKING_WARNING_RULES.has(d.rule ?? "")) {
-      process.stdout.write(`  warn ${d.rule} — ${d.filePath ?? ""}\n`);
+      process.stdout.write(`  warn ${d.rule} — ${directory}/${d.filePath ?? ""}\n`);
     }
   }
 
   return diagnostics
     .filter((d) => d.severity === "error" || BLOCKING_WARNING_RULES.has(d.rule ?? ""))
-    .map((d) => `${d.filePath ?? "?"}: ${d.rule} — ${d.message ?? "React Doctor finding"}`);
+    .map((d) => `${directory}/${d.filePath ?? "?"}: ${d.rule} — ${d.message ?? "React Doctor finding"}`);
 }

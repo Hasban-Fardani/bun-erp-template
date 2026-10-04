@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified
       - uses: ./.github/actions/setup
+      - run: bun run lint
       - run: bun erp check
   test-pglite:
     runs-on: ubuntu-latest

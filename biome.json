@@ -6,7 +6,16 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.json", "!**/node_modules", "!**/dist", "!**/.data", "!tools/governance"]
+    "includes": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.json",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.data",
+      "!tools/governance",
+      "!**/routeTree.gen.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

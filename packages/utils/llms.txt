@@ -1,0 +1,15 @@
+# @bun-erp/utils
+
+> Small cross-platform utilities shared by apps and packages.
+
+## Start here
+- [Package exports](./package.json)
+- [Identifiers](./src/identifiers.ts)
+- [Retry helpers](./src/retry.ts)
+- [Public entry](./src/index.ts)
+
+## Rules for agents
+- Add only utilities used by more than one package or app; feature-specific behavior belongs with its feature.
+- Keep implementations portable across Bun, browsers, and Cloudflare Workers. Do not add Node-only imports.
+- Do not add a dependency when the Web Platform or Bun already provides the needed behavior.
+- Prefer focused subpath imports over the root entry when only one helper is needed.

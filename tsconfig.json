@@ -19,6 +19,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["apps/**/*.ts", "apps/**/*.tsx", "tools/**/*.ts"],
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "tools/**/*.ts", "packages/**/*.ts", "packages/**/*.tsx"],
   "exclude": ["node_modules", "dist", ".data", "tools/governance"]
 }

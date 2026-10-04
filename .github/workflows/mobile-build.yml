@@ -1,0 +1,67 @@
+name: Mobile Native Build
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mobile-native-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: ./.github/actions/setup
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: bun erp mobile:build
+        env:
+          VITE_API_BASE_URL: https://api.example.test
+      - run: bun erp mobile:add android
+        env:
+          MOBILE_APP_ID: com.example.erptemplate
+          MOBILE_APP_NAME: ERP Template
+      - run: bun erp mobile:sync android
+        env:
+          MOBILE_APP_ID: com.example.erptemplate
+          MOBILE_APP_NAME: ERP Template
+      - run: bash apps/mobile/android/gradlew -p apps/mobile/android assembleDebug
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-debug-apk
+          path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+  ios-simulator:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: ./.github/actions/setup
+      - run: bun erp mobile:build
+        env:
+          VITE_API_BASE_URL: https://api.example.test
+      - run: bun erp mobile:add ios
+        env:
+          MOBILE_APP_ID: com.example.erptemplate
+          MOBILE_APP_NAME: ERP Template
+      - run: bun erp mobile:sync ios
+        env:
+          MOBILE_APP_ID: com.example.erptemplate
+          MOBILE_APP_NAME: ERP Template
+      - name: Build simulator app
+        run: xcodebuild -project apps/mobile/ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath .data/mobile-ios CODE_SIGNING_ALLOWED=NO build
+      - name: Package simulator app
+        run: ditto -c -k --sequesterRsrc --keepParent .data/mobile-ios/Build/Products/Debug-iphonesimulator/App.app .data/mobile-ios-simulator.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ios-simulator-app
+          path: .data/mobile-ios-simulator.zip
+          if-no-files-found: error
+          retention-days: 14

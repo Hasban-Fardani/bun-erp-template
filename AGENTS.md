@@ -1,42 +1,56 @@
-# Agent guide
+# Agent instructions
 
-Bun + TypeScript template: Hono, Drizzle/PostgreSQL, React web and Capacitor packaging.
-No client business rules or product data. Use Bun for runtime and package management.
+This repository is a Bun + TypeScript template for internal applications. It contains a Hono API,
+Drizzle/PostgreSQL persistence, a React web app, a separate React + Capacitor mobile app, and shared
+atomic UI. It is a template, not a finished ERP; do not add client names, product data, or business
+rules without a separate product spec.
 
-## Start here
+## Start with the smallest useful context
 
-Read [docs/README.md](docs/README.md) to select context; do not load every doc or research log.
-Code and package manifests describe what exists. ADRs describe decisions, including plans.
-Tasks and research record past evidence; they are not current instructions.
+- Use docs/README.md to select one canonical document; do not load the whole docs tree.
+- Read docs/architecture.md and docs/conventions.md before code changes.
+- Use the matching skill from skills/README.md; source gates are the enforceable rules.
+- Run `bun erp init` once after cloning or copying the template. It indexes the project and installs
+  required agent skills; `check:agents` verifies both prerequisites. `bun dev` and CI do not rerun it.
+- Before a nontrivial feature or architecture change, invoke the project `grill-me` skill and settle
+  open product decisions before implementation. See docs/agent-init.md.
+- When locating or tracing code, query CodeGraph first (MCP when available, otherwise the pinned CLI).
+  Use text search after CodeGraph narrows the files or when checking exact strings.
 
-## Required boundaries
+## Project boundaries
 
-- New server modules copy `apps/server/modules/departments`; do not invent another architecture.
-- Organization comes from server context. No session → 401; missing permission → 403; missing row → 404.
-- Transactions live in services. Authorization precedes validation; error fields remain an array.
-- Do not weaken gates, skip assertions, commit secrets or invent data/measurements.
-- Add dependencies only when Bun/Web APIs cannot serve the requirement; pin exact versions.
-- Only humans set tasks to `ready` or `done`; agent work stops at `in_progress` with evidence.
+- Runtime and package manager are Bun 1.4.2. Do not use npm, yarn, or pnpm.
+- Server domain code lives in apps/server/features/<feature>; copy the departments feature and
+  skills/feature-development/SKILL.md. Drizzle declarations are named schema.ts.
+- Web URLs are TanStack file routes in apps/web/src/pages; route files are small wrappers and
+  screens live in web features. Do not register pages in a second route list or add -page suffixes.
+- Mobile owns apps/mobile/src/main.tsx, screens and features. It must not import web source.
+- Cross-app UI belongs in packages/ui and follows atoms → molecules → organisms → templates.
+- packages/utils is only for pure, runtime-neutral logic with real consumers in two or more apps.
+- Shared localization lives in packages/i18n; rich-text UI lives in packages/editor and persists
+  Lexical JSON. Email and PDF components are opt-in packages; keep browser PDF rendering out of
+  the Cloudflare Worker dependency graph.
+- Server database drivers are PGlite for local/test work and PostgreSQL for production. DATABASE_PATH
+  names the local database directory; mobile SQLite is a separate offline store.
+- Queue handlers are at-least-once: keep them idempotent and enqueue in the feature write transaction.
+- API routes are versioned under /api/v1. Keep 401 (no session), 403 (no permission), and 404 (no row) distinct.
+- Comments, technical names, enum values, and configuration keys use English. User-facing copy may be localized.
+- Never commit secrets, weaken gates, or claim unrun tests. Dependencies must be exact-pinned and necessary.
 
-## Context to load
+## Human-owned task status
 
-| Change | Read first |
-|---|---|
-| Any code | [conventions](docs/conventions.md) |
-| HTTP/module | [architecture](docs/architecture.md), [API contract](docs/api-contract.md), [module skill](skills/module-development/SKILL.md) |
-| Query/migration | [database skill](skills/database-drizzle/SKILL.md) |
-| Auth/audit/log | [security](docs/security.md) |
-| Tests | [testing](docs/testing.md), [test skill](skills/testing/SKILL.md) |
-| UI | [UI skill](skills/antislop-ui/SKILL.md); responsive changes also [mobile layout](skills/antislop-layoutmobile/SKILL.md) |
-| Native packaging | [mobile](docs/mobile.md) |
-| Deployment | [operations](docs/operations.md), [deployment](docs/deployment.md) |
-| Architecture decision | Relevant [ADR](docs/adr/README.md); retain rejected alternatives |
+Never set a task to ready or done. Leave agent work in_progress with actual evidence. Use
+IMPLEMENTATION_DONE → API_UNIT_TESTED → UI_TESTED → READY_FOR_USE; unverified work is NOT_RUN or BLOCKED.
 
-## Handoff
+## Before handoff
 
-Run `bun erp check` and `bun erp test`; report actual exit codes and limitations.
-Check runs read-only lint, types and gates concurrently and reports every failure.
-Use `bun erp --help` for available commands.
-Read [template guardrails](skills/template-guardrails/SKILL.md) before reporting completion.
-Evidence levels: IMPLEMENTATION_DONE → API_UNIT_TESTED → UI_TESTED → READY_FOR_USE.
-Unexecuted work is NOT_RUN; unmet prerequisites are BLOCKED. Native device testing is distinct from browser QA.
+    bun run lint
+    bun erp check
+    bun erp test
+
+Biome is mandatory in `apps/web`, `apps/server`, and `apps/mobile`. `bun run lint` checks the entire
+workspace; each app also exposes its own `lint` and `format` scripts. `bun install` installs the
+tracked `.githooks/pre-push` hook, which runs `bun run check:biome` before every push. CI repeats the
+same lint check and `bun erp check`.
+
+Report the commands actually run and their results. bun erp --help is the source of truth for CLI commands.

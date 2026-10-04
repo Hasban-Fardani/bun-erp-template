@@ -1,0 +1,17 @@
+{
+  "components": {
+    "packages/ui/src/molecules/form-errors.tsx": {
+      "registry": "custom",
+      "reference": "https://tanstack.com/form/latest/docs/framework/react/guides/validation",
+      "rationale": "Accessible summary for TanStack Form individual errors and form-level field maps."
+    }
+  },
+  "libraries": {
+    "table": {
+      "version": "8.21.3",
+      "reference": "https://tanstack.com/table/v8/docs/framework/react/guide/table-state",
+      "reason": "Stable v8 adapter with explicit controlled server state; do not copy v9 APIs into this installed version."
+    },
+    "form": { "version": "1.33.5", "reference": "https://tanstack.com/form/latest/docs/framework/react/quick-start" }
+  }
+}

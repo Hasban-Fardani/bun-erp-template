@@ -36,8 +36,10 @@ export async function findCodeSlop(root: string): Promise<string[]> {
 
 /** Everything the repo owns: app source plus the CLI's own tools. */
 function sourceFiles(root: string): string[] {
-  return ["apps", "tools"].flatMap((dir) =>
-    [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter((p) => !p.includes("node_modules")),
+  return ["apps", "packages", "tools"].flatMap((dir) =>
+    [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter(
+      (p) => !p.includes("node_modules") && !p.endsWith("/routeTree.gen.ts"),
+    ),
   );
 }
 
@@ -54,7 +56,9 @@ async function governanceFindings(root: string): Promise<string[]> {
 
   // Explicit source paths, not `apps`: a built `apps/web/dist` is output, and scanning it
   // produced hundreds of nonsense findings about minified bundles.
-  const targets = ["apps/server", "apps/web/src", "apps/web/tests", "tools"].map((p) => join(root, p));
+  const targets = ["apps/server", "apps/web/src", "apps/web/tests", "apps/mobile/src", "packages/ui/src", "tools"].map(
+    (p) => join(root, p),
+  );
   const proc = Bun.spawn(["bun", validator, ...targets], {
     cwd: root,
     stdout: "pipe",

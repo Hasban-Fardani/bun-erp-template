@@ -14,7 +14,7 @@ export type UiFinding = { file: string; rule: string; detail: string };
  * Only page-level screens are checked for list states: a page is where the user arrives, so a
  * missing branch is visible to them. The shared table component owns the states themselves.
  */
-const SCREEN_DIRS = ["apps/web/src/pages"];
+const SCREEN_DIRS = ["apps/web/src/pages", "apps/mobile/src/pages", "packages/ui/src"];
 
 export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
   const findings: UiFinding[] = [];
@@ -24,7 +24,8 @@ export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
     for (const rel of glob.scanSync({ cwd: join(root, dir) })) {
       const file = `${dir}/${rel}`;
       const code = await Bun.file(join(root, file)).text();
-      findings.push(...focusIndicator(file, code), ...listStates(file, code));
+      findings.push(...focusIndicator(file, code));
+      if (!dir.startsWith("packages/")) findings.push(...listStates(file, code));
     }
   }
 
@@ -88,10 +89,10 @@ function listStates(file: string, code: string): UiFinding[] {
  */
 async function themeSwitch(root: string): Promise<UiFinding[]> {
   const config = await Bun.file(join(root, "apps/web/src/config/ui.ts")).text();
-  const declared = /tinta-gelap/.test(config);
+  const declared = /"dark"/.test(config);
   if (!declared) return [];
 
-  const css = await Bun.file(join(root, "apps/web/src/styles/globals.css")).text();
+  const css = await Bun.file(join(root, "packages/ui/src/styles.css")).text();
   // A second mode needs its own token block, selected by an attribute or media query.
   const hasSecondPalette = /\.dark\b|\[data-theme=|@media\s*\(prefers-color-scheme:\s*dark\)/.test(css);
   if (hasSecondPalette) return [];
@@ -101,7 +102,7 @@ async function themeSwitch(root: string): Promise<UiFinding[]> {
       file: "apps/web/src/config/ui.ts",
       rule: "THEME_NOT_IMPLEMENTED",
       detail:
-        "`tinta-gelap` is offered by config but globals.css defines no second palette, so switching it changes nothing (R-34)",
+        "`dark` is offered by config but the shared stylesheet defines no second palette, so switching it changes nothing (R-34)",
     },
   ];
 }

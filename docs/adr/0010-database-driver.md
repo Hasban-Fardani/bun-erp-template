@@ -1,10 +1,14 @@
 # ADR-0010 — One PostgreSQL dialect
 
-**Status:** Accepted; implemented.
+**Status:** Accepted and implemented.
 
-PGlite serves local/test development and postgres.js production. Modules share the Database
-type and SQL migrations. SQLite/D1 was rejected because it adds another schema/transaction model.
-UUIDv7 bootstrap supports fresh PG16/17; PG18 keeps native defaults.
+The server schema uses one PostgreSQL dialect. PGlite is the local/test driver; postgres.js is used
+for production PostgreSQL. DATABASE_PATH names local database files without tying the path to a
+specific driver. The server does not expose SQLite as a database driver because its schema, locking
+and migrations use PostgreSQL features. Mobile SQLite is an independent offline store.
 
-The workflow defines PGlite and PG16/18 runs; actual success belongs to a particular CI run.
-[Testing](../testing.md) explains the isolated PostgreSQL runner and fixture lifecycle.
+UUIDv7 defaults support PostgreSQL 16/17 through the migration polyfill. PostgreSQL 18 keeps its
+native UUIDv7 implementation. SQLite/D1 as a server persistence dialect was rejected because it
+would add a second schema and transaction model.
+
+See docs/testing.md for the PostgreSQL test runner and docs/mobile.md for local mobile storage.

@@ -1,0 +1,59 @@
+{
+  "name": "@bun-erp/pdf",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "exports": {
+    "./atoms/badge": "./src/atoms/badge.tsx",
+    "./atoms/divider": "./src/atoms/divider.tsx",
+    "./atoms/heading": "./src/atoms/heading.tsx",
+    "./atoms/keep-together": "./src/atoms/keep-together.tsx",
+    "./atoms/link": "./src/atoms/link.tsx",
+    "./atoms/page-break": "./src/atoms/page-break.tsx",
+    "./atoms/page-number": "./src/atoms/page-number.tsx",
+    "./atoms/pdf-image": "./src/atoms/pdf-image.tsx",
+    "./atoms/stack": "./src/atoms/stack.tsx",
+    "./atoms/text": "./src/atoms/text.tsx",
+    "./lib/maybe-fixed": "./src/lib/maybe-fixed.tsx",
+    "./lib/pdf-primitives": "./src/lib/pdf-primitives.tsx",
+    "./lib/resolve-color": "./src/lib/resolve-color.ts",
+    "./molecules/card": "./src/molecules/card.tsx",
+    "./molecules/key-value": "./src/molecules/key-value.tsx",
+    "./molecules/list": "./src/molecules/list.tsx",
+    "./molecules/list.styles": "./src/molecules/list.styles.ts",
+    "./molecules/list.types": "./src/molecules/list.types.ts",
+    "./molecules/section": "./src/molecules/section.tsx",
+    "./molecules/signature": "./src/molecules/signature.tsx",
+    "./molecules/watermark": "./src/molecules/watermark.tsx",
+    "./organisms/page-footer": "./src/organisms/page-footer.tsx",
+    "./organisms/page-header": "./src/organisms/page-header.tsx",
+    "./providers/theme-provider": "./src/providers/theme-provider.tsx",
+    "./render": "./src/render.ts",
+    "./themes/blueprint": "./src/themes/blueprint.ts",
+    "./themes/corporate": "./src/themes/corporate.ts",
+    "./themes/elegant": "./src/themes/elegant.ts",
+    "./themes/executive": "./src/themes/executive.ts",
+    "./themes/forest": "./src/themes/forest.ts",
+    "./themes/minimal": "./src/themes/minimal.ts",
+    "./themes/modern": "./src/themes/modern.ts",
+    "./themes/primitives": "./src/themes/primitives.ts",
+    "./themes/professional": "./src/themes/professional.ts",
+    "./themes/vivid": "./src/themes/vivid.ts",
+    "./types/pdf-components": "./src/types/pdf-components.ts",
+    "./types/pdf-themes": "./src/types/pdf-themes.ts"
+  },
+  "peerDependencies": {
+    "react": "19.3.0"
+  },
+  "dependencies": {
+    "@formepdf/react": "0.27.0",
+    "@formepdf/core": "0.27.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
+  }
+}

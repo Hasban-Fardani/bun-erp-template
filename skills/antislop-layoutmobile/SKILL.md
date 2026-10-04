@@ -5,7 +5,8 @@ description: Use when changing responsive layouts, touch interaction or Capacito
 
 # Responsive and mobile layout
 
-Share React components between web and mobile; packaging is in `apps/mobile`.
+Share atomic UI from `packages/ui`; web and mobile own separate React entries and pages.
+Mobile source and packaging live in `apps/mobile`.
 Read [mobile](../../docs/mobile.md) for native boundaries and
 [UI states](../../docs/ui-states.md) for feedback. No missing antislop core is required.
 

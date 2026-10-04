@@ -1,7 +1,18 @@
 export type GateResult = { name: string; ok: boolean; output: string; ms: number };
 export type CheckJob = { name: string; argv: readonly string[] };
+export type CheckRunOptions = {
+  concurrency?: number;
+  onResult?: (result: GateResult) => void;
+};
+
+const DEFAULT_CONCURRENCY = 6;
 
 const GATES: readonly { name: string; command: string }[] = [
+  { name: "agents", command: "check:agents" },
+  { name: "architecture", command: "check:architecture" },
+  { name: "language", command: "check:language" },
+  { name: "mobile", command: "check:mobile" },
+  { name: "versioning", command: "check:versioning" },
   { name: "docs", command: "check:docs" },
   { name: "rpc", command: "check:rpc" },
   { name: "ci", command: "check:ci" },
@@ -40,15 +51,47 @@ async function runOne(root: string, job: CheckJob): Promise<GateResult> {
   }
 }
 
-/** Read-only checks settle together so one failure cannot hide another check's evidence. */
-export function runChecksParallel(root: string, jobs: readonly CheckJob[]): Promise<GateResult[]> {
-  return Promise.all(jobs.map((job) => runOne(root, job)));
+/** Read-only checks run concurrently without exhausting the host or hiding their progress. */
+export async function runChecksParallel(
+  root: string,
+  jobs: readonly CheckJob[],
+  options: CheckRunOptions = {},
+): Promise<GateResult[]> {
+  const requestedConcurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
+  const concurrency = Math.max(
+    1,
+    Math.min(
+      jobs.length || 1,
+      Number.isFinite(requestedConcurrency) ? Math.floor(requestedConcurrency) : DEFAULT_CONCURRENCY,
+    ),
+  );
+  const results = new Array<GateResult>(jobs.length);
+  let next = 0;
+
+  await Promise.all(
+    Array.from({ length: concurrency }, async () => {
+      while (next < jobs.length) {
+        const index = next++;
+        const job = jobs[index];
+        if (!job) continue;
+        const result = await runOne(root, job);
+        results[index] = result;
+        options.onResult?.(result);
+      }
+    }),
+  );
+
+  return results;
 }
 
-export function runProjectChecks(root: string): Promise<GateResult[]> {
-  return runChecksParallel(root, [
-    { name: "biome", argv: ["bunx", "--bun", "biome", "check", "."] },
-    { name: "types", argv: ["bunx", "--bun", "tsc", "-p", "tsconfig.json"] },
-    ...GATES.map(({ name, command }) => ({ name, argv: ["bun", "erp.ts", command] })),
-  ]);
+export function runProjectChecks(root: string, options?: CheckRunOptions): Promise<GateResult[]> {
+  return runChecksParallel(
+    root,
+    [
+      { name: "biome", argv: ["bunx", "--bun", "biome", "check", "."] },
+      { name: "types", argv: ["bunx", "--bun", "tsc", "-p", "tsconfig.json"] },
+      ...GATES.map(({ name, command }) => ({ name, argv: ["bun", "erp.ts", command] })),
+    ],
+    options,
+  );
 }

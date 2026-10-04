@@ -1,8 +1,7 @@
-import { type Auth, createAuth } from "./modules/identity/auth.ts";
-import { type Env, loadEnv } from "./platform/config/index.ts";
-import { createDatabase, type Database } from "./platform/database/index.ts";
-import { migrate } from "./platform/database/migrate.ts";
-import { createLogger, type Logger } from "./platform/observability/logger.ts";
+import type { Auth } from "./features/identity/auth.ts";
+import type { Env } from "./platform/config/index.ts";
+import type { Database } from "./platform/database/index.ts";
+import type { Logger } from "./platform/observability/logger.ts";
 
 export { resolveDefaultOrganizationId } from "./platform/database/organizations.ts";
 
@@ -14,27 +13,3 @@ export type AppContext = {
   auth: Auth;
   close: () => Promise<void>;
 };
-
-export type BootstrapOptions = {
-  env?: Env;
-  /** `false` for commands that handle their own migrations. */
-  migrateOnStart?: boolean;
-  migrationsDir?: string;
-};
-
-const MIGRATIONS_DIR = new URL("./migrations", import.meta.url).pathname;
-
-export async function createContext(options: BootstrapOptions = {}): Promise<AppContext> {
-  const env = options.env ?? loadEnv();
-  const logger = createLogger(env);
-  const { db, close } = createDatabase(env);
-
-  if (options.migrateOnStart !== false) {
-    const ran = await migrate(db, options.migrationsDir ?? MIGRATIONS_DIR);
-    if (ran.length > 0) logger.info({ event: "database.migrated", migrations: ran });
-  }
-
-  const auth = createAuth(env, db);
-
-  return { env, db, logger, auth, close };
-}

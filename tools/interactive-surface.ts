@@ -1,20 +1,31 @@
 import { join } from "node:path";
 
 /**
- * Interactive-surface gate: feedback must not reflow the page it interrupted.
+ * Interactive-surface gate: transient feedback should not reflow a page.
  *
- * An inline alert under an element pushes content down and lands far from the control that
- * failed — on a table page, potentially a screen away. Feedback goes to a toast instead, which
- * appears next to the work and leaves on its own.
+ * A toast suits transient success and action feedback. An error that must remain visible beside
+ * a form or stale data should stay in that context so it remains available after navigation or
+ * after a toast would have expired.
  *
- * The one exception is an error that must stay readable after a toast expires: a failed sign-in
- * puts the message directly above the submit button, because it describes the form the person is
- * still looking at. It is allowlisted by file below, not by pattern, so the exception stays
- * visible in review.
+ * Contextual inline errors are allowlisted by file, so each new use is reviewed rather than
+ * accepted by a broad pattern.
  */
 
-/** Files where an inline error is deliberate and reviewed. */
-const ALLOWED = new Set(["apps/web/src/pages/login-page.tsx"]);
+/** Files where a persistent error belongs next to the form or data it describes. */
+const CONTEXTUAL_ERRORS = new Set([
+  "apps/web/src/features/identity/screens/login.tsx",
+  "apps/web/src/features/admin/components/role-sheet.tsx",
+  "apps/mobile/src/features/offline/components/offline-drafts.tsx",
+  "packages/ui/src/molecules/form-errors.tsx",
+  "packages/ui/src/organisms/data-table.tsx",
+]);
+
+/** Reusable alert and field-validation primitives are reviewed separately from app usage. */
+const REVIEWED_FEEDBACK_COMPONENTS = new Set([
+  "packages/ui/src/molecules/alert.tsx",
+  "packages/ui/src/molecules/field-primitives.tsx",
+  "packages/ui/src/organisms/questionnaire.tsx",
+]);
 
 /** Props/components that render feedback inside the layout. */
 const INLINE_FEEDBACK = /\b(role="alert"|role=\{tone\s*===\s*"danger"\s*\?\s*"alert")/;
@@ -23,10 +34,12 @@ export type SurfaceFinding = { file: string; line: number; rule: string; detail:
 
 export async function checkInteractiveSurface(root: string): Promise<SurfaceFinding[]> {
   const findings: SurfaceFinding[] = [];
-  const glob = new Bun.Glob("apps/web/src/**/*.tsx");
+  const files = ["apps/web/src", "apps/mobile/src", "packages/ui/src"].flatMap((dir) => [
+    ...new Bun.Glob(`${dir}/**/*.tsx`).scanSync({ cwd: root }),
+  ]);
 
-  for await (const file of glob.scan({ cwd: root })) {
-    if (ALLOWED.has(file)) continue;
+  for (const file of files) {
+    if (CONTEXTUAL_ERRORS.has(file) || REVIEWED_FEEDBACK_COMPONENTS.has(file)) continue;
 
     const raw = await Bun.file(join(root, file)).text();
     raw.split("\n").forEach((line, index) => {
@@ -36,7 +49,8 @@ export async function checkInteractiveSurface(root: string): Promise<SurfaceFind
         file,
         line: index + 1,
         rule: "INLINE_ALERT",
-        detail: "feedback must be a toast; an inline alert reflows the page and can land far from the control",
+        detail:
+          "use a toast for transient feedback; persistent contextual errors require a reviewed file allowlist entry",
       });
     });
   }

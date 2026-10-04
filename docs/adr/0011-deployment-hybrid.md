@@ -1,14 +1,15 @@
-# ADR-0011 — Separate static UI and portable API
+# ADR-0011 — Bun and Cloudflare deployment targets
 
-**Status:** Accepted; hybrid layout implemented, Worker adapter not implemented.
+**Status:** Accepted; shared Cloudflare Worker and static assets are implemented.
 
-React web ships as static assets separately from the Bun API. Cloudflare static hosting is
-an allowed target, not proof of a deployed service. API portability requires environment
-configuration, PostgreSQL/object storage, stdout logs and a separate entrypoint from createApp.
+Bun remains the source-runtime target for local development and traditional hosting. The Cloudflare
+Vite plugin bundles the same Hono app as a Worker and serves the web build through Workers Assets.
+Requests under /api and /api/* run through Hono; other paths use the web asset fallback. Hyperdrive supplies
+the PostgreSQL connection. The Worker does not run migrations during a request.
 
-Current Bun context still couples migrations, drivers and logging to Bun; startup runs
-migrations. Worker/Hyperdrive refactoring and measurements remain pending. Full Workers now
-and permanently VPS-only architectures were rejected.
+Background work uses the PostgreSQL queue selected in ADR-0015. Bun runs a polling worker command;
+Cloudflare uses a scheduled handler to drain a bounded batch. These are execution adapters for one
+durable queue contract, not separate feature queues.
 
-Future queue adapters: BullMQ/Valkey on VPS; a supported Workers queue on Workers. No queue
-implementation is present. Do not import a concrete queue into domain modules preemptively.
+Cloudflare production deployment still requires project-owned account, Hyperdrive and secret setup.
+See docs/deployment.md.

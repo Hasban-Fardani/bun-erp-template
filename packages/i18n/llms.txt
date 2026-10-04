@@ -1,0 +1,17 @@
+# @bun-erp/i18n
+
+> Shared localization catalog, locale selection, and formatting for the web and mobile React apps.
+
+## Start here
+- [Package exports](./package.json)
+- [Core catalog and formatting API](./src/index.ts)
+- [React provider and hooks](./src/react.tsx)
+- [Catalogs](./src/catalogs/)
+- [Tests](./tests/)
+- [Project i18n conventions](../../docs/i18n.md)
+
+## Rules for agents
+- Add user-facing copy to catalogs; do not hard-code translated strings in app components.
+- Keep locale identifiers and code-facing values in English. Current supported locales are `en-US` and `id-ID`.
+- Preserve English fallback behavior and use locale-aware number/date formatting.
+- Import the core entry in non-React code and `@bun-erp/i18n/react` only in React code.

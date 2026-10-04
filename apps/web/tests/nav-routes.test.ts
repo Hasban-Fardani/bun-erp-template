@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { navGroups } from "../src/components/layout/sidebar-data.ts";
-import { registeredPaths } from "../src/routes/route-tree.tsx";
+import { navGroups } from "../src/config/navigation.ts";
+import { registeredPaths } from "../src/lib/navigation-paths.ts";
 
 /**
  * Hard template rule: the sidebar must never point somewhere that does not exist.

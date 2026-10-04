@@ -4,13 +4,12 @@
  */
 export type ThemeConfig = {
   appName: string;
-  /** Palette "kertas-tenang" (default) or "tinta-gelap". */
-  theme: "kertas-tenang" | "tinta-gelap";
+  theme: "light" | "dark";
 };
 
 const raw = import.meta.env as Record<string, string | undefined>;
 
 export const uiConfig: ThemeConfig = {
   appName: raw.VITE_APP_NAME ?? "ERP Template",
-  theme: raw.VITE_THEME === "tinta-gelap" ? "tinta-gelap" : "kertas-tenang",
+  theme: raw.VITE_THEME === "dark" ? "dark" : "light",
 };

@@ -74,8 +74,7 @@ export function loadEnv(
 export function strayKeyWarnings(
   source: Record<string, string | undefined> = Bun.env as Record<string, string | undefined>,
 ): string[] {
-  const strays = findStrayKeys(source);
-  return strays.map((k) => `${k}: not recognised by the config schema (typo or unused variable?)`);
+  return findStrayKeys(source).map((key) => `${key}: not recognised by the config schema (typo or unused variable?)`);
 }
 
 /** Optional test target stays inside the sole environment reader. */

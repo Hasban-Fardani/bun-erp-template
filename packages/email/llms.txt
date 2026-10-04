@@ -1,0 +1,18 @@
+# @bun-erp/email
+
+> Reusable React Email components and templates, organized as atomic parts.
+
+## Start here
+- [Package exports](./package.json)
+- [Atoms](./src/atoms/)
+- [Molecules](./src/molecules/)
+- [Organisms](./src/organisms/)
+- [Templates](./src/templates/)
+- [Themes](./src/themes/)
+- [Tests](./tests/)
+
+## Rules for agents
+- Import only the email components needed by a message; avoid a package-wide barrel.
+- Keep email markup compatible with React Email rendering and email-client constraints.
+- Keep copy and branding supplied by the consuming feature. Do not add client-specific content.
+- Do not import this package from the Cloudflare Worker API entry unless a measured need and runtime compatibility are documented.

@@ -1,0 +1,11 @@
+{
+  "name": "@bun-erp/utils",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./identifiers": "./src/identifiers.ts",
+    "./retry": "./src/retry.ts"
+  }
+}

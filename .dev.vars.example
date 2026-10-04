@@ -1,0 +1,2 @@
+BETTER_AUTH_SECRET=local-only-change-this-secret-before-use-1234
+CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://postgres:postgres@127.0.0.1:5432/erp

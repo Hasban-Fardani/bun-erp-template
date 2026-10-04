@@ -1,6 +1,6 @@
 # UI states
 
-Source: `shared/ui/table-states.tsx`, `shared/ui/data-table.tsx` and
+Source: `packages/ui/src/molecules/table-states.tsx`, `packages/ui/src/organisms/data-table.tsx` and
 `features/admin/resource-table.tsx` in apps/web. Use existing components.
 
 | State | Feedback |
