@@ -6,7 +6,7 @@ import { resetPermissionCache } from "../modules/rbac/cache.ts";
 import { roles } from "../modules/rbac/data.ts";
 import { assignRole } from "../modules/rbac/service.ts";
 import type { Env } from "../platform/config/index.ts";
-import { loadEnv } from "../platform/config/index.ts";
+import { loadEnv, testDatabaseUrl } from "../platform/config/index.ts";
 import { rowsOf } from "../platform/database/migrate.ts";
 import { seed } from "../platform/database/seed.ts";
 
@@ -26,9 +26,9 @@ export const testEnv: Env = loadEnv({
   LOG_RETENTION_DAYS: "1",
   LOG_MAX_SIZE_MB: "1",
   TRUST_PROXY: "false",
-  DATABASE_DRIVER: "pglite",
+  DATABASE_DRIVER: testDatabaseUrl() ? "postgres" : "pglite",
   PGLITE_PATH: "memory://",
-  DATABASE_URL: "",
+  DATABASE_URL: testDatabaseUrl() ?? "",
   DATABASE_POOL_MAX: "1",
   DATABASE_SSL_MODE: "disable",
   BETTER_AUTH_URL: "http://localhost:3000",

@@ -1,0 +1,24 @@
+$ bun erp.ts check
+Checked 117 files in 76ms. No fixes applied.
+  ok   ci (1498ms)
+  FAIL scope (1616ms)
+  ok   slop (1689ms)
+  ok   platform (1510ms)
+  ok   copy (1527ms)
+  ok   design (1480ms)
+  ok   ui (1442ms)
+  ok   shadcn (1522ms)
+  ok   surface (1469ms)
+  ok   react (8243ms)
+  ok   migrations (1474ms)
+  ok   skills (1451ms)
+  ok   task (1473ms)
+  ok   readiness (1630ms)
+
+scope failed:
+scope failed:
+  client-name: docs/riset/upgrade/W0-check-fixed.txt — "hasban" — Nama client/owner tidak boleh bocor ke repo template publik
+  client-name: docs/riset/upgrade/W0-test.txt — "hasban" — Nama client/owner tidak boleh bocor ke repo template publik
+1 finding(s)
+error: script "erp" exited with code 1
+exit_code=1

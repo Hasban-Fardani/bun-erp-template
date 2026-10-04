@@ -1,0 +1,37 @@
+Unable to find image 'postgres:16' locally
+16: Pulling from library/postgres
+46849de44505: Pulling fs layer
+ae8ae052b88d: Pulling fs layer
+09de454e7bd2: Pulling fs layer
+3d6dde914ee8: Pulling fs layer
+e8401bc43ce0: Pulling fs layer
+76db794b62ee: Pulling fs layer
+c9d6ac5e716b: Pulling fs layer
+9a09c0d64573: Pulling fs layer
+ca49afcdbda4: Pulling fs layer
+3672748066c3: Pulling fs layer
+053534618826: Pulling fs layer
+971b44d2c3d3: Pulling fs layer
+bb122215696f: Pulling fs layer
+9a09c0d64573: Download complete
+bb122215696f: Download complete
+4a21cd5afea0: Download complete
+ca49afcdbda4: Download complete
+053534618826: Download complete
+971b44d2c3d3: Download complete
+8d58cca17f33: Download complete
+46849de44505: Download complete
+09de454e7bd2: Download complete
+ae8ae052b88d: Download complete
+09de454e7bd2: Pull complete
+c9d6ac5e716b: Download complete
+e8401bc43ce0: Download complete
+3d6dde914ee8: Download complete
+3d6dde914ee8: Pull complete
+e8401bc43ce0: Pull complete
+76db794b62ee: Download complete
+76db794b62ee: Pull complete
+ca49afcdbda4: Pull complete
+ae8ae052b88d: Pull complete
+c9d6ac5e716b: Pull complete
+3672748066c3: Download complete

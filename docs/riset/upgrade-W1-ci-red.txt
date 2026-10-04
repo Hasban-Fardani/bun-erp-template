@@ -1,0 +1,3 @@
+[ "CI is missing bun erp check", "CI is missing bun erp test", "CI is missing bun run qa",
+  "CI is missing test-postgres:", "CI is missing postgres:", "CI is missing ci-ok:", "docs/ci.md is missing"
+]

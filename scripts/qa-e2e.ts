@@ -14,8 +14,8 @@
  */
 import { chromium, type Page } from "playwright-core";
 
-const WEB = process.env.QA_BASE_URL ?? "http://localhost:3000";
-const CHROME = process.env.CHROME_PATH ?? "/root/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome";
+const WEB = process.env.QA_BASE_URL ?? "http://localhost:4173";
+const CHROME = process.env.CHROME_PATH ?? chromium.executablePath();
 const EMAIL = process.env.QA_EMAIL ?? "admin@erp.local";
 const PASSWORD = process.env.QA_PASSWORD ?? "";
 
@@ -30,6 +30,7 @@ if (!PASSWORD) {
   process.exit(2);
 }
 
+await Bun.$`mkdir -p .data/qa`.quiet();
 const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
@@ -54,64 +55,68 @@ async function login(p: Page) {
   await p.waitForURL(/\/users/, { timeout: 20_000 });
 }
 
-await page.goto(`${WEB}/login`, { waitUntil: "networkidle" });
-check("login: form tampil", (await page.locator("#email").count()) === 1);
-check("login: ada jalur lupa sandi", (await page.getByText("Lupa sandi?").count()) > 0);
-await login(page);
-check("login: masuk berhasil", page.url().includes("/users"));
+try {
+  await page.goto(`${WEB}/login`, { waitUntil: "networkidle" });
+  check("login: form tampil", (await page.locator("#email").count()) === 1);
+  check("login: ada jalur lupa sandi", (await page.getByText("Lupa sandi?").count()) > 0);
+  await login(page);
+  check("login: masuk berhasil", page.url().includes("/users"));
 
-await page.fill('[data-testid="table-search"]', "a");
-await page.waitForTimeout(1200);
-check("pengguna: pencarian bekerja", /\/ \d+/.test(await page.locator('[data-testid="table-info"]').innerText()));
-await page.fill('[data-testid="table-search"]', "");
-await page.waitForTimeout(1200);
+  await page.fill('[data-testid="table-search"]', "a");
+  await page.waitForTimeout(1200);
+  check("pengguna: pencarian bekerja", /\/ \d+/.test(await page.locator('[data-testid="table-info"]').innerText()));
+  await page.fill('[data-testid="table-search"]', "");
+  await page.waitForTimeout(1200);
 
-await page.getByRole("button", { name: /email/i }).first().click();
-await page.waitForTimeout(600);
-check(
-  "pengguna: klik header mengurutkan",
-  (await page.locator("th[aria-sort='ascending'], th[aria-sort='descending']").count()) > 0,
-);
+  await page.getByRole("button", { name: /email/i }).first().click();
+  await page.waitForTimeout(600);
+  check(
+    "pengguna: klik header mengurutkan",
+    (await page.locator("th[aria-sort='ascending'], th[aria-sort='descending']").count()) > 0,
+  );
 
-for (const [label, path, term] of [
-  ["peran", "/roles", "own"],
-  ["audit", "/audit", "role"],
-] as const) {
-  await page.goto(`${WEB}${path}`, { waitUntil: "networkidle" });
+  for (const [label, path, term] of [
+    ["peran", "/roles", "own"],
+    ["audit", "/audit", "role"],
+  ] as const) {
+    await page.goto(`${WEB}${path}`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(800);
+    await page.fill('[data-testid="table-search"]', term);
+    await page.waitForTimeout(1300);
+    check(`${label}: pencarian bekerja`, /\/ \d+/.test(await page.locator('[data-testid="table-info"]').innerText()));
+  }
+
+  // The role picker is a Combobox inside a Sheet: it opens, accepts typing and filters. This
+  // broke once (focus was pulled back to the Sheet's scope) and shipped, so it is checked here.
+  await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
   await page.waitForTimeout(800);
-  await page.fill('[data-testid="table-search"]', term);
-  await page.waitForTimeout(1300);
-  check(`${label}: pencarian bekerja`, /\/ \d+/.test(await page.locator('[data-testid="table-info"]').innerText()));
+  await page.getByRole("button", { name: "Tambah" }).click();
+  await page.waitForTimeout(700);
+  await page.locator('[data-testid="user-role"]').click();
+  await page.waitForTimeout(500);
+  const before = await page.locator("[cmdk-item]").count();
+  await page.locator("[cmdk-input]").fill("owner");
+  await page.waitForTimeout(500);
+  const after = await page.locator("[cmdk-item]").count();
+  check("combobox peran: terbuka dan menyaring", before > 1 && after === 1);
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(400);
+
+  await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
+  await page.waitForTimeout(800);
+  const inlineAlerts = await page.locator("main [role='alert']").count();
+  check("tidak ada alert inline di halaman", inlineAlerts === 0, `ditemukan ${inlineAlerts}`);
+
+  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await mobile.goto(`${WEB}/login`, { waitUntil: "networkidle" });
+  check("mobile: form tidak terpotong", await mobile.locator("#email").isVisible());
+  const widths = await mobile.evaluate(() => ({ doc: document.documentElement.scrollWidth, win: window.innerWidth }));
+  check("mobile: tidak ada scroll horizontal", widths.doc <= widths.win + 1, JSON.stringify(widths));
+} catch (err) {
+  check("browser run", false, err instanceof Error ? err.message : String(err));
+  await page.screenshot({ path: ".data/qa/failure.png", fullPage: true });
 }
-
-// The role picker is a Combobox inside a Sheet: it opens, accepts typing and filters. This
-// broke once (focus was pulled back to the Sheet's scope) and shipped, so it is checked here.
-await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
-await page.waitForTimeout(800);
-await page.getByRole("button", { name: "Tambah" }).click();
-await page.waitForTimeout(700);
-await page.locator('[data-testid="user-role"]').click();
-await page.waitForTimeout(500);
-const before = await page.locator("[cmdk-item]").count();
-await page.locator("[cmdk-input]").fill("owner");
-await page.waitForTimeout(500);
-const after = await page.locator("[cmdk-item]").count();
-check("combobox peran: terbuka dan menyaring", before > 1 && after === 1);
-await page.keyboard.press("Escape");
-await page.keyboard.press("Escape");
-await page.waitForTimeout(400);
-
-await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
-await page.waitForTimeout(800);
-const inlineAlerts = await page.locator("main [role='alert']").count();
-check("tidak ada alert inline di halaman", inlineAlerts === 0, `ditemukan ${inlineAlerts}`);
-
-const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
-await mobile.goto(`${WEB}/login`, { waitUntil: "networkidle" });
-check("mobile: form tidak terpotong", await mobile.locator("#email").isVisible());
-const widths = await mobile.evaluate(() => ({ doc: document.documentElement.scrollWidth, win: window.innerWidth }));
-check("mobile: tidak ada scroll horizontal", widths.doc <= widths.win + 1, JSON.stringify(widths));
-
 const failed = results.filter((r) => !r.ok);
 console.log("\n--- ringkasan ---");
 console.log(`gagal: ${failed.length} dari ${results.length}`);
@@ -120,5 +125,24 @@ for (const b of badResponses.slice(0, 8)) console.log("  ", b);
 console.log(`error JS: ${errors.length}`);
 for (const e of errors.slice(0, 5)) console.log("  ", e);
 
+const commit = (await Bun.$`git rev-parse HEAD`.text()).trim();
+await Bun.write(
+  ".data/qa/qa-report.json",
+  JSON.stringify(
+    {
+      commit,
+      time: new Date().toISOString(),
+      bun: Bun.version,
+      browser: browser.version(),
+      results,
+      badResponses,
+      errors,
+    },
+    null,
+    2,
+  ),
+);
+if (failed.length || badResponses.length || errors.length)
+  await page.screenshot({ path: ".data/qa/failure.png", fullPage: true });
 await browser.close();
 process.exit(failed.length + badResponses.length + errors.length > 0 ? 1 : 0);

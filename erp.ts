@@ -68,7 +68,8 @@ async function runGate(
     | "design"
     | "surface"
     | "shadcn"
-    | "ui",
+    | "ui"
+    | "ci",
 ): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
@@ -98,6 +99,9 @@ async function runGate(
   } else if (kind === "ui") {
     const { checkUiCompleteness } = await import("./tools/ui-completeness.ts");
     findings = (await checkUiCompleteness(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  } else if (kind === "ci") {
+    const { checkCi } = await import("./tools/ci-guard.ts");
+    findings = await checkCi(repoRoot);
   } else {
     const { findReactDoctorIssues } = await import("./tools/react-doctor.ts");
     findings = await findReactDoctorIssues(repoRoot);
@@ -106,6 +110,21 @@ async function runGate(
 }
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
+  "check:ci": async () => {
+    await guard("ci", () => runGate("ci"));
+  },
+  "ci:prepare": async () => {
+    await run(["bun", "scripts/ci-prepare.ts"], "prepare CI");
+  },
+  "ci:owner": async () => {
+    await run(["bun", "scripts/ci-owner.ts"], "create CI owner");
+  },
+  "wait:http": async (args) => {
+    await run(["bun", "scripts/wait-http.ts", ...args], "wait for HTTP");
+  },
+  preview: async () => {
+    await run(["bun", "run", "--cwd", "apps/web", "preview", "--host", "127.0.0.1"], "web preview");
+  },
   check: async () => {
     // biome and tsc run first: a type error explains most of the gate noise below, so seeing
     // them first saves reading twelve reports to find the cause.
@@ -125,7 +144,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   test: async () => {
-    await run(["bun", "test", "apps/server"], "bun test server");
+    await run(["bun", "apps/server/test-runner.ts"], "bun test server");
     await run(["bun", "test", "apps/web"], "bun test web");
   },
 

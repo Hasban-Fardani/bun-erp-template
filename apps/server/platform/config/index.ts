@@ -77,3 +77,8 @@ export function strayKeyWarnings(
   const strays = findStrayKeys(source);
   return strays.map((k) => `${k}: not recognised by the config schema (typo or unused variable?)`);
 }
+
+/** Optional test target stays inside the sole environment reader. */
+export function testDatabaseUrl(): string | undefined {
+  return Bun.env.TEST_DATABASE_URL;
+}

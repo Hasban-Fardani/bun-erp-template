@@ -1,0 +1,114 @@
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified
+      - uses: ./.github/actions/setup
+      - run: bun erp check
+  test-pglite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: ./.github/actions/setup
+      - run: bun erp test
+  test-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['18'] # W2 adds PG16 after the UUIDv7 polyfill is verified.
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-disposable
+          POSTGRES_DB: erp_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:ci-disposable@localhost:5432/erp_ci
+      TEST_DATABASE_URL: postgresql://postgres:ci-disposable@localhost:5432/erp_ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: ./.github/actions/setup
+      - run: bun erp ci:prepare
+      - run: bun erp db:migrate
+      - run: bun erp db:migrate
+      - run: bun erp db:status
+      - run: bun erp test
+  build-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: ./.github/actions/setup
+      - run: bun erp build
+  e2e:
+    needs: [gates, test-postgres]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-disposable
+          POSTGRES_DB: erp_qa
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:ci-disposable@localhost:5432/erp_qa
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: ./.github/actions/setup
+      - run: bunx --bun playwright-core install --with-deps chromium
+      - run: bun erp ci:prepare
+      - run: bun erp db:migrate
+      - run: bun erp db:seed
+      - run: bun erp ci:owner
+      - run: bun erp build
+      - name: Start API and built web
+        run: |
+          bun start > .data/qa/server.log 2>&1 &
+          bun erp preview > .data/qa/preview.log 2>&1 &
+          bun erp wait:http http://localhost:3000/api/v1/ready
+          bun erp wait:http http://localhost:4173/login
+      - run: bun run qa
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, verified
+        if: always()
+        with:
+          name: browser-qa
+          path: |
+            .data/qa/qa-report.json
+            .data/qa/*.log
+            .data/qa/*.png
+  ci-ok:
+    if: always()
+    needs: [gates, test-pglite, test-postgres, build-web, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every job to succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 -c 'import json,os,sys; sys.exit(any(job["result"] != "success" for job in json.loads(os.environ["RESULTS"]).values()))'

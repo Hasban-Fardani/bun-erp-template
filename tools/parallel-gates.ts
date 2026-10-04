@@ -9,6 +9,7 @@ export type GateResult = { name: string; ok: boolean; output: string; ms: number
 
 /** `command` must match a real `bun erp` command; the name is only for the report. */
 const GATES: readonly { name: string; command: string }[] = [
+  { name: "ci", command: "check:ci" },
   { name: "scope", command: "check:scope" },
   { name: "slop", command: "check:slop" },
   { name: "platform", command: "check:platform" },

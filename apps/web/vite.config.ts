@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname ?? ".", "src") },
   },
+  preview: { port: 4173, proxy: { "/api": { target: `http://localhost:${API_PORT}`, changeOrigin: true } } },
   server: {
     port: 5173,
     proxy: {
