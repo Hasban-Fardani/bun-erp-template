@@ -1,0 +1,19 @@
+PASS  login: form tampil
+PASS  login: ada jalur lupa sandi
+PASS  login: masuk berhasil
+PASS  pengguna: pencarian bekerja
+PASS  pengguna: klik header mengurutkan
+FAIL  browser run — goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at http://localhost:4173/roles
+Call log:
+[2m  - navigating to "http://localhost:4173/roles", waiting until "networkidle"[22m
+
+
+--- ringkasan ---
+gagal: 1 dari 6
+respons API >=400: 0
+error JS: 1
+   Failed to load resource: the server responded with a status of 404 ()
+$ bun scripts/qa-e2e.ts
+error: script "qa" exited with code 1
+
+exit_code=1

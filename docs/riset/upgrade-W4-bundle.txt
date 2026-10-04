@@ -1,0 +1,7 @@
+[
+  {
+    "file": "index-Da80XZYE.js",
+    "bytes": 610139,
+    "gzipBytes": 193005
+  }
+]

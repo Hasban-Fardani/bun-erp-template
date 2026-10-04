@@ -1,0 +1,20 @@
+$ bun erp.ts check
+Checked 131 files in 136ms. No fixes applied.
+  ok   rpc (1551ms)
+  ok   ci (1446ms)
+  ok   scope (1738ms)
+  ok   slop (1827ms)
+  ok   platform (1648ms)
+  ok   copy (1504ms)
+  ok   design (1644ms)
+  ok   ui (1611ms)
+  ok   shadcn (1591ms)
+  ok   surface (1518ms)
+  ok   react (7064ms)
+  ok   migrations (1565ms)
+  ok   skills (1604ms)
+  ok   task (1583ms)
+  ok   readiness (1761ms)
+check: OK
+
+exit_code=0

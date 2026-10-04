@@ -17,10 +17,11 @@ type UserSheetProps = {
   user?: PublicUser | null;
   onSave?: (values: UserFormValues) => void;
   saving?: boolean;
+  canAssignRole?: boolean;
 };
 
 /** Create or edit one user. Fields are identical in both modes, so they share one form. */
-export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserSheetProps) {
+export function UserSheet({ open, onOpenChange, user, onSave, saving, canAssignRole = true }: UserSheetProps) {
   const roles = useRoles();
   const createUser = useCreateUser();
   const editing = Boolean(user);
@@ -29,7 +30,7 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserShee
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
-  const [roleKey, setRoleKey] = useState(user?.roles[0]?.key ?? "staff");
+  const [roleKey, setRoleKey] = useState(user?.roles.find((role) => !role.scopeType)?.key ?? "staff");
 
   const roleOptions = roles.data?.length
     ? roles.data
@@ -95,17 +96,19 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving }: UserShee
           </Field>
         )}
 
-        <Field id="user-role" label="Peran">
-          {/* A role list grows with the organisation, so it is searchable rather than scrolled. */}
-          <Combobox
-            value={roleKey}
-            onValueChange={setRoleKey}
-            options={roleOptions.map((r) => ({ value: r.key, label: r.name }))}
-            placeholder="Pilih peran"
-            label="Peran"
-            testId="user-role"
-          />
-        </Field>
+        {canAssignRole ? (
+          <Field id="user-role" label="Peran">
+            {/* A role list grows with the organisation, so it is searchable rather than scrolled. */}
+            <Combobox
+              value={roleKey}
+              onValueChange={setRoleKey}
+              options={roleOptions.map((r) => ({ value: r.key, label: r.name }))}
+              placeholder="Pilih peran"
+              label="Peran"
+              testId="user-role"
+            />
+          </Field>
+        ) : null}
 
         <div className="flex items-center justify-end gap-2 pt-1">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

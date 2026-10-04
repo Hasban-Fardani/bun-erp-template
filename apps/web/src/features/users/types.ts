@@ -1,23 +1,10 @@
-/** Public user response type — matched to `toPublicUser` on the server, not invented. */
-export type PublicUser = {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  organizationId: string | null;
-  createdAt: string;
-  roles: {
-    roleId: string;
-    key: string;
-    name: string;
-    scopeType: "organization" | "department" | null;
-    scopeId: string | null;
-  }[];
-  permissions: string[];
-};
+import type { InferResponseType } from "hono/client";
+import type { rpc } from "../../lib/rpc.ts";
+
+export type PublicUser = InferResponseType<typeof rpc.users.$get, 200>["data"]["items"][number];
 
 export type SessionView = {
   authenticated: boolean;
   user: { id: string; name: string; email: string } | null;
-  permissions: string[];
+  permissions: readonly string[];
 };

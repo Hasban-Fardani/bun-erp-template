@@ -1,0 +1,49 @@
+Checked 131 files in 126ms. No fixes applied.
+Found 1 warning.
+  ok   rpc (1594ms)
+  ok   ci (1715ms)
+  ok   scope (1841ms)
+  ok   slop (2013ms)
+  ok   platform (1651ms)
+  ok   copy (1801ms)
+  ok   design (1680ms)
+  ok   ui (1724ms)
+  ok   shadcn (1760ms)
+  ok   surface (1772ms)
+  ok   react (6887ms)
+  ok   migrations (1789ms)
+  ok   skills (1796ms)
+  ok   task (1785ms)
+  ok   readiness (1895ms)
+check: OK
+tools/rpc-guard.ts:27:5 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Change to an optional chain.
+  
+    25 │   const named = /^\s*\{([^}]+)\}\s*$/.exec(specifiers)?.[1];
+    26 │   return (
+  > 27 │     named !== undefined &&
+       │     ^^^^^^^^^^^^^^^^^^^^^^
+  > 28 │     named
+  > 29 │       .split(",")
+  > 30 │       .filter((part) => part.trim())
+  > 31 │       .every((part) => /^\s*type\s+\w+(?:\s+as\s+\w+)?\s*$/.test(part))
+       │       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    32 │   );
+    33 │ }
+  
+  i Unsafe fix: Change to an optional chain.
+  
+    25 25 │     const named = /^\s*\{([^}]+)\}\s*$/.exec(specifiers)?.[1];
+    26 26 │     return (
+    27    │ - ····named·!==·undefined·&&
+    28    │ - ····named
+    29    │ - ······.split(",")
+       27 │ + ····named
+       28 │ + ······?.split(",")
+    30 29 │         .filter((part) => part.trim())
+    31 30 │         .every((part) => /^\s*type\s+\w+(?:\s+as\s+\w+)?\s*$/.test(part))
+  
+
+
+exit_code=0

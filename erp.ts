@@ -69,7 +69,8 @@ async function runGate(
     | "surface"
     | "shadcn"
     | "ui"
-    | "ci",
+    | "ci"
+    | "rpc",
 ): Promise<void> {
   let findings: string[];
   if (kind === "skills") {
@@ -99,6 +100,9 @@ async function runGate(
   } else if (kind === "ui") {
     const { checkUiCompleteness } = await import("./tools/ui-completeness.ts");
     findings = (await checkUiCompleteness(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  } else if (kind === "rpc") {
+    const { checkRpc } = await import("./tools/rpc-guard.ts");
+    findings = await checkRpc(repoRoot);
   } else if (kind === "ci") {
     const { checkCi } = await import("./tools/ci-guard.ts");
     findings = await checkCi(repoRoot);
@@ -110,6 +114,9 @@ async function runGate(
 }
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
+  "check:rpc": async () => {
+    await guard("rpc", () => runGate("rpc"));
+  },
   "check:ci": async () => {
     await guard("ci", () => runGate("ci"));
   },

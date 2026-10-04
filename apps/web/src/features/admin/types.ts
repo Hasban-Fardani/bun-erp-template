@@ -1,31 +1,6 @@
-/** Shape of the admin API response — matched to the server service, not invented. */
-export type Role = {
-  id: string;
-  key: string;
-  name: string;
-  description: string;
-  isSystem: boolean;
-  organizationId: string;
-  permissions: string[];
-};
+import type { InferResponseType } from "hono/client";
+import type { rpc } from "../../lib/rpc.ts";
 
-/** Statement catalog from code (`/roles/statements`) — the source for the permission screen, not copied. */
-export type RoleStatements = {
-  statements: Record<string, string[]>;
-  permissions: string[];
-  systemRoles: { key: string; name: string; description: string; permissions: string[] }[];
-};
-
-export type AuditLog = {
-  id: string;
-  organizationId: string | null;
-  actorId: string | null;
-  actorLabel: string;
-  event: string;
-  subjectType: string;
-  subjectId: string;
-  before: Record<string, unknown> | null;
-  after: Record<string, unknown> | null;
-  traceId: string;
-  createdAt: string;
-};
+export type Role = InferResponseType<typeof rpc.roles.$get, 200>["data"]["items"][number];
+export type RoleStatements = InferResponseType<typeof rpc.roles.statements.$get, 200>["data"];
+export type AuditLog = InferResponseType<(typeof rpc)["audit-logs"]["$get"], 200>["data"]["items"][number];

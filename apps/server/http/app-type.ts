@@ -8,3 +8,5 @@ export type AppType = ApplyGlobalResponse<
     [Status in 400 | 401 | 403 | 404 | 409 | 422 | 500]: { json: ApiErrorBody };
   }
 >;
+
+export type RpcError = ApiErrorBody;

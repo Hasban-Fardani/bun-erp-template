@@ -1,0 +1,19 @@
+PASS  login: form tampil
+PASS  login: ada jalur lupa sandi
+PASS  login: masuk berhasil
+PASS  pengguna: pencarian bekerja
+PASS  pengguna: klik header mengurutkan
+PASS  peran: pencarian bekerja
+PASS  audit: pencarian bekerja
+PASS  combobox peran: terbuka dan menyaring
+PASS  tidak ada alert inline di halaman — ditemukan 0
+PASS  mobile: form tidak terpotong
+PASS  mobile: tidak ada scroll horizontal — {"doc":390,"win":390}
+
+--- ringkasan ---
+gagal: 0 dari 11
+respons API >=400: 0
+error JS: 0
+$ bun scripts/qa-e2e.ts
+
+exit_code=0

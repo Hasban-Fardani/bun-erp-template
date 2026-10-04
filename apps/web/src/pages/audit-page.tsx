@@ -144,7 +144,7 @@ function AuditDetail({ log, onClose }: { log: AuditLog | null; onClose: () => vo
   );
 }
 
-function Snapshot({ title, value }: { title: string; value: Record<string, unknown> | null }) {
+function Snapshot({ title, value }: { title: string; value: AuditLog["before"] }) {
   return (
     <div>
       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">{title}</p>
