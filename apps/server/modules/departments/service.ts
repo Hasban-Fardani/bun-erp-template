@@ -3,6 +3,7 @@ import { ApiError } from "../../http/errors.ts";
 import { toOffset } from "../../http/list-query.ts";
 import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
+import { auditChange, snapshot } from "../audit/service.ts";
 import { departments } from "./data.ts";
 import type { CreateDepartmentInput, ListDepartmentsInput, UpdateDepartmentInput } from "./schema.ts";
 
@@ -53,6 +54,7 @@ export async function createDepartment(
   db: Database,
   organizationId: string,
   input: CreateDepartmentInput,
+  actor: { userId: string | null; traceId: string; label?: string } = { userId: null, traceId: "" },
 ): Promise<Department> {
   return db.transaction(async (tx) => {
     const existing = await tx
@@ -70,7 +72,9 @@ export async function createDepartment(
       .insert(departments)
       .values({ organizationId, name: input.name, code: input.code })
       .returning();
-    return rows[0] as Department;
+    const after = rows[0] as Department;
+    await recordDepartmentChange(tx as unknown as Database, organizationId, actor, after);
+    return after;
   });
 }
 
@@ -79,18 +83,38 @@ export async function updateDepartment(
   organizationId: string,
   id: string,
   input: UpdateDepartmentInput,
+  actor: { userId: string | null; traceId: string; label?: string } = { userId: null, traceId: "" },
 ): Promise<Department> {
-  const patch: Partial<Pick<Department, "name" | "code" | "updatedAt">> = { updatedAt: new Date() };
-  if (input.name !== undefined) patch.name = input.name;
-  if (input.code !== undefined) patch.code = input.code;
+  return db.transaction(async (tx) => {
+    const before = await findDepartment(tx as unknown as Database, organizationId, id);
+    if (!before) throw ApiError.notFound("Department not found");
+    const patch: Partial<Pick<Department, "name" | "code" | "updatedAt">> = { updatedAt: new Date() };
+    if (input.name !== undefined) patch.name = input.name;
+    if (input.code !== undefined) patch.code = input.code;
+    const rows = await tx
+      .update(departments)
+      .set(patch)
+      .where(and(eq(departments.organizationId, organizationId), eq(departments.id, id)))
+      .returning();
+    const after = rows[0] as Department;
+    await recordDepartmentChange(tx as unknown as Database, organizationId, actor, after, before);
+    return after;
+  });
+}
 
-  const rows = await db
-    .update(departments)
-    .set(patch)
-    .where(and(eq(departments.organizationId, organizationId), eq(departments.id, id)))
-    .returning();
-
-  const updated = rows[0];
-  if (!updated) throw ApiError.notFound("Department not found");
-  return updated;
+async function recordDepartmentChange(
+  db: Database,
+  organizationId: string,
+  actor: { userId: string | null; traceId: string; label?: string },
+  after: Department,
+  before?: Department,
+): Promise<void> {
+  await auditChange(db, {
+    organizationId,
+    actor,
+    event: before ? "department.updated" : "department.created",
+    subject: { type: "department", id: after.id },
+    ...(before ? { before: snapshot("department", before) } : {}),
+    after: snapshot("department", after),
+  });
 }

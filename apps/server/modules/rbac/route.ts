@@ -2,9 +2,10 @@ import { Hono } from "hono";
 import type { AppContext } from "../../context.ts";
 import { doc } from "../../http/api-docs.ts";
 import type { AppVariables } from "../../http/app.ts";
-import { ok, parseInput } from "../../http/errors.ts";
+import { authorize } from "../../http/authorize.ts";
+import { ok } from "../../http/errors.ts";
 import { listMeta, listMetaSchemaProperties } from "../../http/list-query.ts";
-import { requirePermission } from "../identity/policy.ts";
+import { validate } from "../../http/validate.ts";
 import { CreateRoleInput, ListRolesInput, SetRolePermissionsInput, UpdateRoleInput } from "./schema.ts";
 import { createRole, deleteRole, listRoles, permissionsForRole, setRolePermissions, updateRole } from "./service.ts";
 import { allPermissions, statements, systemRoles } from "./statements.ts";
@@ -16,7 +17,7 @@ const idRef = { type: "object", properties: { id: { type: "string" } } } as cons
  * Catalogue + RBAC management. System roles may be read and have their permissions changed,
  * but not deleted: `statements.ts` is the source of truth, and the seed will bring them back.
  */
-export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
+export function rbacRoutes(ctx: AppContext, organizationId: string) {
   const actorOf = (actor: { userId: string; traceId: string; label: string }) => ({
     userId: actor.userId,
     traceId: actor.traceId,
@@ -27,6 +28,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
     new Hono<{ Variables: AppVariables }>()
       .get(
         "/",
+        authorize(ctx, "role.read"),
         doc({
           tag: "roles",
           permission: "role.read",
@@ -36,10 +38,12 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
             properties: { items: { type: "array", items: roleRef }, ...listMetaSchemaProperties },
           },
         }),
+
+        validate("query", ListRolesInput),
         async (c) => {
-          const actor = await requirePermission(c, ctx, "role.read");
+          const actor = c.get("actor");
           const orgId = actor.organizationId ?? organizationId;
-          const input = parseInput(ListRolesInput, c.req.query());
+          const input = c.req.valid("query");
           const { items, total } = await listRoles(ctx.db, orgId, input);
           const withPermissions = await Promise.all(
             items.map(async (role) => ({ ...role, permissions: await permissionsForRole(ctx.db, role.id) })),
@@ -49,6 +53,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
       )
       .post(
         "/",
+        authorize(ctx, "role.create"),
         doc({
           tag: "roles",
           permission: "role.create",
@@ -56,14 +61,17 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
           body: CreateRoleInput,
           data: roleRef,
         }),
+
+        validate("json", CreateRoleInput),
         async (c) => {
-          const actor = await requirePermission(c, ctx, "role.create");
-          const input = parseInput(CreateRoleInput, await c.req.json());
+          const actor = c.get("actor");
+          const input = c.req.valid("json");
           return ok(c, await createRole(ctx.db, actor.organizationId ?? organizationId, input, actorOf(actor)));
         },
       )
       .patch(
         "/:id",
+        authorize(ctx, "role.update"),
         doc({
           tag: "roles",
           permission: "role.update",
@@ -71,9 +79,11 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
           body: UpdateRoleInput,
           data: roleRef,
         }),
+
+        validate("json", UpdateRoleInput),
         async (c) => {
-          const actor = await requirePermission(c, ctx, "role.update");
-          const input = parseInput(UpdateRoleInput, await c.req.json());
+          const actor = c.get("actor");
+          const input = c.req.valid("json");
           return ok(
             c,
             await updateRole(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"), input, actorOf(actor)),
@@ -82,14 +92,16 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
       )
       .delete(
         "/:id",
+        authorize(ctx, "role.delete"),
         doc({
           tag: "roles",
           permission: "role.delete",
           summary: "Hapus role kustom (ditolak bila sistem atau masih dipakai)",
           data: idRef,
         }),
+
         async (c) => {
-          const actor = await requirePermission(c, ctx, "role.delete");
+          const actor = c.get("actor");
           return ok(
             c,
             await deleteRole(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"), actorOf(actor)),
@@ -98,6 +110,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
       )
       .put(
         "/:id/permissions",
+        authorize(ctx, "role.update"),
         doc({
           tag: "roles",
           permission: "role.update",
@@ -108,9 +121,11 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
             properties: { id: { type: "string" }, permissions: { type: "array", items: { type: "string" } } },
           },
         }),
+
+        validate("json", SetRolePermissionsInput),
         async (c) => {
-          const actor = await requirePermission(c, ctx, "role.update");
-          const input = parseInput(SetRolePermissionsInput, await c.req.json());
+          const actor = c.get("actor");
+          const input = c.req.valid("json");
           return ok(
             c,
             await setRolePermissions(
@@ -129,14 +144,16 @@ export function rbacRoutes(ctx: AppContext, organizationId: string): Hono<{ Vari
        */
       .get(
         "/statements",
+        authorize(ctx, "role.read"),
         doc({
           tag: "roles",
           permission: "role.read",
           summary: "Katalog izin & role sistem (sumber = kode)",
           data: { type: "object" },
         }),
+
         async (c) => {
-          await requirePermission(c, ctx, "role.read");
+          c.get("actor");
           return ok(c, {
             statements,
             permissions: allPermissions,

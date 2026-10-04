@@ -3,6 +3,7 @@ import type * as z from "zod";
 
 /** Stable error codes: clients may depend on them, messages may change. */
 export const ErrorCode = {
+  badRequest: "BAD_REQUEST",
   validationFailed: "VALIDATION_FAILED",
   unauthorized: "UNAUTHORIZED",
   notFound: "NOT_FOUND",
@@ -68,17 +69,10 @@ export class ApiError extends Error {
 }
 
 /** Success: `{ data, meta: { requestId } }` (PRD §12). */
-export function ok<T>(c: Context, data: T): Response {
-  return c.json({ data, meta: { requestId: requestId(c) } });
+export function ok<T>(c: Context, data: T) {
+  return c.json({ data, meta: { requestId: requestId(c) } }, 200);
 }
 
 export function requestId(c: Context): string {
   return c.get("requestId") as string;
-}
-
-/** Parse input with the compiled schema; Zod errors become ApiError 422. */
-export function parseInput<T extends z.ZodType>(schema: T, input: unknown): z.output<T> {
-  const result = schema.safeParse(input);
-  if (!result.success) throw ApiError.validation(result.error.issues);
-  return result.data;
 }

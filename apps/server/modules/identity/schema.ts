@@ -53,3 +53,9 @@ export type ListUsersInput = z.output<typeof ListUsersInput>;
 export type UpdateUserInput = z.output<typeof UpdateUserInput>;
 export type AssignRoleInput = z.output<typeof AssignRoleInput>;
 export type CreateUserInput = z.output<typeof CreateUserInput>;
+
+export const ReplaceRolesInput = z.compile(
+  z.strictObject({
+    roleKeys: z.array(assignRoleSchema.shape.roleKey).max(100),
+  }),
+);

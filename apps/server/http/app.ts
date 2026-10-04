@@ -1,20 +1,22 @@
 import { apiReference } from "@scalar/hono-api-reference";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import { requestId as requestIdMiddleware } from "hono/request-id";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { AppContext } from "../context.ts";
+import type { Actor } from "../modules/identity/policy.ts";
 import { ApiError, type ApiErrorBody, ErrorCode, requestId } from "./errors.ts";
 import { BETTER_AUTH_PATHS, BETTER_AUTH_TAGS, DOCUMENTATION, SCHEMAS, SECURITY_SCHEMES, SERVERS } from "./openapi.ts";
 import { registerRoutes } from "./routes.ts";
 
-export type AppVariables = { requestId: string };
+export type AppVariables = { requestId: string; actor: Actor };
 
 /**
  * `ctx` is injected via closure, `organizationId` is set at bootstrap — Phase 2
  * replaces it with the session's own organization (per-request), not a fixed value.
  */
-export function createApp(ctx: AppContext, organizationId: string): Hono<{ Variables: AppVariables }> {
+export function createApp(ctx: AppContext, organizationId: string) {
   const app = new Hono<{ Variables: AppVariables }>();
 
   /**
@@ -71,13 +73,15 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
     }
   });
 
-  registerRoutes(app, ctx, organizationId);
+  const routes = registerRoutes(app, ctx, organizationId);
 
   app.notFound(() => {
     throw ApiError.notFound();
   });
 
   app.onError((err, c) => {
+    if (err instanceof HTTPException && err.status === 400)
+      err = new ApiError("BAD_REQUEST", 400, "Malformed request body");
     const id = requestId(c);
     if (err instanceof ApiError) {
       const body: ApiErrorBody = {
@@ -103,5 +107,5 @@ export function createApp(ctx: AppContext, organizationId: string): Hono<{ Varia
     return c.json(body, 500);
   });
 
-  return app;
+  return routes;
 }

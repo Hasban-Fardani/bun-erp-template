@@ -1,5 +1,5 @@
 import { hashPassword } from "better-auth/crypto";
-import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 
 /** Re-export: the CLI (erp.ts) uses the same hash primitives, not a duplicate. */
 export { hashPassword };
@@ -9,6 +9,7 @@ import { toOffset } from "../../http/list-query.ts";
 import { orderByColumn } from "../../http/sort.ts";
 import type { Database } from "../../platform/database/index.ts";
 import { auditChange, snapshot } from "../audit/service.ts";
+import { invalidateUser } from "../rbac/cache.ts";
 import { permissions as rbacPermissions, roles as rbacRoles, rolePermissions, userRoles } from "../rbac/data.ts";
 import { assignRole, findRoleByKey, revokeRole } from "../rbac/service.ts";
 import { accounts, users } from "./data.ts";
@@ -340,4 +341,41 @@ export async function revokeUserRole(
 
     return toPublicUser(tx as unknown as Database, user);
   });
+}
+
+/** Replace organization-wide roles atomically; scoped assignments are managed separately. */
+export async function replaceUserRoles(
+  db: Database,
+  organizationId: string,
+  userId: string,
+  keys: readonly string[],
+  actor: { userId: string; traceId: string; label?: string },
+): Promise<PublicUser> {
+  const result = await db.transaction(async (tx) => {
+    const database = tx as unknown as Database;
+    const user = await findUserInOrg(database, organizationId, userId);
+    const wanted = [];
+    for (const key of new Set(keys)) {
+      const role = await findRoleByKey(database, organizationId, key);
+      if (!role) throw ApiError.notFound(`Role not found: ${key}`);
+      wanted.push(role);
+    }
+    const before = await toPublicUser(database, user);
+    await tx
+      .delete(userRoles)
+      .where(and(eq(userRoles.userId, userId), isNull(userRoles.scopeType), isNull(userRoles.scopeId)));
+    for (const role of wanted) await assignRole(database, { userId, roleId: role.id });
+    const after = await toPublicUser(database, user);
+    await auditChange(database, {
+      organizationId,
+      actor,
+      event: "user.roles_replaced",
+      subject: { type: "user", id: userId },
+      before: { roles: before.roles },
+      after: { roles: after.roles },
+    });
+    return after;
+  });
+  invalidateUser(userId);
+  return result;
 }

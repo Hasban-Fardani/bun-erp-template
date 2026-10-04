@@ -27,7 +27,7 @@ if (process.env.GITHUB_ENV) {
   console.log(`::add-mask::${secret}`);
   await Bun.write(
     process.env.GITHUB_ENV,
-    `QA_EMAIL=admin@example.test\nQA_PASSWORD=${password}\nQA_BASE_URL=http://localhost:4173\n`,
+    `${await Bun.file(process.env.GITHUB_ENV).text()}QA_EMAIL=admin@example.test\nQA_PASSWORD=${password}\nQA_BASE_URL=http://localhost:4173\n`,
   );
 }
 await Bun.write(".data/qa/credentials.json", JSON.stringify({ email: "admin@example.test", password }));
