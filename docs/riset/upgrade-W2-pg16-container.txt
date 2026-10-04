@@ -35,3 +35,12 @@ ca49afcdbda4: Pull complete
 ae8ae052b88d: Pull complete
 c9d6ac5e716b: Pull complete
 3672748066c3: Download complete
+3672748066c3: Pull complete
+9a09c0d64573: Pull complete
+bb122215696f: Pull complete
+053534618826: Pull complete
+971b44d2c3d3: Pull complete
+46849de44505: Pull complete
+Digest: sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54
+Status: Downloaded newer image for postgres:16
+3379177e2e5eceb31d5ee06d47b2c58d039a310a3f2be8cc276a913f3e9bffb2

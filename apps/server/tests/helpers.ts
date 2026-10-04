@@ -64,7 +64,15 @@ export async function createTestContext(): Promise<AppContext> {
 /** Drops the shared database. Only the migration tests need this, to build their own schema. */
 export async function disposeTestContext(): Promise<void> {
   if (!shared) return;
-  await (await shared).close();
+  const context = await shared;
+  if (context.env.DATABASE_DRIVER === "postgres") {
+    // Real PostgreSQL persists functions after disconnect; only the runner's scratch DB may reset.
+    const databaseName = new URL(context.env.DATABASE_URL).pathname;
+    if (!databaseName.startsWith("/erp_test_")) throw new Error("Refusing to reset a non-test database");
+    await context.db.execute(sql`drop schema public cascade`);
+    await context.db.execute(sql`create schema public`);
+  }
+  await context.close();
   shared = undefined;
 }
 

@@ -9,8 +9,12 @@ tanpa instalasi, dialek identik produksi, tanpa dua set migration. `platform/dat
 memilih driver lalu mengekspor satu objek `db` bertipe sama; modul tidak tahu driver
 mana yang aktif.
 
-Contract test dijalankan atas kedua driver; CI menjalankan test migrasi di Postgres
-sungguhan.
+Workflow CI menjalankan suite yang sama atas kedua driver dan migrasi di PostgreSQL 16
+dan 18. Keberadaan workflow bukan klaim run pertama GitHub sudah lulus.
+
+UUIDv7: PG16/17 memakai polyfill migrasi 0001, PG18 tetap memakai fungsi native.
+Polyfill memakai gen_random_uuid dan timestamp milidetik tanpa extension. UUID dalam satu
+milidetik tidak dijanjikan monotonik; timestamp tetap dapat diurutkan.
 
 **Batas:** PGlite single-process — bukan untuk concurrency produksi.
 

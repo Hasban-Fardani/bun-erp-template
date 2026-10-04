@@ -43,11 +43,19 @@ export function rowsOf<T>(result: unknown): T[] {
   return Array.isArray(rows) ? (rows as T[]) : [];
 }
 
-/** Statements split on `;` at end of line — enough for this SQL template, not a full SQL parser. */
+/** Dollar-quoted function bodies and quoted literals may contain their own semicolons. */
 export function splitStatements(body: string): string[] {
-  return body
-    .replace(/^\s*--.*$/gm, "")
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+  const tokens =
+    /\$([a-zA-Z_][a-zA-Z_0-9]*|)\$[\s\S]*?\$\1\$|'(?:''|[^'])*'|"(?:""|[^"])*"|--[^\n]*|\/\*[\s\S]*?\*\/|;/g;
+  const statements: string[] = [];
+  let start = 0;
+  for (const token of body.matchAll(tokens)) {
+    if (token[0] !== ";") continue;
+    const statement = body.slice(start, token.index).trim();
+    if (statement) statements.push(statement);
+    start = token.index + 1;
+  }
+  const last = body.slice(start).trim();
+  if (last) statements.push(last);
+  return statements;
 }

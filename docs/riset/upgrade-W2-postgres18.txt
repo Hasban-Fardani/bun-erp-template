@@ -1,0 +1,905 @@
+$ bun erp.ts test
+bun test v1.4.2 (744846f84)
+
+apps/server/tests/departments.test.ts:
+(pass) departments > anonymous caller is rejected before any business logic runs [1382.10ms]
+(pass) departments > create returns envelope with requestId and uuidv7 id [560.42ms]
+(pass) departments > duplicate code is 409 conflict, not 422 [507.54ms]
+(pass) departments > invalid payload is 422 with field paths [483.42ms]
+(pass) departments > unknown key is rejected (strictObject) [474.46ms]
+(pass) departments > missing id is 404 (not 403) [426.24ms]
+(pass) departments > list is scoped to organization [622.23ms]
+(pass) departments > unknown route returns NOT_FOUND envelope [522.77ms]
+(pass) departments > patch updates and returns 404 when absent [645.95ms]
+
+apps/server/tests/cors-methods.test.ts:
+(pass) CORS mengizinkan setiap method yang benar-benar dipakai route [190.22ms]
+(pass) CORS menolak method di luar daftar [103.84ms]
+
+apps/server/tests/openapi-coverage.test.ts:
+(pass) setiap route bisnis terdaftar punya operasi di spesifikasi [152.43ms]
+(pass) spesifikasi memuat path auth yang dipakai aplikasi [73.63ms]
+(pass) spesifikasi memuat path CRUD user & role lengkap [74.43ms]
+(pass) respons 401/403/422 tertulis di operasi [92.29ms]
+(pass) izin yang ditegakkan terlihat di spesifikasi, bukan tersembunyi [126.28ms]
+(pass) skema body diturunkan dari zod — bukan salinan yang bisa basi [106.74ms]
+
+apps/server/tests/identity.test.ts:
+(pass) identity > sign-up through Better Auth creates a uuidv7 primary key [305.31ms]
+(pass) identity > password is hashed, never stored as plaintext [290.72ms]
+2026-10-04T03:35:52.585Z WARN [Better Auth]: Invalid password
+(pass) identity > wrong password is rejected with 401, not 500 [390.06ms]
+(pass) identity > anonymous request to a private route is 401 UNAUTHORIZED [65.61ms]
+(pass) identity > authenticated user without permission is 403 FORBIDDEN, not 401 [450.43ms]
+(pass) identity > user holding the owner role passes the permission check [373.23ms]
+(pass) identity > staff can read the directory but cannot assign roles [351.23ms]
+(pass) identity > /me reports the caller's own permissions [353.24ms]
+(pass) identity > seed creates the permission catalogue from code [56.24ms]
+(pass) identity > seeding twice is idempotent and keeps two system roles [66.27ms]
+(pass) identity > assigning a role writes an audit row with a named event and trace id [498.53ms]
+(pass) identity > audit redaction drops secrets even when the entity allows the field name [66.05ms]
+(pass) identity > a role can be scoped to a department, and scope survives the round trip [267.82ms]
+(pass) identity > role catalogue is readable and matches the code, not a copy [408.56ms]
+(pass) identity > scope pair must be given together [231.18ms]
+
+apps/server/tests/list-contract.test.ts:
+(pass) list contract > pagination metadata is returned and slicing actually limits rows [1078.70ms]
+(pass) list contract > roles are paginated too, and report a stable total [388.40ms]
+(pass) list contract > sort changes the order, and direction reverses it [1141.64ms]
+(pass) list contract > an unknown sort column is rejected, not silently ignored [432.66ms]
+(pass) list contract > search filters rows and total reflects the filter, not the table [1115.56ms]
+(pass) list contract > an empty result still reports one page, so the UI never renders 'page 0 of 0' [614.00ms]
+
+apps/server/tests/permission-cache.test.ts:
+(pass) permission cache > a granted role takes effect on the very next request, not after a TTL [1021.63ms]
+(pass) permission cache > revoking a role removes access immediately, with no stale window [1218.16ms]
+(pass) permission cache > repeat requests are served from cache, so the join runs once [478.55ms]
+(pass) permission cache > the cached path and the database agree [535.82ms]
+
+apps/server/tests/database-contract.test.ts:
+(pass) UUIDv7 uses the RFC version, variant, timestamp and unique random payload [131.31ms]
+20 |     expect(Math.abs(Date.now() - timestamp)).toBeLessThan(10_000);
+21 |   }
+22 | });
+23 | 
+24 | test("audit rejects SQL update and delete even without going through a service", async () => {
+25 |   await expect(fixture.ctx.db.execute(sql`update audit_logs set event = 'changed'`)).rejects.toThrow();
+                                                                                                  ^
+error: expect(received).rejects.toThrow(expected)
+
+Expected promise
+Received: PgRaw {
+  execute: [Function],
+  sql: SQL {
+    decoder: {
+      mapFromDriverValue: [Function: mapFromDriverValue],
+    },
+    shouldInlineParams: false,
+    usedTables: [],
+    queryChunks: [
+      StringChunk {
+        value: [ "update audit_logs set event = 'changed'" ],
+        getSQL: [Function: getSQL],
+      }
+    ],
+    append: [Function: append],
+    toQuery: [Function: toQuery],
+    buildQueryFromSourceParams: [Function: buildQueryFromSourceParams],
+    mapInlineParam: [Function: mapInlineParam],
+    getSQL: [Function: getSQL],
+    as: [Function: as],
+    mapWith: [Function: mapWith],
+    inlineParams: [Function: inlineParams],
+    if: [Function: if],
+  },
+  query: {
+    sql: "update audit_logs set event = 'changed'",
+    params: [],
+  },
+  mapBatchResult: [Function],
+  getSQL: [Function: getSQL],
+  getQuery: [Function: getQuery],
+  mapResult: [Function: mapResult],
+  _prepare: [Function: _prepare],
+  isResponseInArrayMode: [Function: isResponseInArrayMode],
+  catch: [Function: catch],
+  finally: [Function: finally],
+  then: [Function: then],
+}
+
+      at <anonymous> (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/apps/server/tests/database-contract.test.ts:25:94)
+(fail) audit rejects SQL update and delete even without going through a service [69.59ms]
+(pass) migration splitting keeps function bodies, comments and quoted semicolons intact [138.94ms]
+
+apps/server/tests/roles-crud.test.ts:
+(pass) roles CRUD > anonymous caller is rejected before any business logic runs [486.57ms]
+(pass) roles CRUD > owner creates a custom role, renames it, and assigns permissions that take effect [495.36ms]
+(pass) roles CRUD > replacing permissions revokes what is left out — the catalog is not additive [593.37ms]
+(pass) roles CRUD > custom role is deleted; system role is refused [736.62ms]
+(pass) roles CRUD > duplicate key is a conflict, not a silent overwrite [473.44ms]
+(pass) roles CRUD > unknown permission is refused, and a role in use cannot be deleted [580.02ms]
+(pass) roles CRUD > audit trail records the role changes [576.56ms]
+
+apps/server/tests/migrations.test.ts:
+(pass) migration runner > applies pending files once, then reports nothing on a second run [163.25ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) migration runner > a new file is applied while applied files are left alone [142.45ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) migration runner > a failing statement rolls the whole file back — no half-migrated schema [0.23ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) migration runner > the real migrations directory is fully applied and its names are well-formed [0.20ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) (unnamed) [0.27ms]
+
+apps/server/tests/schema-parity.test.ts:
+(pass) compiled schema parity > departments.create: compiled matches uncompiled on success, data, and issue paths [1.47ms]
+(pass) compiled schema parity > departments.update: compiled matches uncompiled on success, data, and issue paths [1.40ms]
+(pass) compiled schema parity > departments.list: compiled matches uncompiled on success, data, and issue paths [0.44ms]
+(pass) compiled schema parity > EnvSchema compiled matches uncompiled on the .env.example shape [6.93ms]
+(pass) compiled schema parity > hybrid deployment: BETTER_AUTH_URL may differ from APP_URL when trusted (ADR-0011) [0.39ms]
+(pass) compiled schema parity > hybrid deployment: BETTER_AUTH_URL di luar trusted origins tetap ditolak [1.08ms]
+(pass) compiled schema parity > production guard rejects debug logging, local storage, and short secret [0.60ms]
+(pass) compiled schema parity > postgres driver requires DATABASE_URL [0.43ms]
+
+apps/server/tests/list-search.test.ts:
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) UI and API agree on the list query contract > the route table exposes every collection the UI renders [0.47ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) UI and API agree on the list query contract > /api/v1/users accepts page, perPage, sort, dir and search [0.50ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) UI and API agree on the list query contract > /api/v1/roles accepts page, perPage, sort, dir and search [0.44ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) UI and API agree on the list query contract > /api/v1/audit-logs accepts page, perPage, sort, dir and search [0.30ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) UI and API agree on the list query contract > /api/v1/departments accepts page, perPage, sort, dir and search [0.20ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) UI and API agree on the list query contract > an unknown sort column is refused, so the allowlist is real [0.47ms]
+
+apps/server/tests/users-crud.test.ts:
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > anonymous caller is rejected before any business logic runs [0.49ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > owner creates a user with initial password and role; new user can sign in [0.24ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > duplicate email is a conflict, not a 500 [0.32ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > unknown roleKey is a 404 with a clear message [0.20ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > validation rejects short password and unknown fields [0.24ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > owner updates a user name via PATCH [0.18ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > owner deletes a user; sessions die with them; audit keeps the trail [0.20ms]
+36 |   async queryWithCache(queryString, params, query) {
+37 |     if (this.cache === void 0 || is(this.cache, NoopCache) || this.queryMetadata === void 0) {
+38 |       try {
+39 |         return await query();
+40 |       } catch (e) {
+41 |         throw new DrizzleQueryError(queryString, params, e);
+                   ^
+error: Failed query: -- Evidence must survive accidental application updates and deletes, including raw SQL.
+create function reject_audit_mutation() returns trigger language plpgsql as $guard$
+begin
+  raise exception 'audit_logs is append-only' using errcode = '42501';
+end
+$guard$
+params: 
+  query: "-- Evidence must survive accidental application updates and deletes, including raw SQL.\ncreate function reject_audit_mutation() returns trigger language plpgsql as $guard$\nbegin\n  raise exception 'audit_logs is append-only' using errcode = '42501';\nend\n$guard$",
+ params: [],
+
+      at queryWithCache (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/drizzle-orm@0.45.2+115576fa7cac4083/node_modules/drizzle-orm/pg-core/session.js:41:15)
+
+810 |   }
+811 | 
+812 |   function ErrorResponse(x) {
+813 |     if (query) {
+814 |       (query.cursorFn || query.describeFirst) && write(Sync)
+815 |       errorResponse = Errors.postgres(parseError(x))
+                                   ^
+PostgresError: function "reject_audit_mutation" already exists with same argument types
+ severity_local: "ERROR",
+   severity: "ERROR",
+       file: "pg_proc.c",
+    routine: "ProcedureCreate",
+       code: "42723"
+
+      at ErrorResponse (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)
+      at handle (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:488:7)
+      at data (/Users/antonioperez/Desktop/hasban/sampingan/bun-erp-template/node_modules/.bun/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)
+      at emit (node:events:100:22)
+      at addChunk (internal:streams/readable:267:47)
+      at readableAddChunkPushByteMode (internal:streams/readable:245:18)
+      at data (node:net:633:72)
+(fail) users CRUD > deleting yourself is rejected [0.21ms]
+
+19 tests failed:
+(fail) audit rejects SQL update and delete even without going through a service [69.59ms]
+(fail) migration runner > a new file is applied while applied files are left alone [142.45ms]
+(fail) migration runner > a failing statement rolls the whole file back — no half-migrated schema [0.23ms]
+(fail) migration runner > the real migrations directory is fully applied and its names are well-formed [0.20ms]
+(fail) (unnamed) [0.27ms]
+(fail) UI and API agree on the list query contract > the route table exposes every collection the UI renders [0.47ms]
+(fail) UI and API agree on the list query contract > /api/v1/users accepts page, perPage, sort, dir and search [0.50ms]
+(fail) UI and API agree on the list query contract > /api/v1/roles accepts page, perPage, sort, dir and search [0.44ms]
+(fail) UI and API agree on the list query contract > /api/v1/audit-logs accepts page, perPage, sort, dir and search [0.30ms]
+(fail) UI and API agree on the list query contract > /api/v1/departments accepts page, perPage, sort, dir and search [0.20ms]
+(fail) UI and API agree on the list query contract > an unknown sort column is refused, so the allowlist is real [0.47ms]
+(fail) users CRUD > anonymous caller is rejected before any business logic runs [0.49ms]
+(fail) users CRUD > owner creates a user with initial password and role; new user can sign in [0.24ms]
+(fail) users CRUD > duplicate email is a conflict, not a 500 [0.32ms]
+(fail) users CRUD > unknown roleKey is a 404 with a clear message [0.20ms]
+(fail) users CRUD > validation rejects short password and unknown fields [0.24ms]
+(fail) users CRUD > owner updates a user name via PATCH [0.18ms]
+(fail) users CRUD > owner deletes a user; sessions die with them; audit keeps the trail [0.20ms]
+(fail) users CRUD > deleting yourself is rejected [0.21ms]
+
+ 60 pass
+ 19 fail
+ 2249 expect() calls
+Ran 79 tests across 12 files. [24.45s]
+bun test server failed with exit 1
+error: script "erp" exited with code 1
+exit_code=1

@@ -1,0 +1,122 @@
+$ bun erp.ts test
+bun test v1.4.2 (744846f84)
+
+apps/server/tests/departments.test.ts:
+(pass) departments > anonymous caller is rejected before any business logic runs [650.65ms]
+(pass) departments > create returns envelope with requestId and uuidv7 id [305.27ms]
+(pass) departments > duplicate code is 409 conflict, not 422 [284.16ms]
+(pass) departments > invalid payload is 422 with field paths [268.15ms]
+(pass) departments > unknown key is rejected (strictObject) [272.86ms]
+(pass) departments > missing id is 404 (not 403) [238.75ms]
+(pass) departments > list is scoped to organization [299.33ms]
+(pass) departments > unknown route returns NOT_FOUND envelope [254.38ms]
+(pass) departments > patch updates and returns 404 when absent [291.99ms]
+
+apps/server/tests/cors-methods.test.ts:
+(pass) CORS mengizinkan setiap method yang benar-benar dipakai route [43.41ms]
+(pass) CORS menolak method di luar daftar [28.25ms]
+
+apps/server/tests/openapi-coverage.test.ts:
+(pass) setiap route bisnis terdaftar punya operasi di spesifikasi [41.00ms]
+(pass) spesifikasi memuat path auth yang dipakai aplikasi [33.63ms]
+(pass) spesifikasi memuat path CRUD user & role lengkap [33.74ms]
+(pass) respons 401/403/422 tertulis di operasi [34.98ms]
+(pass) izin yang ditegakkan terlihat di spesifikasi, bukan tersembunyi [41.60ms]
+(pass) skema body diturunkan dari zod — bukan salinan yang bisa basi [32.08ms]
+
+apps/server/tests/identity.test.ts:
+(pass) identity > sign-up through Better Auth creates a uuidv7 primary key [131.22ms]
+(pass) identity > password is hashed, never stored as plaintext [133.74ms]
+2026-10-04T03:37:45.041Z WARN [Better Auth]: Invalid password
+(pass) identity > wrong password is rejected with 401, not 500 [227.29ms]
+(pass) identity > anonymous request to a private route is 401 UNAUTHORIZED [44.37ms]
+(pass) identity > authenticated user without permission is 403 FORBIDDEN, not 401 [238.96ms]
+(pass) identity > user holding the owner role passes the permission check [271.44ms]
+(pass) identity > staff can read the directory but cannot assign roles [284.15ms]
+(pass) identity > /me reports the caller's own permissions [274.72ms]
+(pass) identity > seed creates the permission catalogue from code [39.77ms]
+(pass) identity > seeding twice is idempotent and keeps two system roles [41.67ms]
+(pass) identity > assigning a role writes an audit row with a named event and trace id [374.39ms]
+(pass) identity > audit redaction drops secrets even when the entity allows the field name [39.69ms]
+(pass) identity > a role can be scoped to a department, and scope survives the round trip [145.25ms]
+(pass) identity > role catalogue is readable and matches the code, not a copy [288.48ms]
+(pass) identity > scope pair must be given together [123.51ms]
+
+apps/server/tests/list-contract.test.ts:
+(pass) list contract > pagination metadata is returned and slicing actually limits rows [609.22ms]
+(pass) list contract > roles are paginated too, and report a stable total [246.08ms]
+(pass) list contract > sort changes the order, and direction reverses it [608.30ms]
+(pass) list contract > an unknown sort column is rejected, not silently ignored [254.15ms]
+(pass) list contract > search filters rows and total reflects the filter, not the table [602.12ms]
+(pass) list contract > an empty result still reports one page, so the UI never renders 'page 0 of 0' [262.17ms]
+
+apps/server/tests/permission-cache.test.ts:
+(pass) permission cache > a granted role takes effect on the very next request, not after a TTL [658.27ms]
+(pass) permission cache > revoking a role removes access immediately, with no stale window [610.70ms]
+(pass) permission cache > repeat requests are served from cache, so the join runs once [281.69ms]
+(pass) permission cache > the cached path and the database agree [299.75ms]
+
+apps/server/tests/database-contract.test.ts:
+(pass) UUIDv7 uses the RFC version, variant, timestamp and unique random payload [39.07ms]
+(pass) audit rejects SQL update and delete even without going through a service [30.22ms]
+(pass) migration splitting keeps function bodies, comments and quoted semicolons intact [37.56ms]
+
+apps/server/tests/roles-crud.test.ts:
+(pass) roles CRUD > anonymous caller is rejected before any business logic runs [228.16ms]
+(pass) roles CRUD > owner creates a custom role, renames it, and assigns permissions that take effect [361.50ms]
+(pass) roles CRUD > replacing permissions revokes what is left out — the catalog is not additive [372.52ms]
+(pass) roles CRUD > custom role is deleted; system role is refused [301.90ms]
+(pass) roles CRUD > duplicate key is a conflict, not a silent overwrite [259.71ms]
+(pass) roles CRUD > unknown permission is refused, and a role in use cannot be deleted [308.53ms]
+(pass) roles CRUD > audit trail records the role changes [306.45ms]
+
+apps/server/tests/migrations.test.ts:
+(pass) migration runner > applies pending files once, then reports nothing on a second run [130.44ms]
+(pass) migration runner > a new file is applied while applied files are left alone [113.58ms]
+(pass) migration runner > a failing statement rolls the whole file back — no half-migrated schema [116.22ms]
+(pass) migration runner > the real migrations directory is fully applied and its names are well-formed [93.14ms]
+
+apps/server/tests/schema-parity.test.ts:
+(pass) compiled schema parity > departments.create: compiled matches uncompiled on success, data, and issue paths [1.10ms]
+(pass) compiled schema parity > departments.update: compiled matches uncompiled on success, data, and issue paths [0.72ms]
+(pass) compiled schema parity > departments.list: compiled matches uncompiled on success, data, and issue paths [0.61ms]
+(pass) compiled schema parity > EnvSchema compiled matches uncompiled on the .env.example shape [4.58ms]
+(pass) compiled schema parity > hybrid deployment: BETTER_AUTH_URL may differ from APP_URL when trusted (ADR-0011) [0.19ms]
+(pass) compiled schema parity > hybrid deployment: BETTER_AUTH_URL di luar trusted origins tetap ditolak [0.41ms]
+(pass) compiled schema parity > production guard rejects debug logging, local storage, and short secret [0.26ms]
+(pass) compiled schema parity > postgres driver requires DATABASE_URL [0.20ms]
+
+apps/server/tests/list-search.test.ts:
+(pass) UI and API agree on the list query contract > the route table exposes every collection the UI renders [309.80ms]
+(pass) UI and API agree on the list query contract > /api/v1/users accepts page, perPage, sort, dir and search [266.24ms]
+(pass) UI and API agree on the list query contract > /api/v1/roles accepts page, perPage, sort, dir and search [260.48ms]
+(pass) UI and API agree on the list query contract > /api/v1/audit-logs accepts page, perPage, sort, dir and search [262.50ms]
+(pass) UI and API agree on the list query contract > /api/v1/departments accepts page, perPage, sort, dir and search [271.58ms]
+(pass) UI and API agree on the list query contract > an unknown sort column is refused, so the allowlist is real [266.66ms]
+
+apps/server/tests/users-crud.test.ts:
+(pass) users CRUD > anonymous caller is rejected before any business logic runs [258.47ms]
+(pass) users CRUD > owner creates a user with initial password and role; new user can sign in [476.24ms]
+(pass) users CRUD > duplicate email is a conflict, not a 500 [363.33ms]
+(pass) users CRUD > unknown roleKey is a 404 with a clear message [343.13ms]
+(pass) users CRUD > validation rejects short password and unknown fields [271.52ms]
+(pass) users CRUD > owner updates a user name via PATCH [415.18ms]
+2026-10-04T03:37:58.700Z WARN [Better Auth]: User not found
+(pass) users CRUD > owner deletes a user; sessions die with them; audit keeps the trail [580.88ms]
+(pass) users CRUD > deleting yourself is rejected [284.27ms]
+
+ 78 pass
+ 0 fail
+ 2292 expect() calls
+Ran 78 tests across 12 files. [18.21s]
+bun test v1.4.2 (744846f84)
+
+apps/web/tests/nav-routes.test.ts:
+(pass) setiap item navigasi menunjuk path yang benar-benar terdaftar [0.08ms]
+(pass) setiap item navigasi punya izin yang ditegakkan backend [0.03ms]
+
+ 2 pass
+ 0 fail
+ 2 expect() calls
+Ran 2 tests across 1 file. [153.00ms]
+exit_code=0
