@@ -27,6 +27,115 @@ const MIGRATIONS_DIR = resolve(repoRoot, "apps/server/migrations");
 const TASKS_DIR = resolve(repoRoot, "docs/tasks");
 const SKILLS_DIR = resolve(repoRoot, "skills");
 
+const CHECK_GATE_COMMANDS: Readonly<Record<string, string>> = {
+  agents: "check:agents",
+  architecture: "check:architecture",
+  ci: "check:ci",
+  copy: "check:copy",
+  design: "check:design",
+  docs: "check:docs",
+  language: "check:language",
+  migrations: "check:migrations",
+  mobile: "check:mobile",
+  platform: "check:platform",
+  react: "check:react",
+  readiness: "check:prod",
+  rpc: "check:rpc",
+  scope: "check:scope",
+  shadcn: "check:shadcn",
+  skills: "skills:validate",
+  slop: "check:slop",
+  surface: "check:surface",
+  task: "check:task",
+  ui: "check:ui",
+  versioning: "check:versioning",
+};
+
+const HELP_GROUPS: ReadonlyArray<{
+  title: string;
+  commands: ReadonlyArray<readonly [name: string, description: string]>;
+}> = [
+  {
+    title: "Project",
+    commands: [
+      ["init", "Install the project agent tooling"],
+      ["doctor", "Check local environment and database readiness"],
+      ["dev", "Start the web app with API and Vite HMR"],
+      ["build", "Build the web app for the Bun server"],
+      ["preview", "Preview the built web app"],
+      ["server:api", "Run the API without serving web assets"],
+    ],
+  },
+  {
+    title: "Quality",
+    commands: [
+      ["check", "Run all code, type, and project gates in parallel"],
+      ["check:prod", "Check production deployment readiness"],
+      ["check:gate <name>", "Run one focused gate; use --list to see names"],
+      ["test", "Run backend, web, mobile, and package test suites"],
+    ],
+  },
+  {
+    title: "Database",
+    commands: [
+      ["db:migrate", "Apply pending TypeScript migrations"],
+      ["db:status", "Show applied and pending migrations"],
+      ["db:seed", "Seed infrastructure data"],
+    ],
+  },
+  {
+    title: "Application",
+    commands: [
+      ["route:list", "List routes from the assembled Hono app"],
+      ["env:list", "Show safe configuration values and warnings"],
+      ["key:generate", "Generate the local authentication secret"],
+      ["user:create", "Create a user from the command line"],
+      ["user:grant", "Grant a role to a user"],
+      ["user:passwd", "Reset a user's password"],
+      ["user:list", "List users and their roles"],
+    ],
+  },
+  {
+    title: "Background jobs",
+    commands: [
+      ["jobs:work", "Run the long-lived job worker"],
+      ["jobs:run-once", "Process one bounded batch"],
+      ["jobs:status", "Show queue counts"],
+      ["jobs:dead", "List jobs that reached terminal failure"],
+      ["jobs:retry", "Requeue a dead job by ID"],
+    ],
+  },
+  {
+    title: "Cloudflare",
+    commands: [
+      ["cloudflare:dev", "Run the Worker locally"],
+      ["cloudflare:build", "Build the single Worker and static assets"],
+      ["cloudflare:deploy", "Build and deploy to Cloudflare Workers"],
+    ],
+  },
+  {
+    title: "Mobile",
+    commands: [
+      ["mobile:dev", "Run the mobile web app with HMR"],
+      ["mobile:preview", "Preview the mobile web build"],
+      ["mobile:build", "Build mobile web assets"],
+      ["mobile:package", "Build a native mobile package"],
+      ["mobile:version", "Stamp native version and build number"],
+      ["mobile:add", "Add a native Capacitor platform"],
+      ["mobile:sync", "Sync web assets to native projects"],
+      ["mobile:open", "Open a native project in its IDE"],
+    ],
+  },
+  {
+    title: "CI support",
+    commands: [
+      ["ci:prepare", "Prepare the CI database and owner"],
+      ["ci:owner", "Create the CI owner account"],
+      ["wait:http", "Wait for an HTTP endpoint to become available"],
+    ],
+  },
+];
+
 /** A failing subprocess must stop the gate — not merely be logged and skipped. */
 async function run(argv: readonly string[], label: string): Promise<void> {
   const proc = Bun.spawn([...argv], { cwd: repoRoot, stdout: "inherit", stderr: "inherit" });
@@ -148,6 +257,29 @@ async function runGate(
 const commands: Record<string, (args: string[]) => Promise<void>> = {
   init: async () => {
     await run(["bun", "scripts/init-agents.ts"], "initialize project agent tooling");
+  },
+  "check:gate": async (args) => {
+    const [name, ...forwardedArgs] = args;
+    if (name === "--list" || name === "list") {
+      process.stdout.write(`Available gates: ${Object.keys(CHECK_GATE_COMMANDS).sort().join(", ")}\n`);
+      return;
+    }
+    if (!name) {
+      process.stderr.write(
+        "Usage: bun erp check:gate <name>\nRun `bun erp check:gate --list` to list available gates.\n",
+      );
+      process.exit(1);
+    }
+    const legacyCommand = CHECK_GATE_COMMANDS[name];
+    if (!legacyCommand) {
+      process.stderr.write(
+        `Unknown check gate: ${name}. Available: ${Object.keys(CHECK_GATE_COMMANDS).sort().join(", ")}\n`,
+      );
+      process.exit(1);
+    }
+    const handler = commands[legacyCommand];
+    if (!handler) throw new Error(`Check gate command is not registered: ${legacyCommand}`);
+    await handler(forwardedArgs);
   },
   "check:mobile": async () => {
     await guard("mobile", () => runGate("mobile"));
@@ -660,10 +792,12 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 const [command, ...args] = process.argv.slice(2);
 
 if (!command || command === "--help" || command === "-h" || command === "help") {
-  const list = Object.keys(commands)
-    .map((c) => `  ${c}`)
-    .join("\n");
-  process.stdout.write(`bun erp <command> [args]\n\nCommands:\n${list}\n`);
+  const sections = HELP_GROUPS.map(({ title, commands: entries }) => {
+    const width = Math.max(...entries.map(([name]) => name.length));
+    const lines = entries.map(([name, description]) => `  ${name.padEnd(width)}  ${description}`).join("\n");
+    return `${title}\n${lines}`;
+  });
+  process.stdout.write(`bun erp <command> [args]\n\n${sections.join("\n\n")}\n`);
   process.exit(0);
 }
 
