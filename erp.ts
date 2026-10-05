@@ -595,21 +595,34 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
     const migrationFile = nextMigrationFile(existing, `create_${scaffold.table}_table`);
     for (const file of scaffold.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
+    const migrationPath = `apps/server/migrations/${migrationFile}`;
     await writeScaffold(
       resolve(MIGRATIONS_DIR, migrationFile),
       renderMigrationSource({ mode: "create", table: scaffold.table }),
     );
-    await formatScaffold([...scaffold.files.map((file) => file.path), `apps/server/migrations/${migrationFile}`]);
 
-    const statementsPath = resolve(repoRoot, "apps/server/features/rbac/statements.ts");
-    const statements = addStatementResource(await Bun.file(statementsPath).text(), scaffold.resource);
-    if (statements.status === "added") await Bun.write(statementsPath, statements.source);
-    const auditPath = resolve(repoRoot, "apps/server/features/audit/redact.ts");
-    const audit = addAuditEntity(await Bun.file(auditPath).text(), scaffold.resource);
-    if (audit.status === "added") await Bun.write(auditPath, audit.source);
-    const routesPath = resolve(repoRoot, "apps/server/http/routes.ts");
-    const routes = addRouteMount(await Bun.file(routesPath).text(), scaffold);
-    if (routes.status === "added") await Bun.write(routesPath, routes.source);
+    const statementsPath = "apps/server/features/rbac/statements.ts";
+    const statements = addStatementResource(
+      await Bun.file(resolve(repoRoot, statementsPath)).text(),
+      scaffold.resource,
+    );
+    if (statements.status === "added") await Bun.write(resolve(repoRoot, statementsPath), statements.source);
+    const auditPath = "apps/server/features/audit/redact.ts";
+    const audit = addAuditEntity(await Bun.file(resolve(repoRoot, auditPath)).text(), scaffold.resource);
+    if (audit.status === "added") await Bun.write(resolve(repoRoot, auditPath), audit.source);
+    const routesPath = "apps/server/http/routes.ts";
+    const routes = addRouteMount(await Bun.file(resolve(repoRoot, routesPath)).text(), scaffold);
+    if (routes.status === "added") await Bun.write(resolve(repoRoot, routesPath), routes.source);
+
+    // Wiring edits happen after the scaffold is written, so format every touched file together or lint fails.
+    const touched = [
+      [statementsPath, statements.status],
+      [auditPath, audit.status],
+      [routesPath, routes.status],
+    ]
+      .filter(([, status]) => status === "added")
+      .map(([path]) => path as string);
+    await formatScaffold([...scaffold.files.map((file) => file.path), migrationPath, ...touched]);
 
     process.stdout.write(`Created feature: apps/server/features/${scaffold.name}\n`);
     for (const file of scaffold.files) process.stdout.write(`  ${file.path}\n`);
