@@ -200,4 +200,9 @@ export const idID = {
   "offline.empty": "Belum ada catatan lokal.",
   "offline.savedAt": "Disimpan {timestamp}",
   "offline.offlineBanner": "Anda sedang offline. Data lokal tetap tersedia di perangkat ini.",
+  "notifications.title": "Notifikasi",
+  "notifications.description": "Pembaruan tentang akun dan organisasi Anda.",
+  "notifications.empty": "Belum ada notifikasi.",
+  "notifications.markAllRead": "Tandai semua dibaca",
+  "notifications.unread": "Belum dibaca",
 } satisfies Record<keyof typeof enUS, string>;

@@ -15,6 +15,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { type NavItem, navLocationForPath, visibleNavGroups } from "../config/navigation.ts";
 import { uiConfig } from "../config/ui.ts";
 import { useSession, useSignOut } from "../features/identity/hooks/index.ts";
+import { NotificationsBell } from "../features/notifications/components/notification-bell.tsx";
 import { cn } from "../lib/cn.ts";
 import { CommandPalette } from "./command-palette.tsx";
 import { ThemeSwitcher } from "./theme-switcher.tsx";
@@ -289,6 +290,7 @@ function Topbar({ session }: { session: SessionData }) {
 
           <div className="ml-auto flex items-center gap-1.5">
             <CommandPalette permissions={session?.permissions ?? []} onSignOut={() => signOut.mutate()} />
+            <NotificationsBell />
             <span className="hidden sm:block">
               <ThemeSwitcher />
             </span>

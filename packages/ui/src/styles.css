@@ -1,6 +1,9 @@
 @import "tailwindcss" source(none);
 @source "./";
 
+/* The palette is chosen with `data-theme`, not the OS, so `dark:` must follow that attribute. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * Two palettes, one set of token names. `light` is the default; `dark`
  * is applied through `data-theme` so a deployment can pick one with `VITE_THEME` without a

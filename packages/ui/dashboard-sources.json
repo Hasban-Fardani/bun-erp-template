@@ -118,5 +118,21 @@
     "reference": "https://www.dashboardblocks.com/r/breakdown.json",
     "license": "MIT",
     "upstream": "https://github.com/LGLabGreg/dashboardblocks"
+  },
+  "src/molecules/activity-feed.tsx": {
+    "registry": "@dashboardblocks",
+    "component": "activity-feed",
+    "reference": "https://www.dashboardblocks.com/r/activity-feed.json",
+    "license": "MIT",
+    "upstream": "https://github.com/LGLabGreg/dashboardblocks",
+    "adaptation": "Kept ActivityIcon, UnreadDot and the tone map; dropped the timeline/day-grouping helpers the inbox does not use. Tone classes use the repo token aliases plus the dark variant bound to [data-theme]."
+  },
+  "src/organisms/notification-bell.tsx": {
+    "registry": "@dashboardblocks",
+    "component": "notifications",
+    "reference": "https://www.dashboardblocks.com/r/notifications.json",
+    "license": "MIT",
+    "upstream": "https://github.com/LGLabGreg/dashboardblocks",
+    "adaptation": "Ported the Popover trigger to the repo's radix PopoverTrigger asChild, replaced the multi-icon IconPlaceholder with a lucide Bell, dropped the external Link in favour of an onOpen callback so routing stays in the app, and mapped the time to a caller-provided node for locale formatting."
   }
 }

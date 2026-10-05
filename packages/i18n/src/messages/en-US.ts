@@ -198,4 +198,9 @@ export const enUS = {
   "offline.empty": "No local notes yet.",
   "offline.savedAt": "Saved {timestamp}",
   "offline.offlineBanner": "You are offline. Local data is still available on this device.",
+  "notifications.title": "Notifications",
+  "notifications.description": "Updates about your account and your organization.",
+  "notifications.empty": "No notifications yet.",
+  "notifications.markAllRead": "Mark all as read",
+  "notifications.unread": "Unread",
 } as const;

@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './pages/_authenticated/r
 import { Route as LoginRouteImport } from './pages/login'
 import { Route as AuthenticatedIndexRouteImport } from './pages/_authenticated/index'
 import { Route as AuthenticatedAuditRouteImport } from './pages/_authenticated/audit'
+import { Route as AuthenticatedNotificationsRouteImport } from './pages/_authenticated/notifications'
 import { Route as AuthenticatedRolesRouteImport } from './pages/_authenticated/roles'
 import { Route as AuthenticatedUsersRouteImport } from './pages/_authenticated/users'
 
@@ -35,6 +36,12 @@ const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRolesRoute = AuthenticatedRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
@@ -50,12 +57,14 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/users': typeof AuthenticatedUsersRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/users': typeof AuthenticatedUsersRoute
   '/': typeof AuthenticatedIndexRoute
@@ -65,20 +74,22 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/audit' | '/roles' | '/users'
+  fullPaths: '/' | '/login' | '/audit' | '/notifications' | '/roles' | '/users'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/audit' | '/roles' | '/users' | '/'
+  to: '/login' | '/audit' | '/notifications' | '/roles' | '/users' | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/audit'
+    | '/_authenticated/notifications'
     | '/_authenticated/roles'
     | '/_authenticated/users'
     | '/_authenticated/'
@@ -119,6 +130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/roles': {
       id: '/_authenticated/roles'
       path: '/roles'
@@ -138,6 +156,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -145,6 +164,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
