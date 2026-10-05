@@ -83,3 +83,31 @@ JSON. Keys are normalized and reject traversal before any driver touches a path 
 On the client, `createKeyValueStore(adapter)` stores namespaced JSON records, and
 `getDefaultKeyValueStore()` picks the backend: native SQLite when the mobile app injects
 `createCapacitorSqliteAdapter`, IndexedDB in a browser, then Web Storage, then memory.
+
+## Notifications
+
+`apps/server/features/notifications` delivers in-app and email notifications through a channel
+registry (`NotificationChannelRegistry`, built on the shared `DriverRegistry`). Call `notify()` from
+a service after the owning write commits — or inside the transaction when the notification must be
+atomic with it:
+
+```ts
+await notify(ctx, {
+  organizationId,
+  recipients: [userId],
+  type: "department.created",
+  title: "Department created",
+  body: "A new department is available.",
+  via: ["database", "mail"],
+});
+```
+
+- `database` (default) writes one `notifications` row per recipient: the in-app inbox.
+- `mail` looks up each recipient's email and sends through `ctx.mail.queue`, so delivery is retried
+  by the worker. Register a webhook or push channel by adding a factory to
+  `createNotificationRegistry`.
+
+The API is self-scoped (`requireActor`, no permission key): `GET /api/v1/notifications`,
+`GET /api/v1/notifications/unread-count`, `POST /api/v1/notifications/:id/read`, and
+`POST /api/v1/notifications/read-all` all operate on the signed-in user only. A web or mobile inbox
+screen is a thin client over these routes.
