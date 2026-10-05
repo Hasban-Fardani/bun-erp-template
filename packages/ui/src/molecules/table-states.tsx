@@ -43,13 +43,44 @@ export function TableSkeleton({
   label?: string;
 }) {
   return (
-    <div role="status" aria-live="polite" aria-label={label}>
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      aria-busy="true"
+      data-slot="table-skeleton"
+      className="overflow-hidden rounded-md border border-border"
+    >
       <span className="sr-only">{label}</span>
       <div aria-hidden="true" className="animate-pulse">
-        {skeletonIds(rows).map((rowId) => (
-          <div key={rowId} className="flex items-center gap-4 border-b border-border px-4 py-3.5 last:border-0">
-            {skeletonIds(columns).map((columnId, index) => (
-              <div key={columnId} className={cn("h-3.5 rounded-full bg-border", index === 0 ? "w-40" : "w-24")} />
+        <div
+          className="grid gap-4 border-b border-border bg-background px-4 py-3"
+          style={{ gridTemplateColumns: `repeat(${Math.max(columns, 1)}, minmax(0, 1fr))` }}
+        >
+          {skeletonIds(Math.max(columns, 1)).map((columnId, index) => (
+            <div key={columnId} className={cn("h-2.5 rounded-full bg-border", index === 0 ? "w-1/2" : "w-2/5")} />
+          ))}
+        </div>
+        {skeletonIds(rows).map((rowId, rowIndex) => (
+          <div
+            key={rowId}
+            className="grid items-center gap-4 border-b border-border px-4 py-3.5 last:border-0"
+            style={{ gridTemplateColumns: `repeat(${Math.max(columns, 1)}, minmax(0, 1fr))` }}
+          >
+            {skeletonIds(Math.max(columns, 1)).map((columnId, index) => (
+              <div
+                key={columnId}
+                className={cn(
+                  "h-3.5 rounded-full bg-border",
+                  index === 0
+                    ? rowIndex % 2 === 0
+                      ? "w-3/5"
+                      : "w-2/5"
+                    : (rowIndex + index) % 3 === 0
+                      ? "w-1/2"
+                      : "w-2/3",
+                )}
+              />
             ))}
           </div>
         ))}

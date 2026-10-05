@@ -1,6 +1,30 @@
 {
   "version": 1,
   "skills": {
+    "agentic-browser-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/agentic-browser-testing/SKILL.md",
+      "computedHash": "4cdd703752d6db1a797ab67e64711689630ed46036516c4c2f43661ab380d2d1"
+    },
+    "ai-bug-triage": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ai-bug-triage/SKILL.md",
+      "computedHash": "c3d84a9a4a0d7f63fd7f5c41d245cff34647a5e01861998d87f732f51751f0dd"
+    },
+    "bug-reproduction": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/bug-reproduction/SKILL.md",
+      "computedHash": "dfb76a206a5fbe4c80729185cf8e9e1043e7cee8366ed42e9d90dd9e9520379b"
+    },
+    "exploratory-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/exploratory-testing/SKILL.md",
+      "computedHash": "da0c461f95642d67d621b550e73677094ed02990b51bf66fd9b927ade1a6ab2e"
+    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -12,6 +36,54 @@
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
       "computedHash": "4dd886b0196bf43729d954ae326016f2bd9f5f79d892500b407c33a753362f14"
+    },
+    "playwright-automation": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/playwright-automation/SKILL.md",
+      "computedHash": "bbbb613ebc86099bac39a336ce6b72619503941718f928e23b9759aa22dd4976"
+    },
+    "qa-project-context": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-project-context/SKILL.md",
+      "computedHash": "ad566b175958230a8f3c3b508d8dfbc07e575634e8fc4f226402acc39a5a6e24"
+    },
+    "qa-report-humanizer": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-report-humanizer/SKILL.md",
+      "computedHash": "f1f94112556e016466db1e74cef6db02b17a9a60274a29b65bb9712044bce331"
+    },
+    "risk-based-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/risk-based-testing/SKILL.md",
+      "computedHash": "ef821d7214ab6db9fbc3439a4d28ea23f16bf9a1dc41c3d24d57080109d05647"
+    },
+    "test-data-management": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-data-management/SKILL.md",
+      "computedHash": "55b675f3e0729215fc27c96c1e5cfdfbaed9caa1b95e3113855b06f3109dea2f"
+    },
+    "test-environments": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-environments/SKILL.md",
+      "computedHash": "11af3b8c8cdfe4bb1ccbd76e44e511128d3cb6aff9ed50d3e22c679e1dcfc54c"
+    },
+    "test-planning": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-planning/SKILL.md",
+      "computedHash": "01b1da11a6a9efde9cd49f79771ac08bb216ec8d0eb095c093fd6059b6afa372"
+    },
+    "test-strategy": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-strategy/SKILL.md",
+      "computedHash": "5ba58f1b0e0a389c46c1105f37e8b6f92c2c6c1e47f1ec931086e478855ef766"
     }
   }
 }

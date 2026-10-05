@@ -55,58 +55,224 @@ async function login(p: Page) {
   await p.waitForURL(/\/users/, { timeout: 20_000 });
 }
 
+async function searchResponse(p: Page, path: string, term: string) {
+  const response = p.waitForResponse((candidate) => {
+    const url = new URL(candidate.url());
+    return url.pathname.endsWith(path) && url.searchParams.get("search") === term;
+  });
+  await p.getByTestId("table-search").fill(term);
+  return response;
+}
+
 try {
   await page.goto(`${WEB}/login`, { waitUntil: "networkidle" });
   check("login: form tampil", (await page.locator("#email").count()) === 1);
-  check("login: ada jalur lupa sandi", (await page.getByText("Lupa sandi?").count()) > 0);
+  check("login: ada recovery action", (await page.getByTestId("login-recovery-action").count()) === 1);
   await login(page);
   check("login: masuk berhasil", page.url().includes("/users"));
 
-  await page.fill('[data-testid="table-search"]', "a");
-  await page.waitForTimeout(1200);
-  check("pengguna: pencarian bekerja", /\/ \d+/.test(await page.locator('[data-testid="table-info"]').innerText()));
-  await page.fill('[data-testid="table-search"]', "");
-  await page.waitForTimeout(1200);
+  const userSearch = await searchResponse(page, "/api/v1/users", "a");
+  check("pengguna: pencarian bekerja", userSearch.ok(), `HTTP ${userSearch.status()}`);
 
+  const sortResponse = page.waitForResponse((candidate) => {
+    const url = new URL(candidate.url());
+    return url.pathname.endsWith("/api/v1/users") && url.searchParams.get("sort") === "email";
+  });
   await page.getByRole("button", { name: /email/i }).first().click();
-  await page.waitForTimeout(600);
+  const sortedUsers = await sortResponse;
+  const emailSort = await page.getByRole("columnheader", { name: /email/i }).getAttribute("aria-sort");
   check(
     "pengguna: klik header mengurutkan",
-    (await page.locator("th[aria-sort='ascending'], th[aria-sort='descending']").count()) > 0,
+    sortedUsers.ok() && (emailSort === "ascending" || emailSort === "descending"),
   );
 
-  for (const [label, path, term] of [
-    ["peran", "/roles", "own"],
-    ["audit", "/audit", "role"],
+  for (const [label, path, apiPath, term] of [
+    ["peran", "/roles", "/api/v1/roles", "own"],
+    ["audit", "/audit", "/api/v1/audit-logs", "role"],
   ] as const) {
     await page.goto(`${WEB}${path}`, { waitUntil: "networkidle" });
-    await page.waitForTimeout(800);
-    await page.fill('[data-testid="table-search"]', term);
-    await page.waitForTimeout(1300);
-    check(`${label}: pencarian bekerja`, /\/ \d+/.test(await page.locator('[data-testid="table-info"]').innerText()));
+    const response = await searchResponse(page, apiPath, term);
+    check(`${label}: pencarian bekerja`, response.ok(), `HTTP ${response.status()}`);
   }
 
   // The role picker is a Combobox inside a Sheet: it opens, accepts typing and filters. This
   // broke once (focus was pulled back to the Sheet's scope) and shipped, so it is checked here.
   await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(800);
-  await page.getByRole("button", { name: "Tambah" }).click();
-  await page.waitForTimeout(700);
+  await page.getByTestId("resource-table-primary-action").click();
   await page.locator('[data-testid="user-role"]').click();
-  await page.waitForTimeout(500);
+  const roleItems = page.locator("[cmdk-item]");
+  await roleItems.first().waitFor({ state: "visible" });
   const before = await page.locator("[cmdk-item]").count();
   await page.locator("[cmdk-input]").fill("owner");
-  await page.waitForTimeout(500);
+  await roleItems.filter({ hasText: /owner/i }).waitFor({ state: "visible" });
   const after = await page.locator("[cmdk-item]").count();
   check("combobox peran: terbuka dan menyaring", before > 1 && after === 1);
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
-  await page.waitForTimeout(400);
+  await page.locator('[data-testid="user-role"]').waitFor({ state: "hidden" });
 
   await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(800);
+  await page.getByTestId("table-search").waitFor({ state: "visible" });
   const inlineAlerts = await page.locator("main [role='alert']").count();
   check("tidak ada alert inline di halaman", inlineAlerts === 0, `ditemukan ${inlineAlerts}`);
+
+  const responsiveWidths = [320, 360, 390, 430, 767, 768, 1024, 1440];
+  for (const width of responsiveWidths) {
+    await page.setViewportSize({ width, height: 900 });
+    const isMobileLayout = width < 768;
+    if (isMobileLayout) {
+      await page.getByTestId("resource-table-mobile-row").first().waitFor({ state: "visible" });
+    } else {
+      await page.getByRole("table").waitFor({ state: "visible" });
+    }
+
+    const pageSize = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      document: document.documentElement.scrollWidth,
+      body: document.body.scrollWidth,
+    }));
+    check(
+      `responsive ${width}px: no horizontal overflow`,
+      pageSize.document <= pageSize.viewport + 1 && pageSize.body <= pageSize.viewport + 1,
+      JSON.stringify(pageSize),
+    );
+
+    if (isMobileLayout) {
+      const toolbar = await page.getByTestId("resource-table-toolbar").boundingBox();
+      const search = await page.getByTestId("table-search").boundingBox();
+      const addAction = await page.getByTestId("resource-table-primary-action").boundingBox();
+      const toolbarAligned = Boolean(
+        toolbar &&
+          search &&
+          addAction &&
+          Math.abs(search.x - addAction.x) <= 1 &&
+          Math.abs(search.width - addAction.width) <= 1 &&
+          search.x >= toolbar.x &&
+          addAction.x + addAction.width <= toolbar.x + toolbar.width,
+      );
+      check(`responsive ${width}px: search and primary action align`, toolbarAligned);
+
+      const rowMetrics = await page.getByTestId("resource-table-mobile-row").evaluateAll((rows) =>
+        rows.map((row, rowIndex) => {
+          const style = getComputedStyle(row);
+          const title = row.querySelector('[data-testid="resource-table-mobile-title"]');
+          const actions = row.querySelector('[data-testid="resource-table-mobile-actions"]');
+          const rowBox = row.getBoundingClientRect();
+          const titleBox = title?.getBoundingClientRect();
+          const actionsBox = actions?.getBoundingClientRect();
+          const values = Array.from(row.querySelectorAll('[data-testid="resource-table-mobile-value"]'));
+          const valueLefts = values.map((value) => value.getBoundingClientRect().left);
+          const buttons = Array.from(actions?.querySelectorAll("button") ?? []).map((button) => {
+            const box = button.getBoundingClientRect();
+            return { width: box.width, height: box.height };
+          });
+          return {
+            rowIndex,
+            symmetricPadding:
+              Math.abs(Number.parseFloat(style.paddingLeft) - Number.parseFloat(style.paddingRight)) <= 1,
+            noOverflow: row.scrollWidth <= row.clientWidth + 1,
+            valuesAlign: valueLefts.length < 2 || Math.max(...valueLefts) - Math.min(...valueLefts) <= 1,
+            contentInsideRow:
+              (!titleBox || titleBox.left >= rowBox.left + Number.parseFloat(style.paddingLeft) - 1) &&
+              (!actionsBox || actionsBox.right <= rowBox.right - Number.parseFloat(style.paddingRight) + 1),
+            touchTargetsMeetMinimum: buttons.every((button) => button.width >= 43.9 && button.height >= 43.9),
+            buttonTargets: buttons,
+          };
+        }),
+      );
+      const alignedCards =
+        rowMetrics.length > 0 &&
+        rowMetrics.every(
+          (row) =>
+            row.symmetricPadding &&
+            row.noOverflow &&
+            row.valuesAlign &&
+            row.contentInsideRow &&
+            row.touchTargetsMeetMinimum,
+        );
+      const failingRows = rowMetrics.filter(
+        (row) =>
+          !row.symmetricPadding ||
+          !row.noOverflow ||
+          !row.valuesAlign ||
+          !row.contentInsideRow ||
+          !row.touchTargetsMeetMinimum,
+      );
+      check(
+        `responsive ${width}px: cards stay aligned and touchable`,
+        alignedCards,
+        alignedCards ? "" : JSON.stringify(failingRows),
+      );
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
+  const sidebarToggle = page.locator("header button[aria-expanded][aria-label]");
+  await sidebarToggle.waitFor({ state: "visible" });
+  if ((await sidebarToggle.getAttribute("aria-expanded")) === "true") await sidebarToggle.click();
+  const collapsedSidebar = page.locator('aside[data-sidebar-collapsed="true"]');
+  await collapsedSidebar.waitFor({ state: "visible" });
+  await page.waitForFunction(() => {
+    const sidebar = document.querySelector<HTMLElement>('aside[data-sidebar-collapsed="true"]');
+    const active = sidebar?.querySelector<HTMLAnchorElement>('a[data-nav-item][aria-current="page"]');
+    const indicator = active?.closest("ul")?.parentElement?.querySelector<HTMLElement>("[data-nav-indicator]");
+    const sidebarWidth = sidebar?.getBoundingClientRect().width;
+    const activeBox = active?.getBoundingClientRect();
+    const indicatorBox = indicator?.getBoundingClientRect();
+    return Boolean(
+      sidebarWidth &&
+        Math.abs(sidebarWidth - 64) <= 1 &&
+        activeBox &&
+        indicatorBox &&
+        Math.abs(activeBox.top - indicatorBox.top) <= 1 &&
+        Math.abs(activeBox.width - indicatorBox.width) <= 1 &&
+        Math.abs(activeBox.height - indicatorBox.height) <= 1,
+    );
+  });
+  const railMetrics = await collapsedSidebar.evaluate((sidebar) => {
+    const sidebarBox = sidebar.getBoundingClientRect();
+    const items = Array.from(sidebar.querySelectorAll<HTMLAnchorElement>("a[data-nav-item]")).map((item) => {
+      const itemBox = item.getBoundingClientRect();
+      const iconBox = item.querySelector("svg")?.getBoundingClientRect();
+      return {
+        width: itemBox.width,
+        height: itemBox.height,
+        iconCenterOffset: iconBox
+          ? Math.abs(iconBox.left + iconBox.width / 2 - (itemBox.left + itemBox.width / 2))
+          : null,
+      };
+    });
+    const active = sidebar.querySelector<HTMLAnchorElement>('a[data-nav-item][aria-current="page"]');
+    const activeGroup = active?.closest("ul")?.parentElement;
+    const indicator = activeGroup?.querySelector<HTMLElement>("[data-nav-indicator]");
+    const activeBox = active?.getBoundingClientRect();
+    const indicatorBox = indicator?.getBoundingClientRect();
+    const activeHighlightAligned = Boolean(
+      activeBox &&
+        indicatorBox &&
+        Math.abs(activeBox.top - indicatorBox.top) <= 1 &&
+        Math.abs(activeBox.width - indicatorBox.width) <= 1 &&
+        Math.abs(activeBox.height - indicatorBox.height) <= 1,
+    );
+    return { width: sidebarBox.width, items, activeHighlightAligned };
+  });
+  const railIsAligned =
+    railMetrics.items.length > 0 &&
+    railMetrics.activeHighlightAligned &&
+    railMetrics.items.every(
+      (item) =>
+        item.width >= railMetrics.width - 20 &&
+        item.height >= 40 &&
+        item.iconCenterOffset !== null &&
+        item.iconCenterOffset <= 1,
+    );
+  check(
+    "sidebar collapsed: centered targets and active highlight stay aligned",
+    railIsAligned,
+    railIsAligned ? "" : JSON.stringify(railMetrics),
+  );
+  await collapsedSidebar.screenshot({ path: ".data/qa/sidebar-collapsed.png" });
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.goto(`${WEB}/login`, { waitUntil: "networkidle" });

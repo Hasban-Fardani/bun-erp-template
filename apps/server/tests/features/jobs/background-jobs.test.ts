@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { rowsOf } from "../../../platform/database/migrate.ts";
 import { claimNextJob, enqueueJob, requeueDeadJob, runNextJob } from "../../../platform/jobs/queue.ts";
 import { JobRegistry } from "../../../platform/jobs/registry.ts";
+import { startJobWorker } from "../../../platform/jobs/worker.ts";
 import type { Logger } from "../../../platform/observability/logger.ts";
 import { createTestContext } from "../../support/fixtures.ts";
 
@@ -55,6 +56,23 @@ test("registered job handlers complete claimed work exactly once", async () => {
   expect(result).toMatchObject({ status: "completed", attempt_count: 1 });
   expect(result?.completed_at).toBeTruthy();
   expect(calls).toEqual([`42:${id}`]);
+});
+
+test("long-lived worker processes queued work and stops gracefully", async () => {
+  const { db } = await createTestContext();
+  const id = await enqueueJob(db, { name: "test.worker_stop", payload: {} });
+  const registry = new JobRegistry();
+  let worker: ReturnType<typeof startJobWorker> | undefined;
+  registry.register("test.worker_stop", async () => worker?.stop());
+
+  worker = startJobWorker({ db, registry, logger });
+  await worker.done;
+
+  const rows = rowsOf<{ status: string; completed_at: Date | null }>(
+    await db.execute(sql`select status, completed_at from background_jobs where id = ${id}`),
+  );
+  expect(rows[0]?.status).toBe("completed");
+  expect(rows[0]?.completed_at).toBeTruthy();
 });
 
 test("handler failures retry with bounded delay then stop at max attempts without storing messages", async () => {

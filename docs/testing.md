@@ -3,13 +3,14 @@
 bun erp check launches Biome, TypeScript and read-only gates concurrently. All results are collected,
 including failures; checks do not build or rewrite files.
 
-bun erp test runs the server, web, mobile, packages/utils, packages/email and packages/pdf suites in sequence. Server tests use
+bun erp test runs the server, web, mobile and shared package suites in sequence. Server tests use
 app.request() without a listening port and run in one worker with a 15-second test timeout: their
 shared database fixture is truncated between tests, and migration tests close and rebuild that
 same context. Running server files concurrently can close a database during an active request or
 seed duplicate rows. The longer timeout covers real migration, seed and auth setup; timeout errors
-still fail the suite. Default storage is PGlite memory://; TEST_DATABASE_URL instead creates and
-drops an isolated PostgreSQL database. The test account needs CREATEDB. Never target production.
+still fail the suite. `TEST_DATABASE_URL` is required and must point to a disposable PostgreSQL
+server with CREATEDB permission; the runner creates and drops a uniquely named `erp_test_*` database.
+Never use `DATABASE_URL` or production credentials as a test target.
 `bun erp check` remains parallel because its checks are read-only and independent.
 
 Schema changes need schema/migration parity. Queue tests cover deduplication, concurrent claims,

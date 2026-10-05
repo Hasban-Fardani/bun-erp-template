@@ -37,7 +37,7 @@ function migrationId(file: string): string {
 
 export { splitSqlStatements } from "./sql-migration.ts";
 
-/** Drizzle `execute()` returns an array (postgres-js) or `{ rows }` (pglite). */
+/** Normalize Drizzle query results at the one boundary used by migrations and fixtures. */
 export function rowsOf<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
   const rows = (result as { rows?: unknown }).rows;

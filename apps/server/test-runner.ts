@@ -2,11 +2,10 @@ import postgres from "postgres";
 
 const target = process.env.TEST_DATABASE_URL;
 if (!target) {
-  const child = Bun.spawn(["bun", "test", "--parallel=1", "--timeout=15000", "apps/server"], {
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  process.exit(await child.exited);
+  process.stderr.write(
+    "TEST_DATABASE_URL is required. Point it at a disposable PostgreSQL database; the test runner creates and drops an isolated erp_test_* database. Never use production credentials.\n",
+  );
+  process.exit(78);
 }
 const name = `erp_test_${crypto.randomUUID().replaceAll("-", "")}`;
 const admin = postgres(target, { max: 1 });

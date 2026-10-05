@@ -18,6 +18,8 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   for (const [key, value] of Object.entries(bindings)) {
     if (typeof value === "string") source[key] = value;
   }
+  source.APP_DEPLOY_TARGET = "cloudflare";
+  source.APP_WEB_MODE = "integrated";
   source.DATABASE_DRIVER = "postgres";
   source.DATABASE_URL = bindings.HYPERDRIVE.connectionString;
   source.LOG_DRIVER = "console";

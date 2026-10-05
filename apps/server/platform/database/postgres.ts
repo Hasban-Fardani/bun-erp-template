@@ -1,7 +1,8 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import type { Database } from "./index.ts";
 import * as schema from "./schema.ts";
+
+export type Database = PostgresJsDatabase<typeof schema>;
 
 export function createPostgresDatabase(connectionString: string, max = 10, fetchTypes = true) {
   const client = postgres(connectionString, { max, fetch_types: fetchTypes, prepare: true, onnotice: () => {} });

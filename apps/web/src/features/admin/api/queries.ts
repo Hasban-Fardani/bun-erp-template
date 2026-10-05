@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import * as z from "zod";
 import { listParams } from "../../../lib/list-params.ts";
 import { call, rpc } from "../../../lib/rpc.ts";
@@ -20,6 +20,7 @@ export const roleListQuery = (query: string) =>
     queryKey: adminKeys.roles(query),
     queryFn: () =>
       call(rpc.roles.$get({ query: listParams(query, z.enum(["key", "name", "isSystem"]).default("key")) })),
+    placeholderData: keepPreviousData,
   });
 
 export const auditQuery = (query: string) =>
@@ -31,4 +32,5 @@ export const auditQuery = (query: string) =>
           query: listParams(query, z.enum(["createdAt", "event", "actorLabel"]).default("createdAt")),
         }),
       ),
+    placeholderData: keepPreviousData,
   });

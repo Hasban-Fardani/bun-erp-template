@@ -114,14 +114,14 @@ export function UsersScreen() {
             rowKey={(u) => u.id}
             result={users.data}
             state={table}
-            pending={users.isPending}
+            pending={users.isFetching}
             error={users.isError ? (users.error as Error).message : undefined}
             searchPlaceholder={t("users.search")}
             empty={{ filtered: false, message: t("users.empty"), noMatchMessage: t("users.noMatch") }}
             labels={labels}
             headerExtra={
               canCreate ? (
-                <Button icon={UserPlus} onClick={openCreate}>
+                <Button data-testid="resource-table-primary-action" icon={UserPlus} onClick={openCreate}>
                   {t("common.add")}
                 </Button>
               ) : null

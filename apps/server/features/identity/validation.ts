@@ -1,3 +1,4 @@
+import { emailAddressSchema } from "@bun-erp/utils/email";
 import * as z from "zod";
 import { listQueryParts } from "../../http/list-query.ts";
 
@@ -13,7 +14,7 @@ export const listUsersSchema = z.strictObject({
 
 export const createUserSchema = z.strictObject({
   name: z.string().trim().min(1).max(120),
-  email: z.email().transform((v) => v.trim().toLowerCase()),
+  email: emailAddressSchema,
   // The admin sets the initial password; users change it themselves once the mail driver (Phase 3) lands.
   password: z.string().min(10).max(200),
   roleKey: z

@@ -1,32 +1,9 @@
 import { resolve } from "node:path";
+import { createDevelopmentEnvironment } from "../tools/development-environment.ts";
 
 const root = resolve(import.meta.dir, "..");
-const apiPort = portFromEnvironment("DEV_API_PORT", 3000);
-const webPort = portFromEnvironment("DEV_WEB_PORT", 5173);
-const webUrl = `http://localhost:${webPort}`;
-
-const exampleEnvironment = await readExampleEnvironment();
-const systemEnvironment = pickSystemEnvironment();
-const serverEnvironment = {
-  ...systemEnvironment,
-  ...exampleEnvironment,
-  APP_ENV: "development",
-  APP_PORT: String(apiPort),
-  APP_RELEASE: "local",
-  APP_URL: webUrl,
-  AUTH_TRUSTED_ORIGINS: `${webUrl},http://127.0.0.1:${webPort}`,
-  BETTER_AUTH_SECRET: createLocalAuthSecret(),
-  BETTER_AUTH_URL: webUrl,
-  DATABASE_DRIVER: "pglite",
-  DATABASE_PATH: resolve(root, ".data/development"),
-  DATABASE_URL: "",
-};
-const webEnvironment = {
-  ...systemEnvironment,
-  NODE_ENV: "development",
-  API_PORT: String(apiPort),
-  VITE_API_BASE_URL: "",
-};
+const development = await createDevelopmentEnvironment();
+const { apiPort, webPort, webUrl } = development;
 
 await Bun.$`mkdir -p ${resolve(root, ".data")}`.quiet();
 
@@ -35,9 +12,10 @@ const processes: { name: string; child: Bun.Subprocess }[] = [];
 try {
   processes.push({
     name: "API",
-    child: Bun.spawn([process.execPath, "--no-env-file", "--watch", "server.ts", "--api-only"], {
+    child: Bun.spawn([process.execPath, "--no-env-file", "--watch", "server.ts", "--api-only", "--with-jobs"], {
       cwd: resolve(root, "apps/server"),
-      env: serverEnvironment,
+      env: development.server,
+      detached: true,
       stdin: "inherit",
       stdout: "inherit",
       stderr: "inherit",
@@ -58,7 +36,8 @@ try {
       ],
       {
         cwd: resolve(root, "apps/web"),
-        env: webEnvironment,
+        env: development.web,
+        detached: true,
         stdin: "inherit",
         stdout: "inherit",
         stderr: "inherit",
@@ -73,7 +52,8 @@ try {
 process.stdout.write(`Web app: ${webUrl}\n`);
 process.stdout.write(`Hono API: ${webUrl}/api (health: ${webUrl}/api/v1/health, docs: ${webUrl}/api/docs).\n`);
 process.stdout.write(`Internal API listener: http://localhost:${apiPort}\n`);
-process.stdout.write("Development uses an isolated local PGlite database; repository .env values are not loaded.\n");
+process.stdout.write("Queue worker: enabled in the API process and sharing its local database connection.\n");
+process.stdout.write("Database: PostgreSQL from .env. CLI commands use the same connection.\n");
 
 let stopping = false;
 const stopOnSignal = () => {
@@ -100,39 +80,4 @@ function stopProcesses(): void {
   for (const { child } of processes) {
     if (child.exitCode === null) child.kill("SIGTERM");
   }
-}
-
-function portFromEnvironment(name: string, fallback: number): number {
-  const candidate = process.env[name];
-  if (candidate === undefined) return fallback;
-  const port = Number(candidate);
-  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-    throw new Error(`${name} must be an integer from 1 to 65535`);
-  }
-  return port;
-}
-
-function pickSystemEnvironment(): Record<string, string> {
-  const safeKeys = ["PATH", "HOME", "TMPDIR", "LANG", "TERM"] as const;
-  return Object.fromEntries(safeKeys.flatMap((key) => (process.env[key] ? [[key, process.env[key] as string]] : [])));
-}
-
-async function readExampleEnvironment(): Promise<Record<string, string>> {
-  const source = await Bun.file(resolve(root, ".env.example")).text();
-  const environment: Record<string, string> = {};
-  for (const line of source.split(/\r?\n/)) {
-    const match = /^([A-Z][A-Z0-9_]*)=(.*)$/.exec(line.trim());
-    if (!match) continue;
-    const key = match[1];
-    let value = match[2]?.trim() ?? "";
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-    if (key) environment[key] = value;
-  }
-  return environment;
-}
-
-function createLocalAuthSecret(): string {
-  return [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()].join("");
 }

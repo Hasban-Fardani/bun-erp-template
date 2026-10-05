@@ -4,6 +4,7 @@ import { type AppContext, resolveDefaultOrganizationId } from "../../../context.
 import { redactEntity } from "../../../features/audit/redact.ts";
 import { auditLogs } from "../../../features/audit/schema.ts";
 import { accounts } from "../../../features/identity/schema.ts";
+import { createUser } from "../../../features/identity/service.ts";
 import { permissions, roles } from "../../../features/rbac/schema.ts";
 import { assignRole, permissionsForUser, rolesForUser, seedRbac } from "../../../features/rbac/service.ts";
 import { createApp } from "../../../http/app.ts";
@@ -81,6 +82,18 @@ describe("identity", () => {
     await signUp("salah@example.test");
     const res = await signIn("salah@example.test", "sandi-yang-salah-panjang");
     expect(res.status).toBe(401);
+  });
+
+  test("a user created through the CLI service can sign in through Better Auth", async () => {
+    await createUser(
+      ctx.db,
+      orgId,
+      { name: "CLI User", email: "cli-user@example.test", password: "password-cli-yang-valid" },
+      { userId: null, traceId: "test-cli-user-create", label: "cli" },
+    );
+
+    const response = await signIn("cli-user@example.test", "password-cli-yang-valid");
+    expect(response.status).toBe(200);
   });
 
   test("anonymous request to a private route is 401 UNAUTHORIZED", async () => {

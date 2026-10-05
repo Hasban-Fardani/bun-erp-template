@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { AGENT_SKILL_SOURCES } from "../tools/agent-skills.ts";
 
 const root = resolve(import.meta.dir, "..");
 const CODEGRAPH_VERSION = "1.6.2";
@@ -20,29 +21,41 @@ if (await Bun.file(codegraphDatabase).exists()) {
   );
 }
 
-const requiredSkills = ["grill-me", "grilling"] as const;
-const skillFiles = requiredSkills.map((skill) => resolve(root, `.agents/skills/${skill}/SKILL.md`));
-if (await Promise.all(skillFiles.map((file) => Bun.file(file).exists())).then((results) => results.every(Boolean))) {
-  process.stdout.write("Required Matthew Pocock skills are already installed.\n");
-} else {
+for (const source of AGENT_SKILL_SOURCES) {
+  const missing = await Promise.all(
+    source.skills.map(async (skill) =>
+      (await Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()) ? undefined : skill,
+    ),
+  ).then((skills) => skills.filter((skill): skill is string => skill !== undefined));
+
+  if (missing.length === 0) {
+    process.stdout.write(`Required skills from ${source.repository} are already installed.\n`);
+    continue;
+  }
+
   await run(
     [
       "bunx",
       "--bun",
       `skills@${SKILLS_CLI_VERSION}`,
       "add",
-      "mattpocock/skills",
+      source.repository,
       "--skill",
-      ...requiredSkills,
+      ...missing,
       "--agent",
       "codex",
       "--copy",
       "--yes",
     ],
-    "Matthew Pocock skills setup",
+    `${source.repository} skills setup`,
   );
-  const installed = await Promise.all(skillFiles.map((file) => Bun.file(file).exists()));
-  if (installed.some((ready) => !ready)) throw new Error("Required grill-me skills were not installed");
+
+  const installed = await Promise.all(
+    missing.map((skill) => Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()),
+  );
+  if (installed.some((ready) => !ready)) {
+    throw new Error(`Required skills from ${source.repository} were not installed: ${missing.join(", ")}`);
+  }
 }
 
 process.stdout.write("Agent skills are installed and the current project is indexed by CodeGraph.\n");

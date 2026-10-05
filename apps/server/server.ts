@@ -1,23 +1,42 @@
 import { createContext } from "./bootstrap.ts";
 import { resolveDefaultOrganizationId } from "./context.ts";
+import { createJobRegistry } from "./features/jobs.ts";
 import { createApp } from "./http/app.ts";
 import { createHostFetch } from "./http/host.ts";
 import { createWebAssetsApp } from "./http/web-assets.ts";
-import { ConfigError } from "./platform/config/index.ts";
+import { ConfigError, loadEnv } from "./platform/config/index.ts";
 import { seed } from "./platform/database/seed.ts";
+import { startJobWorker } from "./platform/jobs/worker.ts";
 
 const apiOnly = process.argv.includes("--api-only");
 const webDist = `${import.meta.dir}/../web/dist`;
 
 async function main(): Promise<void> {
-  if (!apiOnly && !(await Bun.file(`${webDist}/index.html`).exists())) {
+  let env: ReturnType<typeof loadEnv>;
+  try {
+    env = loadEnv();
+    if (env.APP_DEPLOY_TARGET !== "bun") {
+      throw new ConfigError([
+        "APP_DEPLOY_TARGET=cloudflare uses `bun erp cloudflare:dev` or `bun erp cloudflare:deploy`",
+      ]);
+    }
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      process.stderr.write(`${err.message}\n`);
+      process.exit(78);
+    }
+    throw err;
+  }
+
+  const servesWeb = !apiOnly && env.APP_WEB_MODE === "integrated";
+  if (servesWeb && !(await Bun.file(`${webDist}/index.html`).exists())) {
     process.stderr.write("Web build not found. Run `bun erp build` before `bun start`.\n");
     process.exit(1);
   }
 
   let ctx: Awaited<ReturnType<typeof createContext>>;
   try {
-    ctx = await createContext();
+    ctx = await createContext({ env });
   } catch (err) {
     // Invalid config must surface at bootstrap, not on the first request.
     if (err instanceof ConfigError) {
@@ -32,20 +51,23 @@ async function main(): Promise<void> {
 
   const organizationId = await resolveDefaultOrganizationId(ctx.db);
   const app = createApp(ctx, organizationId);
-  const webApp = apiOnly ? undefined : createWebAssetsApp(webDist, ctx.env.isProduction);
+  const webApp = servesWeb ? createWebAssetsApp(webDist, ctx.env.isProduction) : undefined;
   const server = Bun.serve({
     port: ctx.env.APP_PORT,
     fetch: createHostFetch(app.fetch, webApp?.fetch),
   });
+  const jobWorker = process.argv.includes("--with-jobs")
+    ? startJobWorker({ db: ctx.db, registry: createJobRegistry(), logger: ctx.logger })
+    : undefined;
 
   ctx.logger.info({
     event: "server.started",
     port: server.port,
-    mode: apiOnly ? "api-only" : "web-and-api",
+    mode: servesWeb ? "web-and-api" : "api-only",
     app_url: ctx.env.APP_URL,
     listen_url: `http://localhost:${server.port}`,
     api_url: `${ctx.env.APP_URL}/api`,
-    web_path: apiOnly ? undefined : "/",
+    web_path: servesWeb ? "/" : undefined,
     api_path: "/api",
     api_prefix: "/api/v1",
     health_path: "/api/v1/health",
@@ -55,14 +77,37 @@ async function main(): Promise<void> {
     database_driver: ctx.env.DATABASE_DRIVER,
   });
 
-  const shutdown = async (signal: string): Promise<void> => {
-    ctx.logger.info({ event: "server.stopping", signal });
-    await server.stop();
-    await ctx.close();
-    process.exit(0);
+  let shutdownTask: Promise<void> | undefined;
+  const shutdown = (signal: string): Promise<void> => {
+    if (shutdownTask) return shutdownTask;
+    shutdownTask = shutdownOnce(signal);
+    return shutdownTask;
   };
-  process.on("SIGTERM", () => void shutdown("SIGTERM"));
-  process.on("SIGINT", () => void shutdown("SIGINT"));
+
+  async function shutdownOnce(signal: string): Promise<void> {
+    ctx.logger.info({ event: "server.stopping", signal });
+    jobWorker?.stop();
+    try {
+      await server.stop();
+      if (jobWorker) await jobWorker.done;
+    } finally {
+      await ctx.close();
+    }
+    ctx.logger.info({ event: "server.stopped" });
+  }
+
+  const requestShutdown = (signal: string) => {
+    void shutdown(signal).catch((error: unknown) => {
+      ctx.logger.error({ event: "server.shutdown_failed", errorCode: errorCode(error) });
+      process.exitCode = 1;
+    });
+  };
+  process.once("SIGTERM", () => requestShutdown("SIGTERM"));
+  process.once("SIGINT", () => requestShutdown("SIGINT"));
 }
 
 await main();
+
+function errorCode(error: unknown): string {
+  return error instanceof Error && /^[A-Z][A-Z0-9_]{0,79}$/.test(error.name) ? error.name : "SERVER_SHUTDOWN_FAILED";
+}

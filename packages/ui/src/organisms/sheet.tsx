@@ -12,6 +12,7 @@ export function Sheet({
   onOpenChange,
   title,
   side = "left",
+  mobileSide = side === "right" ? "bottom" : side,
   children,
   className,
   titleHidden = false,
@@ -20,6 +21,8 @@ export function Sheet({
   onOpenChange: (open: boolean) => void;
   title: string;
   side?: "left" | "right";
+  /** Forms open from the bottom on narrow screens while retaining their desktop side. */
+  mobileSide?: "left" | "right" | "bottom";
   children: ReactNode;
   className?: string;
   /** Hide the title bar when the content carries its own header; the name stays readable to a screen reader. */
@@ -28,11 +31,12 @@ export function Sheet({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay data-slot="overlay" className="fixed inset-0 z-40 bg-stone-950/40 backdrop-blur-[2px]" />
+        <Dialog.Overlay data-slot="sheet-overlay" className="fixed inset-0 z-40 bg-stone-950/40 backdrop-blur-[2px]" />
         <Dialog.Content
           aria-describedby={undefined}
-          data-slot="panel"
+          data-slot="sheet-panel"
           data-side={side}
+          data-mobile-side={mobileSide}
           className={cn(
             "fixed inset-y-0 z-50 flex w-full max-w-sm flex-col border-border bg-surface shadow-lg outline-none",
             side === "left" ? "left-0 w-64 border-r" : "right-0 border-l",

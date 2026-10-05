@@ -75,7 +75,8 @@ describe("compiled schema parity", () => {
       LOG_RETENTION_DAYS: "14",
       LOG_MAX_SIZE_MB: "100",
       TRUST_PROXY: "false",
-      DATABASE_DRIVER: "pglite",
+      DATABASE_DRIVER: "postgres",
+      DATABASE_URL: "postgresql://local.test/bun-erp",
       BETTER_AUTH_URL: "http://localhost:3000",
       STORAGE_DRIVER: "local",
       MAIL_DRIVER: "log",
@@ -86,6 +87,38 @@ describe("compiled schema parity", () => {
     const b = EnvRawSchema.safeParse(input);
     expect(a.success).toBe(true);
     expect(a.success && b.success ? a.data : null).toEqual(b.success ? b.data : null);
+    if (a.success) {
+      expect(a.data.APP_DEPLOY_TARGET).toBe("bun");
+      expect(a.data.APP_WEB_MODE).toBe("integrated");
+    }
+  });
+
+  test("Cloudflare deployment rejects separately hosted web assets", () => {
+    const result = EnvSchema.safeParse({
+      APP_NAME: "Bun ERP Template",
+      APP_ENV: "development",
+      APP_URL: "http://localhost:3000",
+      APP_PORT: "3000",
+      APP_RELEASE: "dev",
+      APP_TIMEZONE: "UTC",
+      APP_DEPLOY_TARGET: "cloudflare",
+      APP_WEB_MODE: "separate",
+      LOG_DRIVER: "console",
+      LOG_LEVEL: "debug",
+      LOG_PATH: ".data/logs/app.log",
+      LOG_RETENTION_DAYS: "14",
+      LOG_MAX_SIZE_MB: "100",
+      DATABASE_DRIVER: "postgres",
+      DATABASE_URL: "postgresql://local.test/bun-erp",
+      BETTER_AUTH_URL: "http://localhost:3000",
+      STORAGE_DRIVER: "local",
+      MAIL_DRIVER: "log",
+      MAIL_FROM_ADDRESS: "no-reply@example.test",
+      MAIL_FROM_NAME: "Bun ERP Template",
+    });
+    expect(result.success).toBe(false);
+    const paths = result.success ? [] : result.error.issues.map((issue) => issue.path.join("."));
+    expect(paths).toContain("APP_WEB_MODE");
   });
 
   test("hybrid deployment: BETTER_AUTH_URL may differ from APP_URL when trusted (ADR-0011)", () => {
@@ -157,7 +190,8 @@ describe("compiled schema parity", () => {
       LOG_PATH: "/var/log/bun-erp/app.log",
       LOG_RETENTION_DAYS: "14",
       LOG_MAX_SIZE_MB: "100",
-      DATABASE_DRIVER: "pglite",
+      DATABASE_DRIVER: "postgres",
+      DATABASE_URL: "postgresql://local.test/bun-erp",
       BETTER_AUTH_URL: "https://erp.example.test",
       STORAGE_DRIVER: "local",
       MAIL_DRIVER: "log",

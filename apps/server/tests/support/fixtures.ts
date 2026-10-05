@@ -12,8 +12,14 @@ import { rowsOf } from "../../platform/database/migrate.ts";
 import { seed } from "../../platform/database/seed.ts";
 
 const MIGRATIONS_DIR = resolve(import.meta.dir, "../../migrations");
+const databaseUrl = testDatabaseUrl();
+if (!databaseUrl) {
+  throw new Error(
+    "TEST_DATABASE_URL is required; run tests with a disposable PostgreSQL database, never production data.",
+  );
+}
 
-/** Test env: PGlite in memory, no `.data` files that can leak between tests. */
+/** Tests use the runner's isolated, disposable PostgreSQL database. */
 export const testEnv: Env = loadEnv({
   APP_NAME: "Bun ERP Template",
   APP_ENV: "test",
@@ -27,9 +33,8 @@ export const testEnv: Env = loadEnv({
   LOG_RETENTION_DAYS: "1",
   LOG_MAX_SIZE_MB: "1",
   TRUST_PROXY: "false",
-  DATABASE_DRIVER: testDatabaseUrl() ? "postgres" : "pglite",
-  DATABASE_PATH: "memory://",
-  DATABASE_URL: testDatabaseUrl() ?? "",
+  DATABASE_DRIVER: "postgres",
+  DATABASE_URL: databaseUrl,
   DATABASE_POOL_MAX: "1",
   DATABASE_SSL_MODE: "disable",
   BETTER_AUTH_URL: "http://localhost:3000",
@@ -66,13 +71,11 @@ export async function createTestContext(): Promise<AppContext> {
 export async function disposeTestContext(): Promise<void> {
   if (!shared) return;
   const context = await shared;
-  if (context.env.DATABASE_DRIVER === "postgres") {
-    // Real PostgreSQL persists functions after disconnect; only the runner's scratch DB may reset.
-    const databaseName = new URL(context.env.DATABASE_URL).pathname;
-    if (!databaseName.startsWith("/erp_test_")) throw new Error("Refusing to reset a non-test database");
-    await context.db.execute(sql`drop schema public cascade`);
-    await context.db.execute(sql`create schema public`);
-  }
+  // Real PostgreSQL persists functions after disconnect; only the runner's scratch DB may reset.
+  const databaseName = new URL(context.env.DATABASE_URL).pathname;
+  if (!databaseName.startsWith("/erp_test_")) throw new Error("Refusing to reset a non-test database");
+  await context.db.execute(sql`drop schema public cascade`);
+  await context.db.execute(sql`create schema public`);
   await context.close();
   shared = undefined;
 }

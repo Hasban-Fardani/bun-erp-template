@@ -33,10 +33,13 @@ rules without a separate product spec.
 - Shared localization lives in packages/i18n; rich-text UI lives in packages/editor and persists
   Lexical JSON. Email and PDF components are opt-in packages; keep browser PDF rendering out of
   the Cloudflare Worker dependency graph.
-- Server database drivers are PGlite for local/test work and PostgreSQL for production. DATABASE_PATH
-  names the local database directory; mobile SQLite is a separate offline store.
+- Server persistence always uses PostgreSQL through postgres.js. Tests require a disposable
+  PostgreSQL URL; mobile SQLite is a separate offline store.
 - Queue handlers are at-least-once: keep them idempotent and enqueue in the feature write transaction.
 - API routes are versioned under /api/v1. Keep 401 (no session), 403 (no permission), and 404 (no row) distinct.
+- Browser QA is Playwright-only. Run `bun run qa` against local/non-production data; do not add or run Cypress.
+- `bun erp role:list` shows role keys. The first `bun erp user:create` account defaults to owner; subsequent accounts default to staff. Use `--role` to choose explicitly.
+- `bun erp make:feature`, `make:migration`, and `make:seeder` create the supported starting points. Migrations are forward-only TypeScript; feature route mounting stays explicit for Hono RPC inference.
 - Comments, technical names, enum values, and configuration keys use English. User-facing copy may be localized.
 - Never commit secrets, weaken gates, or claim unrun tests. Dependencies must be exact-pinned and necessary.
 

@@ -103,7 +103,7 @@ export function RolesScreen() {
               rowKey={(role) => role.id}
               result={roles.data}
               state={table}
-              pending={roles.isPending}
+              pending={roles.isFetching}
               error={roles.isError ? (roles.error as Error).message : undefined}
               searchPlaceholder={t("roles.search")}
               empty={{ filtered: false, message: t("roles.empty"), noMatchMessage: t("roles.noMatch") }}

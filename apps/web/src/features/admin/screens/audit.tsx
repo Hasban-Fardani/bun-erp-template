@@ -107,7 +107,7 @@ export function AuditScreen() {
               rowKey={(log) => log.id}
               result={logs.data}
               state={table}
-              pending={logs.isPending}
+              pending={logs.isFetching}
               error={logs.isError ? (logs.error as Error).message : undefined}
               searchPlaceholder={t("audit.search")}
               empty={{ filtered: false, message: t("audit.empty"), noMatchMessage: t("audit.noMatch") }}

@@ -1,28 +1,42 @@
 # Deployment
 
-Use a deployment-owned environment and secret store. Set APP_ENV=production, APP_RELEASE,
-DATABASE_DRIVER=postgres, DATABASE_URL and a strong BETTER_AUTH_SECRET. Run bun erp check,
+Use a deployment-owned environment and secret store. Set APP_DEPLOY_TARGET to `bun` or
+`cloudflare`, and APP_WEB_MODE to `integrated` or `separate` (Cloudflare requires `integrated`). Set
+APP_ENV=production, APP_RELEASE, DATABASE_DRIVER=postgres, DATABASE_URL and a strong
+BETTER_AUTH_SECRET. Run bun erp check,
 bun erp test, apply forward-only migrations, seed base records and verify readiness. Review each
 migration against the target PostgreSQL version before application.
 
 ## Bun host
 
-Build and run the default semi-monolith with `bun erp build` then `bun start`. One Bun listener serves
+Set `APP_DEPLOY_TARGET=bun`. For integrated hosting, set `APP_WEB_MODE=integrated`; build and run the
+semi-monolith with `bun erp build` then `bun start`. One Bun listener serves
 the Vite build from `apps/web/dist` at `/` and Hono routes under `/api/*`; client-side routes fall
 back to `index.html`, hashed assets get immutable caching, and the entry HTML is revalidated. The
 server fails before database bootstrap when the web build is missing. Put it behind a TLS-terminating
 reverse proxy on a VPS and keep the application port private to that proxy.
 
-For a separately hosted frontend, use `bun erp server:api` and set `VITE_API_BASE_URL` to the public
+The root Dockerfile builds the integrated web app, installs production dependencies, and runs the Bun
+server as the non-root `bun` user. It starts the queue worker alongside HTTP handling. Build with
+`docker build -t bun-erp-template .`; supply production settings through the host's secret/environment
+manager, not a committed env file. `compose.yaml` is a local development stack with PostgreSQL and
+local storage; it binds the app port to loopback and is not a production preset. Production still needs
+HTTPS at a reverse proxy, a strong `BETTER_AUTH_SECRET`, `APP_ENV=production`, and durable database
+backups. The current template has no file upload feature or storage adapter, so do not add file-backed
+features to production until an object-storage adapter and its configuration are implemented.
+
+For a separately hosted frontend, set `APP_WEB_MODE=separate`, build the Vite app, and use
+`bun erp server:api`; set `VITE_API_BASE_URL` to the public
 HTTPS API origin at web build time. Run a separate `bun erp jobs:work` process for durable jobs. Use
-PostgreSQL for API and queue state; local PGlite files are not a production data store. Hono applies
+PostgreSQL for API and queue state. Hono applies
 secure response headers to API and Bun-hosted web responses. Production responses enable six-month
 HSTS without `includeSubDomains`; serve the app over HTTPS through the VPS reverse proxy.
 
 ## Cloudflare Workers
 
-wrangler.jsonc is source configuration for the Cloudflare Vite plugin. bun erp cloudflare:build
-generates a Worker bundle and web assets; deploy the generated
+Set `APP_DEPLOY_TARGET=cloudflare` and `APP_WEB_MODE=integrated`. wrangler.jsonc is source
+configuration for the Cloudflare Vite plugin. `bun erp build` or `bun erp cloudflare:build` generates
+a Worker bundle and web assets; deploy the generated
 apps/web/dist/bun_erp_template/wrangler.json. The build removes the Vite plugin's generated local
 .dev.vars file so local secrets do not remain in the deploy output. The asset directory contains
 the Vite client build, not the Worker bundle. /api and /api/* reach the shared Hono Worker and

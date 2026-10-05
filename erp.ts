@@ -9,7 +9,9 @@ import { resolveDefaultOrganizationId } from "./apps/server/context.ts";
 import { recordAudit, snapshot } from "./apps/server/features/audit/service.ts";
 import { accounts, users } from "./apps/server/features/identity/schema.ts";
 import { createUser, hashPassword } from "./apps/server/features/identity/service.ts";
+import { createUserSchema } from "./apps/server/features/identity/validation.ts";
 import { createJobRegistry } from "./apps/server/features/jobs.ts";
+import { roles as roleTable } from "./apps/server/features/rbac/schema.ts";
 import { assignRole, findRoleByKey, rolesForUser } from "./apps/server/features/rbac/service.ts";
 import { createApp } from "./apps/server/http/app.ts";
 import { loadEnv, strayKeyWarnings } from "./apps/server/platform/config/index.ts";
@@ -18,12 +20,21 @@ import { migrate, rowsOf } from "./apps/server/platform/database/migrate.ts";
 import { organizations } from "./apps/server/platform/database/schema.ts";
 import { seed } from "./apps/server/platform/database/seed.ts";
 import { requeueDeadJob, runJobBatch } from "./apps/server/platform/jobs/queue.ts";
+import { startJobWorker } from "./apps/server/platform/jobs/worker.ts";
+import {
+  nextMigrationFile,
+  renderFeatureGuide,
+  renderMigrationSource,
+  renderSeederSource,
+  toKebabName,
+} from "./tools/scaffolding.ts";
 import { checkScope } from "./tools/scope.ts";
 import { validateSkills } from "./tools/skills.ts";
 import { loadTasks, validateTasks } from "./tools/tasks.ts";
 
 const repoRoot = resolve(import.meta.dir);
 const MIGRATIONS_DIR = resolve(repoRoot, "apps/server/migrations");
+const SEEDERS_DIR = resolve(repoRoot, "apps/server/seeders");
 const TASKS_DIR = resolve(repoRoot, "docs/tasks");
 const SKILLS_DIR = resolve(repoRoot, "skills");
 
@@ -61,7 +72,7 @@ const HELP_GROUPS: ReadonlyArray<{
       ["init", "Install the project agent tooling"],
       ["doctor", "Check local environment and database readiness"],
       ["dev", "Start the web app with API and Vite HMR"],
-      ["build", "Build the web app for the Bun server"],
+      ["build", "Build the target selected by APP_DEPLOY_TARGET"],
       ["preview", "Preview the built web app"],
       ["server:api", "Run the API without serving web assets"],
     ],
@@ -76,11 +87,19 @@ const HELP_GROUPS: ReadonlyArray<{
     ],
   },
   {
+    title: "Generators",
+    commands: [
+      ["make:feature <name>", "Create a feature workspace guide"],
+      ["make:migration <name>", "Create a numbered TypeScript migration scaffold"],
+      ["make:seeder <name>", "Create an idempotent feature seeder scaffold"],
+    ],
+  },
+  {
     title: "Database",
     commands: [
       ["db:migrate", "Apply pending TypeScript migrations"],
       ["db:status", "Show applied and pending migrations"],
-      ["db:seed", "Seed infrastructure data"],
+      ["db:seed [seeder]", "Seed infrastructure and feature data"],
     ],
   },
   {
@@ -89,7 +108,8 @@ const HELP_GROUPS: ReadonlyArray<{
       ["route:list", "List routes from the assembled Hono app"],
       ["env:list", "Show safe configuration values and warnings"],
       ["key:generate", "Generate the local authentication secret"],
-      ["user:create", "Create a user from the command line"],
+      ["role:list", "List available role keys for this organization"],
+      ["user:create <email> <password> [--role <key>] [--name <name>]", "Create a user in the configured database"],
       ["user:grant", "Grant a role to a user"],
       ["user:passwd", "Reset a user's password"],
       ["user:list", "List users and their roles"],
@@ -143,6 +163,29 @@ async function run(argv: readonly string[], label: string): Promise<void> {
   if (code !== 0) {
     process.stderr.write(`${label} failed with exit ${code}\n`);
     process.exit(code);
+  }
+}
+
+function deploymentTarget(): "bun" | "cloudflare" {
+  const target = process.env.APP_DEPLOY_TARGET ?? "bun";
+  if (target !== "bun" && target !== "cloudflare") {
+    throw new Error(`Unsupported APP_DEPLOY_TARGET=${target}. Implemented targets: bun, cloudflare.`);
+  }
+  return target;
+}
+
+async function buildCloudflare(): Promise<void> {
+  const webMode = process.env.APP_WEB_MODE ?? "integrated";
+  if (webMode !== "integrated") {
+    throw new Error("Cloudflare currently requires APP_WEB_MODE=integrated.");
+  }
+
+  const generatedLocalBindings = resolve(repoRoot, "apps/web/dist/bun_erp_template/.dev.vars");
+  try {
+    await run(["bun", "run", "--cwd", "apps/web", "build:cloudflare"], "Cloudflare Worker build");
+  } finally {
+    // The Vite plugin can materialize values from a local .env for development; they never belong in deploy output.
+    await Bun.$`rm -f ${generatedLocalBindings}`.quiet();
   }
 }
 
@@ -214,7 +257,11 @@ async function runGate(
     findings = (await checkInteractiveSurface(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
   } else if (kind === "design") {
     const { checkDesign } = await import("./tools/design-gate.ts");
-    findings = (await checkDesign(repoRoot)).map((f) => `${f.screen} ${f.code}/${f.severity} — ${f.detail}`);
+    const { checkContrast } = await import("./tools/contrast-gate.ts");
+    findings = [
+      ...(await checkDesign(repoRoot)).map((f) => `${f.screen} ${f.code}/${f.severity} — ${f.detail}`),
+      ...(await checkContrast(repoRoot)),
+    ];
   } else if (kind === "shadcn") {
     const { checkShadcn } = await import("./tools/shadcn-guard.ts");
     findings = (await checkShadcn(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
@@ -293,6 +340,44 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await guard("versioning", () => runGate("versioning"));
     process.stdout.write("Workspace versions OK.\n");
   },
+  "make:feature": async (args) => {
+    const rawName = args[0];
+    if (!rawName) {
+      process.stderr.write("Usage: bun erp make:feature <name>\n");
+      process.exit(1);
+    }
+    const name = toKebabName(rawName, "Feature");
+    const target = resolve(repoRoot, `apps/server/features/${name}/README.md`);
+    await writeScaffold(target, renderFeatureGuide(name));
+    process.stdout.write(`Created feature guide: apps/server/features/${name}/README.md\n`);
+    process.stdout.write(
+      "Feature routes are mounted explicitly in apps/server/http/routes.ts to preserve Hono RPC types.\n",
+    );
+  },
+  "make:migration": async (args) => {
+    const rawName = args[0];
+    if (!rawName) {
+      process.stderr.write("Usage: bun erp make:migration <name>\n");
+      process.exit(1);
+    }
+    const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
+    const file = nextMigrationFile(existing, rawName);
+    await writeScaffold(resolve(MIGRATIONS_DIR, file), renderMigrationSource());
+    process.stdout.write(`Created migration scaffold: apps/server/migrations/${file}\n`);
+    process.stdout.write("Implement its forward-only schema change before running bun erp db:migrate.\n");
+  },
+  "make:seeder": async (args) => {
+    const rawName = args[0];
+    if (!rawName) {
+      process.stderr.write("Usage: bun erp make:seeder <name>\n");
+      process.exit(1);
+    }
+    const name = toKebabName(rawName, "Seeder");
+    const target = resolve(SEEDERS_DIR, `${name}.ts`);
+    await writeScaffold(target, renderSeederSource());
+    process.stdout.write(`Created seeder scaffold: apps/server/seeders/${name}.ts\n`);
+    process.stdout.write("`bun erp db:seed` runs all feature seeders; add deterministic, idempotent data first.\n");
+  },
   "check:language": async () => {
     await guard("language", () => runGate("language"));
     process.stdout.write("Technical language OK.\n");
@@ -346,13 +431,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await run(["bun", "run", "--cwd", "apps/web", "dev:cloudflare"], "Cloudflare Workers dev");
   },
   "cloudflare:build": async () => {
-    const generatedLocalBindings = resolve(repoRoot, "apps/web/dist/bun_erp_template/.dev.vars");
-    try {
-      await run(["bun", "run", "--cwd", "apps/web", "build:cloudflare"], "Cloudflare Worker build");
-    } finally {
-      // The Vite plugin can materialize values from a local .env for development; they never belong in deploy output.
-      await Bun.$`rm -f ${generatedLocalBindings}`.quiet();
-    }
+    await buildCloudflare();
   },
   "cloudflare:deploy": async () => {
     await run(["bun", "erp.ts", "cloudflare:build"], "Cloudflare Worker build");
@@ -400,7 +479,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     const envFile = await Bun.file(resolve(repoRoot, ".env")).exists();
     checks.push([".env present", envFile, envFile ? "found" : "copy .env.example -> .env"]);
     try {
-      const ctx = await createContext({ migrateOnStart: false });
+      const ctx = await createCliContext({ migrateOnStart: false });
       await ctx.db.execute(sql`select 1`);
       checks.push(["database reachable", true, loadEnv().DATABASE_DRIVER]);
       const orgs = await ctx.db.select({ id: organizations.id }).from(organizations).limit(1);
@@ -425,6 +504,11 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
   /** Build the client assets served by the default Bun web-and-API server. */
   build: async () => {
+    if (deploymentTarget() === "cloudflare") {
+      await buildCloudflare();
+      process.stdout.write("build: OK — Cloudflare Worker and static assets are in apps/web/dist\n");
+      return;
+    }
     await run(["bun", "run", "--cwd", "apps/web", "build"], "web build (vite)");
     process.stdout.write("build: OK — output in apps/web/dist\n");
   },
@@ -453,7 +537,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
   "route:list": async () => {
     // Routes are read from the app as actually assembled — not a hardcoded list that can go stale.
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
     const routes = app.routes
       .filter((r) => r.method !== "ALL")
@@ -466,21 +550,107 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
   // Chicken-and-egg escape hatch: the first owner cannot be created over HTTP that requires a role.
   "user:create": async (args) => {
-    const [email, password, roleKey = "staff", name] = args;
+    const [email, password, ...options] = args;
     if (!email || !password) {
-      process.stderr.write("Usage: bun erp user:create <email> <password> [roleKey] [name]\n");
+      process.stderr.write("Usage: bun erp user:create <email> <password> [--role <key>] [--name <name>]\n");
+      process.stderr.write(
+        "Run `bun erp role:list` to see available roles. The first user defaults to owner; later users default to staff.\n",
+      );
       process.exit(1);
     }
-    const ctx = await createContext({ migrateOnStart: false });
-    const organizationId = await resolveDefaultOrganizationId(ctx.db);
-    const created = await createUser(
-      ctx.db,
-      organizationId,
-      { email, password, roleKey, name: name ?? email.split("@")[0] ?? "User" },
-      { userId: null, traceId: `cli-${Date.now()}`, label: "cli" },
-    );
-    process.stdout.write(`Created ${created.email} (${created.roles.map((r) => r.key).join(", ") || "tanpa role"})\n`);
-    await ctx.close();
+    let roleKey: string | undefined;
+    let name: string | undefined;
+    const positional: string[] = [];
+    for (let index = 0; index < options.length; index += 1) {
+      const option = options[index];
+      if (option === "--role" || option === "--name") {
+        const value = options[index + 1];
+        if (!value || value.startsWith("--")) throw new Error(`${option} requires a value`);
+        if (option === "--role") roleKey = value;
+        else name = value;
+        index += 1;
+        continue;
+      }
+      if (option?.startsWith("--")) throw new Error(`Unknown option: ${option}`);
+      positional.push(option ?? "");
+    }
+
+    if (positional.length > 0) {
+      if (roleKey) throw new Error("Use either --role or the legacy positional role, not both");
+      roleKey = positional[0];
+      if (positional.length > 1) name = positional.slice(1).join(" ");
+    }
+
+    const parsedInput = createUserSchema.safeParse({
+      email,
+      password,
+      name: name ?? email.split("@")[0] ?? "User",
+      ...(roleKey ? { roleKey } : {}),
+    });
+    if (!parsedInput.success) {
+      const details = parsedInput.error.issues
+        .map((issue) => `${issue.path.join(".") || "input"}: ${issue.message}`)
+        .join("\n");
+      process.stderr.write(`Invalid user details:\n${details}\n`);
+      process.exit(1);
+    }
+
+    const env = loadEnv();
+    const ctx = await createCliContext({ migrateOnStart: false, env });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const existingUser = await ctx.db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.organizationId, organizationId))
+        .limit(1);
+      roleKey ??= existingUser.length === 0 ? "owner" : "staff";
+
+      const availableRoles = await ctx.db
+        .select({ key: roleTable.key })
+        .from(roleTable)
+        .where(eq(roleTable.organizationId, organizationId))
+        .orderBy(roleTable.key);
+      const roleKeys = availableRoles.map(({ key }) => key);
+      if (!roleKeys.includes(roleKey)) {
+        throw new Error(
+          `Unknown role "${roleKey}". Available: ${roleKeys.join(", ") || "none"}. Run bun erp role:list.`,
+        );
+      }
+
+      const created = await createUser(
+        ctx.db,
+        organizationId,
+        { ...parsedInput.data, roleKey },
+        { userId: null, traceId: `cli-${Date.now()}`, label: "cli" },
+      );
+      const target = `configured database (${ctx.env.APP_ENV}/${ctx.env.DATABASE_DRIVER})`;
+      process.stdout.write(`Created ${created.email} (${created.roles.map((r) => r.key).join(", ")}) in ${target}.\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "role:list": async () => {
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const availableRoles = await ctx.db
+        .select({ key: roleTable.key, name: roleTable.name, isSystem: roleTable.isSystem })
+        .from(roleTable)
+        .where(eq(roleTable.organizationId, organizationId))
+        .orderBy(roleTable.key);
+      if (availableRoles.length === 0) {
+        process.stdout.write("No roles found. Run `bun erp db:seed` first.\n");
+        return;
+      }
+      for (const role of availableRoles) {
+        process.stdout.write(`${role.key.padEnd(16)} ${role.name}${role.isSystem ? " (system)" : ""}\n`);
+      }
+      process.stdout.write("Use a role key with `bun erp user:create ... --role <key>`.\n");
+    } finally {
+      await ctx.close();
+    }
   },
 
   "user:grant": async (args) => {
@@ -489,7 +659,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
       process.stderr.write("Usage: bun erp user:grant <email> [roleKey]\n");
       process.exit(1);
     }
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     const organizationId = await resolveDefaultOrganizationId(ctx.db);
     const userRows = await ctx.db.select().from(users).where(eq(users.email, email)).limit(1);
     const user = userRows[0];
@@ -500,7 +670,14 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     }
     const role = await findRoleByKey(ctx.db, organizationId, roleKey);
     if (!role) {
-      process.stderr.write(`No role "${roleKey}" in this organization. Run: bun erp db:seed\n`);
+      const available = await ctx.db
+        .select({ key: roleTable.key })
+        .from(roleTable)
+        .where(eq(roleTable.organizationId, organizationId))
+        .orderBy(roleTable.key);
+      process.stderr.write(
+        `No role "${roleKey}" in this organization. Available: ${available.map(({ key }) => key).join(", ") || "none"}. Run: bun erp role:list\n`,
+      );
       await ctx.close();
       process.exit(1);
     }
@@ -527,7 +704,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
       process.exit(1);
     }
     const password = newPassword ?? Array.from({ length: 3 }, () => Math.random().toString(36).slice(2, 6)).join("-");
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     const organizationId = await resolveDefaultOrganizationId(ctx.db);
     const userRows = await ctx.db.select().from(users).where(eq(users.email, email)).limit(1);
     const user = userRows[0];
@@ -564,7 +741,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "user:list": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     const rows = await ctx.db
       .select({ id: users.id, name: users.name, email: users.email })
       .from(users)
@@ -578,7 +755,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "db:migrate": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     const ran = await migrate(ctx.db, MIGRATIONS_DIR);
     process.stdout.write(ran.length === 0 ? "No pending migrations.\n" : `Applied: ${ran.join(", ")}\n`);
     await ctx.close();
@@ -587,7 +764,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   // Exit 1 when any migration is pending — CI uses it to force db:migrate before deploy.
 
   "db:status": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     const files = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })]
       .filter((file) => /^\d{4}_[a-z0-9_]+\.ts$/.test(file))
       .sort();
@@ -603,45 +780,54 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     if (pending.length > 0) process.exitCode = 1;
   },
 
-  "db:seed": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
-    const result = await seed(ctx.db);
-    process.stdout.write(
-      `Seeded ${result.organizations} organization(s), ${result.permissions} permission(s), ${result.roles} role(s).\n`,
-    );
-    await ctx.close();
+  "db:seed": async (args) => {
+    const requestedSeeder = args[0] ? toKebabName(args[0], "Seeder") : undefined;
+    if (args.length > 1) {
+      process.stderr.write("Usage: bun erp db:seed [seeder]\n");
+      process.exit(1);
+    }
+    const seederFiles = listSeederFiles();
+    if (requestedSeeder && !seederFiles.includes(`${requestedSeeder}.ts`)) {
+      process.stderr.write(
+        `Seeder not found: ${requestedSeeder}. Available: ${seederFiles.map((file) => file.slice(0, -3)).join(", ") || "none"}.\n`,
+      );
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const result = await seed(ctx.db);
+      process.stdout.write(
+        `Seeded ${result.organizations} organization(s), ${result.permissions} permission(s), ${result.roles} role(s).\n`,
+      );
+      const selected = requestedSeeder ? [`${requestedSeeder}.ts`] : seederFiles;
+      for (const file of selected) {
+        const module = (await import(resolve(SEEDERS_DIR, file))) as { seed?: (database: Database) => Promise<void> };
+        if (typeof module.seed !== "function") throw new Error(`Seeder ${file} must export seed(database)`);
+        await module.seed(ctx.db);
+        process.stdout.write(`Ran feature seeder: ${file}\n`);
+      }
+    } finally {
+      await ctx.close();
+    }
   },
 
   "jobs:work": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
-    const registry = createJobRegistry();
-    let stopping = false;
-    const stop = () => {
-      stopping = true;
-    };
+    const ctx = await createCliContext({ migrateOnStart: false });
+    const worker = startJobWorker({ db: ctx.db, registry: createJobRegistry(), logger: ctx.logger });
+    const stop = () => worker.stop();
     process.on("SIGINT", stop);
     process.on("SIGTERM", stop);
-    ctx.logger.info({ event: "jobs.worker.started", pollIntervalMs: 1_000 });
     try {
-      while (!stopping) {
-        try {
-          const processed = await runJobBatch(ctx.db, registry, ctx.logger, { limit: 10 });
-          if (processed === 0) await Bun.sleep(1_000);
-        } catch {
-          ctx.logger.error({ event: "jobs.worker.poll_failed" });
-          await Bun.sleep(2_000);
-        }
-      }
+      await worker.done;
     } finally {
       process.off("SIGINT", stop);
       process.off("SIGTERM", stop);
       await ctx.close();
-      ctx.logger.info({ event: "jobs.worker.stopped" });
     }
   },
 
   "jobs:run-once": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     try {
       const processed = await runJobBatch(ctx.db, createJobRegistry(), ctx.logger, { limit: 20 });
       process.stdout.write(`Processed ${processed} background job(s).\n`);
@@ -651,7 +837,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "jobs:status": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     try {
       const rows = rowsOf<{ status: string; count: string | number }>(
         await ctx.db.execute(
@@ -666,7 +852,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "jobs:dead": async () => {
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     try {
       const rows = rowsOf<{
         id: string;
@@ -699,7 +885,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
       process.stderr.write("Usage: bun erp jobs:retry <job-id>\n");
       process.exit(1);
     }
-    const ctx = await createContext({ migrateOnStart: false });
+    const ctx = await createCliContext({ migrateOnStart: false });
     try {
       if (!(await requeueDeadJob(ctx.db, id))) throw new Error("No dead job found with that ID.");
       ctx.logger.warn({ event: "jobs.operator_requeued", jobId: id });
@@ -767,7 +953,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
   "check:design": async () => {
     await guard("design", () => runGate("design"));
-    process.stdout.write("Design OK: every screen declares its direction.\n");
+    process.stdout.write("Design OK: screens and text contrast meet the visual rules.\n");
   },
   "check:surface": async () => {
     await guard("surface", () => runGate("surface"));
@@ -789,7 +975,25 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 };
 
+async function writeScaffold(path: string, source: string): Promise<void> {
+  if (await Bun.file(path).exists()) throw new Error(`Refusing to overwrite existing file: ${path}`);
+  await Bun.$`mkdir -p ${resolve(path, "..")}`.quiet();
+  await Bun.write(path, source);
+}
+
+function listSeederFiles(): string[] {
+  try {
+    return [...new Bun.Glob("*.ts").scanSync({ cwd: SEEDERS_DIR })].sort();
+  } catch {
+    return [];
+  }
+}
+
 const [command, ...args] = process.argv.slice(2);
+
+async function createCliContext(options: Parameters<typeof createContext>[0] = {}) {
+  return createContext({ ...options, env: options.env ?? loadEnv() });
+}
 
 if (!command || command === "--help" || command === "-h" || command === "help") {
   const sections = HELP_GROUPS.map(({ title, commands: entries }) => {

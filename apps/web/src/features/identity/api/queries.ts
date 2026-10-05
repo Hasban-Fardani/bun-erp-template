@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import * as z from "zod";
 import { ApiError } from "../../../lib/api.ts";
 import { authRequest } from "../../../lib/auth.ts";
@@ -31,6 +31,7 @@ export const usersQuery = (query: string) =>
     queryKey: userKeys.list(query),
     queryFn: () =>
       call(rpc.users.$get({ query: listParams(query, z.enum(["name", "email", "createdAt"]).default("name")) })),
+    placeholderData: keepPreviousData,
   });
 
 export const rolesQuery = queryOptions({

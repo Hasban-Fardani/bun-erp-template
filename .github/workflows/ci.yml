@@ -18,13 +18,6 @@ jobs:
       - uses: ./.github/actions/setup
       - run: bun run lint
       - run: bun erp check
-  test-pglite:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: ./.github/actions/setup
-      - run: bun erp test
   test-postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -113,7 +106,7 @@ jobs:
             .data/qa/*.png
   ci-ok:
     if: always()
-    needs: [gates, test-pglite, test-postgres, build-web, mobile-build, e2e]
+    needs: [gates, test-postgres, build-web, mobile-build, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

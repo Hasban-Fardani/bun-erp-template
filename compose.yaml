@@ -1,0 +1,72 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.docker
+    environment:
+      APP_PORT: "3000"
+      APP_DEPLOY_TARGET: bun
+      APP_WEB_MODE: integrated
+      LOG_DRIVER: console
+      LOG_LEVEL: info
+      LOG_PATH: /dev/stdout
+      LOG_RETENTION_DAYS: "14"
+      LOG_MAX_SIZE_MB: "100"
+      TRUST_PROXY: "false"
+      DATABASE_DRIVER: postgres
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
+      DATABASE_POOL_MAX: "10"
+      DATABASE_SSL_MODE: disable
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_ROOT: /app/.data/storage
+      MAIL_DRIVER: log
+      MAIL_FROM_ADDRESS: no-reply@example.test
+      MAIL_FROM_NAME: Bun ERP Template
+      SMTP_PORT: "587"
+      SMTP_SECURE: "false"
+      FEATURE_ADVANCED_REPORTS: "false"
+    ports:
+      - 127.0.0.1:${HOST_PORT:-3000}:3000
+    volumes:
+      - app_storage:/app/.data/storage
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - fetch('http://127.0.0.1:3000/api/v1/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bun_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-bun_erp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.docker.example to .env.docker and set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
+  app_storage:

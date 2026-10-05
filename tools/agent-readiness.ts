@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+import { REQUIRED_AGENT_SKILLS } from "./agent-skills.ts";
 
 export type AgentReadinessInput = {
   installedSkills: string[];
@@ -6,7 +7,6 @@ export type AgentReadinessInput = {
   indexError?: string;
 };
 
-const REQUIRED_SKILLS = ["grill-me", "grilling"] as const;
 const REQUIRED_INDEXED_FILES = [
   "apps/server/http/app.ts",
   "apps/web/src/main.tsx",
@@ -15,7 +15,7 @@ const REQUIRED_INDEXED_FILES = [
 
 export function evaluateAgentReadiness(input: AgentReadinessInput): string[] {
   const findings: string[] = [];
-  for (const skill of REQUIRED_SKILLS) {
+  for (const skill of REQUIRED_AGENT_SKILLS) {
     if (!input.installedSkills.includes(skill)) findings.push(`Install the project skill .agents/skills/${skill}.`);
   }
   if (input.indexError) findings.push(`CodeGraph index is unavailable: ${input.indexError}`);
@@ -29,7 +29,7 @@ export function evaluateAgentReadiness(input: AgentReadinessInput): string[] {
 
 export async function checkAgentReadiness(root: string): Promise<string[]> {
   const installedSkills: string[] = [];
-  for (const skill of REQUIRED_SKILLS) {
+  for (const skill of REQUIRED_AGENT_SKILLS) {
     if (await Bun.file(`${root}/.agents/skills/${skill}/SKILL.md`).exists()) installedSkills.push(skill);
   }
 

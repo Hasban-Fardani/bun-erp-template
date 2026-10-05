@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRi
 import { type ReactNode, useMemo } from "react";
 import { IconButton } from "../atoms/icon-button.tsx";
 import { cn } from "../lib/cn.ts";
+import { useSoftAutoAnimate } from "../lib/use-auto-animate.ts";
 import { SimpleSelect } from "../molecules/select.tsx";
 import {
   DEFAULT_TABLE_EMPTY_LABELS,
@@ -103,6 +104,8 @@ export function DataTable<T>({
   actions,
   caption,
 }: DataTableProps<T>) {
+  const [tableRowsRef] = useSoftAutoAnimate<HTMLTableSectionElement>();
+  const [mobileRowsRef] = useSoftAutoAnimate<HTMLUListElement>();
   const tableRows = useMemo(() => rows.map((value) => ({ value })), [rows]);
   const columnHelper = useMemo(() => createServerColumnHelper<TableRow<T>>(), []);
   const definitions = useMemo<ServerColumn<TableRow<T>>[]>(
@@ -207,7 +210,7 @@ export function DataTable<T>({
               ) : null}
             </tr>
           </thead>
-          <tbody>
+          <tbody ref={tableRowsRef}>
             {renderedRows.map(({ id, original: row }) => (
               <tr key={id} className="border-b border-border transition-colors last:border-0 hover:bg-background">
                 {columns.map((column) => (
@@ -234,27 +237,45 @@ export function DataTable<T>({
       </div>
 
       {/* Mobile: one card per row. Same data, same actions, no horizontal scroll. */}
-      <ul className="enter-soft divide-y divide-border md:hidden" aria-busy={pending}>
+      <ul
+        ref={mobileRowsRef}
+        className="enter-soft divide-y divide-border md:hidden"
+        aria-busy={pending}
+        data-testid="resource-table-mobile-list"
+      >
         {renderedRows.map(({ id, original: row }) => (
-          <li key={id} className="flex items-start gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1 space-y-1">
-              {columns.map((column, index) => (
+          <li key={id} className="px-4 py-4" data-testid="resource-table-mobile-row">
+            <div className="mb-2 flex min-w-0 items-center justify-between gap-3">
+              <div
+                data-testid="resource-table-mobile-title"
+                className="min-w-0 flex-1 truncate text-sm leading-6 font-semibold text-ink"
+              >
+                {columns[0]?.cell(row)}
+              </div>
+              {actions ? (
                 <div
-                  key={column.key}
-                  className={cn(index === 0 ? "text-sm font-medium text-ink" : "flex gap-2 text-xs text-ink-soft")}
+                  data-testid="resource-table-mobile-actions"
+                  className="flex shrink-0 items-center justify-end gap-1 [&_button]:size-11"
                 >
-                  {index === 0 ? (
-                    column.cell(row)
-                  ) : (
-                    <>
-                      <span className="shrink-0 text-ink-muted">{column.header}</span>
-                      <span className="line-clamp-2 min-w-0">{column.cell(row)}</span>
-                    </>
-                  )}
+                  {actions(row)}
                 </div>
-              ))}
+              ) : null}
             </div>
-            {actions ? <div className="flex shrink-0 gap-1">{actions(row)}</div> : null}
+            {columns.length > 1 ? (
+              <dl className="space-y-1">
+                {columns.slice(1).map((column) => (
+                  <div key={column.key} className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-start gap-x-3">
+                    <dt className="min-w-0 break-words text-xs leading-5 text-ink-muted">{column.header}</dt>
+                    <dd
+                      data-testid="resource-table-mobile-value"
+                      className="m-0 min-w-0 break-words text-xs leading-5 text-ink-soft"
+                    >
+                      {column.cell(row)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
           </li>
         ))}
       </ul>

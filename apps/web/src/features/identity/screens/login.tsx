@@ -3,6 +3,7 @@ import { Button } from "@bun-erp/ui/atoms/button.tsx";
 import { Input } from "@bun-erp/ui/atoms/input.tsx";
 import { FormErrors } from "@bun-erp/ui/molecules/form-errors.tsx";
 import { Modal } from "@bun-erp/ui/organisms/modal.tsx";
+import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Loader2, Users as UsersIcon } from "lucide-react";
@@ -31,6 +32,7 @@ import { useLogin } from "../hooks/index.ts";
 export function LoginScreen() {
   const { t } = useI18n();
   const login = useLogin();
+  const toast = useToast();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
@@ -45,31 +47,35 @@ export function LoginScreen() {
         return Object.keys(fields).length ? { fields } : undefined;
       },
     },
-    onSubmit: ({ value }) => login.mutate(value, { onSuccess: () => void navigate({ to: "/" }) }),
+    onSubmit: ({ value }) =>
+      login.mutate(value, {
+        onSuccess: () => void navigate({ to: "/" }),
+        onError: () => toast.error(t("auth.signInFailed")),
+      }),
   });
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {/* Hidden below lg: on a phone the panel would push the form off the first screen. */}
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-ink p-12 text-stone-300 lg:flex">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-inverse-surface p-12 text-inverse-muted lg:flex">
         <div className="enter-soft flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-white">
+          <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-ink">
             <UsersIcon className="size-5" aria-hidden="true" />
           </span>
-          <span className="text-[15px] font-semibold tracking-tight text-stone-100">{uiConfig.appName}</span>
+          <span className="text-[15px] font-semibold tracking-tight text-inverse-foreground">{uiConfig.appName}</span>
         </div>
 
         <div className="enter-soft max-w-sm">
-          <p className="text-[26px] leading-snug font-semibold tracking-tight text-stone-100">
+          <p className="text-[26px] leading-snug font-semibold tracking-tight text-inverse-foreground">
             {t("auth.accessSummary")}
           </p>
 
-          <p className="mt-8 text-[12px] font-medium tracking-wider text-stone-500 uppercase">
+          <p className="mt-8 text-[12px] font-medium tracking-wider text-inverse-subtle uppercase">
             {t("auth.featureHeading")}
           </p>
           <ul className="mt-3 space-y-3">
             {shippedFeatures.map((item) => (
-              <li key={item.titleKey} className="flex items-center gap-3 text-[14.5px] text-stone-200">
+              <li key={item.titleKey} className="flex items-center gap-3 text-[14.5px] text-inverse-muted">
                 <item.icon size={16} className="shrink-0 text-accent-soft" aria-hidden="true" />
                 {t(item.titleKey)}
               </li>
@@ -77,12 +83,12 @@ export function LoginScreen() {
           </ul>
         </div>
 
-        <p className="text-[12.5px] text-stone-400">{t("auth.accessByRole")}</p>
+        <p className="text-[12.5px] text-inverse-subtle">{t("auth.accessByRole")}</p>
       </aside>
 
       <div className="flex flex-col items-center justify-center px-4 py-10">
         <div className="enter-soft mb-6 flex items-center gap-2.5 lg:hidden">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-ink">
             <UsersIcon className="size-5" aria-hidden="true" />
           </span>
           <span className="text-[15px] font-semibold tracking-tight">{uiConfig.appName}</span>
@@ -126,6 +132,7 @@ export function LoginScreen() {
                   </label>
                   <button
                     type="button"
+                    data-testid="login-recovery-action"
                     onClick={() => setRecoveryOpen(true)}
                     className="rounded text-[12.5px] font-medium text-accent outline-none underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-accent"
                   >
@@ -161,15 +168,6 @@ export function LoginScreen() {
                 >
                   {(errors) => <FormErrors errors={errors} />}
                 </form.Subscribe>
-                {login.isError ? (
-                  <p
-                    role="alert"
-                    className="mt-4 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[13px] text-danger"
-                  >
-                    {(login.error as Error).message}
-                  </p>
-                ) : null}
-
                 <Button
                   className="mt-6 h-11 w-full justify-center rounded-lg text-[15px]"
                   type="submit"

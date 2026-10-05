@@ -10,8 +10,11 @@ The runner creates a unique temporary database and removes it even if the suite 
 The database login must be allowed to create databases; never point this at production.
 
 Browser QA needs `bunx --bun playwright-core install chromium`, API and Vite preview running,
-and `QA_BASE_URL`, `QA_EMAIL`, `QA_PASSWORD`. Preview proxies `/api` to the API. Reports,
-screenshots and server logs go in `.data/qa/`; credentials never belong in artifacts.
+and `QA_BASE_URL`, `QA_EMAIL`, `QA_PASSWORD`. The existing `bun run qa` gate also checks the
+users screen at 320, 360, 390, 430, 767, 768, 1024, and 1440 CSS pixels for horizontal overflow,
+aligned controls and card fields, contained row actions, and 44-pixel mobile touch targets.
+Preview proxies `/api` to the API. Reports, screenshots and server logs go in `.data/qa/`;
+credentials never belong in artifacts.
 
 The mobile build uses a reserved example API origin solely to verify packaging; it does not test native authentication or devices.
 `.github/workflows/mobile-release.yml` is separate from pull-request CI. A `v*` tag or manual dispatch uploads a signed Android bundle to Play internal testing and a signed iOS app to TestFlight after the copied application configures its `mobile-release` environment credentials.

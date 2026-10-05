@@ -17,7 +17,7 @@ const logger = createMobileLogger("offline-drafts");
 /** A small reference screen for storing user-authored drafts without a network connection. */
 export function OfflineDrafts() {
   const { t, formatDateTime } = useI18n();
-  const [draftStateRef] = useSoftAutoAnimate<HTMLDivElement>();
+  const [draftContentRef] = useSoftAutoAnimate<HTMLDivElement>();
   const [draftListRef] = useSoftAutoAnimate<HTMLUListElement>();
   const [drafts, setDrafts] = useState<Array<{ key: string; text: string; updatedAt: string }>>([]);
   const [text, setText] = useState("");
@@ -68,7 +68,7 @@ export function OfflineDrafts() {
   return (
     <PageShell title={t("offline.title")} description={t("offline.description")}>
       <section className="space-y-4" aria-label={t("offline.storageLabel")}>
-        <div ref={draftStateRef} className="space-y-2">
+        <div className="space-y-2">
           <label htmlFor="offline-draft" className="text-sm font-medium text-ink">
             {t("offline.localNote")}
           </label>
@@ -91,7 +91,7 @@ export function OfflineDrafts() {
             {t("offline.unavailable")}
           </p>
         ) : null}
-        <div className="space-y-2">
+        <div ref={draftContentRef} className="space-y-2">
           <h2 className="text-sm font-semibold text-ink">{t("offline.savedHeading")}</h2>
           {loading ? (
             <div role="status" aria-live="polite" aria-label={t("offline.loadingSaved")}>

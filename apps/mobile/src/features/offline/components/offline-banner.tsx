@@ -21,7 +21,7 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="border-b border-accent/30 bg-accent-soft px-4 py-3 text-sm text-accent-ink"
+      className="border-b border-accent/30 bg-accent-soft px-4 py-3 text-sm text-accent-soft-foreground"
     >
       {t("offline.offlineBanner")}
     </div>

@@ -8,21 +8,44 @@ reference infrastructure, not a client's ERP workflows.
 ## First run
 
     bun install --frozen-lockfile
+    cp .env.example .env
     bun erp init
+    bun erp db:migrate
+    bun erp db:seed
+    bun erp user:create <email> <password> --role owner --name <name>
     bun dev
 
 Open the single URL printed by Vite (by default `http://localhost:5173`). The web app and Hono API
-share that origin; `/api/*` is proxied to the internal API process. Local development creates and
-seeds an isolated PGlite database under `.data/development` and ignores repository `.env` values.
-See [development setup](docs/development.md) for port overrides and non-local configuration.
+share that origin; `/api/*` is proxied to the internal API process. The app and CLI read the same
+database configuration from `.env`. Keep `APP_ENV=development` and point the configured database at
+a local development database. See [development setup](docs/development.md) for database and port
+details.
 
-For a local production-shaped run, build the web assets with `bun erp build`, then run `bun start`.
-One Bun server serves the built React app at `/` and the versioned Hono API at `/api/*`. Use
-`bun erp server:api` only when deploying the frontend separately.
+The seed creates the default organization and `owner`/`staff` role keys, but no login account.
+The first `bun erp user:create <email> <password>` account becomes the owner automatically; use
+`--role owner --name <name>` to be explicit. The app and CLI use the same database settings from
+`.env`. Create the initial account after applying migrations and seeding PostgreSQL. CLI and app
+writes use the same PostgreSQL database while the server is running. See the
+[development guide](docs/development.md) for details.
+
+For a local production-shaped run, set `APP_DEPLOY_TARGET=bun` and
+`APP_WEB_MODE=integrated` in `.env`, build with `bun erp build`, then run `bun start`. One Bun server
+serves the built React app at `/` and the versioned Hono API at `/api/*`. Set
+`APP_WEB_MODE=separate` and use `bun erp server:api` when deploying the frontend separately. Set
+`APP_DEPLOY_TARGET=cloudflare` for `bun erp build` to produce the Cloudflare Worker and static assets;
+Cloudflare currently requires integrated hosting. These are the only runtime adapters implemented.
 
 Run `bun erp init` once after cloning or copying the template to index the project and install the
 required agent skills. Development commands do not refresh or install agent tooling.
 See docs/agent-init.md and docs/README.md.
+
+Browser QA uses Playwright only: set `QA_EMAIL` and `QA_PASSWORD`, start `bun dev`, then run
+`bun run qa`. Planning, exploratory testing, and report rules are documented in
+`.agents/qa-project-context.md` and the installed QA skills.
+
+For a local Docker stack with PostgreSQL, copy `.env.docker.example` to `.env.docker`, change both
+local-only passwords, then run `docker compose --env-file .env.docker up --build`. The Compose
+profile is for local development; see [deployment.md](docs/deployment.md) before exposing a server.
 
 ## Verify changes
 

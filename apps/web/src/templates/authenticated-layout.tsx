@@ -4,8 +4,8 @@ import * as UserMenu from "@bun-erp/ui/organisms/dropdown-menu.tsx";
 import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
 import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { Menu, PanelLeftClose, PanelLeftOpen, Users as UsersIcon } from "lucide-react";
-import { useState } from "react";
-import { navGroups } from "../config/navigation.ts";
+import { useLayoutEffect, useRef, useState } from "react";
+import { type NavItem, navGroups } from "../config/navigation.ts";
 import { uiConfig } from "../config/ui.ts";
 import { useSession, useSignOut } from "../features/identity/hooks/index.ts";
 import { cn } from "../lib/cn.ts";
@@ -31,6 +31,131 @@ function hasPermission(session: SessionData, permission?: string): boolean {
   return session?.permissions.includes(permission) ?? false;
 }
 
+function NavigationGroup({
+  items,
+  titleKey,
+  collapsed,
+  pathname,
+  onNavigate,
+}: {
+  items: NavItem[];
+  titleKey?: NavItem["titleKey"];
+  collapsed: boolean;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  const { t } = useI18n();
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
+  const [hoveredUrl, setHoveredUrl] = useState<string | null>(null);
+  const [focusedUrl, setFocusedUrl] = useState<string | null>(null);
+  const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
+  const activeUrl = items.find((item) => pathname === item.url || pathname.startsWith(`${item.url}/`))?.url;
+  const targetUrl = hoveredUrl ?? focusedUrl ?? activeUrl;
+
+  useLayoutEffect(() => {
+    const container = listRef.current;
+    if (!container || !targetUrl) {
+      setIndicator(null);
+      return;
+    }
+
+    const measure = () => {
+      const target = itemRefs.current.get(targetUrl);
+      if (!target || !listRef.current) return;
+      const containerBounds = listRef.current.getBoundingClientRect();
+      const targetBounds = target.getBoundingClientRect();
+      const next = { top: targetBounds.top - containerBounds.top, height: targetBounds.height };
+      setIndicator((previous) =>
+        previous && Math.abs(previous.top - next.top) < 0.5 && Math.abs(previous.height - next.height) < 0.5
+          ? previous
+          : next,
+      );
+    };
+
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [targetUrl]);
+
+  return (
+    <div className="mb-5">
+      {titleKey && !collapsed ? (
+        <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-ink-muted">{t(titleKey)}</p>
+      ) : null}
+      <div ref={listRef} className="relative">
+        {indicator ? (
+          <span
+            aria-hidden="true"
+            data-nav-indicator="true"
+            className={cn(
+              "pointer-events-none absolute inset-x-0 top-0 z-0 rounded-md",
+              "transition-[transform,height,background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
+              targetUrl === activeUrl ? "bg-accent shadow-sm" : "bg-accent-soft",
+            )}
+            style={{ height: indicator.height, transform: `translateY(${indicator.top}px)` }}
+          />
+        ) : null}
+        <ul className="relative z-10 space-y-0.5" onPointerLeave={() => setHoveredUrl(null)}>
+          {items.map((item) => {
+            const active = item.url === activeUrl;
+            const highlighted = item.url === targetUrl;
+            const title = t(item.titleKey);
+            const link = (
+              <Link
+                to={item.url}
+                ref={(node) => {
+                  if (node) itemRefs.current.set(item.url, node);
+                  else itemRefs.current.delete(item.url);
+                }}
+                onClick={onNavigate}
+                onPointerEnter={() => setHoveredUrl(item.url)}
+                onFocus={() => setFocusedUrl(item.url)}
+                onBlur={(event) => {
+                  if (!listRef.current?.contains(event.relatedTarget as Node | null)) setFocusedUrl(null);
+                }}
+                aria-current={active ? "page" : undefined}
+                data-nav-item={item.url}
+                className={cn(
+                  "flex items-center rounded-md text-[13.5px] font-medium outline-none transition-colors duration-150 ease-out motion-reduce:transition-none",
+                  "focus-visible:ring-2 focus-visible:ring-accent",
+                  collapsed ? "h-10 w-full justify-center px-0" : "gap-2.5 px-2 py-2",
+                  highlighted
+                    ? active
+                      ? "text-accent-ink"
+                      : "text-accent-soft-foreground"
+                    : active
+                      ? "font-semibold text-accent"
+                      : "text-ink-soft",
+                )}
+              >
+                <item.icon className="size-4 shrink-0" aria-hidden />
+                {collapsed ? <span className="sr-only">{title}</span> : title}
+              </Link>
+            );
+            return (
+              <li key={item.url}>
+                {collapsed ? (
+                  <Tooltip label={title} side="right">
+                    {link}
+                  </Tooltip>
+                ) : (
+                  link
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function NavContent({
   session,
   onNavigate,
@@ -44,7 +169,12 @@ function NavContent({
   const location = useLocation();
   return (
     <nav className="flex h-full flex-col" aria-label={t("navigation.primary")}>
-      <div className={cn("flex h-14 shrink-0 items-center gap-2 border-b border-border", collapsed ? "px-3" : "px-4")}>
+      <div
+        className={cn(
+          "flex h-14 shrink-0 items-center gap-2 border-b border-border",
+          collapsed ? "justify-center px-0" : "px-4",
+        )}
+      >
         <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-accent-ink">
           <UsersIcon className="size-4" />
         </span>
@@ -59,46 +189,14 @@ function NavContent({
           const items = group.items.filter((item) => hasPermission(session, item.permission));
           if (items.length === 0) return null;
           return (
-            <div key={group.titleKey ?? "primary"} className="mb-5">
-              {group.titleKey && !collapsed ? (
-                <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-ink-muted">
-                  {t(group.titleKey)}
-                </p>
-              ) : null}
-              <ul className="space-y-0.5">
-                {items.map((item) => {
-                  const active = location.pathname === item.url || location.pathname.startsWith(`${item.url}/`);
-                  const title = t(item.titleKey);
-                  const link = (
-                    <Link
-                      to={item.url}
-                      onClick={onNavigate}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex items-center rounded-md text-[13.5px] font-medium outline-none transition-colors",
-                        "focus-visible:ring-2 focus-visible:ring-accent",
-                        collapsed ? "h-9 justify-center" : "gap-2.5 px-2 py-2",
-                        active ? "bg-accent-soft text-accent-ink" : "text-ink-soft hover:bg-background",
-                      )}
-                    >
-                      <item.icon className="size-4 shrink-0" aria-hidden />
-                      {collapsed ? <span className="sr-only">{title}</span> : title}
-                    </Link>
-                  );
-                  return (
-                    <li key={item.url}>
-                      {collapsed ? (
-                        <Tooltip label={title} side="right">
-                          {link}
-                        </Tooltip>
-                      ) : (
-                        link
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            <NavigationGroup
+              key={group.titleKey ?? "primary"}
+              titleKey={group.titleKey}
+              items={items}
+              collapsed={collapsed}
+              pathname={location.pathname}
+              onNavigate={onNavigate}
+            />
           );
         })}
       </div>
@@ -117,6 +215,7 @@ function Topbar({ session }: { session: SessionData }) {
     <>
       {/* Desktop: collapses into an icon rail; mobile: full drawer. */}
       <aside
+        data-sidebar-collapsed={collapsed}
         className={cn(
           "sticky top-0 hidden h-dvh shrink-0 border-r border-border bg-surface transition-[width] duration-200 lg:block",
           collapsed ? "w-16" : "w-60",
@@ -160,7 +259,7 @@ function Topbar({ session }: { session: SessionData }) {
             <LocaleSwitcher className="mr-2 h-8 max-w-32 rounded-md border border-border bg-surface px-2 text-xs text-ink-soft outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             <UserMenu.Root>
               <UserMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent">
-                <span className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-ink">
+                <span className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-soft-foreground">
                   {(session?.user?.name ?? "?").slice(0, 1).toUpperCase()}
                 </span>
                 <span className="hidden text-[13px] font-medium text-ink sm:block">{session?.user?.name}</span>

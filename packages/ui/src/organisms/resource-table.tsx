@@ -61,8 +61,11 @@ export function ResourceTable<T>({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
-        <div className="relative flex-1 sm:max-w-xs">
+      <div
+        data-testid="resource-table-toolbar"
+        className="grid grid-cols-1 items-stretch gap-3 border-b border-border px-4 py-3 md:flex md:flex-wrap md:items-center md:gap-2"
+      >
+        <div className="relative w-full min-w-0 md:flex-1 md:max-w-xs">
           <Search
             size={14}
             aria-hidden="true"
@@ -77,7 +80,11 @@ export function ResourceTable<T>({
             className="pl-7"
           />
         </div>
-        {headerExtra ? <div className="ml-auto flex items-center gap-2">{headerExtra}</div> : null}
+        {headerExtra ? (
+          <div className="flex w-full min-w-0 items-center gap-2 md:ml-auto md:w-auto [&>button]:min-h-11 [&>button]:w-full md:[&>button]:min-h-8 md:[&>button]:w-auto">
+            {headerExtra}
+          </div>
+        ) : null}
       </div>
 
       <DataTable

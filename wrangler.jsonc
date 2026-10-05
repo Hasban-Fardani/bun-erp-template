@@ -25,6 +25,8 @@
     "APP_PORT": "8787",
     "APP_RELEASE": "0.1.0",
     "APP_TIMEZONE": "UTC",
+    "APP_DEPLOY_TARGET": "cloudflare",
+    "APP_WEB_MODE": "integrated",
     "LOG_DRIVER": "console",
     "LOG_LEVEL": "info",
     "LOG_PATH": "stdout",

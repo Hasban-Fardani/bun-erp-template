@@ -25,15 +25,31 @@ a convention.
 
 ## Runtime modes
 
+Hono's `fetch` contract lets the HTTP application run behind different host adapters; it does not
+make every application dependency runtime-neutral. This template currently implements and tests
+two targets: Bun (`apps/server/server.ts`) and Cloudflare Workers (`apps/server/worker.ts`). The
+bootstrap, CLI, migrations and local tooling use Bun APIs, so Node, Deno and Google Cloud Functions
+are not selectable targets yet. Each additional target needs its own entrypoint, platform services,
+build/deploy flow and CI coverage before it can be advertised as supported.
+
 `bun dev` starts Vite with HMR and an internal API-only Bun process. Vite provides the browser
-origin and proxies `/api/*` to Hono. Production Bun uses `bun erp build` followed by `bun start`:
-one Hono listener dispatches `/api/*` to the API and serves `apps/web/dist` for web routes. Startup
-checks the web build before opening the database. `bun erp server:api` preserves API-only hosting
-for a separately deployed frontend or an upstream reverse proxy.
+origin and proxies `/api/*` to Hono. That API process also polls the durable queue using the same
+database connection. Production Bun uses `bun erp build` followed by `bun start`: one Hono listener
+dispatches `/api/*` to the API and serves `apps/web/dist` for web routes. Startup checks the web
+build before opening the database. `bun erp server:api` preserves API-only hosting for a separately
+deployed frontend or an upstream reverse proxy.
 
 Cloudflare uses the same API path boundary in one Worker deployment. Workers Static Assets serves
 the Vite build directly; only `/api` and `/api/*` invoke Worker code. This keeps static requests
 outside the Worker request quota. See [deployment](deployment.md) for host and asset details.
+
+`APP_DEPLOY_TARGET` selects an implemented build profile (`bun` or `cloudflare`), and `APP_WEB_MODE`
+selects `integrated` or `separate` hosting. `bun erp build` dispatches to the selected target; the
+explicit `cloudflare:*` commands remain available. Bun can run API-only for a separately hosted web
+build; Cloudflare currently requires integrated Workers Static Assets. Invalid target/mode pairs
+fail validation. These settings select existing adapters; they do not turn Bun-specific imports
+into Node, Deno or Google Functions support. Those targets need actual entrypoints and CI coverage
+before they can be added to the allowed values.
 
 ## Backend request flow
 
@@ -55,10 +71,10 @@ Follow [Hono's larger-application and RPC guidance](https://hono.dev/docs/guides
 
 ## Database and jobs
 
-DATABASE_DRIVER=pglite is the local/test Postgres-compatible driver; production uses PostgreSQL.
-DATABASE_PATH identifies the local database directory and is intentionally independent of driver
-name. Server SQLite is not supported: the server schema uses PostgreSQL types and constraints.
-Capacitor SQLite is a separate mobile-only local store.
+The server uses PostgreSQL through postgres.js in development, tests, Bun and Cloudflare. A single
+driver keeps CLI, app, queue, migrations and production on the same behavior. Server SQLite is not
+supported: the schema and queue use PostgreSQL types and locking. Capacitor SQLite is a separate
+mobile-only local store.
 
 enqueueJob() writes to background_jobs; call it inside the same DB transaction as the feature
 write when both must commit together. Workers claim rows with FOR UPDATE SKIP LOCKED and a lease.

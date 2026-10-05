@@ -32,6 +32,8 @@ const rawSchema = z
     APP_PORT: z.coerce.number().int().min(1).max(65535),
     APP_RELEASE: z.string().trim().min(1).max(120),
     APP_TIMEZONE: timezone,
+    APP_DEPLOY_TARGET: z.enum(["bun", "cloudflare"]).default("bun"),
+    APP_WEB_MODE: z.enum(["integrated", "separate"]).default("integrated"),
 
     // Log
     LOG_DRIVER: z.enum(["console", "daily"]),
@@ -42,8 +44,7 @@ const rawSchema = z
     TRUST_PROXY: boolOr("false"),
 
     // Database
-    DATABASE_DRIVER: z.enum(["pglite", "postgres"]),
-    DATABASE_PATH: z.string().trim().min(1).default(".data/database"),
+    DATABASE_DRIVER: z.literal("postgres").default("postgres"),
     DATABASE_URL: z.string().trim().default(""),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
     DATABASE_SSL_MODE: z.enum(["disable", "require", "verify-full"]).default("disable"),
@@ -75,8 +76,15 @@ const rawSchema = z
   })
   .superRefine((env, ctx) => {
     // Cross-field: variables required only under a specific driver/mode.
-    if (env.DATABASE_DRIVER === "postgres" && env.DATABASE_URL === "") {
-      ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "required when DATABASE_DRIVER=postgres" });
+    if (env.APP_DEPLOY_TARGET === "cloudflare" && env.APP_WEB_MODE !== "integrated") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["APP_WEB_MODE"],
+        message: "Cloudflare currently requires integrated Workers Static Assets hosting",
+      });
+    }
+    if (env.DATABASE_URL === "") {
+      ctx.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "required for the PostgreSQL database" });
     }
     if (env.MAIL_DRIVER === "smtp" && env.SMTP_HOST === "") {
       ctx.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "required when MAIL_DRIVER=smtp" });
