@@ -3,7 +3,7 @@ import type { Env } from "./platform/config/index.ts";
 import type { Database } from "./platform/database/index.ts";
 import type { Mailer } from "./platform/mail/index.ts";
 import type { Logger } from "./platform/observability/logger.ts";
-import type { Storage } from "./platform/storage/index.ts";
+import type { Storage } from "./platform/storage.ts";
 
 export { resolveDefaultOrganizationId } from "./platform/database/organizations.ts";
 

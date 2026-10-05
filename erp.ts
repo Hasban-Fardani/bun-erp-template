@@ -815,6 +815,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await run(["bun", "test", "apps/web"], "bun test web");
     await run(["bun", "test", "apps/mobile"], "bun test mobile");
     await run(["bun", "test", "packages/utils/tests"], "bun test shared utilities");
+    await run(["bun", "test", "packages/storage/tests"], "bun test shared storage");
     await run(["bun", "test", "packages/data-table/tests"], "bun test shared data table");
     await run(["bun", "test", "packages/charts/tests"], "bun test shared charts");
     await run(["bun", "test", "packages/i18n/tests"], "bun test i18n");

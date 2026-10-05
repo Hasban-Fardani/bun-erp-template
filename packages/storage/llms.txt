@@ -1,0 +1,20 @@
+# @bun-erp/storage
+
+One storage package for every platform, with a subpath per runtime so a bundler only sees the code
+it needs.
+
+- `@bun-erp/storage` — runtime-neutral key/value store for the web and mobile apps.
+- `@bun-erp/storage/browser` — IndexedDB and Web Storage adapters.
+- `@bun-erp/storage/mobile` — encrypted SQLite through `@capacitor-community/sqlite`.
+- `@bun-erp/storage/server` — object store for Bun and Cloudflare Workers.
+
+Client: `createKeyValueStore(adapter)` stores namespaced JSON records with an `updatedAt`; the
+generic `get<T>`/`put<T>`/`list<T>` methods keep the payload typed. `getDefaultKeyValueStore()` picks
+native SQLite when the mobile app injects `createCapacitorSqliteAdapter`, then IndexedDB, then Web
+Storage, then memory.
+
+Server: `createObjectStorage({ config, bindings })` resolves a driver by name — `local` (Bun
+filesystem), `s3` (`Bun.S3Client`), `r2` (Worker binding), or `memory`. `put`/`get`/`delete`/
+`exists`/`url` plus `putJson`/`getJson` cover the surface; keys reject traversal. The driver name is
+validated immediately and the transport is built on first use, so a runtime-specific driver never
+crashes startup.

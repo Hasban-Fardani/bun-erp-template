@@ -1,0 +1,20 @@
+{
+  "name": "@bun-erp/storage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser/index.ts",
+    "./mobile": "./src/mobile/index.ts",
+    "./server": "./src/server/index.ts"
+  },
+  "dependencies": {
+    "@bun-erp/utils": "workspace:*",
+    "@capacitor-community/sqlite": "8.1.1"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  }
+}

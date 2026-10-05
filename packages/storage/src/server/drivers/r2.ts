@@ -19,19 +19,20 @@ type R2Bucket = {
 };
 
 /**
- * Cloudflare R2 through the Worker binding. The binding name is STORAGE_R2_BINDING and the public
- * URL comes from STORAGE_PUBLIC_URL; R2 bindings cannot presign, so an unset base URL is an error.
+ * Cloudflare R2 through the Worker binding. The binding name comes from config and the public URL
+ * from config.publicUrl; R2 bindings cannot presign, so an unset base URL is an error.
  */
-export const r2StorageDriver: StorageDriverFactory = ({ env, bindings }): StorageDriver => {
-  const binding = bindings?.[env.STORAGE_R2_BINDING];
+export const r2StorageDriver: StorageDriverFactory = ({ config, bindings }): StorageDriver => {
+  const bindingName = config.r2Binding ?? "STORAGE";
+  const binding = bindings?.[bindingName];
   if (!binding || typeof (binding as R2Bucket).get !== "function") {
     throw new Error(
-      `R2 binding "${env.STORAGE_R2_BINDING}" is not available; add it to the Worker bindings or pick another STORAGE_DRIVER`,
+      `R2 binding "${bindingName}" is not available; add it to the Worker bindings or pick another storage driver`,
     );
   }
   const bucket = binding as R2Bucket;
-  const base = env.STORAGE_PUBLIC_URL.replace(/\/+$/, "");
-  if (base === "") throw new Error("STORAGE_PUBLIC_URL is required when STORAGE_DRIVER=r2");
+  const base = (config.publicUrl ?? "").replace(/\/+$/, "");
+  if (base === "") throw new Error("a public URL is required when driver=r2");
 
   return {
     name: "r2",

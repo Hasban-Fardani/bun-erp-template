@@ -5,22 +5,23 @@ import type { StorageDriver, StorageDriverFactory, StorageObject, StoragePutOpti
  * S3-compatible objects through Bun.S3Client, so no AWS SDK is bundled. On Cloudflare the same
  * endpoint is reached with the R2 binding driver instead, because Workers have no Bun client.
  */
-export const s3StorageDriver: StorageDriverFactory = ({ env }): StorageDriver => {
+export const s3StorageDriver: StorageDriverFactory = ({ config }): StorageDriver => {
   if (typeof Bun === "undefined" || typeof Bun.S3Client !== "function") {
-    throw new Error("s3 storage needs the Bun runtime (Bun.S3Client); use STORAGE_DRIVER=r2 on Cloudflare");
+    throw new Error("s3 storage needs the Bun runtime (Bun.S3Client); use the r2 driver on Cloudflare");
   }
-  if (env.S3_BUCKET === "") {
-    throw new Error("S3_BUCKET is required when STORAGE_DRIVER=s3");
+  const s3 = config.s3;
+  if (!s3 || s3.bucket === "") {
+    throw new Error("an S3 bucket is required when driver=s3");
   }
   const client = new Bun.S3Client({
-    bucket: env.S3_BUCKET,
-    region: env.S3_REGION,
-    endpoint: env.S3_ENDPOINT || undefined,
-    accessKeyId: env.S3_ACCESS_KEY_ID || undefined,
-    secretAccessKey: env.S3_SECRET_ACCESS_KEY || undefined,
-    virtualHostedStyle: !env.S3_FORCE_PATH_STYLE,
+    bucket: s3.bucket,
+    region: s3.region,
+    endpoint: s3.endpoint || undefined,
+    accessKeyId: s3.accessKeyId || undefined,
+    secretAccessKey: s3.secretAccessKey || undefined,
+    virtualHostedStyle: !s3.forcePathStyle,
   });
-  const base = env.STORAGE_PUBLIC_URL.replace(/\/+$/, "");
+  const base = (config.publicUrl ?? "").replace(/\/+$/, "");
 
   return {
     name: "s3",

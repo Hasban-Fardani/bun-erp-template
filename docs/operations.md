@@ -54,9 +54,17 @@ the mailer; the package stays opt-in because the correct transport depends on th
 
 ## Object storage
 
-`ctx.storage` (apps/server/platform/storage) is the helper features use to persist uploaded files
-and documents. The driver is chosen by STORAGE_DRIVER through `StorageDriverRegistry`, so feature
-code never branches on the runtime:
+Storage lives in one package, `@bun-erp/storage`, with a subpath per platform so imports stay
+explicit and a bundler never pulls the wrong runtime:
+
+- `@bun-erp/storage/server` — object store for Bun and Cloudflare. `apps/server/platform/storage.ts`
+  maps the validated environment onto `ServerStorageConfig` and exposes `ctx.storage`.
+- `@bun-erp/storage` — the runtime-neutral browser/mobile key/value store.
+- `@bun-erp/storage/browser` — IndexedDB and Web Storage adapters.
+- `@bun-erp/storage/mobile` — encrypted SQLite through `@capacitor-community/sqlite`.
+
+The server driver is chosen by STORAGE_DRIVER through `StorageDriverRegistry`, so feature code never
+branches on the runtime:
 
 - `local` writes under STORAGE_LOCAL_ROOT through the Bun filesystem. Development and test only;
   the config schema refuses it when APP_ENV=production.
@@ -71,3 +79,7 @@ S3 client, and Worker binding cannot all be constructed on every runtime, so an 
 crashes startup. `put`, `get`, `delete`, `exists` and `url` are the surface; `putJson`/`getJson` wrap
 JSON. Keys are normalized and reject traversal before any driver touches a path or bucket. Use
 `url(key, { expiresInSeconds })` for a presigned link when the driver supports it.
+
+On the client, `createKeyValueStore(adapter)` stores namespaced JSON records, and
+`getDefaultKeyValueStore()` picks the backend: native SQLite when the mobile app injects
+`createCapacitorSqliteAdapter`, IndexedDB in a browser, then Web Storage, then memory.

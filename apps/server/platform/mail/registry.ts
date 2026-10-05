@@ -1,4 +1,4 @@
-import { DriverRegistry } from "../registry.ts";
+import { DriverRegistry } from "@bun-erp/utils";
 import { logMailDriver } from "./drivers/log.ts";
 import { memoryMailDriver } from "./drivers/memory.ts";
 import { smtpMailDriver } from "./drivers/smtp.ts";

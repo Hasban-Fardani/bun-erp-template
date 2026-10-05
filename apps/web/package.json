@@ -23,6 +23,7 @@
     "hono": "4.13.8",
     "@bun-erp/ui": "workspace:*",
     "@bun-erp/utils": "workspace:*",
+    "@bun-erp/storage": "workspace:*",
     "@bun-erp/i18n": "workspace:*",
     "@bun-erp/editor": "workspace:*",
     "@bun-erp/charts": "workspace:*",

@@ -9,6 +9,7 @@
     "apps/mobile",
     "packages/ui",
     "packages/utils",
+    "packages/storage",
     "packages/email",
     "packages/pdf",
     "packages/i18n",

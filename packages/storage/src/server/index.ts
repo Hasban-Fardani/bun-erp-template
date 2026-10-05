@@ -1,8 +1,10 @@
 export { contentTypeFor, prepareObject, storageKey, toBytes } from "./key.ts";
 export { createStorageRegistry, StorageDriverRegistry } from "./registry.ts";
-export { type CreateStorageOptions, createStorage } from "./storage.ts";
+export { type CreateObjectStorageOptions, createObjectStorage } from "./storage.ts";
 export type {
-  Storage,
+  ObjectStorage,
+  S3Config,
+  ServerStorageConfig,
   StorageBody,
   StorageDriver,
   StorageDriverContext,

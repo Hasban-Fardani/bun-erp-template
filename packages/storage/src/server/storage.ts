@@ -1,11 +1,8 @@
-import type { Env } from "../config/index.ts";
-import type { Logger } from "../observability/logger.ts";
 import { createStorageRegistry, type StorageDriverRegistry } from "./registry.ts";
-import type { Storage, StorageDriver, StoragePutOptions } from "./types.ts";
+import type { ObjectStorage, ServerStorageConfig, StorageDriver, StoragePutOptions } from "./types.ts";
 
-export type CreateStorageOptions = {
-  env: Env;
-  logger: Logger;
+export type CreateObjectStorageOptions = {
+  config: ServerStorageConfig;
   /** Cloudflare bindings, when the R2 driver is selected. */
   bindings?: Record<string, unknown>;
   /** Overrides the registry, e.g. to add a project driver or inject a memory driver in tests. */
@@ -14,24 +11,20 @@ export type CreateStorageOptions = {
 };
 
 /**
- * `ctx.storage` is the helper features use. The driver name is validated at bootstrap, but the
- * transport is built on first use: a Bun filesystem, S3 client, and Worker binding cannot all be
- * constructed on every runtime, so an unused driver must not crash startup.
+ * The server object store. The driver name is validated immediately, but the transport is built on
+ * first use: a filesystem, S3 client, and Worker binding cannot all be constructed on every
+ * runtime, so an unused driver must not crash startup.
  */
-export function createStorage(options: CreateStorageOptions): Storage {
+export function createObjectStorage(options: CreateObjectStorageOptions): ObjectStorage {
   const registry = options.registry ?? createStorageRegistry();
-  const name = options.driver?.name ?? options.env.STORAGE_DRIVER;
+  const name = options.driver?.name ?? options.config.driver;
   if (!options.driver && !registry.has(name)) {
     throw new Error(`Unknown storage driver "${name}". Registered: ${registry.names().join(", ") || "(none)"}`);
   }
 
   let resolved = options.driver;
   const driver = (): StorageDriver => {
-    resolved ??= registry.create(name, {
-      env: options.env,
-      logger: options.logger,
-      bindings: options.bindings,
-    });
+    resolved ??= registry.create(name, { config: options.config, bindings: options.bindings });
     return resolved;
   };
 

@@ -6,7 +6,7 @@ import { createDatabase } from "./platform/database/index.ts";
 import { migrate } from "./platform/database/migrate.ts";
 import { createMailEnqueue, createMailer } from "./platform/mail/index.ts";
 import { createLogger } from "./platform/observability/logger.ts";
-import { createStorage } from "./platform/storage/index.ts";
+import { createStorage } from "./platform/storage.ts";
 
 export type BootstrapOptions = {
   env?: Env;
@@ -29,7 +29,7 @@ export async function createContext(options: BootstrapOptions = {}): Promise<App
 
   const auth = createAuth(env, db);
   const mail = createMailer({ env, logger, enqueue: createMailEnqueue(db) });
-  const storage = createStorage({ env, logger });
+  const storage = createStorage({ env });
 
   return { env, db, logger, auth, mail, storage, close };
 }

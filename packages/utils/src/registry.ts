@@ -1,6 +1,6 @@
 /**
- * Pluggable driver registry shared by mail and storage: transports are resolved by name from
- * configuration so a project can register its own without editing the core.
+ * Pluggable driver registry shared by every platform: transports are resolved by name from
+ * configuration, so a project can register its own without editing the core.
  */
 export class DriverRegistry<Context, Driver> {
   readonly #factories = new Map<string, (context: Context) => Driver>();

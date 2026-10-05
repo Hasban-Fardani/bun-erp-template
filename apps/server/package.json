@@ -11,6 +11,7 @@
     "format": "bunx --bun biome format --write ."
   },
   "dependencies": {
+    "@bun-erp/storage": "workspace:*",
     "@bun-erp/utils": "workspace:*",
     "@scalar/hono-api-reference": "0.12.3",
     "better-auth": "1.7.5",

@@ -4,7 +4,7 @@ import { loadEnv } from "./platform/config/index.ts";
 import { createPostgresDatabase } from "./platform/database/postgres.ts";
 import { createMailEnqueue, createMailer } from "./platform/mail/index.ts";
 import { createWorkerLogger } from "./platform/observability/worker-logger.ts";
-import { createStorage } from "./platform/storage/index.ts";
+import { createStorage } from "./platform/storage.ts";
 
 type HyperdriveBinding = { connectionString: string };
 export type WorkerBindings = Record<string, unknown> & {
@@ -32,7 +32,7 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false);
   const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);
   const mail = createMailer({ env, logger, enqueue: createMailEnqueue(db) });
-  const storage = createStorage({ env, logger, bindings });
+  const storage = createStorage({ env, bindings });
   return { env, db, logger, mail, storage, close };
 }
 
