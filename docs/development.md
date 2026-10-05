@@ -14,6 +14,22 @@ Run `bun erp init` once after copying the template. It configures project-local 
 the approved agent skills; see agent-init.md. Development commands do not sync or install agent
 tooling. Never commit `.env` or credentials.
 
+## Install size
+
+The git repository is small (a few MB); the disk footprint comes from `node_modules`. A full
+development install is around 0.9 GB because it carries the whole toolchain: Biome, TypeScript,
+Playwright, the Vite/Rolldown bundler, the Cloudflare Workers runtime (`workerd`/`miniflare`), and
+the Capacitor mobile tooling.
+
+For a run-only environment (CI, containers, a VPS), install runtime dependencies only:
+
+    bun install --production
+
+That drops every `devDependencies` tree and lands around 0.4 GB. The `Dockerfile` already uses this
+for its runtime stage, so `docker compose build` never ships the toolchain. Do not run `--production`
+in a checkout where you still need `bun run lint`, `bun erp check`, or `bun erp test` — reinstall with
+plain `bun install` to restore the dev tooling.
+
 `bun dev` starts Vite with HMR and the Hono API. Open `http://localhost:5173`; Vite proxies `/api/*`
 to the internal API listener on port 3000. The API process also runs the queue worker against the
 same PostgreSQL connection, using the same polling loop as `bun erp jobs:work`. Stop the full stack with

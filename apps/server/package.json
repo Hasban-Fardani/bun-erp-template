@@ -21,9 +21,6 @@
     "postgres": "3.4.9",
     "zod": "4.6.5"
   },
-  "devDependencies": {
-    "drizzle-kit": "0.31.10"
-  },
   "exports": {
     "./app-type": "./http/app-type.ts"
   }

@@ -28,6 +28,7 @@
     "format:check": "bunx --bun biome format .",
     "check": "bun erp check",
     "check:prod": "bun erp check:prod",
+    "install:prod": "bun install --production",
     "test": "bun erp test",
     "qa": "bun apps/web/tests/browser/admin-workflow.ts",
     "qa:login": "bun apps/web/tests/browser/login-feedback.ts"
@@ -44,5 +45,8 @@
   },
   "engines": {
     "bun": "1.4.2"
+  },
+  "overrides": {
+    "esbuild": "0.28.2"
   }
 }
