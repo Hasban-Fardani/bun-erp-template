@@ -51,3 +51,23 @@ register its own HTTP provider without editing the core:
 
 Compose the body with `@bun-erp/email` components and `renderEmailDocument`, then pass the HTML to
 the mailer; the package stays opt-in because the correct transport depends on the deployment.
+
+## Object storage
+
+`ctx.storage` (apps/server/platform/storage) is the helper features use to persist uploaded files
+and documents. The driver is chosen by STORAGE_DRIVER through `StorageDriverRegistry`, so feature
+code never branches on the runtime:
+
+- `local` writes under STORAGE_LOCAL_ROOT through the Bun filesystem. Development and test only;
+  the config schema refuses it when APP_ENV=production.
+- `s3` uses `Bun.S3Client` (no AWS SDK). S3_BUCKET is required; S3_REGION, S3_ENDPOINT,
+  S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY and S3_FORCE_PATH_STYLE configure the client.
+- `r2` uses a Cloudflare Worker binding named by STORAGE_R2_BINDING. R2 bindings cannot presign, so
+  STORAGE_PUBLIC_URL is required; the Worker example in wrangler.jsonc selects this driver.
+- `memory` keeps objects in-process for tests and driver-agnostic boots.
+
+The driver name is validated at bootstrap, but the transport is built on first use: a filesystem,
+S3 client, and Worker binding cannot all be constructed on every runtime, so an unused driver never
+crashes startup. `put`, `get`, `delete`, `exists` and `url` are the surface; `putJson`/`getJson` wrap
+JSON. Keys are normalized and reject traversal before any driver touches a path or bucket. Use
+`url(key, { expiresInSeconds })` for a presigned link when the driver supports it.

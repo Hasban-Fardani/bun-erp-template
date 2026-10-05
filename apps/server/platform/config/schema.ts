@@ -57,9 +57,19 @@ const rawSchema = z
     GOOGLE_CLIENT_ID: z.string().default(""),
     GOOGLE_CLIENT_SECRET: z.string().default(""),
 
-    // Storage
-    STORAGE_DRIVER: z.enum(["local", "s3"]),
+    // Storage: local is dev/test only. s3 uses Bun.S3Client; r2 uses a Cloudflare binding.
+    STORAGE_DRIVER: z.enum(["local", "s3", "r2", "memory"]),
     STORAGE_LOCAL_ROOT: z.string().trim().min(1).default(".data/storage"),
+    /** Public base for object URLs; R2 requires it, S3 falls back to presigned URLs when empty. */
+    STORAGE_PUBLIC_URL: z.string().trim().default(""),
+    /** Worker binding name for the r2 driver. */
+    STORAGE_R2_BINDING: z.string().trim().default("STORAGE"),
+    S3_BUCKET: z.string().trim().default(""),
+    S3_REGION: z.string().trim().default("auto"),
+    S3_ENDPOINT: z.string().trim().default(""),
+    S3_ACCESS_KEY_ID: z.string().trim().default(""),
+    S3_SECRET_ACCESS_KEY: z.string().default(""),
+    S3_FORCE_PATH_STYLE: boolOr("false"),
 
     // Mail
     MAIL_DRIVER: z.enum(["log", "smtp"]),
@@ -150,6 +160,7 @@ export function findStrayKeys(env: Record<string, string | undefined>): string[]
     "AUTH_",
     "GOOGLE_",
     "STORAGE_",
+    "S3_",
     "MAIL_",
     "SMTP_",
     "FEATURE_",
