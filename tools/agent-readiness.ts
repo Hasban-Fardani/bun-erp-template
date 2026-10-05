@@ -38,7 +38,9 @@ export async function checkAgentReadiness(root: string): Promise<string[]> {
   const indexPath = `${root}/.codegraph/codegraph.db`;
   try {
     if (!(await Bun.file(indexPath).exists())) throw new Error("missing .codegraph/codegraph.db");
-    const database = new Database(indexPath, { readonly: true });
+    // Bun's SQLite cannot open a WAL database read-only when the `-shm` sidecar is absent (a fresh
+    // `bun erp init` leaves none), so open read-write and only ever read from it.
+    const database = new Database(indexPath);
     try {
       indexedFiles = database
         .query<{ path: string }, []>("SELECT path FROM files")
