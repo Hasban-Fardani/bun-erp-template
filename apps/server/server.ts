@@ -57,7 +57,7 @@ async function main(): Promise<void> {
     fetch: createHostFetch(app.fetch, webApp?.fetch),
   });
   const jobWorker = process.argv.includes("--with-jobs")
-    ? startJobWorker({ db: ctx.db, registry: createJobRegistry(), logger: ctx.logger })
+    ? startJobWorker({ db: ctx.db, registry: createJobRegistry(ctx), logger: ctx.logger })
     : undefined;
 
   ctx.logger.info({

@@ -2,6 +2,7 @@ import type { AppContext } from "./context.ts";
 import { createAuth } from "./features/identity/auth.ts";
 import { loadEnv } from "./platform/config/index.ts";
 import { createPostgresDatabase } from "./platform/database/postgres.ts";
+import { createMailEnqueue, createMailer } from "./platform/mail/index.ts";
 import { createWorkerLogger } from "./platform/observability/worker-logger.ts";
 
 type HyperdriveBinding = { connectionString: string };
@@ -29,7 +30,8 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   // Hyperdrive owns pooling; clients and their sockets remain scoped to this invocation.
   const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false);
   const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);
-  return { env, db, logger, close };
+  const mail = createMailer({ env, logger, enqueue: createMailEnqueue(db) });
+  return { env, db, logger, mail, close };
 }
 
 /** HTTP requests need auth; scheduled queue ticks only need the database and logger. */

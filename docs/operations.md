@@ -31,3 +31,23 @@ cause. Error messages are not persisted; only safe error codes and structured jo
 
 Back up PostgreSQL before migrations and test restoration in a separate database. Production state
 belongs in PostgreSQL or configured object storage, not an application directory. See deployment.md.
+
+## Mail
+
+`ctx.mail` (apps/server/platform/mail) is the single mail entry point. Features call
+`ctx.mail.send(message)` for immediate delivery or `ctx.mail.queue(message)` to store a `mail.send`
+job and let the worker retry transient failures. The queue path stores the already-rendered HTML, so
+the worker needs no email renderer. `to` accepts a string or `{ address, name }`; `html` is optional
+when `text` is present, and a plain-text body is derived from the HTML otherwise.
+
+Transport is selected by MAIL_DRIVER and resolved through `MailDriverRegistry`, so a project can
+register its own HTTP provider without editing the core:
+
+- `log` (default) writes a structured `mail.sent` line and sends nothing — visible, never silent.
+- `smtp` sends through nodemailer using SMTP_HOST/SMTP_PORT/SMTP_SECURE/SMTP_USERNAME/SMTP_PASSWORD.
+  It needs raw sockets, so the config schema refuses it when APP_DEPLOY_TARGET=cloudflare; use `log`
+  or a custom HTTP driver there.
+- `memory` captures messages in-process and is the seam tests assert against.
+
+Compose the body with `@bun-erp/email` components and `renderEmailDocument`, then pass the HTML to
+the mailer; the package stays opt-in because the correct transport depends on the deployment.

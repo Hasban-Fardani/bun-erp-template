@@ -1,6 +1,7 @@
 import type { Auth } from "./features/identity/auth.ts";
 import type { Env } from "./platform/config/index.ts";
 import type { Database } from "./platform/database/index.ts";
+import type { Mailer } from "./platform/mail/index.ts";
 import type { Logger } from "./platform/observability/logger.ts";
 
 export { resolveDefaultOrganizationId } from "./platform/database/organizations.ts";
@@ -11,5 +12,6 @@ export type AppContext = {
   db: Database;
   logger: Logger;
   auth: Auth;
+  mail: Mailer;
   close: () => Promise<void>;
 };

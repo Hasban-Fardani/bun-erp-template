@@ -17,11 +17,15 @@
     "drizzle-orm": "0.45.2",
     "hono": "4.13.8",
     "hono-openapi": "1.3.3",
+    "nodemailer": "10.0.15",
     "pino": "10.3.1",
     "postgres": "3.4.9",
     "zod": "4.6.5"
   },
   "exports": {
     "./app-type": "./http/app-type.ts"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "8.0.2"
   }
 }

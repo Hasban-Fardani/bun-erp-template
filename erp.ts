@@ -1385,7 +1385,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 
   "jobs:work": async () => {
     const ctx = await createCliContext({ migrateOnStart: false });
-    const worker = startJobWorker({ db: ctx.db, registry: createJobRegistry(), logger: ctx.logger });
+    const worker = startJobWorker({ db: ctx.db, registry: createJobRegistry(ctx), logger: ctx.logger });
     const stop = () => worker.stop();
     process.on("SIGINT", stop);
     process.on("SIGTERM", stop);
@@ -1401,7 +1401,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "jobs:run-once": async () => {
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const processed = await runJobBatch(ctx.db, createJobRegistry(), ctx.logger, { limit: 20 });
+      const processed = await runJobBatch(ctx.db, createJobRegistry(ctx), ctx.logger, { limit: 20 });
       process.stdout.write(`Processed ${processed} background job(s).\n`);
     } finally {
       await ctx.close();

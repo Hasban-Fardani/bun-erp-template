@@ -50,7 +50,7 @@ export default {
       (async () => {
         const context = createCloudflareInfrastructure(bindings);
         try {
-          const count = await runJobBatch(context.db, createJobRegistry(), context.logger, {
+          const count = await runJobBatch(context.db, createJobRegistry(context), context.logger, {
             limit: CLOUDFLARE_JOB_BATCH_SIZE,
           });
           context.logger.info({ event: "jobs.schedule.completed", processed: count });

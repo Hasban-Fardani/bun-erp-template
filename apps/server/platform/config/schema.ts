@@ -89,6 +89,13 @@ const rawSchema = z
     if (env.MAIL_DRIVER === "smtp" && env.SMTP_HOST === "") {
       ctx.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "required when MAIL_DRIVER=smtp" });
     }
+    if (env.APP_DEPLOY_TARGET === "cloudflare" && env.MAIL_DRIVER === "smtp") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["MAIL_DRIVER"],
+        message: "SMTP needs raw sockets; use log or an HTTP mail driver on Cloudflare Workers",
+      });
+    }
     if (env.APP_ENV !== "production") return;
 
     // APP_ENV=production rejects unsafe configuration.
