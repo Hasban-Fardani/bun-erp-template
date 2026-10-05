@@ -12,6 +12,7 @@ export function Content({ children }: { children: ReactNode }) {
   return (
     <DropdownMenu.Portal>
       <DropdownMenu.Content
+        data-slot="dropdown-menu-content"
         className="z-50 min-w-44 rounded-md border border-border bg-surface p-1 text-[13px] shadow-md outline-none focus-visible:ring-2 focus-visible:ring-accent"
         align="end"
         sideOffset={6}

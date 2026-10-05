@@ -52,7 +52,8 @@ async function login(p: Page) {
   await p.fill("#email", EMAIL);
   await p.fill("#password", PASSWORD);
   await p.click('button[type="submit"]');
-  await p.waitForURL(/\/users/, { timeout: 20_000 });
+  // Sign-in now lands on the overview ("/"), not straight into the user list.
+  await p.waitForURL((url) => url.pathname !== "/login", { timeout: 20_000 });
 }
 
 async function searchResponse(p: Page, path: string, term: string) {
@@ -69,8 +70,9 @@ try {
   check("login: form tampil", (await page.locator("#email").count()) === 1);
   check("login: ada recovery action", (await page.getByTestId("login-recovery-action").count()) === 1);
   await login(page);
-  check("login: masuk berhasil", page.url().includes("/users"));
+  check("login: masuk berhasil", !page.url().includes("/login"));
 
+  await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
   const userSearch = await searchResponse(page, "/api/v1/users", "a");
   check("pengguna: pencarian bekerja", userSearch.ok(), `HTTP ${userSearch.status()}`);
 
@@ -273,6 +275,20 @@ try {
     railIsAligned ? "" : JSON.stringify(railMetrics),
   );
   await collapsedSidebar.screenshot({ path: ".data/qa/sidebar-collapsed.png" });
+
+  // Theme is a runtime preference now: the stored choice must survive a reload and be applied
+  // before paint. Reset afterwards so the rest of the run uses the default palette.
+  await page.evaluate(() => localStorage.setItem("erp.theme", "dark"));
+  await page.reload({ waitUntil: "networkidle" });
+  check(
+    "theme: dark preference persists and applies",
+    await page.evaluate(() => document.documentElement.dataset.theme === "dark"),
+  );
+  await page.evaluate(() => localStorage.setItem("erp.theme", "light"));
+  await page.reload({ waitUntil: "networkidle" });
+
+  check("a11y: skip-to-content link exists", (await page.locator('a[href="#main-content"]').count()) === 1);
+  check("a11y: main landmark is present", (await page.locator("main#main-content").count()) === 1);
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.goto(`${WEB}/login`, { waitUntil: "networkidle" });

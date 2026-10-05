@@ -1,9 +1,16 @@
 import type { AutoAnimateOptions, AutoAnimationPlugin } from "@formkit/auto-animate";
 import { useAutoAnimate as useFormKitAutoAnimate } from "@formkit/auto-animate/react";
 
+/**
+ * Shared list motion. 200 ms on the panel enter curve matches the `--motion-*` scale in
+ * `styles.css` closely enough that a reordered list and an opening menu feel like one system,
+ * and it is slow enough to read what moved without holding the user back. AutoAnimate honours
+ * reduced-motion preferences by default; `disrespectUserMotionPreference` stays false so a
+ * caller cannot override that.
+ */
 const SOFT_MOTION_OPTIONS: Partial<AutoAnimateOptions> = {
-  duration: 180,
-  easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+  duration: 200,
+  easing: "cubic-bezier(0.22, 1, 0.36, 1)",
 };
 
 type AccessibleAutoAnimateOptions = Omit<Partial<AutoAnimateOptions>, "disrespectUserMotionPreference">;

@@ -1,14 +1,23 @@
 import { LocaleSwitcher, useI18n } from "@bun-erp/i18n/react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@bun-erp/ui/molecules/breadcrumb.tsx";
 import { Tooltip } from "@bun-erp/ui/molecules/tooltip.tsx";
 import * as UserMenu from "@bun-erp/ui/organisms/dropdown-menu.tsx";
 import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
 import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { Menu, PanelLeftClose, PanelLeftOpen, Users as UsersIcon } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
-import { type NavItem, navGroups } from "../config/navigation.ts";
+import { type NavItem, navLocationForPath, visibleNavGroups } from "../config/navigation.ts";
 import { uiConfig } from "../config/ui.ts";
 import { useSession, useSignOut } from "../features/identity/hooks/index.ts";
 import { cn } from "../lib/cn.ts";
+import { CommandPalette } from "./command-palette.tsx";
+import { ThemeSwitcher } from "./theme-switcher.tsx";
 
 type SessionData = Awaited<ReturnType<typeof useSession>>["data"];
 
@@ -24,11 +33,6 @@ function useCollapsed() {
       setCollapsed(next);
     },
   ] as const;
-}
-
-function hasPermission(session: SessionData, permission?: string): boolean {
-  if (!permission) return true;
-  return session?.permissions.includes(permission) ?? false;
 }
 
 function NavigationGroup({
@@ -175,32 +179,58 @@ function NavContent({
           collapsed ? "justify-center px-0" : "px-4",
         )}
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-accent-ink">
-          <UsersIcon className="size-4" />
-        </span>
-        {/* Rail mode: the app name drops out, icons stay as position markers. */}
-        {collapsed ? null : (
-          <span className="truncate text-[14.5px] font-semibold tracking-tight">{uiConfig.appName}</span>
-        )}
+        <Link
+          to="/"
+          aria-label={t("navigation.home")}
+          className="flex min-w-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-accent-ink">
+            <UsersIcon className="size-4" />
+          </span>
+          {/* Rail mode: the app name drops out, icons stay as position markers. */}
+          {collapsed ? null : (
+            <span className="truncate text-[14.5px] font-semibold tracking-tight">{uiConfig.appName}</span>
+          )}
+        </Link>
       </div>
 
       <div className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
-        {navGroups.map((group) => {
-          const items = group.items.filter((item) => hasPermission(session, item.permission));
-          if (items.length === 0) return null;
-          return (
-            <NavigationGroup
-              key={group.titleKey ?? "primary"}
-              titleKey={group.titleKey}
-              items={items}
-              collapsed={collapsed}
-              pathname={location.pathname}
-              onNavigate={onNavigate}
-            />
-          );
-        })}
+        {visibleNavGroups(session?.permissions ?? []).map((group) => (
+          <NavigationGroup
+            key={group.titleKey ?? "primary"}
+            titleKey={group.titleKey}
+            items={group.items}
+            collapsed={collapsed}
+            pathname={location.pathname}
+            onNavigate={onNavigate}
+          />
+        ))}
       </div>
     </nav>
+  );
+}
+
+/**
+ * Where you are, for the administration subpages. The sidebar names the group, but once a page
+ * is open the header repeats the trail. Home has no group, so it renders nothing rather than a
+ * lone crumb.
+ */
+function Breadcrumbs({ pathname }: { pathname: string }) {
+  const { t } = useI18n();
+  const location = navLocationForPath(pathname);
+  if (!location?.group.titleKey) return null;
+  return (
+    <Breadcrumb className="hidden min-w-0 md:block">
+      <BreadcrumbList className="flex-nowrap text-[12.5px]">
+        <BreadcrumbItem>
+          <span className="truncate text-ink-muted">{t(location.group.titleKey)}</span>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage className="truncate">{t(location.item.titleKey)}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }
 
@@ -255,8 +285,14 @@ function Topbar({ session }: { session: SessionData }) {
             {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           </button>
 
-          <div className="ml-auto flex items-center">
-            <LocaleSwitcher className="mr-2 h-8 max-w-32 rounded-md border border-border bg-surface px-2 text-xs text-ink-soft outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+          <Breadcrumbs pathname={location.pathname} />
+
+          <div className="ml-auto flex items-center gap-1.5">
+            <CommandPalette permissions={session?.permissions ?? []} onSignOut={() => signOut.mutate()} />
+            <span className="hidden sm:block">
+              <ThemeSwitcher />
+            </span>
+            <LocaleSwitcher className="h-8 max-w-32 rounded-md border border-border bg-surface px-2 text-xs text-ink-soft outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             <UserMenu.Root>
               <UserMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent">
                 <span className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-soft-foreground">
@@ -275,7 +311,7 @@ function Topbar({ session }: { session: SessionData }) {
             </UserMenu.Root>
           </div>
         </header>
-        <main key={location.pathname} className="enter-soft flex-1">
+        <main key={location.pathname} id="main-content" className="enter-soft flex-1">
           <Outlet />
         </main>
       </div>
@@ -296,6 +332,12 @@ export function AuthenticatedLayout() {
 
   return (
     <div className="flex min-h-dvh bg-background">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        {t("navigation.skipToContent")}
+      </a>
       <Topbar session={session.data} />
     </div>
   );

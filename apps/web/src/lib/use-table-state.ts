@@ -75,6 +75,13 @@ export function useTableState(config: TableStateConfig) {
   );
   useEffect(() => () => (searchTimer.current ? clearTimeout(searchTimer.current) : undefined), []);
 
+  /** Clearing is a deliberate action, so it lands immediately instead of waiting on the debounce. */
+  const clearSearch = useCallback(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    setSearchDraft("");
+    setState((prev) => ({ ...prev, search: "", page: 1 }));
+  }, []);
+
   /** Query string for the endpoint, built once so no page hand-rolls `URLSearchParams`. */
   const queryString = useMemo(() => {
     const params = new URLSearchParams({
@@ -87,7 +94,7 @@ export function useTableState(config: TableStateConfig) {
     return params.toString();
   }, [state]);
 
-  return { ...state, searchDraft, setSort, setPage, setPerPage, setSearch, queryString };
+  return { ...state, searchDraft, setSort, setPage, setPerPage, setSearch, clearSearch, queryString };
 }
 
 /** Only non-default values reach the URL, so the common view stays a clean address. */

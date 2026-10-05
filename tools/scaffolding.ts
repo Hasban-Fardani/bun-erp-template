@@ -721,6 +721,7 @@ export function ${pascal}Screen() {
               state={table}
               pending={rows.isFetching}
               error={rows.isError ? (rows.error as Error).message : undefined}
+              onRetry={() => void rows.refetch()}
               searchPlaceholder={t("${name}.search")}
               empty={{ filtered: false, message: t("${name}.empty"), noMatchMessage: t("${name}.noMatch") }}
               labels={labels}

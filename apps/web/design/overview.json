@@ -1,0 +1,119 @@
+{
+  "feature_id": "overview",
+  "surface_class": "operational_surface",
+  "status": "IMPLEMENTED",
+  "ui_code_requested": true,
+  "approved_by": "owner",
+  "approved_at": "2026-10-05",
+  "mock_paths": ["docs/riset/shadcn-charts-blocks.md", "docs/riset/login-entry-screens.md"],
+  "style": {
+    "contrast_min_ratio": 4.8,
+    "unique_font_sizes": 6,
+    "unique_weights": 2,
+    "accent_hues": 1,
+    "nested_card_depth": 0,
+    "icon_libraries": 1,
+    "radius_styles": 3,
+    "browser_surfaces_themed": true,
+    "reduced_motion_respected": true,
+    "section_scaffolds_repeated": 0,
+    "hero_cliche_stack": false,
+    "kicker_above_heading": false,
+    "gradient_multistop": false,
+    "emoji_as_icon": false,
+    "motion_unmapped": false,
+    "invented_identity_assets": [],
+    "fabricated_portrait": false,
+    "copy_forbidden_hits": []
+  },
+  "options": [
+    {
+      "option_id": "permission-filtered-module-grid",
+      "role": "primary",
+      "reference_refs": ["https://ui.shadcn.com/blocks", "https://ui.shadcn.com/blocks/login"],
+      "patterns": ["operational:permission-filtered-grid", "operational:module-inventory"],
+      "tradeoff": "A grid of reachable areas orients a new operator without inventing data. It carries no KPIs on purpose: a template has no business numbers, and a chart fed placeholder values would be a lie about the deployment.",
+      "mock_path": "docs/riset/login-entry-screens.md",
+      "authored_device": "module-grid-read-from-the-same-navigation-source-the-sidebar-uses",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "measured_facts": {
+            "block": "dashboard-01",
+            "composition": "sidebar-header-cards-chart-table"
+          },
+          "mechanism": "operational-shell-with-a-grid-of-entry-cards",
+          "application": "the overview reuses the shell's permission-filtered navigation rows as its cards instead of keeping a second list."
+        },
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "measured_facts": {
+            "two_column_variants": "2",
+            "single_card_variants": "3"
+          },
+          "mechanism": "a second surface must carry content rather than decoration",
+          "application": "the grid lists genuinely reachable areas with their own icon; nothing is a placeholder or an illustration."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "copied": "the sidebar/header shell and a card grid for the content column",
+          "deviated": "no charts and no KPI cards",
+          "reason": "an ERP template has no business data; a chart with fabricated numbers would misrepresent the deployment, and the audit rules forbid it."
+        },
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "copied": "the entry surface names what the account can reach",
+          "deviated": "no cover panel and no metrics",
+          "reason": "an authenticated operator already knows the product; the useful content is the list of areas their role opens, read from the navigation source."
+        }
+      ]
+    },
+    {
+      "option_id": "dashboard-with-charts",
+      "role": "alternate",
+      "reference_refs": ["https://ui.shadcn.com/charts/"],
+      "patterns": ["operational:permission-filtered-grid"],
+      "tradeoff": "Rejected: the chart components exist, but there is no domain data to fill them. Shipping trend lines over invented values would fabricate the state of the business.",
+      "mock_path": "docs/riset/shadcn-charts-blocks.md",
+      "authored_device": "none",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/charts/",
+          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "measured_facts": {
+            "families": "area-bar-line-pie-radar-radial",
+            "data_source": "sample-records"
+          },
+          "mechanism": "gallery charts render sample records, not domain state",
+          "application": "would require real records; none exist in the template, so the charts stay unused here."
+        },
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "measured_facts": {
+            "block": "dashboard-01",
+            "content": "chart-and-recent-sales-table"
+          },
+          "mechanism": "a dashboard block assumes product data",
+          "application": "the block is a reference for the shell, not for fabricated content."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/charts/",
+          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "copied": "nothing",
+          "deviated": "charts are not mounted on the landing screen",
+          "reason": "the anti-slop rules ban fabricated metrics; the charts wait for a product spec that supplies real data."
+        }
+      ]
+    }
+  ],
+  "notes": "The landing screen shows only areas the account can open, derived from the shared permission-filtered navigation. No metrics, no cover art, no invented identity. A new area added to navigation appears here and in the sidebar and command palette at once."
+}

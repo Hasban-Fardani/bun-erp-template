@@ -1,2 +1,4 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
-export const Route = createFileRoute("/_authenticated/")({ component: () => <Navigate to="/users" replace /> });
+import { createFileRoute } from "@tanstack/react-router";
+import { OverviewScreen } from "../../features/overview/screens/overview.tsx";
+
+export const Route = createFileRoute("/_authenticated/")({ component: OverviewScreen });

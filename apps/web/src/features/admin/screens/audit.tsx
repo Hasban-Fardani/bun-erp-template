@@ -7,14 +7,37 @@ import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
 import type { Column } from "@bun-erp/ui/organisms/data-table.tsx";
 import { ResourceTable } from "@bun-erp/ui/organisms/resource-table.tsx";
 import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
+import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
 import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
-import { Download, FileSearch, ScrollText } from "lucide-react";
-import { useState } from "react";
+import { Copy, Download, FileSearch, ScrollText } from "lucide-react";
+import { useCallback, useState } from "react";
 import { useResourceTableLabels } from "../../../lib/resource-table-labels.ts";
 import { useTableState } from "../../../lib/use-table-state.ts";
 import { useSession } from "../../identity/hooks/index.ts";
 import { useAuditLogs } from "../hooks/index.ts";
 import type { AuditLog } from "../types/index.ts";
+
+/** Copies text and reports through the toast system; clipboard can be missing on some hosts. */
+function useCopyToClipboard() {
+  const { t } = useI18n();
+  const toast = useToast();
+
+  return useCallback(
+    async (text: string) => {
+      try {
+        if (typeof navigator === "undefined" || !navigator.clipboard) {
+          toast.error(t("common.copyFailed"));
+          return;
+        }
+        await navigator.clipboard.writeText(text);
+        toast.success(t("common.copied"));
+      } catch {
+        toast.error(t("common.copyFailed"));
+      }
+    },
+    [t, toast],
+  );
+}
 
 /** CSV export is built client-side from data already on screen — no new endpoint. */
 function toCsv(items: AuditLog[], headers: string[], formatTime: (iso: string) => string): string {
@@ -109,6 +132,7 @@ export function AuditScreen() {
               state={table}
               pending={logs.isFetching}
               error={logs.isError ? (logs.error as Error).message : undefined}
+              onRetry={() => void logs.refetch()}
               searchPlaceholder={t("audit.search")}
               empty={{ filtered: false, message: t("audit.empty"), noMatchMessage: t("audit.noMatch") }}
               labels={labels}
@@ -153,6 +177,7 @@ export function AuditScreen() {
 /** Before/after payload of the selected event, in a drawer so the table stays scannable. */
 function AuditDetail({ log, onClose }: { log: AuditLog | null; onClose: () => void }) {
   const { t, formatDateTime } = useI18n();
+  const copy = useCopyToClipboard();
   if (!log) return null;
   return (
     <Sheet open onOpenChange={(open) => (open ? undefined : onClose())} side="right" title={log.event}>
@@ -163,9 +188,14 @@ function AuditDetail({ log, onClose }: { log: AuditLog | null; onClose: () => vo
             {log.subjectType}:{log.subjectId}
           </span>
         </div>
-        <p className="text-[12px] text-ink-muted">
-          {formatDateTime(log.createdAt, { timeZone: "Asia/Jakarta" })} {t("audit.timeZone")} · trace {log.traceId}
-        </p>
+        <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-muted">
+          <span>
+            {formatDateTime(log.createdAt, { timeZone: "Asia/Jakarta" })} {t("audit.timeZone")}
+          </span>
+          <span aria-hidden="true">·</span>
+          <span className="select-all">trace {log.traceId}</span>
+          <IconButton icon={Copy} label={t("audit.copyTrace")} onClick={() => void copy(log.traceId)} />
+        </div>
         <Snapshot title={t("audit.before")} value={log.before} />
         <Snapshot title={t("audit.after")} value={log.after} />
       </div>
@@ -174,11 +204,22 @@ function AuditDetail({ log, onClose }: { log: AuditLog | null; onClose: () => vo
 }
 
 function Snapshot({ title, value }: { title: string; value: AuditLog["before"] }) {
+  const { t } = useI18n();
+  const copy = useCopyToClipboard();
+  const snapshot = value ? JSON.stringify(value, null, 2) : "";
   return (
     <div>
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">{title}</p>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">{title}</p>
+        <IconButton
+          icon={Copy}
+          label={t("audit.copySnapshot", { title })}
+          disabled={!snapshot}
+          onClick={() => void copy(snapshot)}
+        />
+      </div>
       <pre className="max-h-72 overflow-auto rounded-md border border-border bg-background p-2 text-[11.5px]">
-        {value ? JSON.stringify(value, null, 2) : "—"}
+        {snapshot || "—"}
       </pre>
     </div>
   );

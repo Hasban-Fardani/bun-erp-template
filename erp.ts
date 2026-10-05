@@ -81,6 +81,7 @@ const CHECK_GATE_COMMANDS: Readonly<Record<string, string>> = {
   language: "check:language",
   migrations: "check:migrations",
   mobile: "check:mobile",
+  motion: "check:motion",
   platform: "check:platform",
   react: "check:react",
   readiness: "check:prod",
@@ -402,6 +403,7 @@ async function runGate(
     | "surface"
     | "shadcn"
     | "ui"
+    | "motion"
     | "ci"
     | "rpc"
     | "docs"
@@ -445,6 +447,9 @@ async function runGate(
   } else if (kind === "ui") {
     const { checkUiCompleteness } = await import("./tools/ui-completeness.ts");
     findings = (await checkUiCompleteness(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  } else if (kind === "motion") {
+    const { checkMotion } = await import("./tools/motion-gate.ts");
+    findings = (await checkMotion(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
   } else if (kind === "architecture") {
     const { checkArchitecture } = await import("./tools/architecture-guard.ts");
     findings = await checkArchitecture(repoRoot);
@@ -1540,6 +1545,11 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "check:ui": async () => {
     await guard("ui", () => runGate("ui"));
     process.stdout.write("UI completeness OK: states, focus, theme.\n");
+  },
+
+  "check:motion": async () => {
+    await guard("motion", () => runGate("motion"));
+    process.stdout.write("Motion OK: reduced-motion escape and shared keyframes.\n");
   },
 
   "skills:validate": async () => {

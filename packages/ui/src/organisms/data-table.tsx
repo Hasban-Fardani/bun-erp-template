@@ -1,6 +1,7 @@
 import { createServerColumnHelper, type ServerColumn, useServerDataTable } from "@bun-erp/data-table/server";
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
+import { Button } from "../atoms/button.tsx";
 import { IconButton } from "../atoms/icon-button.tsx";
 import { cn } from "../lib/cn.ts";
 import { useSoftAutoAnimate } from "../lib/use-auto-animate.ts";
@@ -36,6 +37,8 @@ type DataTableProps<T> = {
   empty: { filtered: boolean; message?: string; action?: ReactNode };
   pending?: boolean;
   error?: string;
+  /** Re-runs the failed request; the error state offers this as the way out. */
+  onRetry?: () => void;
   labels?: DataTableLabels;
   /** Actions column, rendered as icons. */
   actions?: (row: T) => ReactNode;
@@ -58,6 +61,8 @@ export type DataTableLabels = {
   refreshing: string;
   staleData: string;
   actions: string;
+  retry: string;
+  clearSearch: string;
   empty: TableEmptyLabels;
   pagination: PaginationLabels;
 };
@@ -67,6 +72,8 @@ export const DEFAULT_DATA_TABLE_LABELS: DataTableLabels = {
   refreshing: "Updating data…",
   staleData: "Previously loaded data is still shown.",
   actions: "Actions",
+  retry: "Try again",
+  clearSearch: "Clear search",
   empty: DEFAULT_TABLE_EMPTY_LABELS,
   pagination: {
     range: (first, last, total) => `Showing ${first}–${last} of ${total}`,
@@ -100,6 +107,7 @@ export function DataTable<T>({
   empty,
   pending,
   error,
+  onRetry,
   labels = DEFAULT_DATA_TABLE_LABELS,
   actions,
   caption,
@@ -151,6 +159,7 @@ export function DataTable<T>({
       <TableState
         columns={columns.length + (actions ? 1 : 0)}
         error={error}
+        onRetry={onRetry}
         labels={labels}
         pending={pending}
         filtered={empty.filtered}
@@ -389,6 +398,7 @@ export function Pagination({
 function TableState({
   columns,
   error,
+  onRetry,
   pending,
   filtered,
   message,
@@ -397,6 +407,7 @@ function TableState({
 }: {
   columns: number;
   error?: string;
+  onRetry?: () => void;
   pending?: boolean;
   filtered: boolean;
   message?: string;
@@ -406,7 +417,22 @@ function TableState({
   // Skeletons, not a sentence: the table keeps its shape while data lands, so the page does
   // not jump between "Memuat…" and thirty rows.
   if (pending && !error) return <TableSkeleton columns={columns} label={labels.loading} />;
-  if (error) return <TableEmpty cause="error" message={error} labels={labels.empty} />;
+  if (error) {
+    return (
+      <TableEmpty
+        cause="error"
+        message={error}
+        labels={labels.empty}
+        action={
+          onRetry ? (
+            <Button icon={RotateCcw} onClick={onRetry}>
+              {labels.retry}
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
   return (
     <TableEmpty
       cause={filtered ? "no-match" : "no-data"}

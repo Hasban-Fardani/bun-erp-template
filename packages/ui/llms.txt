@@ -30,10 +30,16 @@ import { SidebarBlock } from "@bun-erp/ui/templates/sidebar-block";
 ```
 
 Use `useSoftAutoAnimate` on the parent of a short collection whose children are inserted, removed
-or reordered. It sets the shared 180 ms motion preset and honors `prefers-reduced-motion`. The hook
-also accepts an AutoAnimate keyframe plugin for a component with a deliberate custom motion need.
-Give mapped React children stable, unique keys. Do not animate every page or a table's rows by
+or reordered. It uses the shared 200 ms panel-easing preset and honors `prefers-reduced-motion`. The
+hook also accepts an AutoAnimate keyframe plugin for a component with a deliberate custom motion
+need. Give mapped React children stable, unique keys. Do not animate every page or a table's rows by
 default; add motion only where it helps users track a state change.
+
+Motion is defined once in `@bun-erp/ui/styles.css` as `--motion-duration-fast|base|panel` and
+`--motion-ease-enter|exit`. Overlays, menus, popovers, selects, tooltips, dialogs and disclosure
+sections animate on open and on close through those tokens, so closing never snaps harder than
+opening. A global `@media (prefers-reduced-motion: reduce)` block disables every one of them along
+with the list hook's AutoAnimate preset, so components do not each re-check the preference.
 
 Explicit `.tsx` imports are supported too. Existing app-facing modules keep their current API paths;
 where those overlap an upstream API, import the complete shadcn component from the sibling

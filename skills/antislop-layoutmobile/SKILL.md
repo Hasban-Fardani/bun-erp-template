@@ -17,6 +17,8 @@ Read [mobile](../../docs/mobile.md) for native boundaries and
 - Use dynamic viewport sizing where appropriate and preserve content behind sticky controls.
 - Account for native safe areas before claiming a device layout works.
 - Navigation, dialogs and sheets remain keyboard/touch accessible with preserved focus.
+- Transient feedback must not reflow the layout: pending/refetch indicators and toasts over the content rather than pushing rows, and reserve the space a status line needs.
+- Overlays (sheet, dialog, toast) animate on open and close, and that motion is reduced-motion safe via the shared stylesheet guard (`bun erp check:gate motion`).
 
 Check at phone/tablet/desktop widths, reduced motion and both themes. Browser mobile emulation
 is viewport evidence only; iOS/Android keyboard, safe area, back navigation and plugins need

@@ -8,6 +8,8 @@ export function useResourceTableLabels(): DataTableLabels {
     refreshing: t("table.refreshing"),
     staleData: t("table.staleData"),
     actions: t("table.actions"),
+    retry: t("table.retry"),
+    clearSearch: t("table.clearSearch"),
     empty: {
       "no-data": {
         title: t("table.empty.noData.title"),

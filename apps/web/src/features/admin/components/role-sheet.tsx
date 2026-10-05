@@ -3,7 +3,7 @@ import { Button } from "@bun-erp/ui/atoms/button.tsx";
 import { Input } from "@bun-erp/ui/atoms/input.tsx";
 import { Textarea } from "@bun-erp/ui/atoms/textarea.tsx";
 import { Field } from "@bun-erp/ui/molecules/field.tsx";
-import { FormErrors } from "@bun-erp/ui/molecules/form-errors.tsx";
+import { FieldError } from "@bun-erp/ui/molecules/field-primitives.tsx";
 import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
 import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
 import { useForm } from "@tanstack/react-form";
@@ -11,6 +11,17 @@ import { Save, ShieldPlus } from "lucide-react";
 import { ApiError } from "../../../lib/api.ts";
 import { useRoleStatements } from "../hooks/index.ts";
 import type { Role } from "../types/index.ts";
+
+function FormFieldError({ id, errors }: { id: string; errors: readonly unknown[] }) {
+  const messages = errors.flatMap((error) => {
+    if (error == null) return [];
+    if (typeof error === "string") return [{ message: error }];
+    if (error instanceof Error) return [{ message: error.message }];
+    return [{ message: String(error) }];
+  });
+
+  return <FieldError id={id} className="text-xs" errors={messages} />;
+}
 
 /** Role form shared by create and edit modes — the fields are identical. */
 export function RoleSheet({
@@ -31,15 +42,6 @@ export function RoleSheet({
   const toast = useToast();
   const form = useForm({
     defaultValues: { key: role?.key ?? "", name: role?.name ?? "", description: role?.description ?? "" },
-    validators: {
-      onSubmit: ({ value }) => {
-        const fields: Record<string, string> = {};
-        if (!/^[a-z0-9_-]{1,64}$/.test(value.key)) fields.key = t("roles.form.keyInvalid");
-        if (!value.name.trim() || value.name.length > 120) fields.name = t("roles.form.nameInvalid");
-        if (value.description.length > 500) fields.description = t("roles.form.descriptionTooLong");
-        return Object.keys(fields).length ? { fields } : undefined;
-      },
-    },
     onSubmit: async ({ value }) => {
       try {
         await onSubmit({ ...value, description: value.description || undefined });
@@ -51,28 +53,38 @@ export function RoleSheet({
     },
   });
 
+  const validateKey = (value: string) => (/^[a-z0-9_-]{1,64}$/.test(value) ? undefined : t("roles.form.keyInvalid"));
+  const validateName = (value: string) =>
+    value.trim() && value.length <= 120 ? undefined : t("roles.form.nameInvalid");
+  const validateDescription = (value: string) => (value.length <= 500 ? undefined : t("roles.form.descriptionTooLong"));
+  const heading = editing ? t("roles.form.editTitle") : t("roles.form.createTitle");
+
   return (
-    <Sheet
-      open={open}
-      onOpenChange={onOpenChange}
-      side="right"
-      title={editing ? t("roles.form.editTitle") : t("roles.form.createTitle")}
-    >
+    <Sheet open={open} onOpenChange={onOpenChange} side="right" title={heading}>
       <form
+        noValidate
         onSubmit={(event) => {
           event.preventDefault();
           void form.handleSubmit();
         }}
         className="flex flex-col gap-4"
         aria-label={t("roles.form.formLabel")}
+        aria-busy={pending}
       >
-        <form.Subscribe selector={(state) => state.values}>
-          {({ key, name, description }) => (
-            <>
-              <h2 className="text-[15px] font-semibold">
-                {editing ? t("roles.form.editTitle") : t("roles.form.createTitle")}
-              </h2>
+        <h2 className="text-[15px] font-semibold">{heading}</h2>
 
+        <form.Field
+          name="key"
+          validators={{
+            onBlur: ({ value }) => validateKey(value),
+            onChange: ({ value, fieldApi }) => (fieldApi.state.meta.isTouched ? validateKey(value) : undefined),
+            onSubmit: ({ value }) => validateKey(value),
+          }}
+        >
+          {(field) => {
+            const errorId = "role-key-error";
+            const invalid = field.state.meta.errors.length > 0;
+            return (
               <Field
                 id="role-key"
                 label={t("roles.form.key")}
@@ -80,53 +92,90 @@ export function RoleSheet({
               >
                 <Input
                   id="role-key"
-                  value={key}
-                  onChange={(e) => form.setFieldValue("key", e.target.value)}
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
                   required
                   disabled={editing}
                   pattern="[a-z0-9_\-]+"
                   maxLength={64}
+                  aria-invalid={invalid}
+                  aria-describedby={invalid ? errorId : undefined}
                 />
+                <FormFieldError id={errorId} errors={field.state.meta.errors} />
               </Field>
+            );
+          }}
+        </form.Field>
 
+        <form.Field
+          name="name"
+          validators={{
+            onBlur: ({ value }) => validateName(value),
+            onChange: ({ value, fieldApi }) => (fieldApi.state.meta.isTouched ? validateName(value) : undefined),
+            onSubmit: ({ value }) => validateName(value),
+          }}
+        >
+          {(field) => {
+            const errorId = "role-name-error";
+            const invalid = field.state.meta.errors.length > 0;
+            return (
               <Field id="role-name" label={t("roles.form.name")}>
                 <Input
                   id="role-name"
-                  value={name}
-                  onChange={(e) => form.setFieldValue("name", e.target.value)}
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
                   required
                   maxLength={120}
+                  aria-invalid={invalid}
+                  aria-describedby={invalid ? errorId : undefined}
                 />
+                <FormFieldError id={errorId} errors={field.state.meta.errors} />
               </Field>
+            );
+          }}
+        </form.Field>
 
+        <form.Field
+          name="description"
+          validators={{
+            onBlur: ({ value }) => validateDescription(value),
+            onChange: ({ value, fieldApi }) => (fieldApi.state.meta.isTouched ? validateDescription(value) : undefined),
+            onSubmit: ({ value }) => validateDescription(value),
+          }}
+        >
+          {(field) => {
+            const errorId = "role-description-error";
+            const invalid = field.state.meta.errors.length > 0;
+            return (
               <Field id="role-description" label={t("roles.form.description")}>
                 <Textarea
                   id="role-description"
-                  value={description}
-                  onChange={(e) => form.setFieldValue("description", e.target.value)}
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
                   maxLength={500}
+                  aria-invalid={invalid}
+                  aria-describedby={invalid ? errorId : undefined}
                 />
+                <FormFieldError id={errorId} errors={field.state.meta.errors} />
               </Field>
+            );
+          }}
+        </form.Field>
 
-              <form.Subscribe
-                selector={(state) => [
-                  ...state.errors,
-                  ...Object.values(state.fieldMeta).flatMap((field) => field?.errors ?? []),
-                ]}
-              >
-                {(errors) => <FormErrors errors={errors} />}
-              </form.Subscribe>
-              <div className="flex items-center justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                  {t("common.cancel")}
-                </Button>
-                <Button type="submit" icon={editing ? Save : ShieldPlus} disabled={pending}>
-                  {pending ? t("common.saving") : t("common.save")}
-                </Button>
-              </div>
-            </>
-          )}
-        </form.Subscribe>
+        <div className="flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            {t("common.cancel")}
+          </Button>
+          <Button type="submit" icon={editing ? Save : ShieldPlus} disabled={pending}>
+            {pending ? t("common.saving") : t("common.save")}
+          </Button>
+        </div>
       </form>
     </Sheet>
   );

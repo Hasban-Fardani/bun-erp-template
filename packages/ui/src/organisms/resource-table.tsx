@@ -6,8 +6,9 @@ import {
   DEFAULT_DATA_TABLE_LABELS,
   Pagination,
 } from "@bun-erp/ui/organisms/data-table.tsx";
-import { Search } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { cn } from "../lib/cn.ts";
 import type { Paged } from "../types/list.ts";
 
 type ResourceTableProps<T> = {
@@ -22,6 +23,7 @@ type ResourceTableProps<T> = {
     sort: string;
     dir: "asc" | "desc";
     setSearch: (value: string) => void;
+    clearSearch: () => void;
     setSort: (column: string) => void;
     setPage: (page: number) => void;
     setPerPage: (perPage: number) => void;
@@ -30,6 +32,8 @@ type ResourceTableProps<T> = {
   empty: { filtered: boolean; message?: string; noMatchMessage?: string; action?: ReactNode };
   pending?: boolean;
   error?: string;
+  /** Re-runs the failed request; rendered as the error state's way out. */
+  onRetry?: () => void;
   actions?: (row: T) => ReactNode;
   /** Extra controls next to the search box (for example an "Add" button). */
   headerExtra?: ReactNode;
@@ -51,6 +55,7 @@ export function ResourceTable<T>({
   empty,
   pending,
   error,
+  onRetry,
   actions,
   headerExtra,
   caption,
@@ -77,11 +82,40 @@ export function ResourceTable<T>({
             placeholder={searchPlaceholder ?? "Search…"}
             aria-label={searchPlaceholder ?? "Search"}
             data-testid="table-search"
-            className="pl-7"
+            className="pl-7 pr-8"
           />
+          {state.searchDraft ? (
+            <button
+              type="button"
+              onClick={state.clearSearch}
+              aria-label={labels.clearSearch}
+              title={labels.clearSearch}
+              data-testid="table-search-clear"
+              className="absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 items-center justify-center rounded text-ink-muted outline-none hover:bg-background hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
+        {pending ? (
+          <span
+            role="status"
+            aria-live="polite"
+            data-testid="table-refreshing"
+            className="inline-flex items-center justify-center gap-1.5 text-[12px] text-ink-muted md:ml-auto"
+          >
+            <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden="true" />
+            {labels.refreshing}
+          </span>
+        ) : null}
         {headerExtra ? (
-          <div className="flex w-full min-w-0 items-center gap-2 md:ml-auto md:w-auto [&>button]:min-h-11 [&>button]:w-full md:[&>button]:min-h-8 md:[&>button]:w-auto">
+          <div
+            className={cn(
+              "flex w-full min-w-0 items-center gap-2 md:w-auto",
+              "[&>button]:min-h-11 [&>button]:w-full md:[&>button]:min-h-8 md:[&>button]:w-auto",
+              pending ? "" : "md:ml-auto",
+            )}
+          >
             {headerExtra}
           </div>
         ) : null}
@@ -97,6 +131,7 @@ export function ResourceTable<T>({
         empty={emptyState}
         pending={pending}
         error={error}
+        onRetry={onRetry}
         labels={labels}
         actions={actions}
         caption={caption}

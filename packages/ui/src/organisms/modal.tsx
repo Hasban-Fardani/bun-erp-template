@@ -21,9 +21,10 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-stone-950/40 backdrop-blur-[2px] data-[slot=overlay]" />
+        <Dialog.Overlay data-slot="modal-overlay" className="fixed inset-0 z-40 bg-stone-950/40 backdrop-blur-[2px]" />
         <Dialog.Content
           aria-describedby={undefined}
+          data-slot="modal-panel"
           className={cn(
             "fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2",
             "rounded-xl border border-border bg-surface p-6 shadow-lg outline-none",

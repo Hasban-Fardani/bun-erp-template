@@ -35,7 +35,6 @@ export function PopoverContent({
       }}
       className={cn(
         "z-50 w-72 rounded-lg border border-border bg-surface p-0 text-[13px] shadow-lg outline-none",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
         className,
       )}
       {...props}

@@ -30,7 +30,77 @@ export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
   }
 
   findings.push(...(await themeSwitch(root)));
+  findings.push(...(await resourceTableFeedback(root)));
   return findings;
+}
+
+/**
+ * R-27 (extended by the list-feedback audit). Two halves, checked separately so neither can
+ * regress alone:
+ *
+ * - the shared `ResourceTable` must *declare* a visible refetch indicator, a clear-search control,
+ *   and an error branch that accepts a retry action;
+ * - every feature screen that mounts `ResourceTable` must *pass* `pending`, `error`, and `onRetry`,
+ *   otherwise the affordances exist but are never wired.
+ *
+ * Markers are the stable ones the implementation actually uses (`data-testid="table-refreshing"`,
+ * `clearSearch`, `onRetry`) rather than incidental wording, so the check guides instead of dictating.
+ */
+const TABLE_COMPONENT = "packages/ui/src/organisms/resource-table.tsx";
+
+async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
+  const out: UiFinding[] = [];
+
+  if (await Bun.file(join(root, TABLE_COMPONENT)).exists()) {
+    const code = await Bun.file(join(root, TABLE_COMPONENT)).text();
+    // A component that never renders rows owes the user nothing; keep this honest.
+    if (/<DataTable|<table/.test(code)) {
+      if (!/data-testid="table-refreshing"|labels\.refreshing/.test(code)) {
+        out.push({
+          file: TABLE_COMPONENT,
+          rule: "TABLE_FEEDBACK_MISSING",
+          detail:
+            'no visible refetch indicator — add a `role="status"`/`data-testid="table-refreshing"` element that stays on screen while existing rows are preserved',
+        });
+      }
+      if (!/clearSearch|table-search-clear/.test(code)) {
+        out.push({
+          file: TABLE_COMPONENT,
+          rule: "TABLE_FEEDBACK_MISSING",
+          detail:
+            "no clear-search control — a filtered list must be resettable without deleting the query character by character",
+        });
+      }
+      if (!/onRetry/.test(code)) {
+        out.push({
+          file: TABLE_COMPONENT,
+          rule: "TABLE_FEEDBACK_MISSING",
+          detail:
+            "error branch accepts no retry action — a failed list must offer a way to recover in place, not only after a reload",
+        });
+      }
+    }
+  }
+
+  // Feature screens are where `ResourceTable` is mounted; the route wrappers in `pages` never own it.
+  const glob = new Bun.Glob("apps/web/src/features/**/*.tsx");
+  for (const file of glob.scanSync({ cwd: root })) {
+    const code = await Bun.file(join(root, file)).text();
+    if (!/<ResourceTable/.test(code)) continue;
+    const missing = [
+      /\bpending\s*=/.test(code) ? null : "pending (refetch)",
+      /\berror\s*=/.test(code) ? null : "error",
+      /\bonRetry\s*=/.test(code) ? null : "retry",
+    ].filter((value): value is string => value !== null);
+    if (missing.length === 0) continue;
+    out.push({
+      file,
+      rule: "TABLE_FEEDBACK_MISSING",
+      detail: `mounts ResourceTable without ${missing.join(" / ")}; the list must show refetch state, surface failure, and offer recovery`,
+    });
+  }
+
+  return out;
 }
 
 /**

@@ -7,6 +7,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { uiConfig } from "./config/ui.ts";
 import { createQueryClient } from "./lib/query-client.ts";
+import { applyInitialTheme, ThemeProvider } from "./lib/theme.tsx";
 import { routeTree } from "./routeTree.gen.ts";
 import "./styles/globals.css";
 
@@ -35,12 +36,19 @@ declare module "@tanstack/react-router" {
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("element #root tidak ditemukan");
+
+// The palette is a runtime preference now; apply it before the first paint so a dark deployment
+// does not flash light. The provider reconciles the same value once React mounts.
+applyInitialTheme();
+
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <I18nProvider>
-          <RouterProvider router={router} />
+          <ThemeProvider>
+            <RouterProvider router={router} />
+          </ThemeProvider>
         </I18nProvider>
       </ToastProvider>
     </QueryClientProvider>
@@ -48,7 +56,3 @@ createRoot(rootElement).render(
 );
 
 document.title = uiConfig.appName;
-
-// The palette is chosen at build time; applying it as an attribute lets globals.css hold both
-// token sets. Set on <html> so the background is correct before React paints anything.
-if (uiConfig.theme === "dark") document.documentElement.dataset.theme = "dark";

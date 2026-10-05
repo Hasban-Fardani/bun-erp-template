@@ -105,6 +105,7 @@ export function RolesScreen() {
               state={table}
               pending={roles.isFetching}
               error={roles.isError ? (roles.error as Error).message : undefined}
+              onRetry={() => void roles.refetch()}
               searchPlaceholder={t("roles.search")}
               empty={{ filtered: false, message: t("roles.empty"), noMatchMessage: t("roles.noMatch") }}
               labels={labels}
@@ -154,6 +155,7 @@ export function RolesScreen() {
                             disabled={deleteRole.isPending}
                             onConfirm={() =>
                               deleteRole.mutate(role.id, {
+                                onSuccess: () => toast.success(t("roles.deleted")),
                                 onError: (err) =>
                                   toast.error(
                                     err instanceof ApiError

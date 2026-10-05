@@ -8,7 +8,7 @@ prose alone does not prove enforcement.
 - [Feature development](feature-development/SKILL.md): feature boundaries and work order.
 - [Database](database-drizzle/SKILL.md): Drizzle, migrations and driver parity.
 - [Testing](testing/SKILL.md): shared fixtures and evidence.
-- [UI](antislop-ui/SKILL.md): existing components and operator feedback.
+- [UI](antislop-ui/SKILL.md): existing components, operator feedback, and the `bun erp check:gate motion` reduced-motion gate.
 - [Responsive layout](antislop-layoutmobile/SKILL.md): viewport/touch/native checks.
 - [Mobile development](mobile-development/SKILL.md): source ownership, API, logging and Capacitor release boundaries.
 - [Guardrails](template-guardrails/SKILL.md): gate diagnosis and truthful handoff.

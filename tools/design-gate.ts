@@ -24,6 +24,7 @@ async function screenNames(root: string, sourceDir: string): Promise<string[]> {
     if (sourceDir === "apps/web/src/pages") {
       const routeScreens: Record<string, string> = {
         "login.tsx": "login",
+        "_authenticated/index.tsx": "overview",
         "_authenticated/users.tsx": "users",
         "_authenticated/roles.tsx": "roles",
         "_authenticated/audit.tsx": "audit",

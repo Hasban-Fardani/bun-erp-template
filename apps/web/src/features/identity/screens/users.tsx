@@ -116,6 +116,7 @@ export function UsersScreen() {
             state={table}
             pending={users.isFetching}
             error={users.isError ? (users.error as Error).message : undefined}
+            onRetry={() => void users.refetch()}
             searchPlaceholder={t("users.search")}
             empty={{ filtered: false, message: t("users.empty"), noMatchMessage: t("users.noMatch") }}
             labels={labels}

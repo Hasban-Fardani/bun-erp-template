@@ -1,6 +1,7 @@
 import { Inbox, type LucideIcon, SearchX, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
+import { EmptyState } from "./empty-state.tsx";
 
 /**
  * Table surfaces for the states a list actually spends its life in: loading, empty, and failed.
@@ -8,9 +9,14 @@ import { cn } from "../lib/cn.ts";
  * out read as an answer. Row skeletons also keep the layout from jumping when data lands.
  */
 
-/** Placeholder rows sized to the real table so the first paint is not a smaller, different shape. */
 /** Stable ids for placeholder shapes: index keys are banned, and these never reorder. */
 const skeletonIds = (count: number): string[] => Array.from({ length: count }, (_, i) => `skeleton-${i}`);
+
+/** Identity-first tables give the first column more room; the placeholder should match that. */
+function placeholderColumns(columns: number): string {
+  const count = Math.max(columns, 1);
+  return ["minmax(0,1.4fr)", ...Array.from({ length: count - 1 }, () => "minmax(0,1fr)")].join(" ");
+}
 
 export type TableEmptyLabels = {
   "no-data": { title: string; detail: string };
@@ -42,6 +48,7 @@ export function TableSkeleton({
   columns: number;
   label?: string;
 }) {
+  const gridTemplateColumns = placeholderColumns(columns);
   return (
     <div
       role="status"
@@ -52,11 +59,8 @@ export function TableSkeleton({
       className="overflow-hidden rounded-md border border-border"
     >
       <span className="sr-only">{label}</span>
-      <div aria-hidden="true" className="animate-pulse">
-        <div
-          className="grid gap-4 border-b border-border bg-background px-4 py-3"
-          style={{ gridTemplateColumns: `repeat(${Math.max(columns, 1)}, minmax(0, 1fr))` }}
-        >
+      <div aria-hidden="true" className="motion-safe:animate-pulse">
+        <div className="grid gap-4 border-b border-border bg-background px-4 py-3" style={{ gridTemplateColumns }}>
           {skeletonIds(Math.max(columns, 1)).map((columnId, index) => (
             <div key={columnId} className={cn("h-2.5 rounded-full bg-border", index === 0 ? "w-1/2" : "w-2/5")} />
           ))}
@@ -65,7 +69,7 @@ export function TableSkeleton({
           <div
             key={rowId}
             className="grid items-center gap-4 border-b border-border px-4 py-3.5 last:border-0"
-            style={{ gridTemplateColumns: `repeat(${Math.max(columns, 1)}, minmax(0, 1fr))` }}
+            style={{ gridTemplateColumns }}
           >
             {skeletonIds(Math.max(columns, 1)).map((columnId, index) => (
               <div
@@ -91,8 +95,8 @@ export function TableSkeleton({
 
 /**
  * One empty-state shape for every reason a list can be empty. `action` is not decoration: an
- * empty table with no way out is a dead end, and the two causes need different fixes (clear the
- * filter vs create the first record).
+ * empty table with no way out is a dead end, and the causes need different fixes (clear the
+ * filter, create the first record, or retry a failed request).
  */
 export function TableEmpty({
   cause,
@@ -109,12 +113,14 @@ export function TableEmpty({
   const preset = labels[cause];
 
   return (
-    <div className="flex flex-col items-center gap-2 px-4 py-14 text-center">
-      <Icon size={22} aria-hidden="true" className={cause === "error" ? "text-danger" : "text-ink-muted"} />
-      <p className="text-sm font-medium text-ink">{message ?? preset.title}</p>
-      <p className="max-w-sm text-xs text-ink-muted">{preset.detail}</p>
-      {action ? <div className="mt-2">{action}</div> : null}
-    </div>
+    <EmptyState
+      icon={Icon}
+      iconClassName={cause === "error" ? "text-danger" : "text-ink-muted"}
+      title={message ?? preset.title}
+      message={preset.detail}
+      action={action}
+      className="py-14"
+    />
   );
 }
 
@@ -128,7 +134,7 @@ export function PageLoading({ label = "Loading…" }: { label?: string }) {
   return (
     <div className="min-h-[60vh] p-4" role="status" aria-live="polite" aria-busy="true" aria-label={label}>
       <span className="sr-only">{label}</span>
-      <div aria-hidden="true" className="animate-pulse space-y-6">
+      <div aria-hidden="true" className="motion-safe:animate-pulse space-y-6">
         <div className="h-7 w-48 rounded-md bg-border" />
         <div className="space-y-3 rounded-lg border border-border p-4">
           <div className="h-4 w-2/3 rounded-full bg-border" />

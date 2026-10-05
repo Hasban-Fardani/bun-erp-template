@@ -77,6 +77,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={toast.id}
+              data-slot="toast"
               role={toast.tone === "error" ? "alert" : "status"}
               className={cn(
                 "pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-[13px] shadow-lg",

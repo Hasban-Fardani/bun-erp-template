@@ -22,6 +22,7 @@ const GATES: readonly { name: string; command: string }[] = [
   { name: "copy", command: "check:copy" },
   { name: "design", command: "check:design" },
   { name: "ui", command: "check:ui" },
+  { name: "motion", command: "check:motion" },
   { name: "shadcn", command: "check:shadcn" },
   { name: "surface", command: "check:surface" },
   { name: "react", command: "check:react" },
