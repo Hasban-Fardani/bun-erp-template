@@ -57,11 +57,10 @@ jobs:
           MOBILE_APP_NAME: ERP Template
       - name: Build simulator app
         run: xcodebuild -project apps/mobile/ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath .data/mobile-ios CODE_SIGNING_ALLOWED=NO build
-      - name: Package simulator app
-        run: ditto -c -k --sequesterRsrc --keepParent .data/mobile-ios/Build/Products/Debug-iphonesimulator/App.app .data/mobile-ios-simulator.zip
+      # GitHub wraps every artifact in a zip, so upload the .app bundle directly instead of pre-zipping it.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ios-simulator-app
-          path: .data/mobile-ios-simulator.zip
+          path: .data/mobile-ios/Build/Products/Debug-iphonesimulator/App.app
           if-no-files-found: error
           retention-days: 14

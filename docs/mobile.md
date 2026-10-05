@@ -61,6 +61,8 @@ required; keep the native screen responsive and avoid animating whole page trans
 ## CI and release
 
 .github/workflows/mobile-build.yml creates an Android debug APK and iOS simulator artifact.
+Artifacts download as a single GitHub zip: the iOS one contains the `App.app` bundle, which installs
+on a simulator with `xcrun simctl install booted App.app`.
 .github/workflows/mobile-release.yml uploads signed Android builds to Google Play internal testing
 and iOS builds to TestFlight when the copied project supplies signing/store credentials. It does not
 promote a public production release. Native CI artifacts are not proof of device QA or store approval.
