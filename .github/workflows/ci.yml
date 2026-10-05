@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - uses: ./.github/actions/setup
       - run: bun run lint
       - run: bun erp check
@@ -40,7 +40,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:ci-disposable@localhost:5432/erp_ci
       TEST_DATABASE_URL: postgresql://postgres:ci-disposable@localhost:5432/erp_ci
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup
       - run: bun erp ci:prepare
       - run: bun erp db:migrate
@@ -51,14 +51,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup
       - run: bun erp build
   mobile-build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup
       - run: bun erp mobile:build
         env:
@@ -81,7 +81,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:ci-disposable@localhost:5432/erp_qa
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup
       - run: bunx --bun playwright-core install --with-deps chromium
       - run: bun erp ci:prepare
