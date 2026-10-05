@@ -48,6 +48,8 @@ import {
 } from "./tools/apps.ts";
 import {
   addAuditEntity,
+  addI18nKeys,
+  addNavItem,
   addRouteMount,
   addStatementResource,
   nextMigrationFile,
@@ -55,6 +57,7 @@ import {
   renderFeatureScaffold,
   renderMigrationSource,
   renderSeederSource,
+  renderWebFeatureScaffold,
   toSeederName,
   toSnakeName,
 } from "./tools/scaffolding.ts";
@@ -119,7 +122,7 @@ const HELP_GROUPS: ReadonlyArray<{
   {
     title: "Generators",
     commands: [
-      ["make:feature <name>", "Create a CRUD feature, its test, and its create-table migration"],
+      ["make:feature <name>", "Create a server + web CRUD feature, its test, and its create-table migration"],
       ["make:migration <name>", "Create a numbered migration; create_x_table fills the table name"],
       ["make:seeder <name>", "Create an idempotent feature seeder scaffold"],
     ],
@@ -587,7 +590,8 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
       process.exit(1);
     }
     const scaffold = renderFeatureScaffold(rawName);
-    for (const file of scaffold.files) {
+    const web = renderWebFeatureScaffold(scaffold);
+    for (const file of [...scaffold.files, ...web.files]) {
       const path = resolve(repoRoot, file.path);
       if (await Bun.file(path).exists()) throw new Error(`Refusing to overwrite existing file: ${file.path}`);
     }
@@ -595,6 +599,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
     const migrationFile = nextMigrationFile(existing, `create_${scaffold.table}_table`);
     for (const file of scaffold.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
+    for (const file of web.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
     const migrationPath = `apps/server/migrations/${migrationFile}`;
     await writeScaffold(
       resolve(MIGRATIONS_DIR, migrationFile),
@@ -614,19 +619,42 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     const routes = addRouteMount(await Bun.file(resolve(repoRoot, routesPath)).text(), scaffold);
     if (routes.status === "added") await Bun.write(resolve(repoRoot, routesPath), routes.source);
 
+    const navPath = "apps/web/src/config/navigation.ts";
+    const nav = addNavItem(await Bun.file(resolve(repoRoot, navPath)).text(), scaffold);
+    if (nav.status === "added") await Bun.write(resolve(repoRoot, navPath), nav.source);
+    const enPath = "packages/i18n/src/messages/en-US.ts";
+    const en = addI18nKeys(await Bun.file(resolve(repoRoot, enPath)).text(), scaffold, "en-US");
+    if (en.status === "added") await Bun.write(resolve(repoRoot, enPath), en.source);
+    const idPath = "packages/i18n/src/messages/id-ID.ts";
+    const id = addI18nKeys(await Bun.file(resolve(repoRoot, idPath)).text(), scaffold, "id-ID");
+    if (id.status === "added") await Bun.write(resolve(repoRoot, idPath), id.source);
+
     // Wiring edits happen after the scaffold is written, so format every touched file together or lint fails.
     const touched = [
       [statementsPath, statements.status],
       [auditPath, audit.status],
       [routesPath, routes.status],
+      [navPath, nav.status],
+      [enPath, en.status],
+      [idPath, id.status],
     ]
       .filter(([, status]) => status === "added")
       .map(([path]) => path as string);
-    await formatScaffold([...scaffold.files.map((file) => file.path), migrationPath, ...touched]);
+    await formatScaffold([
+      ...scaffold.files.map((file) => file.path),
+      ...web.files.map((file) => file.path),
+      migrationPath,
+      ...touched,
+    ]);
+
+    // The typed route tree must list the new page or createFileRoute fails the types gate.
+    await regenerateWebRouteTree();
 
     process.stdout.write(`Created feature: apps/server/features/${scaffold.name}\n`);
     for (const file of scaffold.files) process.stdout.write(`  ${file.path}\n`);
     process.stdout.write(`Created migration: apps/server/migrations/${migrationFile}\n`);
+    process.stdout.write(`Created web feature: apps/web/src/features/${scaffold.name}\n`);
+    for (const file of web.files) process.stdout.write(`  ${file.path}\n`);
     if (statements.status === "added") {
       process.stdout.write(`Registered permissions: ${scaffold.resource}.create, read, update, delete\n`);
     } else if (statements.status === "present") {
@@ -650,6 +678,17 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
         `Mount ${scaffold.camel}Routes under /api/v1/${scaffold.name} in apps/server/http/routes.ts\n`,
       );
     }
+    if (nav.status === "added") {
+      process.stdout.write(`Added navigation: /${scaffold.name}\n`);
+    } else if (nav.status !== "present") {
+      process.stdout.write(`Add a sidebar entry for /${scaffold.name} in apps/web/src/config/navigation.ts\n`);
+    }
+    if (en.status === "added" && id.status === "added") {
+      process.stdout.write(`Added i18n keys: ${scaffold.name}.* and navigation.${scaffold.name}\n`);
+    } else {
+      process.stdout.write(`Add the ${scaffold.name}.* i18n keys to packages/i18n/src/messages\n`);
+    }
+    process.stdout.write("Regenerated apps/web/src/routeTree.gen.ts\n");
     process.stdout.write("Next: add the domain fields, then run bun erp db:migrate && bun erp db:seed.\n");
   },
   "make:migration": async (args) => {
@@ -1524,6 +1563,21 @@ async function formatScaffold(paths: readonly string[]): Promise<void> {
     stderr: "ignore",
   });
   await proc.exited;
+}
+
+/** The web router types every page from routeTree.gen.ts; a new page must regenerate it or tsc fails. */
+async function regenerateWebRouteTree(): Promise<void> {
+  const proc = Bun.spawn(["bun", "run", "--cwd", "apps/web", "build"], {
+    cwd: repoRoot,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  if (code !== 0) throw new Error(`Web route generation failed (vite build):\n${err || out}`);
 }
 
 function listSeederFiles(): string[] {

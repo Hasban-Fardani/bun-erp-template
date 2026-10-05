@@ -57,9 +57,11 @@ Manage roles and accounts with the rest of the CLI: `role:list`, `role:show <key
 `user:show <email>`, `user:edit` (`--roles a,b` replaces organization-wide roles), `user:delete`,
 `user:grant`, `user:revoke`, and `user:passwd`. Destructive commands refuse to run without `--force`.
 
-`bun erp make:feature <name>` generates the feature module (validation, policy, schema, service,
-route, test, README) plus a create-table migration, and registers the permission keys, audit
-entity, and explicit route mount. `make:migration create_posts_table` and
+`bun erp make:feature <name>` generates the server feature module (validation, policy, schema,
+service, route, test, README) plus a create-table migration, then registers the permission keys,
+audit entity, and explicit route mount. It also generates the web feature (types, api/queries,
+hooks, screen, route page), wires the sidebar entry and both locale catalogs, and regenerates
+`apps/web/src/routeTree.gen.ts` with a web build. `make:migration create_posts_table` and
 `add_status_to_posts_table` fill the table and column names into the SQL template, and
 `make:seeder users` normalizes a `-seeder` suffix to `users.ts`. After generating a feature, add
 the domain fields and run `bun erp db:migrate` followed by `bun erp db:seed`.

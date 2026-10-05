@@ -1,13 +1,17 @@
 import { expect, test } from "bun:test";
 import {
   addAuditEntity,
+  addI18nKeys,
+  addNavItem,
   addRouteMount,
   addStatementResource,
+  humanizeName,
   nextMigrationFile,
   parseMigrationName,
   renderFeatureScaffold,
   renderMigrationSource,
   renderSeederSource,
+  renderWebFeatureScaffold,
   toKebabName,
   toSeederName,
   toSnakeName,
@@ -124,4 +128,62 @@ test("make:feature wires permissions and routes without touching duplicates", ()
     source: mounted.source,
     status: "present",
   });
+});
+
+test("make:feature emits the web feature files that mirror the app patterns", () => {
+  expect(humanizeName("sales-orders")).toBe("Sales Orders");
+  const web = renderWebFeatureScaffold({ name: "sales-orders", pascal: "SalesOrders", camel: "salesOrders" });
+  const contents = new Map(web.files.map((file) => [file.path, file.contents]));
+  expect([...contents.keys()]).toEqual([
+    "apps/web/src/features/sales-orders/types/index.ts",
+    "apps/web/src/features/sales-orders/api/queries.ts",
+    "apps/web/src/features/sales-orders/hooks/index.ts",
+    "apps/web/src/features/sales-orders/screens/sales-orders.tsx",
+    "apps/web/src/pages/_authenticated/sales-orders.tsx",
+  ]);
+
+  const screen = contents.get("apps/web/src/features/sales-orders/screens/sales-orders.tsx") ?? "";
+  expect(screen).toContain("export function SalesOrdersScreen()");
+  expect(screen).toContain('t("sales-orders.title")');
+  expect(screen).toContain("useSalesOrdersList(table.queryString)");
+
+  const queries = contents.get("apps/web/src/features/sales-orders/api/queries.ts") ?? "";
+  expect(queries).toContain("export const salesOrdersListQuery =");
+  expect(queries).toContain('rpc["sales-orders"].$get');
+
+  const types = contents.get("apps/web/src/features/sales-orders/types/index.ts") ?? "";
+  expect(types).toContain('(typeof rpc)["sales-orders"]["$get"]');
+
+  const route = contents.get("apps/web/src/pages/_authenticated/sales-orders.tsx") ?? "";
+  expect(route).toContain('createFileRoute("/_authenticated/sales-orders")');
+});
+
+test("web wiring adds the sidebar entry and both locale catalogs once", () => {
+  const nav = [
+    'import { type LucideIcon, ScrollText, ShieldCheck, Users } from "lucide-react";',
+    "",
+    "export const navGroups = [",
+    "  {",
+    '    items: [{ titleKey: "navigation.users", url: "/users", icon: Users, permission: "user.read" }],',
+    "  },",
+    "];",
+  ].join("\n");
+  const wiredNav = addNavItem(nav, { name: "sales-orders" });
+  expect(wiredNav.status).toBe("added");
+  expect(wiredNav.source).toContain("import { FileText, type LucideIcon,");
+  expect(wiredNav.source).toContain('url: "/sales-orders"');
+  expect(wiredNav.source).toContain('permission: "sales-orders.read"');
+  expect(addNavItem(wiredNav.source, { name: "sales-orders" }).status).toBe("present");
+  expect(addNavItem("export const x = 1;", { name: "sales-orders" }).status).toBe("skipped");
+
+  const en = 'export const enUS = {\n  "a": "A",\n} as const;';
+  const addedEn = addI18nKeys(en, { name: "sales-orders" }, "en-US");
+  expect(addedEn.status).toBe("added");
+  expect(addedEn.source).toContain('"sales-orders.title": "Sales Orders"');
+  expect(addedEn.source).toContain('"navigation.sales-orders": "Sales Orders"');
+  expect(addI18nKeys(addedEn.source, { name: "sales-orders" }, "en-US").status).toBe("present");
+
+  const id = 'export const idID = {\n  "a": "A",\n} satisfies Record<keyof typeof enUS, string>;';
+  expect(addI18nKeys(id, { name: "sales-orders" }, "id-ID").source).toContain('"sales-orders.title": "Sales Orders"');
+  expect(addI18nKeys("const x = 1;", { name: "sales-orders" }, "en-US").status).toBe("skipped");
 });

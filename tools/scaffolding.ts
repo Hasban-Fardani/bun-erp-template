@@ -601,3 +601,206 @@ export function addRouteMount(source: string, input: { name: string; camel: stri
 
   return { source: next, status: "added" };
 }
+
+/** "sales-orders" -> "Sales orders" for default, human-readable labels. */
+export function humanizeName(value: string): string {
+  const words = value
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`);
+  return words.join(" ") || "Feature";
+}
+
+export function renderWebFeatureScaffold(feature: { name: string; pascal: string; camel: string }): {
+  files: ReadonlyArray<{ path: string; contents: string }>;
+} {
+  const { name, pascal, camel } = feature;
+  const dir = `apps/web/src/features/${name}`;
+  return {
+    files: [
+      { path: `${dir}/types/index.ts`, contents: renderWebTypes(name, pascal) },
+      { path: `${dir}/api/queries.ts`, contents: renderWebQueries(name, camel) },
+      { path: `${dir}/hooks/index.ts`, contents: renderWebHooks(pascal, camel) },
+      { path: `${dir}/screens/${name}.tsx`, contents: renderWebScreen(name, pascal) },
+      { path: `apps/web/src/pages/_authenticated/${name}.tsx`, contents: renderWebRoute(name, pascal) },
+    ],
+  };
+}
+
+function renderWebTypes(name: string, pascal: string): string {
+  return `import type { InferResponseType } from "hono/client";
+import type { rpc } from "../../../lib/rpc.ts";
+
+/** One ${name} row as the list endpoint returns it. Add the domain fields once the spec defines them. */
+type ListResponse = InferResponseType<(typeof rpc)[${JSON.stringify(name)}]["$get"], 200>;
+export type ${pascal} = ListResponse["data"]["items"][number];
+`;
+}
+
+function renderWebQueries(name: string, camel: string): string {
+  const access = /^[A-Za-z_$][\w$]*$/.test(name) ? `.${name}` : `[${JSON.stringify(name)}]`;
+  return `import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import * as z from "zod";
+import { listParams } from "../../../lib/list-params.ts";
+import { call, rpc } from "../../../lib/rpc.ts";
+
+export const ${camel}Keys = {
+  list: (query: string) => ["${name}", query] as const,
+};
+
+export const ${camel}ListQuery = (query: string) =>
+  queryOptions({
+    queryKey: ${camel}Keys.list(query),
+    queryFn: () =>
+      call(rpc${access}.$get({ query: listParams(query, z.enum(["createdAt"]).default("createdAt")) })),
+    placeholderData: keepPreviousData,
+  });
+`;
+}
+
+function renderWebHooks(pascal: string, camel: string): string {
+  return `import { useQuery } from "@tanstack/react-query";
+import { ${camel}ListQuery } from "../api/queries.ts";
+
+export function use${pascal}List(query: string) {
+  return useQuery(${camel}ListQuery(query));
+}
+`;
+}
+
+function renderWebScreen(name: string, pascal: string): string {
+  return `import { useI18n } from "@bun-erp/i18n/react";
+import { Card } from "@bun-erp/ui/atoms/card.tsx";
+import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
+import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
+import type { Column } from "@bun-erp/ui/organisms/data-table.tsx";
+import { ResourceTable } from "@bun-erp/ui/organisms/resource-table.tsx";
+import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
+import { useResourceTableLabels } from "../../../lib/resource-table-labels.ts";
+import { useTableState } from "../../../lib/use-table-state.ts";
+import { useSession } from "../../identity/hooks/index.ts";
+import { use${pascal}List } from "../hooks/index.ts";
+import type { ${pascal} } from "../types/index.ts";
+
+// slop-ok: generated list screens deliberately share the standard resource-table shape
+export function ${pascal}Screen() {
+  const { t, formatRelativeTime } = useI18n();
+  const labels = useResourceTableLabels();
+  const session = useSession();
+  const table = useTableState({ defaultSort: "createdAt", defaultDir: "desc" });
+  const rows = use${pascal}List(table.queryString);
+
+  if (session.isPending) return <PageLoading label={t("common.loading")} />;
+  if (!session.data?.authenticated) return null;
+
+  const columns: Column<${pascal}>[] = [
+    {
+      key: "id",
+      header: t("${name}.column.id"),
+      cell: (row) => <span className="font-mono text-[12.5px]">{row.id.slice(0, 8)}</span>,
+    },
+    {
+      key: "createdAt",
+      header: t("${name}.column.created"),
+      sortable: true,
+      align: "right",
+      cell: (row) => <time className="text-[12px] text-ink-muted">{formatRelativeTime(row.createdAt)}</time>,
+    },
+  ];
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+      <PageShell title={t("${name}.title")}>
+        <Card>
+          {session.data.permissions.includes("${name}.read") ? (
+            <ResourceTable
+              caption={t("${name}.caption")}
+              columns={columns}
+              rowKey={(row) => row.id}
+              result={rows.data}
+              state={table}
+              pending={rows.isFetching}
+              error={rows.isError ? (rows.error as Error).message : undefined}
+              searchPlaceholder={t("${name}.search")}
+              empty={{ filtered: false, message: t("${name}.empty"), noMatchMessage: t("${name}.noMatch") }}
+              labels={labels}
+            />
+          ) : (
+            <EmptyState message={t("${name}.permissionDenied")} />
+          )}
+        </Card>
+      </PageShell>
+    </div>
+  );
+}
+`;
+}
+
+function renderWebRoute(name: string, pascal: string): string {
+  return `import { createFileRoute } from "@tanstack/react-router";
+import { ${pascal}Screen } from "../../features/${name}/screens/${name}.tsx";
+
+export const Route = createFileRoute("/_authenticated/${name}")({ component: ${pascal}Screen });
+`;
+}
+
+/** Adds the sidebar entry (and its icon import) for the generated web screen. */
+export function addNavItem(source: string, feature: { name: string }): WiringResult {
+  const { name } = feature;
+  const titleKey = `navigation.${name}`;
+  if (source.includes(`"${titleKey}"`)) return { source, status: "present" };
+  const importAnchor = "import { type LucideIcon,";
+  const itemsAnchor = "    items: [";
+  if (!source.includes(importAnchor) || !source.includes(itemsAnchor)) return { source, status: "skipped" };
+
+  let next = source;
+  if (!/\bFileText\b/.test(next)) next = next.replace(importAnchor, "import { FileText, type LucideIcon,");
+  const at = next.indexOf(itemsAnchor) + itemsAnchor.length;
+  const line = `\n      { titleKey: "${titleKey}", url: "/${name}", icon: FileText, permission: "${name}.read" },`;
+  next = `${next.slice(0, at)}${line}${next.slice(at)}`;
+  return { source: next, status: "added" };
+}
+
+const I18N_ANCHORS = {
+  "en-US": "} as const;",
+  "id-ID": "} satisfies Record<keyof typeof enUS, string>;",
+} as const;
+
+/** Adds the screen's message keys to one catalog. Missing keys break the typed catalog at build time. */
+export function addI18nKeys(source: string, feature: { name: string }, locale: "en-US" | "id-ID"): WiringResult {
+  const { name } = feature;
+  if (source.includes(`"${name}.title"`)) return { source, status: "present" };
+  const label = humanizeName(name);
+  const lower = label.toLowerCase();
+  const keys =
+    locale === "en-US"
+      ? {
+          [`navigation.${name}`]: label,
+          [`${name}.title`]: label,
+          [`${name}.caption`]: `${label} records`,
+          [`${name}.search`]: `Search ${lower}…`,
+          [`${name}.empty`]: `No ${lower} yet.`,
+          [`${name}.noMatch`]: `No ${lower} match your search.`,
+          [`${name}.permissionDenied`]: `You do not have permission to view ${lower}.`,
+          [`${name}.column.id`]: "ID",
+          [`${name}.column.created`]: "Created",
+        }
+      : {
+          [`navigation.${name}`]: label,
+          [`${name}.title`]: label,
+          [`${name}.caption`]: `Data ${lower}`,
+          [`${name}.search`]: `Cari ${lower}…`,
+          [`${name}.empty`]: `Belum ada ${lower}.`,
+          [`${name}.noMatch`]: `Tidak ada ${lower} yang cocok.`,
+          [`${name}.permissionDenied`]: `Anda tidak punya izin melihat ${lower}.`,
+          [`${name}.column.id`]: "ID",
+          [`${name}.column.created`]: "Dibuat",
+        };
+  const anchor = I18N_ANCHORS[locale];
+  const at = source.lastIndexOf(anchor);
+  if (at === -1) return { source, status: "skipped" };
+  const lines = Object.entries(keys)
+    .map(([key, value]) => `  ${JSON.stringify(key)}: ${JSON.stringify(value)},`)
+    .join("\n");
+  return { source: `${source.slice(0, at)}${lines}\n${source.slice(at)}`, status: "added" };
+}
