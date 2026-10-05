@@ -210,7 +210,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 900 });
 
   await page.goto(`${WEB}/users`, { waitUntil: "networkidle" });
-  const sidebarToggle = page.locator("header button[aria-expanded][aria-label]");
+  const sidebarToggle = page.getByTestId("sidebar-toggle");
   await sidebarToggle.waitFor({ state: "visible" });
   if ((await sidebarToggle.getAttribute("aria-expanded")) === "true") await sidebarToggle.click();
   const collapsedSidebar = page.locator('aside[data-sidebar-collapsed="true"]');

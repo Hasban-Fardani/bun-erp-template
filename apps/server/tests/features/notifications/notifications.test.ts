@@ -159,3 +159,12 @@ test("the notifications API rejects an anonymous caller", async () => {
   const response = await api.app.request("/api/v1/notifications", { method: "GET" });
   expect(response.status).toBe(401);
 });
+
+test("the inbox accepts the list query the web client sends", async () => {
+  const api = await createHttpFixture();
+  await api.signInAsOwner();
+  const response = await api.app.request("/api/v1/notifications?page=1&perPage=25&sort=createdAt&dir=asc", {
+    headers: { cookie: api.cookie },
+  });
+  expect(response.status).toBe(200);
+});

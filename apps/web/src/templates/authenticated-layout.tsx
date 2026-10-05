@@ -278,6 +278,7 @@ function Topbar({ session }: { session: SessionData }) {
 
           <button
             type="button"
+            data-testid="sidebar-toggle"
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? t("navigation.expandSidebar") : t("navigation.collapseSidebar")}
             aria-expanded={!collapsed}
