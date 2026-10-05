@@ -19,3 +19,24 @@ test("mobile builds reject same-origin, insecure and API-prefix configuration be
     expect(out).not.toContain("vite build");
   }
 });
+
+test("mobile:package rejects an unknown or missing --mode before building natively", async () => {
+  const root = new URL("../../../../", import.meta.url).pathname;
+  for (const args of [
+    ["package", "android", "--mode", "staging"],
+    ["package", "android", "--mode"],
+  ]) {
+    const child = Bun.spawn(["bun", "scripts/mobile.ts", ...args], {
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [out, error, code] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    expect(code).toBe(1);
+    expect(`${out}${error}`).toContain("--mode");
+  }
+});

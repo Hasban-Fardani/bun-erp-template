@@ -189,7 +189,7 @@ const HELP_GROUPS: ReadonlyArray<{
       ["mobile:dev", "Run the mobile web app with HMR"],
       ["mobile:preview", "Preview the mobile web build"],
       ["mobile:build", "Build mobile web assets"],
-      ["mobile:package", "Build a native mobile package"],
+      ["mobile:package", "Build a native mobile package; --mode debug|production (default production)"],
       ["mobile:version", "Stamp native version and build number"],
       ["mobile:add", "Add a native Capacitor platform"],
       ["mobile:sync", "Sync web assets to native projects"],

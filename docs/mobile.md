@@ -32,6 +32,15 @@ Run bun erp mobile:dev for the separate mobile app on port 5174. Set VITE_API_BA
 API origin with no path, then run bun erp mobile:build. Output is apps/mobile/www. Ordinary
 bun erp build creates only apps/web/dist.
 
+`bun erp mobile:package <android|ios>` builds the native package and defaults to
+`--mode production`, which is the signed release path used by the store workflows. Pass
+`--mode debug` for an unsigned development build: Android writes
+`apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk` and iOS writes a simulator app under
+`.data/mobile-ios/Build/Products/Debug-iphonesimulator/App.app`. Both modes require `mobile:add` and
+`mobile:sync` inputs (MOBILE_APP_ID, MOBILE_APP_NAME) and an existing native project; `--mode` is
+stripped before the remaining arguments reach the Capacitor CLI, so release flags like
+`--androidreleasetype AAB` keep working unchanged.
+
 Packaged mobile builds load bundled assets. Do not configure server.url to load a remote web app.
 Set MOBILE_APP_ID and MOBILE_APP_NAME in the copied application before generating native projects.
 The template contains no production identity, signing key or store secret.
