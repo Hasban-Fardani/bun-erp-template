@@ -38,8 +38,9 @@ rules without a separate product spec.
 - Queue handlers are at-least-once: keep them idempotent and enqueue in the feature write transaction.
 - API routes are versioned under /api/v1. Keep 401 (no session), 403 (no permission), and 404 (no row) distinct.
 - Browser QA is Playwright-only. Run `bun run qa` against local/non-production data; do not add or run Cypress.
-- `bun erp role:list` shows role keys. The first `bun erp user:create` account defaults to owner; subsequent accounts default to staff. Use `--role` to choose explicitly.
-- `bun erp make:feature`, `make:migration`, and `make:seeder` create the supported starting points. Migrations are forward-only TypeScript; feature route mounting stays explicit for Hono RPC inference.
+- `bun erp role:list` shows role keys. The first `bun erp user:create` account defaults to owner; subsequent accounts default to staff. Use `--role` to choose explicitly. `role:show/create/edit/delete` and `user:show/edit/delete/grant/revoke/passwd` cover the rest; deletes require `--force`.
+- `bun erp make:feature` generates a CRUD feature module, its test, and a create-table migration, then registers the permission keys, audit entity, and explicit route mount. `make:migration` reads Laravel-style names (`create_x_table`, `add_y_to_x_table`) and `make:seeder` normalizes the `-seeder` suffix.
+- `bun erp apps` lists workspace apps with build, port, and test status; `apps:status <name>` shows one app; `apps:create <name>` adds a minimal Bun workspace app and registers it in the root workspaces. Migrations stay forward-only TypeScript; feature route mounting stays explicit for Hono RPC inference.
 - Comments, technical names, enum values, and configuration keys use English. User-facing copy may be localized.
 - Never commit secrets, weaken gates, or claim unrun tests. Dependencies must be exact-pinned and necessary.
 

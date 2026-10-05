@@ -8,11 +8,29 @@ import { createContext } from "./apps/server/bootstrap.ts";
 import { resolveDefaultOrganizationId } from "./apps/server/context.ts";
 import { recordAudit, snapshot } from "./apps/server/features/audit/service.ts";
 import { accounts, users } from "./apps/server/features/identity/schema.ts";
-import { createUser, hashPassword } from "./apps/server/features/identity/service.ts";
-import { createUserSchema } from "./apps/server/features/identity/validation.ts";
+import {
+  createUser,
+  deleteUser,
+  hashPassword,
+  replaceUserRoles,
+  revokeUserRole,
+  updateUser,
+} from "./apps/server/features/identity/service.ts";
+import { createUserSchema, updateUserSchema } from "./apps/server/features/identity/validation.ts";
 import { createJobRegistry } from "./apps/server/features/jobs.ts";
 import { roles as roleTable } from "./apps/server/features/rbac/schema.ts";
-import { assignRole, findRoleByKey, rolesForUser } from "./apps/server/features/rbac/service.ts";
+import {
+  assignRole,
+  createRole,
+  deleteRole,
+  findRoleByKey,
+  permissionsForRole,
+  permissionsForUser,
+  rolesForUser,
+  setRolePermissions,
+  updateRole,
+} from "./apps/server/features/rbac/service.ts";
+import { createRoleSchema, updateRoleSchema } from "./apps/server/features/rbac/validation.ts";
 import { createApp } from "./apps/server/http/app.ts";
 import { loadEnv, strayKeyWarnings } from "./apps/server/platform/config/index.ts";
 import type { Database } from "./apps/server/platform/database/index.ts";
@@ -22,11 +40,23 @@ import { seed } from "./apps/server/platform/database/seed.ts";
 import { requeueDeadJob, runJobBatch } from "./apps/server/platform/jobs/queue.ts";
 import { startJobWorker } from "./apps/server/platform/jobs/worker.ts";
 import {
+  listWorkspaceApps,
+  readWorkspaceApp,
+  registerWorkspace,
+  renderAppScaffold,
+  type WorkspaceApp,
+} from "./tools/apps.ts";
+import {
+  addAuditEntity,
+  addRouteMount,
+  addStatementResource,
   nextMigrationFile,
-  renderFeatureGuide,
+  parseMigrationName,
+  renderFeatureScaffold,
   renderMigrationSource,
   renderSeederSource,
-  toKebabName,
+  toSeederName,
+  toSnakeName,
 } from "./tools/scaffolding.ts";
 import { checkScope } from "./tools/scope.ts";
 import { validateSkills } from "./tools/skills.ts";
@@ -89,9 +119,18 @@ const HELP_GROUPS: ReadonlyArray<{
   {
     title: "Generators",
     commands: [
-      ["make:feature <name>", "Create a feature workspace guide"],
-      ["make:migration <name>", "Create a numbered TypeScript migration scaffold"],
+      ["make:feature <name>", "Create a CRUD feature, its test, and its create-table migration"],
+      ["make:migration <name>", "Create a numbered migration; create_x_table fills the table name"],
       ["make:seeder <name>", "Create an idempotent feature seeder scaffold"],
+    ],
+  },
+  {
+    title: "Apps",
+    commands: [
+      ["apps", "List workspace apps with build, port, and test status"],
+      ["apps:list", "List workspace apps (same as bun erp apps)"],
+      ["apps:status <name>", "Show build, port, script, and environment info for one app"],
+      ["apps:create <name>", "Create a minimal Bun workspace app under apps/"],
     ],
   },
   {
@@ -109,10 +148,21 @@ const HELP_GROUPS: ReadonlyArray<{
       ["env:list", "Show safe configuration values and warnings"],
       ["key:generate", "Generate the local authentication secret"],
       ["role:list", "List available role keys for this organization"],
-      ["user:create <email> <password> [--role <key>] [--name <name>]", "Create a user in the configured database"],
-      ["user:grant", "Grant a role to a user"],
-      ["user:passwd", "Reset a user's password"],
+      ["role:show <key>", "Show one role with its permissions"],
+      ["role:create <key> [--name] [--description] [--permissions a,b]", "Create a custom role"],
+      [
+        "role:edit <key> [--name] [--description] [--permissions a,b]",
+        "Update a role; --permissions replaces the whole set",
+      ],
+      ["role:delete <key> --force", "Delete a custom role"],
       ["user:list", "List users and their roles"],
+      ["user:show <email>", "Show one user with roles and permissions"],
+      ["user:create <email> <password> [--role <key>] [--name <name>]", "Create a user in the configured database"],
+      ["user:edit <email> [--name] [--verified] [--roles a,b]", "Update a profile or replace organization-wide roles"],
+      ["user:delete <email> --force", "Delete a user"],
+      ["user:grant <email> [roleKey]", "Grant a role to a user"],
+      ["user:revoke <email> <roleKey>", "Revoke a role from a user"],
+      ["user:passwd <email> [password]", "Reset a user's password"],
     ],
   },
   {
@@ -207,6 +257,130 @@ class GateFailure extends Error {
     super(`${findings.length} finding(s)`);
     this.findings = findings;
   }
+}
+
+type CommandOptions = {
+  positional: string[];
+  flags: Set<string>;
+  values: Map<string, string>;
+};
+
+/**
+ * Minimal artisan-style parser: `--flag`, `--key value`, and `--key=value`.
+ * Unknown options fail loudly, so a typo never silently drops operator input.
+ */
+function parseCommandOptions(
+  args: readonly string[],
+  spec: { flags?: readonly string[]; values?: readonly string[] },
+): CommandOptions {
+  const knownFlags = new Set(spec.flags ?? []);
+  const knownValues = new Set(spec.values ?? []);
+  const parsed: CommandOptions = { positional: [], flags: new Set(), values: new Map() };
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index] ?? "";
+    if (!arg.startsWith("--")) {
+      parsed.positional.push(arg);
+      continue;
+    }
+    const [key, inlineValue] = arg.slice(2).split("=", 2);
+    if (key && knownFlags.has(key)) {
+      if (inlineValue !== undefined) throw new Error(`--${key} does not take a value`);
+      parsed.flags.add(key);
+      continue;
+    }
+    if (key && knownValues.has(key)) {
+      const value = inlineValue ?? args[index + 1];
+      if (value === undefined || (inlineValue === undefined && value.startsWith("--"))) {
+        throw new Error(`--${key} requires a value`);
+      }
+      parsed.values.set(key, value);
+      if (inlineValue === undefined) index += 1;
+      continue;
+    }
+    throw new Error(`Unknown option: ${arg}`);
+  }
+  return parsed;
+}
+
+function cliActor(): { userId: null; traceId: string; label: string } {
+  return { userId: null, traceId: `cli-${Date.now()}`, label: "cli" };
+}
+
+function humanizeKey(key: string): string {
+  return key
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`)
+    .join(" ");
+}
+
+function parseKeyList(value: string): string[] {
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+function formatIssues(issues: readonly { path: readonly PropertyKey[]; message: string }[]): string {
+  return issues.map((issue) => `${issue.path.map(String).join(".") || "input"}: ${issue.message}`).join("\n");
+}
+
+async function requireRoleByKey(db: Database, organizationId: string, key: string) {
+  const role = await findRoleByKey(db, organizationId, key);
+  if (role) return role;
+  const available = await db
+    .select({ key: roleTable.key })
+    .from(roleTable)
+    .where(eq(roleTable.organizationId, organizationId))
+    .orderBy(roleTable.key);
+  throw new Error(
+    `No role "${key}" in this organization. Available: ${available.map((row) => row.key).join(", ") || "none"}. Run bun erp role:list.`,
+  );
+}
+
+async function requireUserByEmail(db: Database, email: string) {
+  const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const user = rows[0];
+  if (!user) throw new Error(`No user with email ${email}. Run bun erp user:list.`);
+  return user;
+}
+
+function formatTimestamp(date: Date | null): string {
+  return date ? date.toISOString().replace("T", " ").slice(0, 16) : "unknown";
+}
+
+async function envKeyCount(path: string): Promise<number | undefined> {
+  const file = Bun.file(path);
+  if (!(await file.exists())) return undefined;
+  return (await file.text()).split("\n").filter((line) => /^[A-Z][A-Z0-9_]*=/.test(line)).length;
+}
+
+function printAppTable(apps: WorkspaceApp[]): void {
+  const headers = ["app", "package", "version", "port", "build", "tests"];
+  const rows = apps.map((app) => [
+    app.name,
+    app.packageName,
+    app.version,
+    app.port ? String(app.port) : "—",
+    app.buildDir ? `built (${app.buildDir})` : "not built",
+    app.testFiles > 0 ? String(app.testFiles) : "—",
+  ]);
+  const widths = headers.map((header, index) =>
+    Math.max(header.length, ...rows.map((row) => (row[index] ?? "").length)),
+  );
+  process.stdout.write(`${headers.map((header, index) => header.padEnd(widths[index] ?? 0)).join("  ")}\n`);
+  for (const row of rows) {
+    process.stdout.write(`${row.map((cell, index) => cell.padEnd(widths[index] ?? 0)).join("  ")}\n`);
+  }
+}
+
+async function showApps(): Promise<void> {
+  const apps = await listWorkspaceApps(repoRoot);
+  if (apps.length === 0) {
+    process.stdout.write("No workspace apps found. Create one with bun erp apps:create <name>.\n");
+    return;
+  }
+  printAppTable(apps);
 }
 
 /** Gates read repo files directly — used by `check` and callable on their own. */
@@ -305,6 +479,72 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   init: async () => {
     await run(["bun", "scripts/init-agents.ts"], "initialize project agent tooling");
   },
+  apps: async () => {
+    await showApps();
+  },
+  "apps:list": async () => {
+    await showApps();
+  },
+  "apps:status": async (args) => {
+    const parsed = parseCommandOptions(args, {});
+    const name = parsed.positional[0];
+    if (!name) {
+      process.stderr.write("Usage: bun erp apps:status <name>\n");
+      process.exit(1);
+    }
+    const app = await readWorkspaceApp(repoRoot, name);
+    if (!app) throw new Error(`Unknown app "${name}". Run bun erp apps to list workspace apps.`);
+    process.stdout.write(`app:        ${app.name}\n`);
+    process.stdout.write(`path:       ${app.dir}\n`);
+    process.stdout.write(`package:    ${app.packageName}\n`);
+    process.stdout.write(`version:    ${app.version}\n`);
+    process.stdout.write(`private:    ${app.private ? "yes" : "no"}\n`);
+    process.stdout.write(`entry:      ${app.entry ?? "—"}\n`);
+    process.stdout.write(`dev port:   ${app.port ? `${app.port} (${app.portSource})` : "—"}\n`);
+    process.stdout.write(
+      app.buildDir
+        ? `build:      ${app.dir}/${app.buildDir} (updated ${formatTimestamp(app.buildUpdatedAt)})\n`
+        : "build:      not built\n",
+    );
+    process.stdout.write(
+      app.testDir ? `tests:      ${app.dir}/${app.testDir} (${app.testFiles} file(s))\n` : "tests:      none\n",
+    );
+    process.stdout.write(`scripts:    ${Object.keys(app.scripts).join(", ") || "—"}\n`);
+    const appEnv = await envKeyCount(resolve(repoRoot, app.dir, ".env.example"));
+    const rootEnv = appEnv === undefined ? await envKeyCount(resolve(repoRoot, ".env.example")) : undefined;
+    const envLabel =
+      appEnv !== undefined
+        ? `${app.dir}/.env.example (${appEnv} key(s))`
+        : rootEnv !== undefined
+          ? `.env.example (${rootEnv} key(s))`
+          : "no .env.example";
+    process.stdout.write(`env:        ${envLabel}\n`);
+  },
+  "apps:create": async (args) => {
+    const rawName = args[0];
+    if (!rawName || rawName.startsWith("--")) {
+      process.stderr.write("Usage: bun erp apps:create <name>\n");
+      process.exit(1);
+    }
+    const rootManifest = (await Bun.file(resolve(repoRoot, "package.json")).json()) as { version?: string };
+    const scaffold = renderAppScaffold(rawName, { version: rootManifest.version ?? "0.1.0" });
+    if (await Bun.file(resolve(repoRoot, scaffold.dir, "package.json")).exists()) {
+      throw new Error(`App already exists: ${scaffold.dir}`);
+    }
+    for (const file of scaffold.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
+    await formatScaffold(scaffold.files.map((file) => file.path));
+    const manifestPath = resolve(repoRoot, "package.json");
+    const registered = registerWorkspace(await Bun.file(manifestPath).text(), scaffold.dir);
+    if (registered.status === "added") await Bun.write(manifestPath, registered.source);
+    process.stdout.write(`Created app: ${scaffold.dir}\n`);
+    for (const file of scaffold.files) process.stdout.write(`  ${file.path}\n`);
+    process.stdout.write(
+      registered.status === "added"
+        ? `Registered workspace: ${scaffold.dir}\n`
+        : `Add "${scaffold.dir}" to the workspaces array in package.json\n`,
+    );
+    process.stdout.write(`Next: run bun install, then bun run --cwd ${scaffold.dir} dev\n`);
+  },
   "check:gate": async (args) => {
     const [name, ...forwardedArgs] = args;
     if (name === "--list" || name === "list") {
@@ -342,39 +582,97 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
   "make:feature": async (args) => {
     const rawName = args[0];
-    if (!rawName) {
+    if (!rawName || rawName.startsWith("--")) {
       process.stderr.write("Usage: bun erp make:feature <name>\n");
       process.exit(1);
     }
-    const name = toKebabName(rawName, "Feature");
-    const target = resolve(repoRoot, `apps/server/features/${name}/README.md`);
-    await writeScaffold(target, renderFeatureGuide(name));
-    process.stdout.write(`Created feature guide: apps/server/features/${name}/README.md\n`);
-    process.stdout.write(
-      "Feature routes are mounted explicitly in apps/server/http/routes.ts to preserve Hono RPC types.\n",
+    const scaffold = renderFeatureScaffold(rawName);
+    for (const file of scaffold.files) {
+      const path = resolve(repoRoot, file.path);
+      if (await Bun.file(path).exists()) throw new Error(`Refusing to overwrite existing file: ${file.path}`);
+    }
+
+    const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
+    const migrationFile = nextMigrationFile(existing, `create_${scaffold.table}_table`);
+    for (const file of scaffold.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
+    await writeScaffold(
+      resolve(MIGRATIONS_DIR, migrationFile),
+      renderMigrationSource({ mode: "create", table: scaffold.table }),
     );
+    await formatScaffold([...scaffold.files.map((file) => file.path), `apps/server/migrations/${migrationFile}`]);
+
+    const statementsPath = resolve(repoRoot, "apps/server/features/rbac/statements.ts");
+    const statements = addStatementResource(await Bun.file(statementsPath).text(), scaffold.resource);
+    if (statements.status === "added") await Bun.write(statementsPath, statements.source);
+    const auditPath = resolve(repoRoot, "apps/server/features/audit/redact.ts");
+    const audit = addAuditEntity(await Bun.file(auditPath).text(), scaffold.resource);
+    if (audit.status === "added") await Bun.write(auditPath, audit.source);
+    const routesPath = resolve(repoRoot, "apps/server/http/routes.ts");
+    const routes = addRouteMount(await Bun.file(routesPath).text(), scaffold);
+    if (routes.status === "added") await Bun.write(routesPath, routes.source);
+
+    process.stdout.write(`Created feature: apps/server/features/${scaffold.name}\n`);
+    for (const file of scaffold.files) process.stdout.write(`  ${file.path}\n`);
+    process.stdout.write(`Created migration: apps/server/migrations/${migrationFile}\n`);
+    if (statements.status === "added") {
+      process.stdout.write(`Registered permissions: ${scaffold.resource}.create, read, update, delete\n`);
+    } else if (statements.status === "present") {
+      process.stdout.write(`Permissions already registered: ${scaffold.resource}.*\n`);
+    } else {
+      process.stdout.write(
+        `Register the ${scaffold.resource}.* permissions in apps/server/features/rbac/statements.ts\n`,
+      );
+    }
+    if (audit.status === "added") {
+      process.stdout.write(`Registered audit entity: ${scaffold.resource}\n`);
+    } else if (audit.status === "skipped") {
+      process.stdout.write(`Register the ${scaffold.resource} audit fields in apps/server/features/audit/redact.ts\n`);
+    }
+    if (routes.status === "added") {
+      process.stdout.write(`Mounted routes: /api/v1/${scaffold.name}\n`);
+    } else if (routes.status === "present") {
+      process.stdout.write(`Routes already mounted: /api/v1/${scaffold.name}\n`);
+    } else {
+      process.stdout.write(
+        `Mount ${scaffold.camel}Routes under /api/v1/${scaffold.name} in apps/server/http/routes.ts\n`,
+      );
+    }
+    process.stdout.write("Next: add the domain fields, then run bun erp db:migrate && bun erp db:seed.\n");
   },
   "make:migration": async (args) => {
-    const rawName = args[0];
+    const parsed = parseCommandOptions(args, { values: ["create", "table"] });
+    const rawName = parsed.positional[0];
     if (!rawName) {
-      process.stderr.write("Usage: bun erp make:migration <name>\n");
+      process.stderr.write("Usage: bun erp make:migration <name> [--create <table>] [--table <table>]\n");
       process.exit(1);
     }
+    if (parsed.values.has("create") && parsed.values.has("table")) {
+      throw new Error("Use either --create or --table, not both");
+    }
+    const intent = parsed.values.has("create")
+      ? { mode: "create" as const, table: toSnakeName(parsed.values.get("create") ?? "") }
+      : parsed.values.has("table")
+        ? { mode: "alter" as const, table: toSnakeName(parsed.values.get("table") ?? "") }
+        : parseMigrationName(rawName);
     const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
     const file = nextMigrationFile(existing, rawName);
-    await writeScaffold(resolve(MIGRATIONS_DIR, file), renderMigrationSource());
+    await writeScaffold(resolve(MIGRATIONS_DIR, file), renderMigrationSource(intent));
     process.stdout.write(`Created migration scaffold: apps/server/migrations/${file}\n`);
-    process.stdout.write("Implement its forward-only schema change before running bun erp db:migrate.\n");
+    process.stdout.write(
+      intent.mode === "stub"
+        ? "Implement its forward-only schema change before running bun erp db:migrate.\n"
+        : "Fill in the domain columns and indexes, then run bun erp db:migrate.\n",
+    );
   },
   "make:seeder": async (args) => {
     const rawName = args[0];
-    if (!rawName) {
+    if (!rawName || rawName.startsWith("--")) {
       process.stderr.write("Usage: bun erp make:seeder <name>\n");
       process.exit(1);
     }
-    const name = toKebabName(rawName, "Seeder");
+    const name = toSeederName(rawName);
     const target = resolve(SEEDERS_DIR, `${name}.ts`);
-    await writeScaffold(target, renderSeederSource());
+    await writeScaffold(target, renderSeederSource(name));
     process.stdout.write(`Created seeder scaffold: apps/server/seeders/${name}.ts\n`);
     process.stdout.write("`bun erp db:seed` runs all feature seeders; add deterministic, idempotent data first.\n");
   },
@@ -653,6 +951,123 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     }
   },
 
+  "role:show": async (args) => {
+    const [key] = args;
+    if (!key) {
+      process.stderr.write("Usage: bun erp role:show <key>\n");
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const role = await requireRoleByKey(ctx.db, organizationId, key);
+      const permissions = await permissionsForRole(ctx.db, role.id);
+      process.stdout.write(`key:         ${role.key}\n`);
+      process.stdout.write(`name:        ${role.name}\n`);
+      process.stdout.write(`description: ${role.description || "—"}\n`);
+      process.stdout.write(`type:        ${role.isSystem ? "system" : "custom"}\n`);
+      process.stdout.write(`permissions: ${permissions.length}\n`);
+      for (const permission of permissions) process.stdout.write(`  ${permission}\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "role:create": async (args) => {
+    const parsed = parseCommandOptions(args, { values: ["name", "description", "permissions"] });
+    const key = parsed.positional[0];
+    if (!key) {
+      process.stderr.write(
+        "Usage: bun erp role:create <key> [--name <name>] [--description <text>] [--permissions a,b]\n",
+      );
+      process.exit(1);
+    }
+    const input = createRoleSchema.safeParse({
+      key,
+      name: parsed.values.get("name") ?? humanizeKey(key),
+      ...(parsed.values.has("description") ? { description: parsed.values.get("description") } : {}),
+    });
+    if (!input.success) {
+      process.stderr.write(`Invalid role details:\n${formatIssues(input.error.issues)}\n`);
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const role = await createRole(ctx.db, organizationId, input.data, cliActor());
+      let permissionCount = 0;
+      if (parsed.values.has("permissions")) {
+        const keys = parseKeyList(parsed.values.get("permissions") ?? "");
+        await setRolePermissions(ctx.db, organizationId, role.id, keys, cliActor());
+        permissionCount = keys.length;
+      }
+      process.stdout.write(`Created role "${role.key}" (${role.name}) with ${permissionCount} permission(s).\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "role:edit": async (args) => {
+    const parsed = parseCommandOptions(args, { values: ["name", "description", "permissions"] });
+    const key = parsed.positional[0];
+    if (!key) {
+      process.stderr.write(
+        "Usage: bun erp role:edit <key> [--name <name>] [--description <text>] [--permissions a,b]\n",
+      );
+      process.exit(1);
+    }
+    if (parsed.values.size === 0) {
+      process.stderr.write("Provide at least one of --name, --description, or --permissions.\n");
+      process.exit(1);
+    }
+    const patch =
+      parsed.values.has("name") || parsed.values.has("description")
+        ? updateRoleSchema.safeParse({
+            ...(parsed.values.has("name") ? { name: parsed.values.get("name") } : {}),
+            ...(parsed.values.has("description") ? { description: parsed.values.get("description") } : {}),
+          })
+        : undefined;
+    if (patch && !patch.success) {
+      process.stderr.write(`Invalid role details:\n${formatIssues(patch.error.issues)}\n`);
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const role = await requireRoleByKey(ctx.db, organizationId, key);
+      if (patch?.success) await updateRole(ctx.db, organizationId, role.id, patch.data, cliActor());
+      if (parsed.values.has("permissions")) {
+        const keys = parseKeyList(parsed.values.get("permissions") ?? "");
+        await setRolePermissions(ctx.db, organizationId, role.id, keys, cliActor());
+      }
+      process.stdout.write(`Updated role "${role.key}".\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "role:delete": async (args) => {
+    const parsed = parseCommandOptions(args, { flags: ["force"] });
+    const key = parsed.positional[0];
+    if (!key) {
+      process.stderr.write("Usage: bun erp role:delete <key> --force\n");
+      process.exit(1);
+    }
+    if (!parsed.flags.has("force")) {
+      process.stderr.write(`Refusing to delete a role without --force. Run: bun erp role:delete ${key} --force\n`);
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const role = await requireRoleByKey(ctx.db, organizationId, key);
+      await deleteRole(ctx.db, organizationId, role.id, cliActor());
+      process.stdout.write(`Deleted role "${role.key}".\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
   "user:grant": async (args) => {
     const [email, roleKey = "owner"] = args;
     if (!email) {
@@ -754,6 +1169,111 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
     await ctx.close();
   },
 
+  "user:show": async (args) => {
+    const parsed = parseCommandOptions(args, {});
+    const email = parsed.positional[0];
+    if (!email) {
+      process.stderr.write("Usage: bun erp user:show <email>\n");
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const user = await requireUserByEmail(ctx.db, email);
+      const roles = await rolesForUser(ctx.db, user.id);
+      const permissions = await permissionsForUser(ctx.db, user.id);
+      process.stdout.write(`email:          ${user.email}\n`);
+      process.stdout.write(`name:           ${user.name}\n`);
+      process.stdout.write(`organizationId: ${user.organizationId ?? "—"}\n`);
+      process.stdout.write(`emailVerified:  ${user.emailVerified ? "yes" : "no"}\n`);
+      process.stdout.write(`roles:          ${roles.map((role) => role.key).join(", ") || "—"}\n`);
+      process.stdout.write(`permissions:    ${permissions.length}\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "user:edit": async (args) => {
+    const parsed = parseCommandOptions(args, { flags: ["verified", "unverified"], values: ["name", "roles"] });
+    const email = parsed.positional[0];
+    if (!email) {
+      process.stderr.write(
+        "Usage: bun erp user:edit <email> [--name <name>] [--verified|--unverified] [--roles a,b]\n",
+      );
+      process.exit(1);
+    }
+    if (parsed.values.size === 0 && parsed.flags.size === 0) {
+      process.stderr.write("Provide at least one of --name, --verified, --unverified, or --roles.\n");
+      process.exit(1);
+    }
+    if (parsed.flags.has("verified") && parsed.flags.has("unverified")) {
+      throw new Error("Use either --verified or --unverified, not both");
+    }
+    const patch = updateUserSchema.safeParse({
+      ...(parsed.values.has("name") ? { name: parsed.values.get("name") } : {}),
+      ...(parsed.flags.has("verified") ? { emailVerified: true } : {}),
+      ...(parsed.flags.has("unverified") ? { emailVerified: false } : {}),
+    });
+    if (!patch.success) {
+      process.stderr.write(`Invalid user details:\n${formatIssues(patch.error.issues)}\n`);
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const user = await requireUserByEmail(ctx.db, email);
+      if (Object.keys(patch.data).length > 0) {
+        await updateUser(ctx.db, organizationId, user.id, patch.data, cliActor());
+      }
+      if (parsed.values.has("roles")) {
+        const roleKeys = parseKeyList(parsed.values.get("roles") ?? "");
+        await replaceUserRoles(ctx.db, organizationId, user.id, roleKeys, cliActor());
+      }
+      process.stdout.write(`Updated user ${email}.\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "user:delete": async (args) => {
+    const parsed = parseCommandOptions(args, { flags: ["force"] });
+    const email = parsed.positional[0];
+    if (!email) {
+      process.stderr.write("Usage: bun erp user:delete <email> --force\n");
+      process.exit(1);
+    }
+    if (!parsed.flags.has("force")) {
+      process.stderr.write(`Refusing to delete a user without --force. Run: bun erp user:delete ${email} --force\n`);
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const user = await requireUserByEmail(ctx.db, email);
+      await deleteUser(ctx.db, organizationId, user.id, cliActor());
+      process.stdout.write(`Deleted user ${email}.\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
+  "user:revoke": async (args) => {
+    const parsed = parseCommandOptions(args, {});
+    const [email, roleKey] = parsed.positional;
+    if (!email || !roleKey) {
+      process.stderr.write("Usage: bun erp user:revoke <email> <roleKey>\n");
+      process.exit(1);
+    }
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      const organizationId = await resolveDefaultOrganizationId(ctx.db);
+      const user = await requireUserByEmail(ctx.db, email);
+      await revokeUserRole(ctx.db, organizationId, user.id, roleKey, cliActor());
+      process.stdout.write(`Revoked "${roleKey}" from ${email}.\n`);
+    } finally {
+      await ctx.close();
+    }
+  },
+
   "db:migrate": async () => {
     const ctx = await createCliContext({ migrateOnStart: false });
     const ran = await migrate(ctx.db, MIGRATIONS_DIR);
@@ -781,7 +1301,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   },
 
   "db:seed": async (args) => {
-    const requestedSeeder = args[0] ? toKebabName(args[0], "Seeder") : undefined;
+    const requestedSeeder = args[0] ? toSeederName(args[0]) : undefined;
     if (args.length > 1) {
       process.stderr.write("Usage: bun erp db:seed [seeder]\n");
       process.exit(1);
@@ -979,6 +1499,18 @@ async function writeScaffold(path: string, source: string): Promise<void> {
   if (await Bun.file(path).exists()) throw new Error(`Refusing to overwrite existing file: ${path}`);
   await Bun.$`mkdir -p ${resolve(path, "..")}`.quiet();
   await Bun.write(path, source);
+}
+
+/** Generated code must survive `bun run lint`; let the repo's own formatter settle name-dependent wrapping. */
+async function formatScaffold(paths: readonly string[]): Promise<void> {
+  const biome = resolve(repoRoot, "node_modules/.bin/biome");
+  if (!(await Bun.file(biome).exists())) return;
+  const proc = Bun.spawn([biome, "format", "--write", ...paths], {
+    cwd: repoRoot,
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+  await proc.exited;
 }
 
 function listSeederFiles(): string[] {

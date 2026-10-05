@@ -52,6 +52,23 @@ default to `staff`. Use `--role` when you want an explicit role. `bun erp db:see
 and can also run all feature seeders under `apps/server/seeders`; pass a seeder name to run only
 that one. Use a strong, unique password and never store it in this document.
 
+Manage roles and accounts with the rest of the CLI: `role:list`, `role:show <key>`, `role:create`,
+`role:edit` (`--permissions a,b` replaces the whole set), and `role:delete`; `user:list`,
+`user:show <email>`, `user:edit` (`--roles a,b` replaces organization-wide roles), `user:delete`,
+`user:grant`, `user:revoke`, and `user:passwd`. Destructive commands refuse to run without `--force`.
+
+`bun erp make:feature <name>` generates the feature module (validation, policy, schema, service,
+route, test, README) plus a create-table migration, and registers the permission keys, audit
+entity, and explicit route mount. `make:migration create_posts_table` and
+`add_status_to_posts_table` fill the table and column names into the SQL template, and
+`make:seeder users` normalizes a `-seeder` suffix to `users.ts`. After generating a feature, add
+the domain fields and run `bun erp db:migrate` followed by `bun erp db:seed`.
+
+`bun erp apps` lists workspace apps with build, port, and test status; `apps:status <name>` shows
+one app's entry point, scripts, build output, and environment file; `apps:create <name>` adds a
+minimal Bun workspace app under `apps/` and registers it in the root workspaces (run `bun install`
+afterwards).
+
 `bun erp doctor` verifies configuration, database connectivity and the seed. Use `bun erp --help`
 for the current command list. See mobile.md for native packaging and testing.md for test prerequisites.
 
