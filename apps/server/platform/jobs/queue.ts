@@ -27,6 +27,11 @@ export type ClaimedJob = {
 
 const DEFAULT_LEASE_MS = 5 * 60_000;
 
+// Drizzle maps typed columns to driver values, but parameters inside raw `sql` templates bypass that
+// mapping while Drizzle still replaces postgres.js's timestamp serializer with an identity function.
+// Pass timestamptz arguments as ISO strings, and let the database resolve `now()` so job scheduling
+// never depends on the app clock drifting ahead of the database clock.
+
 /** Call with the transaction used for a feature write to keep enqueue atomic with that write. */
 export async function enqueueJob(db: Database, input: EnqueueJobInput): Promise<string> {
   const name = input.name.trim();
@@ -46,7 +51,7 @@ export async function enqueueJob(db: Database, input: EnqueueJobInput): Promise<
     await db.execute(sql`
       insert into background_jobs (id, job_name, queue_name, payload, status, max_attempts, run_at, idempotency_key)
       values (${id}, ${name}, ${queue}, ${JSON.stringify(input.payload)}::jsonb, 'pending', ${maxAttempts},
-        ${input.runAt ?? new Date()}, ${idempotencyKey})
+        coalesce(${input.runAt ? input.runAt.toISOString() : null}, now()), ${idempotencyKey})
       on conflict (queue_name, job_name, idempotency_key) do nothing
       returning id
     `),
@@ -160,13 +165,7 @@ export async function runNextJob(
       baseDelayMs: options.retryBaseMs ?? 1_000,
       maxDelayMs: options.retryMaxMs ?? 60_000,
     });
-    const updated = await finish(
-      db,
-      job,
-      terminal ? "dead" : "pending",
-      errorCode,
-      terminal ? undefined : new Date(Date.now() + delayMs),
-    );
+    const updated = await finish(db, job, terminal ? "dead" : "pending", errorCode, terminal ? undefined : delayMs);
     if (updated) {
       logger.error({
         event: terminal ? "job.dead" : "job.retry_scheduled",
@@ -226,13 +225,15 @@ async function finish(
   job: ClaimedJob,
   status: "pending" | "completed" | "dead",
   errorCode?: string,
-  runAt?: Date,
+  retryDelayMs?: number,
 ): Promise<boolean> {
   const rows = rowsOf<{ id: string }>(
     await db.execute(sql`
     update background_jobs
     set status = ${status}, lease_token = null, lease_expires_at = null, last_error_code = ${errorCode ?? null},
-        run_at = coalesce(${runAt ?? null}, run_at), completed_at = ${status === "completed" ? new Date() : null}, updated_at = now()
+        run_at = coalesce(now() + (${retryDelayMs ?? null} * interval '1 millisecond'), run_at),
+        completed_at = case when ${status} = 'completed' then now() else null end,
+        updated_at = now()
     where id = ${job.id} and status = 'running' and lease_token = ${job.leaseToken}
     returning id
   `),
