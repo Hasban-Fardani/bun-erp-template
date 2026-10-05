@@ -413,8 +413,11 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("query");
-        const organizationId = actor.organizationId ?? fallbackOrganizationId;
-        const { items, total } = await list${pascal}(ctx.db, organizationId, input);
+        const { items, total } = await list${pascal}(
+          ctx.db,
+          actor.organizationId ?? fallbackOrganizationId,
+          input,
+        );
         return ok(c, { items, ...listMeta(input, total) });
       },
     )
@@ -429,8 +432,7 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       }),
       async (c) => {
         const actor = c.get("actor");
-        const organizationId = actor.organizationId ?? fallbackOrganizationId;
-        const row = await find${pascal}(ctx.db, organizationId, c.req.param("id"));
+        const row = await find${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, c.req.param("id"));
         if (!row) throw ApiError.notFound("${pascal} not found");
         return ok(c, row);
       },
@@ -449,8 +451,7 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        const organizationId = actor.organizationId ?? fallbackOrganizationId;
-        return ok(c, await create${pascal}(ctx.db, organizationId, input, actor));
+        return ok(c, await create${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, input, actor));
       },
     )
     .patch(
@@ -467,8 +468,10 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        const organizationId = actor.organizationId ?? fallbackOrganizationId;
-        return ok(c, await update${pascal}(ctx.db, organizationId, c.req.param("id"), input, actor));
+        return ok(
+          c,
+          await update${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, c.req.param("id"), input, actor),
+        );
       },
     )
     .delete(
@@ -482,8 +485,7 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       }),
       async (c) => {
         const actor = c.get("actor");
-        const organizationId = actor.organizationId ?? fallbackOrganizationId;
-        return ok(c, await delete${pascal}(ctx.db, organizationId, c.req.param("id"), actor));
+        return ok(c, await delete${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, c.req.param("id"), actor));
       },
     );
 }
@@ -498,6 +500,7 @@ let api: HttpFixture;
 
 const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
 
+// slop-ok: the HTTP fixture lifecycle is deliberately identical across feature tests
 beforeEach(async () => {
   api = await createHttpFixture();
   await api.signInAsOwner();
