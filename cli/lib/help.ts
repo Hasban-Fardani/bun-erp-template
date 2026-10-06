@@ -24,6 +24,14 @@ export const HELP_GROUPS: ReadonlyArray<{
     ],
   },
   {
+    title: "AI",
+    commands: [
+      ["about", "Show runtime versions, installed catalog, migrations, routes, database and CodeGraph state"],
+      ["mcp", "Run the read-only stdio MCP server that exposes project introspection tools"],
+      ["ai:update", "Refresh the AGENTS.md guidelines block, CodeGraph MCP wiring and project skills"],
+    ],
+  },
+  {
     title: "Generators",
     commands: [
       ["make:feature <name>", "Create a server + web CRUD feature, its test, and its create-table migration"],

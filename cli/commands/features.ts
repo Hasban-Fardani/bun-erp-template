@@ -9,6 +9,7 @@ import {
   type ServerFeatureManifest,
   type WebFeatureManifest,
 } from "../lib/feature-catalog.ts";
+import { refreshGuidelines } from "../lib/guidelines.ts";
 import { planInfraWiring, type WiringEdit } from "../lib/infra-wiring.ts";
 import { parseCommandOptions } from "../lib/options.ts";
 import { copyCatalogPackage, ensureWorkspaceDependency } from "../lib/package-catalog.ts";
@@ -161,6 +162,9 @@ export const commands = [
       process.stdout.write(`Added navigation: ${manifest.nav.url}\n`);
       process.stdout.write(`Added i18n keys: ${manifest.name}.* and ${manifest.nav.titleKey}\n`);
       process.stdout.write("Regenerated apps/web/src/routeTree.gen.ts\n");
+    }
+    if ((await refreshGuidelines(repoRoot)) === "updated") {
+      process.stdout.write("Updated AGENTS.md guidelines block.\n");
     }
     process.stdout.write("Next: run bun erp check before using it.\n");
   }),

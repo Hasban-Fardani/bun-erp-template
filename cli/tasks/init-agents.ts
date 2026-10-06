@@ -116,9 +116,9 @@ function parseJsonc(text: string): unknown {
  * Normalize it to opencode's real schema (`mcp.<name>` with `type`, `command`, `enabled`) and point
  * the server at the pinned release.
  */
-async function wireOpencodeMcp(): Promise<void> {
+export async function wireOpencodeMcp(): Promise<"wired" | "unchanged" | "skipped"> {
   const directory = resolve(homedir(), ".config", "opencode");
-  if (!(await pathExists(directory))) return;
+  if (!(await pathExists(directory))) return "skipped";
   let path: string | undefined;
   for (const name of ["opencode.jsonc", "opencode.json"]) {
     const candidate = resolve(directory, name);
@@ -127,7 +127,7 @@ async function wireOpencodeMcp(): Promise<void> {
       break;
     }
   }
-  if (!path) return;
+  if (!path) return "skipped";
 
   let parsed: unknown;
   try {
@@ -136,10 +136,10 @@ async function wireOpencodeMcp(): Promise<void> {
     process.stderr.write(
       `CodeGraph could not update ${path}: ${error instanceof Error ? error.message : String(error)}. Add an mcp.codegraph entry manually.\n`,
     );
-    return;
+    return "skipped";
   }
   const config = asObject(parsed);
-  if (!config) return;
+  if (!config) return "skipped";
   const mcp = asObject(config.mcp) ?? {};
   const command = codegraphMcpCommand();
   const current = asObject(mcp.codegraph);
@@ -151,13 +151,14 @@ async function wireOpencodeMcp(): Promise<void> {
     currentCommand.every((part, index) => part === command[index]);
   const servers = asObject(mcp.servers);
   const staleServers = servers !== undefined && Object.keys(servers).every((key) => key === "codegraph");
-  if (valid && !staleServers) return;
+  if (valid && !staleServers) return "unchanged";
 
   const nextMcp: JsonObject = { ...mcp, codegraph: { type: "local", command, enabled: true } };
   if (staleServers) delete nextMcp.servers;
   await mkdir(directory, { recursive: true });
   await Bun.write(path, `${JSON.stringify({ ...config, mcp: nextMcp }, null, 2)}\n`);
   process.stdout.write(`CodeGraph MCP server wired for opencode in ${path}.\n`);
+  return "wired";
 }
 
 /** Align a developer's global `codegraph` with the pinned release so bare commands stay on 1.6.2. */
@@ -174,59 +175,79 @@ async function alignGlobalCli(): Promise<void> {
   await tryRun(["codegraph", "upgrade", CODEGRAPH_VERSION], "CodeGraph CLI upgrade");
 }
 
-if (await Bun.file(codegraphDatabase).exists()) {
-  await runWithLockRetry(codegraphCommand("sync", root), "CodeGraph index sync");
-} else {
-  await runWithLockRetry(codegraphCommand("init", "--yes", root), "CodeGraph index initialization");
-}
-
-// CI has no interactive agent, and wiring global config there would be noise.
-if (!process.env.CI) {
-  await alignGlobalCli();
-  await tryRun(
-    codegraphCommand("install", "--target", "auto", "--location", "global", "--yes"),
-    "CodeGraph agent wiring",
-  );
-  await wireOpencodeMcp();
-}
-
-for (const source of AGENT_SKILL_SOURCES) {
-  const missing = await Promise.all(
-    source.skills.map(async (skill) =>
-      (await Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()) ? undefined : skill,
-    ),
-  ).then((skills) => skills.filter((skill): skill is NonNullable<typeof skill> => skill !== undefined));
-
-  if (missing.length === 0) {
-    process.stdout.write(`Required skills from ${source.repository} are already installed.\n`);
-    continue;
-  }
-
-  await run(
-    [
-      "bunx",
-      "--bun",
-      `skills@${SKILLS_CLI_VERSION}`,
-      "add",
-      source.repository,
-      "--skill",
-      ...missing,
-      "--agent",
-      "codex",
-      "--copy",
-      "--yes",
-    ],
-    `${source.repository} skills setup`,
-  );
-
-  const installed = await Promise.all(
-    missing.map((skill) => Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()),
-  );
-  if (installed.some((ready) => !ready)) {
-    throw new Error(`Required skills from ${source.repository} were not installed: ${missing.join(", ")}`);
+/** Keeps the local CodeGraph index complete; `init` runs this, `ai:update` does not. */
+export async function syncCodegraphIndex(): Promise<void> {
+  if (await Bun.file(codegraphDatabase).exists()) {
+    await runWithLockRetry(codegraphCommand("sync", root), "CodeGraph index sync");
+  } else {
+    await runWithLockRetry(codegraphCommand("init", "--yes", root), "CodeGraph index initialization");
   }
 }
 
-process.stdout.write(
-  `Agent skills are installed, CodeGraph ${CODEGRAPH_VERSION} indexes the project, and detected agents are wired for its MCP server.\n`,
-);
+/** Installs every required project skill; already installed skills are left untouched. */
+export async function installAgentSkills(): Promise<void> {
+  for (const source of AGENT_SKILL_SOURCES) {
+    const missing = await Promise.all(
+      source.skills.map(async (skill) =>
+        (await Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()) ? undefined : skill,
+      ),
+    ).then((skills) => skills.filter((skill): skill is NonNullable<typeof skill> => skill !== undefined));
+
+    if (missing.length === 0) {
+      process.stdout.write(`Required skills from ${source.repository} are already installed.\n`);
+      continue;
+    }
+
+    await run(
+      [
+        "bunx",
+        "--bun",
+        `skills@${SKILLS_CLI_VERSION}`,
+        "add",
+        source.repository,
+        "--skill",
+        ...missing,
+        "--agent",
+        "codex",
+        "--copy",
+        "--yes",
+      ],
+      `${source.repository} skills setup`,
+    );
+
+    const installed = await Promise.all(
+      missing.map((skill) => Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()),
+    );
+    if (installed.some((ready) => !ready)) {
+      throw new Error(`Required skills from ${source.repository} were not installed: ${missing.join(", ")}`);
+    }
+  }
+}
+
+/**
+ * The CodeGraph MCP wiring and the project skills — the parts `bun erp ai:update` re-syncs.
+ * `init` additionally builds the local index through `initializeAgentTooling`.
+ */
+export async function updateAgentTooling(): Promise<void> {
+  // CI has no interactive agent, and wiring global config there would be noise.
+  if (!process.env.CI) {
+    await alignGlobalCli();
+    await tryRun(
+      codegraphCommand("install", "--target", "auto", "--location", "global", "--yes"),
+      "CodeGraph agent wiring",
+    );
+    await wireOpencodeMcp();
+  }
+  await installAgentSkills();
+}
+
+/** Full `bun erp init` agent setup: build the index, then wire MCP and skills. */
+export async function initializeAgentTooling(): Promise<void> {
+  await syncCodegraphIndex();
+  await updateAgentTooling();
+  process.stdout.write(
+    `Agent skills are installed, CodeGraph ${CODEGRAPH_VERSION} indexes the project, and detected agents are wired for its MCP server.\n`,
+  );
+}
+
+if (import.meta.main) await initializeAgentTooling();
