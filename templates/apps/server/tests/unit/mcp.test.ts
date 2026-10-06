@@ -111,7 +111,7 @@ test("the MCP server completes a real handshake and answers every tool", async (
     gates?: number;
     routes?: number;
   };
-  expect(appInfo.gates).toBe(26);
+  expect(appInfo.gates).toBe(27);
   expect(appInfo.routes).toBeGreaterThanOrEqual(20);
 
   const schema = byId.get(callId("db-schema"))?.result?.content?.[0]?.text ?? "";

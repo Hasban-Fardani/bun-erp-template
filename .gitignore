@@ -13,6 +13,9 @@ dist/
 .riset/
 .codegraph/
 
+# Agent skills are installed by `bun erp ai:update`; skills-lock.json is the lockfile.
+.agents/skills/
+
 # Capacitor build output and local native tooling
 apps/mobile/www/
 apps/mobile/android/.gradle/
@@ -20,3 +23,27 @@ apps/mobile/android/local.properties
 apps/mobile/android/**/build/
 apps/mobile/ios/App/Pods/
 apps/mobile/ios/**/DerivedData/
+
+# impeccable-ignore-start
+# Ephemeral output, runtime state, and per-dev overrides.
+# The **/ prefix covers .impeccable at the repo root or in a nested workspace.
+# Shared artifacts stay tracked: config.json, live/config.json,
+# design.json, surfaces/*.md, critique/*.md.
+**/.impeccable/config.local.json
+**/.impeccable/hook.cache.json
+**/.impeccable/hook.pending.json
+**/.impeccable/*.png
+**/.impeccable/review/
+**/.impeccable/questions/
+**/.impeccable/live/server.json
+**/.impeccable/live/sessions/
+**/.impeccable/live/previews/
+**/.impeccable/live/annotations/
+**/.impeccable/live/cache/
+**/.impeccable/live/manual-edit-apply-transaction.json
+**/.impeccable/live/manual-edit-events.jsonl
+**/.impeccable/live/manual-edit-evidence/
+**/.impeccable/live/pending-manual-edits.json
+**/.impeccable/live/deferred-svelte-component-accepts.json
+**/.impeccable/live/*.png
+# impeccable-ignore-end

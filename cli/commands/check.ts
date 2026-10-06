@@ -174,6 +174,10 @@ export const commands = [
     await guard("design", () => runGate("design"));
     process.stdout.write("Design OK: screens and text contrast meet the visual rules.\n");
   }),
+  defineCommand("check:impeccable", async () => {
+    await guard("impeccable", () => runGate("impeccable"));
+    process.stdout.write("Impeccable OK: no design anti-patterns found.\n");
+  }),
   defineCommand("check:surface", async () => {
     await guard("surface", () => runGate("surface"));
     process.stdout.write("Surface OK: transient feedback and contextual errors follow the reviewed contract.\n");

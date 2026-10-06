@@ -100,6 +100,12 @@ export const GATE_CATALOG = [
     summary: "Every screen declares a design direction and passes the text-contrast rules.",
   },
   {
+    name: "impeccable",
+    command: "check:impeccable",
+    file: "cli/gates/impeccable.ts",
+    summary: "The pinned design detector finds no AI-slop anti-patterns on any UI surface.",
+  },
+  {
     name: "ui",
     command: "check:ui",
     file: "cli/gates/ui-completeness.ts",
@@ -208,6 +214,9 @@ export async function runGate(kind: GateName): Promise<void> {
       ...(await checkDesign(repoRoot)).map((f) => `${f.screen} ${f.code}/${f.severity} — ${f.detail}`),
       ...(await checkContrast(repoRoot)),
     ];
+  } else if (kind === "impeccable") {
+    const { checkImpeccable } = await import("../gates/impeccable.ts");
+    findings = await checkImpeccable(repoRoot);
   } else if (kind === "shadcn") {
     const { checkShadcn } = await import("../gates/shadcn-guard.ts");
     findings = (await checkShadcn(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);

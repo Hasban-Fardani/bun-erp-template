@@ -111,14 +111,10 @@ function parseJsonc(text: string): unknown {
   return JSON.parse(stripped.replace(/,(\s*[}\]])/g, "$1"));
 }
 
-/**
- * CodeGraph 1.6.2 writes the wrong opencode shape (`mcp.servers` with `disabled`/`codemode`).
- * Normalize it to opencode's real schema (`mcp.<name>` with `type`, `command`, `enabled`) and point
- * the server at the pinned release.
- */
-export async function wireOpencodeMcp(): Promise<"wired" | "unchanged" | "skipped"> {
+/** The opencode config a developer actually has, in the order opencode itself looks for it. */
+async function loadOpencodeConfig(): Promise<{ path: string; config: JsonObject } | undefined> {
   const directory = resolve(homedir(), ".config", "opencode");
-  if (!(await pathExists(directory))) return "skipped";
+  if (!(await pathExists(directory))) return undefined;
   let path: string | undefined;
   for (const name of ["opencode.jsonc", "opencode.json"]) {
     const candidate = resolve(directory, name);
@@ -127,19 +123,28 @@ export async function wireOpencodeMcp(): Promise<"wired" | "unchanged" | "skippe
       break;
     }
   }
-  if (!path) return "skipped";
+  if (!path) return undefined;
 
-  let parsed: unknown;
   try {
-    parsed = parseJsonc(await Bun.file(path).text());
+    const config = asObject(parseJsonc(await Bun.file(path).text()));
+    return config ? { path, config } : undefined;
   } catch (error) {
     process.stderr.write(
-      `CodeGraph could not update ${path}: ${error instanceof Error ? error.message : String(error)}. Add an mcp.codegraph entry manually.\n`,
+      `Could not update ${path}: ${error instanceof Error ? error.message : String(error)}. MCP servers were left unchanged.\n`,
     );
-    return "skipped";
+    return undefined;
   }
-  const config = asObject(parsed);
-  if (!config) return "skipped";
+}
+
+/**
+ * CodeGraph 1.6.2 writes the wrong opencode shape (`mcp.servers` with `disabled`/`codemode`).
+ * Normalize it to opencode's real schema (`mcp.<name>` with `type`, `command`, `enabled`) and point
+ * the server at the pinned release. Other MCP entries are preserved untouched.
+ */
+export async function wireOpencodeMcp(): Promise<"wired" | "unchanged" | "skipped"> {
+  const found = await loadOpencodeConfig();
+  if (!found) return "skipped";
+  const { path, config } = found;
   const mcp = asObject(config.mcp) ?? {};
   const command = codegraphMcpCommand();
   const current = asObject(mcp.codegraph);
@@ -153,11 +158,46 @@ export async function wireOpencodeMcp(): Promise<"wired" | "unchanged" | "skippe
   const staleServers = servers !== undefined && Object.keys(servers).every((key) => key === "codegraph");
   if (valid && !staleServers) return "unchanged";
 
-  const nextMcp: JsonObject = { ...mcp, codegraph: { type: "local", command, enabled: true } };
-  if (staleServers) delete nextMcp.servers;
-  await mkdir(directory, { recursive: true });
+  // Rebuild with codegraph first: the CodeGraph installer drops its entry and re-adds the wrong
+  // `servers` shape on every run, and a stable key order keeps repeated `ai:update` byte-identical.
+  const nextMcp: JsonObject = { codegraph: { type: "local", command, enabled: true } };
+  for (const [key, value] of Object.entries(mcp)) {
+    if (key === "codegraph" || (key === "servers" && staleServers)) continue;
+    nextMcp[key] = value;
+  }
+  await mkdir(resolve(path, ".."), { recursive: true });
   await Bun.write(path, `${JSON.stringify({ ...config, mcp: nextMcp }, null, 2)}\n`);
   process.stdout.write(`CodeGraph MCP server wired for opencode in ${path}.\n`);
+  return "wired";
+}
+
+/**
+ * Context7 serves up-to-date library documentation to agents. It shares the opencode config with
+ * CodeGraph; the optional CONTEXT7_API_KEY is passed through to the server when set.
+ */
+export async function wireContext7Mcp(): Promise<"wired" | "unchanged" | "skipped"> {
+  const found = await loadOpencodeConfig();
+  if (!found) return "skipped";
+  const { path, config } = found;
+  const mcp = asObject(config.mcp) ?? {};
+  const command = ["bunx", "--bun", "@upstash/context7-mcp"];
+  const apiKey = process.env.CONTEXT7_API_KEY;
+  const entry: JsonObject = { type: "local", command, enabled: true };
+  if (apiKey) entry.environment = { CONTEXT7_API_KEY: apiKey };
+
+  const current = asObject(mcp.context7);
+  const currentCommand = current && Array.isArray(current.command) ? current.command : undefined;
+  const currentEnvironment = current ? asObject(current.environment) : undefined;
+  const valid =
+    current?.type === "local" &&
+    current.enabled !== false &&
+    currentCommand?.length === command.length &&
+    currentCommand.every((part, index) => part === command[index]) &&
+    (apiKey ? currentEnvironment?.CONTEXT7_API_KEY === apiKey : currentEnvironment === undefined);
+  if (valid) return "unchanged";
+
+  await Bun.write(path, `${JSON.stringify({ ...config, mcp: { ...mcp, context7: entry } }, null, 2)}\n`);
+  process.stdout.write(`Context7 MCP server wired for opencode in ${path}.\n`);
   return "wired";
 }
 
@@ -225,8 +265,8 @@ export async function installAgentSkills(): Promise<void> {
 }
 
 /**
- * The CodeGraph MCP wiring and the project skills — the parts `bun erp ai:update` re-syncs.
- * `init` additionally builds the local index through `initializeAgentTooling`.
+ * The CodeGraph and Context7 MCP wiring plus the project skills — the parts `bun erp ai:update`
+ * re-syncs. `init` additionally builds the local index through `initializeAgentTooling`.
  */
 export async function updateAgentTooling(): Promise<void> {
   // CI has no interactive agent, and wiring global config there would be noise.
@@ -237,6 +277,7 @@ export async function updateAgentTooling(): Promise<void> {
       "CodeGraph agent wiring",
     );
     await wireOpencodeMcp();
+    await wireContext7Mcp();
   }
   await installAgentSkills();
 }

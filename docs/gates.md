@@ -17,7 +17,7 @@ prints that catalog as a table.
    `check:fast` runs the file-level subset named in `FAST_GATE_NAMES`.
 4. `cli/commands/check.ts` registers the `check:*` commands and `check:gate`; `check:gate <name>`
    looks the command up in the catalog and forwards any extra arguments.
-5. `bun erp check` runs Biome, `tsc` and all 24 gates (up to six at a time); `bun erp check:fast`
+5. `bun erp check` runs Biome, `tsc` and all 25 gates (up to six at a time); `bun erp check:fast`
    skips the typecheck, the React audit and the slower gates for the inner loop. Neither runs tests
    or builds — use `bun erp test` and the app build for those.
 
@@ -33,6 +33,7 @@ prints that catalog as a table.
 | copy | `check:copy` | `cli/gates/copy-guard.ts` | Rendered copy for infrastructure vocabulary and deployment names | Missing web or mobile source |
 | design | `check:design` | `cli/gates/design-gate.ts` + `cli/gates/contrast-gate.ts` | A direction spec for every screen, theme-token contrast, component class contrast | Missing web or mobile screen directories |
 | docs | `check:docs` | `cli/gates/docs-guard.ts` | Relative Markdown links resolve; every package has a matching `llms.txt` | Never |
+| impeccable | `check:impeccable` | `cli/gates/impeccable.ts` | The pinned Impeccable design detector reports 0 anti-pattern findings on every UI surface | UI directories that are not installed |
 | language | `check:language` | `cli/gates/language-guard.ts` | Indonesian identifiers and technical enum values in first-party source | Never; it scans the directories that exist |
 | migrations | `check:migrations` | `cli/commands/check.ts` (inline) | Migration modules are named `NNNN_snake_case.ts` | `apps/server` is not installed |
 | mobile | `check:mobile` | `cli/gates/mobile-gate.ts` | Capacitor version pin, entry files, offline SQLite encryption, release workflow | `apps/mobile` is not installed |

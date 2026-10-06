@@ -24,10 +24,22 @@ Run `bun erp init` from the repository root before code exploration or developme
 catalogs and the first `bun install`, it pins and syncs the local CodeGraph index at the release in
 `cli/gates/codegraph.ts`, wires the CodeGraph MCP server into every detected agent (opencode
 included, normalized to opencode's real schema), aligns an older global `codegraph` to the pinned
-release, and installs the required Matthew Pocock and Petr Kindlmann QA skills when any are missing.
-Re-running it updates the index, repairs missing skills, and re-fits a detached web/mobile shell once
-a server app exists. CI setup runs `bun erp init --apps server,web --yes` on every job; `bun dev`
-does not. The index is local state under `.codegraph/` and is ignored by Git.
+release, and installs the required agent skills — Matthew Pocock, Petr Kindlmann QA, Impeccable,
+i-have-adhd and diagram-design — when any are missing. Re-running it updates the index, repairs
+missing skills, and re-fits a detached web/mobile shell once a server app exists. CI setup runs
+`bun erp init --apps server,web --yes` on every job; `bun dev` does not. The index is local state
+under `.codegraph/` and is ignored by Git.
+
+Context7 (`upstash/context7-mcp`) gives agents current library documentation over MCP. `bun erp init`
+and `bun erp ai:update` write an `mcp.context7` entry into the opencode config when one exists; a
+`CONTEXT7_API_KEY` in the environment is passed through to the server. Other agents have no shared
+config file, so add Context7 manually to their MCP settings:
+
+```json
+{ "type": "local", "command": ["bunx", "--bun", "@upstash/context7-mcp"], "enabled": true }
+```
+
+Add `"environment": { "CONTEXT7_API_KEY": "<key>" }` to that entry when you use an API key.
 
 For a nontrivial feature or architecture change, invoke `grill-me` before implementation and close
 the open design decisions with the user. Read the relevant project skill and canonical docs before
@@ -40,13 +52,23 @@ required). QA browser work uses Playwright only; Cypress skills and Cypress test
 are outside the approved toolchain. `bun erp check` includes this gate. Initialize first when it
 reports a missing skill, an unavailable or drifted CLI, or an index entry.
 
-Tool versions are pinned in `cli/gates/codegraph.ts` and `cli/tasks/init-agents.ts`. CodeGraph CLI reference:
+Tool versions are pinned in `cli/gates/codegraph.ts`, `cli/gates/impeccable.ts` and
+`cli/tasks/init-agents.ts`. CodeGraph CLI reference:
 [project quickstart](https://github.com/colbymchenry/codegraph/blob/main/site/src/content/docs/getting-started/quickstart.md).
-The skills are vendored from [Matthew Pocock's skills repository](https://github.com/mattpocock/skills)
-and [Petr Kindlmann's QA skills repository](https://github.com/petrkindlmann/qa-skills). Two skill
-directories coexist and are not interchangeable: `skills/` holds this template's own skills (see
-`skills/README.md`), while `.agents/skills/` holds the externally installed skills above. The QA
+The skills are installed from [Matthew Pocock's skills repository](https://github.com/mattpocock/skills),
+[Petr Kindlmann's QA skills repository](https://github.com/petrkindlmann/qa-skills),
+[Impeccable](https://github.com/pbakaus/impeccable),
+[i-have-adhd](https://github.com/ayghri/i-have-adhd) and
+[diagram-design](https://github.com/cathrynlavery/diagram-design). Two skill directories coexist and
+are not interchangeable: `skills/` holds this template's own skills (see `skills/README.md`), while
+`.agents/skills/` holds the externally installed skills above. `skills-lock.json` records their
+pinned sources; `.agents/skills/` itself is ignored by Git and restored by `bun erp ai:update`. The QA
 project context at `.agents/qa-project-context.md` records this repository's test stack and rules.
+
+`bun erp check:impeccable` runs the pinned Impeccable design detector over every UI surface that
+exists on disk and requires 0 findings. It runs in `bun erp check` but not `bun erp check:fast`; the
+engine is networked on its first run. `impeccable` is mandatory for UI and design work (see
+`AGENTS.md`).
 
 ## Install size
 
