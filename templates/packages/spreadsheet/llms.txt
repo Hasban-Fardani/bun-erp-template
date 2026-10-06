@@ -1,0 +1,26 @@
+# @bun-erp/spreadsheet
+
+Tabular formats behind one dependency boundary: papaparse for CSV, ExcelJS for XLSX (ADR-0005).
+Features import these helpers and never the underlying libraries.
+
+## Read first
+
+- `README.md`: behavior, exports and limits.
+- `src/utils/types.ts`: `SpreadsheetTable`, `SpreadsheetColumn`, `SpreadsheetRow`, `CsvTable`.
+
+## Public exports
+
+- `@bun-erp/spreadsheet`: shared types plus every function below.
+- `@bun-erp/spreadsheet/csv`: `parseCsv(text, options)`, `parseCsvStream(asyncIterable, options)`,
+  `stringifyCsv(table, options)`, `CsvParseOptions`, `CsvWriteOptions`.
+- `@bun-erp/spreadsheet/xlsx`: `readXlsx(data, options)`, `readXlsxStream(path, options)`,
+  `writeXlsx(table, options)`, `XlsxReadOptions`, `XlsxWriteOptions`.
+
+## Contracts
+
+- `parseCsv` auto-detects `,`, `;` or tab; strips a BOM; keeps quoted fields and embedded newlines.
+- `parseCsvStream` accepts `AsyncIterable<string | Uint8Array>` and decodes byte chunks safely.
+- `stringifyCsv` returns `\r\n` rows; `includeBom` prepares a file for Excel.
+- `writeXlsx` applies styled headers, widths and `numFmt`; Date cells stay dates.
+- `readXlsx` / `readXlsxStream` key rows by header and normalize rich text, formulas and hyperlinks.
+- XLSX streaming takes a file path; CSV streaming is caller-driven.

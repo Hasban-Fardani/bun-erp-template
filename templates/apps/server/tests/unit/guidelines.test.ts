@@ -15,7 +15,9 @@ test("the generated block lists installed apps, packages and features with guide
   expect(block).toContain("`server`");
   expect(block).toContain("@bun-erp/server");
   expect(block).toContain("packages/ui/llms.txt");
-  expect(block).toContain("templates/features/README.md");
+  // The catalog guide appears only while no feature is installed; an installed feature lists its
+  // own README instead, so either form is a correct block.
+  expect(block).toMatch(/templates\/features\/(?:README\.md|[a-z0-9-]+\/README\.md)/);
   expect(await renderGuidelinesBlock(repoRoot)).toBe(block);
 });
 

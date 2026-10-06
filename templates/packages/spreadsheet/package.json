@@ -1,0 +1,36 @@
+{
+  "name": "@bun-erp/spreadsheet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CSV and XLSX read/write behind one dependency boundary",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./csv": {
+      "types": "./src/server/csv.ts",
+      "import": "./src/server/csv.ts",
+      "default": "./src/server/csv.ts"
+    },
+    "./xlsx": {
+      "types": "./src/server/xlsx.ts",
+      "import": "./src/server/xlsx.ts",
+      "default": "./src/server/xlsx.ts"
+    },
+    "./llms.txt": "./llms.txt"
+  },
+  "scripts": {
+    "check": "bunx --bun tsc --noEmit -p tsconfig.json",
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "papaparse": "5.7.0"
+  },
+  "devDependencies": {
+    "@types/papaparse": "5.5.2"
+  }
+}
