@@ -1,13 +1,13 @@
-import { createIndexedDbAdapter } from "./browser/indexed-db.ts";
-import { createLocalStorageAdapter, type StringStorage } from "./browser/local-storage.ts";
-import { createKeyValueStore, type KeyValueAdapter, type KeyValueStore } from "./key-value.ts";
-import { createMemoryAdapter } from "./memory.ts";
+import { createKeyValueStore, type KeyValueAdapter, type KeyValueStore } from "../utils/key-value.ts";
+import { createMemoryAdapter } from "../utils/memory.ts";
+import { createIndexedDbAdapter } from "./indexed-db.ts";
+import { createLocalStorageAdapter, type StringStorage } from "./local-storage.ts";
 
 export type DefaultStoreOptions = {
   databaseName?: string;
   /**
    * Native adapter factory. The app injects it because encrypted SQLite lives in the app's
-   * Capacitor dependency (imported from `@bun-erp/storage/mobile`), not in the core.
+   * Capacitor dependency (imported from `@bun-erp/storage/capacitor`), not in the core.
    */
   native?: () => Promise<KeyValueAdapter>;
 };

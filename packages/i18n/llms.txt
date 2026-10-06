@@ -4,9 +4,9 @@
 
 ## Start here
 - [Package exports](./package.json)
-- [Core catalog and formatting API](./src/index.ts)
-- [React provider and hooks](./src/react.tsx)
-- [Catalogs](./src/messages/)
+- [Core catalog and formatting API](./src/utils/index.ts)
+- [React provider and hooks](./src/ui/react.tsx)
+- [Catalogs](./src/utils/messages/)
 - [Tests](./tests/)
 - [Project i18n conventions](../../docs/i18n.md)
 

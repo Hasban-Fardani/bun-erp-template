@@ -1,4 +1,4 @@
-import type { KeyValueAdapter } from "../key-value.ts";
+import type { KeyValueAdapter } from "../utils/key-value.ts";
 
 export type CapacitorSqliteOptions = {
   databaseName?: string;
@@ -8,7 +8,7 @@ export type CapacitorSqliteOptions = {
 
 /**
  * Encrypted SQLite for native Capacitor builds. The driver is loaded from `@capacitor-community/sqlite`
- * only when this function runs, so a web bundle that never imports `@bun-erp/storage/mobile`
+ * only when this function runs, so a web bundle that never imports `@bun-erp/storage/capacitor`
  * stays free of the native plugin.
  */
 export async function createCapacitorSqliteAdapter(options: CapacitorSqliteOptions = {}): Promise<KeyValueAdapter> {

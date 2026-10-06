@@ -1,4 +1,4 @@
-import type { KeyValueAdapter } from "../key-value.ts";
+import type { KeyValueAdapter } from "../utils/key-value.ts";
 
 /** The synchronous string storage the Web Storage API exposes. */
 export type StringStorage = {

@@ -50,7 +50,7 @@ export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
  * Markers are the stable ones the implementation actually uses (`data-testid="table-refreshing"`,
  * `clearSearch`, `onRetry`) rather than incidental wording, so the check guides instead of dictating.
  */
-const TABLE_COMPONENT = "packages/data-table/src/resource-table.tsx";
+const TABLE_COMPONENT = "packages/data-table/src/ui/resource-table.tsx";
 
 async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
   const out: UiFinding[] = [];

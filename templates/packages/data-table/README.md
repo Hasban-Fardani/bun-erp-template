@@ -2,6 +2,8 @@
 
 Typed React table primitives built on TanStack Table v9. The default `DataTable` is local-first: it receives a complete in-memory array and applies filtering, sorting, and pagination in the browser. “Local-first” here describes where table operations run; it does not add persistence, offline storage, or synchronization.
 
+Source splits by runtime target: React and browser code lives in `src/ui/`, and the manual/server adapter in `src/server/`.
+
 ```tsx
 import { Column, DataTable } from "@bun-erp/data-table";
 

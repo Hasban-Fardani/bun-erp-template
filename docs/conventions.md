@@ -88,7 +88,7 @@ Check this table before creating a file; it resolves the boundaries that are oth
 | A new data table | the `data-table` catalog package (`bun erp packages:install data-table`) | `packages/ui` |
 | Charts | `@bun-erp/charts` from the opt-in catalog (lazy, runtime-isolated) | `packages/ui` |
 | Pure logic shared by two or more apps | `packages/utils` | an app's `lib/` |
-| Localization copy | `packages/i18n/src/messages/` | app components |
+| Localization copy | `packages/i18n/src/utils/messages/` | app components |
 | An app unit test | `apps/<app>/tests/unit/<name>.test.ts` | beside the source |
 | A server HTTP round-trip test | `apps/server/tests/features/<feature>/<feature>.test.ts` | `tests/unit/` |
 
@@ -98,3 +98,13 @@ Two names look similar but are not interchangeable; choose deliberately:
   complete shadcn primitive. Import a `*-primitives` module only when you need the upstream API.
 - Prefer `Dialog` (controlled overlay) and `Sheet` (side panel) for new overlays.
   `organisms/modal.tsx` predates them and stays only where it is already used.
+
+## Package targets
+
+A package that serves more than one runtime splits its source by target under `src/<target>/`:
+`ui` (browser and React), `server` (Bun, Hono, Postgres, Drizzle, Cloudflare), `capacitor` (native
+plugins), or `utils` (runtime-neutral, shared by every side). `src/index.ts` (the barrel) and
+`src/styles.css` stay at the root; every other source file belongs to a target directory. A package
+with a single target stays flat, and a flat UI or server package may keep `utils` helpers beside its
+dominant files. `storage` is the reference split (`src/ui`, `src/capacitor`, `src/server`,
+`src/utils`); `bun erp check:package-targets` rejects an unsplit multi-target package.

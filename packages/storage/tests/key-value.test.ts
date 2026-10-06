@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
-import { createLocalStorageAdapter, type StringStorage } from "../src/browser/local-storage.ts";
-import { getDefaultKeyValueStore } from "../src/default.ts";
-import { createKeyValueStore } from "../src/key-value.ts";
-import { createMemoryAdapter } from "../src/memory.ts";
+import { getDefaultKeyValueStore } from "../src/ui/default.ts";
+import { createLocalStorageAdapter, type StringStorage } from "../src/ui/local-storage.ts";
+import { createKeyValueStore } from "../src/utils/key-value.ts";
+import { createMemoryAdapter } from "../src/utils/memory.ts";
 
 function fakeStringStorage(): StringStorage {
   const map = new Map<string, string>();

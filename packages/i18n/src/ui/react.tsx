@@ -13,8 +13,8 @@ import {
   type MessageValues,
   persistLocale,
   resolveMessage,
-} from "./core.ts";
-import { enUS } from "./messages/en-US.ts";
+} from "../utils/core.ts";
+import { enUS } from "../utils/messages/en-US.ts";
 
 type I18nValue = {
   locale: Locale;
@@ -40,7 +40,7 @@ export function I18nProvider({ children, initialLocale }: { children: ReactNode;
     if (locale === "en-US") {
       setLoadedMessages({ locale, messages: enUS });
     } else {
-      void import("./messages/id-ID.ts")
+      void import("../utils/messages/id-ID.ts")
         .then(({ idID }) => {
           if (active) setLoadedMessages({ locale, messages: idID });
         })

@@ -148,6 +148,10 @@ export const commands = [
     await guard("copy", () => runGate("copy"));
     process.stdout.write("Copy OK: no technical vocabulary on screen.\n");
   }),
+  defineCommand("check:package-targets", async () => {
+    await guard("package targets", () => runGate("package-targets"));
+    process.stdout.write("Package targets OK: multi-target packages use src/<target>.\n");
+  }),
   defineCommand("check:design", async () => {
     await guard("design", () => runGate("design"));
     process.stdout.write("Design OK: screens and text contrast meet the visual rules.\n");

@@ -26,6 +26,7 @@ Composable React table primitives for the Bun ERP workspace, built on TanStack T
 
 ## Implementation notes
 
+- Source splits by target: `src/ui/` holds the React/browser modules, `src/server/` holds the manual/server adapter.
 - v9 features are opt-in through feature sets; local row-model factories are registered only for local mode.
 - Imports are ESM and the CSS is opt-in. Avoid adding umbrella feature registries or network/storage dependencies.
 - Pagination state uses zero-based `pageIndex`; API query mapping is app-owned.

@@ -70,8 +70,8 @@ explicit and a bundler never pulls the wrong runtime:
 - `@bun-erp/storage/server` — object store for Bun and Cloudflare. `apps/server/infra/storage.ts`
   maps the validated environment onto `ServerStorageConfig` and exposes `ctx.storage`.
 - `@bun-erp/storage` — the runtime-neutral browser/mobile key/value store.
-- `@bun-erp/storage/browser` — IndexedDB and Web Storage adapters.
-- `@bun-erp/storage/mobile` — encrypted SQLite through `@capacitor-community/sqlite`.
+- `@bun-erp/storage/ui` — IndexedDB and Web Storage adapters plus the default browser resolver.
+- `@bun-erp/storage/capacitor` — encrypted SQLite through `@capacitor-community/sqlite`.
 
 The server driver is chosen by STORAGE_DRIVER through `StorageDriverRegistry`, so feature code never
 branches on the runtime:

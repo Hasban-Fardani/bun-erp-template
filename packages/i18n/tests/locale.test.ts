@@ -10,8 +10,8 @@ import {
   resolveInitialLocale,
   resolveLocale,
   resolveMessage,
-} from "../src/core.ts";
-import { enUS } from "../src/messages/en-US.ts";
+} from "../src/utils/core.ts";
+import { enUS } from "../src/utils/messages/en-US.ts";
 
 test("resolves supported language tags and falls back to English", () => {
   expect(resolveLocale(["fr-FR", "id-ID"])).toBe("id-ID");

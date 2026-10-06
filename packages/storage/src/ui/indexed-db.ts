@@ -1,4 +1,4 @@
-import type { KeyValueAdapter } from "../key-value.ts";
+import type { KeyValueAdapter } from "../utils/key-value.ts";
 
 const OBJECT_STORE = "records";
 const DEFAULT_DATABASE = "bun-erp-storage";

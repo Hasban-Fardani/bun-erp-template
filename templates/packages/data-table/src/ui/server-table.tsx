@@ -11,7 +11,7 @@ import {
 } from "@bun-erp/ui/molecules/table-states.tsx";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
-import { createServerColumnHelper, type ServerColumn, useServerDataTable } from "./server";
+import { createServerColumnHelper, type ServerColumn, useServerDataTable } from "../server/index";
 
 export type Column<T> = {
   key: string;

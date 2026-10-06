@@ -14,6 +14,7 @@ export const CHECK_GATE_COMMANDS: Readonly<Record<string, string>> = {
   migrations: "check:migrations",
   mobile: "check:mobile",
   motion: "check:motion",
+  "package-targets": "check:package-targets",
   platform: "check:platform",
   react: "check:react",
   readiness: "check:prod",
@@ -53,6 +54,7 @@ export async function runGate(
     | "architecture"
     | "language"
     | "mobile"
+    | "package-targets"
     | "versioning",
 ): Promise<void> {
   let findings: string[];
@@ -108,6 +110,9 @@ export async function runGate(
   } else if (kind === "mobile") {
     const { checkMobile } = await import("../../gates/mobile-gate.ts");
     findings = (await checkMobile(repoRoot)).map((f) => `${f.rule}: ${f.detail}`);
+  } else if (kind === "package-targets") {
+    const { checkPackageTargets } = await import("../../gates/package-targets.ts");
+    findings = await checkPackageTargets(repoRoot);
   } else if (kind === "versioning") {
     const { checkWorkspaceVersions } = await import("../../gates/versioning.ts");
     findings = (await checkWorkspaceVersions(repoRoot)).map(

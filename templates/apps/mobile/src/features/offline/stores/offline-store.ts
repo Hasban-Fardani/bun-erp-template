@@ -1,5 +1,5 @@
 import { createKeyValueStore, getDefaultKeyValueStore, type KeyValueAdapter } from "@bun-erp/storage";
-import { createCapacitorSqliteAdapter } from "@bun-erp/storage/mobile";
+import { createCapacitorSqliteAdapter } from "@bun-erp/storage/capacitor";
 
 const DATABASE_NAME = "bun_erp_offline";
 

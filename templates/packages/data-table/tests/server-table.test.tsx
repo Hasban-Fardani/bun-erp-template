@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { type Column, DataTable } from "../src/server-table";
+import { type Column, DataTable } from "../src/ui/server-table";
 
 type Row = { id: string; name: string; role: string };
 const columns: Column<Row>[] = [

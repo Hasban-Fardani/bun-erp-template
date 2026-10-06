@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Column, DataTable } from "../src/index";
-import { createServerColumnHelper, type ServerTableState, useServerDataTable } from "../src/server";
+import { createServerColumnHelper, type ServerTableState, useServerDataTable } from "../src/server/index";
+import { Column, DataTable } from "../src/ui/index";
 
 type Person = { id: string; name: string };
 

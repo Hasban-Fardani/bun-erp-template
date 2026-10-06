@@ -6,40 +6,40 @@
   "description": "Composable, typed TanStack Table primitives for Bun ERP applications",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./src/ui/index.ts",
+      "import": "./src/ui/index.ts",
+      "default": "./src/ui/index.ts"
     },
     "./server": {
-      "types": "./src/server.tsx",
-      "import": "./src/server.tsx",
-      "default": "./src/server.tsx"
+      "types": "./src/server/index.ts",
+      "import": "./src/server/index.ts",
+      "default": "./src/server/index.ts"
     },
     "./local": {
-      "types": "./src/local.ts",
-      "import": "./src/local.ts",
-      "default": "./src/local.ts"
+      "types": "./src/ui/local.ts",
+      "import": "./src/ui/local.ts",
+      "default": "./src/ui/local.ts"
     },
     "./primitives": {
-      "types": "./src/primitives.tsx",
-      "import": "./src/primitives.tsx",
-      "default": "./src/primitives.tsx"
+      "types": "./src/ui/primitives.tsx",
+      "import": "./src/ui/primitives.tsx",
+      "default": "./src/ui/primitives.tsx"
     },
     "./resource-table": {
-      "types": "./src/resource-table.tsx",
-      "import": "./src/resource-table.tsx",
-      "default": "./src/resource-table.tsx"
+      "types": "./src/ui/resource-table.tsx",
+      "import": "./src/ui/resource-table.tsx",
+      "default": "./src/ui/resource-table.tsx"
     },
     "./server-table": {
-      "types": "./src/server-table.tsx",
-      "import": "./src/server-table.tsx",
-      "default": "./src/server-table.tsx"
+      "types": "./src/ui/server-table.tsx",
+      "import": "./src/ui/server-table.tsx",
+      "default": "./src/ui/server-table.tsx"
     },
-    "./styles.css": "./src/styles.css",
+    "./styles.css": "./src/ui/styles.css",
     "./llms.txt": "./llms.txt"
   },
   "sideEffects": [
-    "./src/styles.css"
+    "./src/ui/styles.css"
   ],
   "scripts": {
     "check": "bunx --bun tsc --noEmit -p tsconfig.json",

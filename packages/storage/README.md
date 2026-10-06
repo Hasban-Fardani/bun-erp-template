@@ -6,7 +6,7 @@ server object store lives on its own subpath.
 
 ```ts
 import { getDefaultKeyValueStore } from "@bun-erp/storage";
-import { createCapacitorSqliteAdapter } from "@bun-erp/storage/mobile";
+import { createCapacitorSqliteAdapter } from "@bun-erp/storage/capacitor";
 
 const store = await getDefaultKeyValueStore({
   native: () => createCapacitorSqliteAdapter({ databaseName: "bun_erp_offline" }),
@@ -41,8 +41,8 @@ traversal before any driver touches a path or bucket. `put`/`get`/`delete`/`exis
 - `@bun-erp/storage`: `createKeyValueStore`, `getDefaultKeyValueStore`, `createMemoryAdapter`,
   `createIndexedDbAdapter`, `createLocalStorageAdapter`, and the `KeyValueStore`/`KeyValueAdapter`/
   `StoredRecord`/`StringStorage`/`DefaultStoreOptions` types.
-- `@bun-erp/storage/browser`: IndexedDB and Web Storage adapters only.
-- `@bun-erp/storage/mobile`: `createCapacitorSqliteAdapter` for encrypted SQLite; the native plugin
+- `@bun-erp/storage/ui`: IndexedDB and Web Storage adapters, plus the default browser resolver.
+- `@bun-erp/storage/capacitor`: `createCapacitorSqliteAdapter` for encrypted SQLite; the native plugin
   is imported lazily, so a web bundle that skips this subpath stays free of it.
 - `@bun-erp/storage/server`: `createObjectStorage`, `createStorageRegistry`, key helpers, and the
   server storage types.

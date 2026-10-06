@@ -4,8 +4,8 @@ One storage package for every platform, with a subpath per runtime so a bundler 
 it needs.
 
 - `@bun-erp/storage` — runtime-neutral key/value store for the web and mobile apps.
-- `@bun-erp/storage/browser` — IndexedDB and Web Storage adapters.
-- `@bun-erp/storage/mobile` — encrypted SQLite through `@capacitor-community/sqlite`.
+- `@bun-erp/storage/ui` — IndexedDB and Web Storage adapters plus the default browser resolver.
+- `@bun-erp/storage/capacitor` — encrypted SQLite through `@capacitor-community/sqlite`.
 - `@bun-erp/storage/server` — object store for Bun and Cloudflare Workers.
 
 Client: `createKeyValueStore(adapter)` stores namespaced JSON records with an `updatedAt`; the

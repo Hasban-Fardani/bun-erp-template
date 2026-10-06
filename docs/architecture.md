@@ -144,3 +144,8 @@ Lexical JSON. Import individual package subpaths from their manifests instead of
 behavior to a shared package. The email, PDF and mail packages stay opt-in; browser-only PDF
 rendering must not enter the Worker graph, and the default server carries no mail transport or
 `nodemailer` dependency.
+
+Packages split by runtime target only when they serve more than one: `storage` is `src/ui`,
+`src/capacitor`, `src/server` and `src/utils`; `i18n` is `src/utils` plus `src/ui`; `data-table` is
+`src/ui` plus `src/server`. A single-target package stays flat, with `src/index.ts` and
+`src/styles.css` at the root. `bun erp check:package-targets` enforces the layout.
