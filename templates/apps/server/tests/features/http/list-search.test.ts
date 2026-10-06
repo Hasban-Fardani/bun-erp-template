@@ -18,12 +18,31 @@ afterAll(async () => {
  * `search` with a 422 while the box was on screen, so every keystroke failed.
  *
  * Sort columns are per-endpoint by design (the allowlist is what stops ORDER BY injection), so
- * each entry names the column the UI actually sends as its default.
+ * each entry names the column the UI actually sends as its default — the typed client keeps each
+ * endpoint's allowlist in the query type.
  */
 const COLLECTIONS = [
-  { path: "/api/v1/users", sort: "name" },
-  { path: "/api/v1/roles", sort: "key" },
-  { path: "/api/v1/audit-logs", sort: "createdAt" },
+  {
+    path: "/api/v1/users",
+    list: () =>
+      api.client.api.v1.users.$get({
+        query: { page: "1", perPage: "5", sort: "name", dir: "desc", search: "a" },
+      }),
+  },
+  {
+    path: "/api/v1/roles",
+    list: () =>
+      api.client.api.v1.roles.$get({
+        query: { page: "1", perPage: "5", sort: "key", dir: "desc", search: "a" },
+      }),
+  },
+  {
+    path: "/api/v1/audit-logs",
+    list: () =>
+      api.client.api.v1["audit-logs"].$get({
+        query: { page: "1", perPage: "5", sort: "createdAt", dir: "desc", search: "a" },
+      }),
+  },
 ];
 
 describe("UI and API agree on the list query contract", () => {
@@ -40,11 +59,9 @@ describe("UI and API agree on the list query contract", () => {
     expect([...registered].sort()).toEqual(COLLECTIONS.map((c) => c.path).sort());
   });
 
-  for (const { path, sort } of COLLECTIONS) {
+  for (const { path, list } of COLLECTIONS) {
     test(`${path} accepts page, perPage, sort, dir and search`, async () => {
-      const res = await api.app.request(`${path}?page=1&perPage=5&sort=${sort}&dir=desc&search=a`, {
-        headers: { cookie: api.cookie },
-      });
+      const res = await list();
 
       if (res.status === 422) {
         const body = (await res.json()) as { error: { fields?: { message: string }[] } };
@@ -55,6 +72,7 @@ describe("UI and API agree on the list query contract", () => {
   }
 
   test("an unknown sort column is refused, so the allowlist is real", async () => {
+    // `sort=password` is outside the typed allowlist, so only a raw request can send it.
     const res = await api.app.request("/api/v1/users?sort=password", { headers: { cookie: api.cookie } });
     expect(res.status).toBe(422);
   });

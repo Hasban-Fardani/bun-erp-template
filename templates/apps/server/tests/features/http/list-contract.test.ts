@@ -3,27 +3,33 @@ import { createHttpFixture, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;
 
-const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
-
 type ListBody<T> = {
   data: { items: T[]; page: number; perPage: number; total: number; totalPages: number };
 };
 
 type Named = { id: string; name: string; email: string };
 
-const get = async <T>(path: string): Promise<ListBody<T>> => {
-  const res = await api.app.request(path, { headers: { cookie: api.cookie } });
+/** Typed users list: the query object carries the same values the old query strings did. */
+const listUsers = async (
+  query: {
+    page?: string;
+    perPage?: string;
+    sort?: "name" | "email" | "createdAt";
+    dir?: "asc" | "desc";
+    search?: string;
+  } = {},
+): Promise<ListBody<Named>> => {
+  const res = await api.client.api.v1.users.$get({ query });
   expect(res.status).toBe(200);
-  return (await res.json()) as ListBody<T>;
+  return (await res.json()) as ListBody<Named>;
 };
 
 /** The owner created by `loginOwner` is already a row, so counts start at one. */
 const seedUsers = async (...names: string[]) => {
   for (const name of names) {
-    const res = await api.app.request(
-      "/api/v1/users",
-      json({ name, email: `${name.toLowerCase()}@example.test`, password: "sandi-panjang" }),
-    );
+    const res = await api.client.api.v1.users.$post({
+      json: { name, email: `${name.toLowerCase()}@example.test`, password: "sandi-panjang" },
+    });
     expect(res.status).toBe(200);
   }
 };
@@ -41,11 +47,11 @@ describe("list contract", () => {
   test("pagination metadata is returned and slicing actually limits rows", async () => {
     await seedUsers("Candra", "Budi", "Ayu");
 
-    const first = await get<Named>("/api/v1/users?page=1&perPage=2");
+    const first = await listUsers({ page: "1", perPage: "2" });
     expect(first.data.items).toHaveLength(2);
     expect(first.data).toMatchObject({ page: 1, perPage: 2, total: 4, totalPages: 2 });
 
-    const second = await get<Named>("/api/v1/users?page=2&perPage=2");
+    const second = await listUsers({ page: "2", perPage: "2" });
     expect(second.data.items).toHaveLength(2);
     expect(second.data.page).toBe(2);
 
@@ -55,7 +61,7 @@ describe("list contract", () => {
   });
 
   test("roles are paginated too, and report a stable total", async () => {
-    const res = await api.app.request("/api/v1/roles?perPage=1", { headers: { cookie: api.cookie } });
+    const res = await api.client.api.v1.roles.$get({ query: { perPage: "1" } });
     expect(res.status).toBe(200);
     const body = (await res.json()) as ListBody<{ key: string }>;
     expect(body.data.items).toHaveLength(1);
@@ -67,13 +73,13 @@ describe("list contract", () => {
     await seedUsers("Candra", "Budi", "Ayu");
 
     // Admin belongs to the logged-in owner, so it is part of every expectation below.
-    const asc = await get<Named>("/api/v1/users?sort=name&dir=asc");
+    const asc = await listUsers({ sort: "name", dir: "asc" });
     expect(asc.data.items.map((u) => u.name)).toEqual(["Admin", "Ayu", "Budi", "Candra"]);
 
-    const desc = await get<Named>("/api/v1/users?sort=name&dir=desc");
+    const desc = await listUsers({ sort: "name", dir: "desc" });
     expect(desc.data.items.map((u) => u.name)).toEqual(["Candra", "Budi", "Ayu", "Admin"]);
 
-    const byEmail = await get<Named>("/api/v1/users?sort=email&dir=asc");
+    const byEmail = await listUsers({ sort: "email", dir: "asc" });
     expect(byEmail.data.items.map((u) => u.email)).toEqual([
       "admin@example.test",
       "ayu@example.test",
@@ -83,6 +89,7 @@ describe("list contract", () => {
   });
 
   test("an unknown sort column is rejected, not silently ignored", async () => {
+    // `sort=password` is outside the typed allowlist, so only a raw request can send it.
     const res = await api.app.request("/api/v1/users?sort=password", { headers: { cookie: api.cookie } });
     expect(res.status).toBe(422);
     const body = (await res.json()) as { error: { code: string; fields: { path: string }[] } };
@@ -93,14 +100,14 @@ describe("list contract", () => {
   test("search filters rows and total reflects the filter, not the table", async () => {
     await seedUsers("Candra", "Budi", "Ayu");
 
-    const found = await get<Named>("/api/v1/users?search=budi");
+    const found = await listUsers({ search: "budi" });
     expect(found.data.items).toHaveLength(1);
     expect(found.data.total).toBe(1);
     expect(found.data.totalPages).toBe(1);
   });
 
   test("an empty result still reports one page, so the UI never renders 'page 0 of 0'", async () => {
-    const empty = await get<Named>("/api/v1/users?search=nomatchatall");
+    const empty = await listUsers({ search: "nomatchatall" });
     expect(empty.data.items).toEqual([]);
     expect(empty.data.total).toBe(0);
     expect(empty.data.totalPages).toBe(1);

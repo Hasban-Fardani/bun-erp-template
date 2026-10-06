@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
+import { testClient } from "hono/testing";
 import { createContext } from "../../bootstrap/bootstrap.ts";
 import { type AppContext, resolveDefaultOrganizationId } from "../../bootstrap/context.ts";
 import type { Env } from "../../config/index.ts";
@@ -10,6 +11,7 @@ import { resetPermissionCache } from "../../features/rbac/cache.ts";
 import { roles } from "../../features/rbac/schema.ts";
 import { assignRole } from "../../features/rbac/service.ts";
 import { createApp } from "../../http/app.ts";
+import type { AppType } from "../../http/app-type.ts";
 
 const MIGRATIONS_DIR = resolve(import.meta.dir, "../../database/migrations");
 const databaseUrl = testDatabaseUrl();
@@ -94,10 +96,26 @@ export async function truncateAll(ctx: AppContext): Promise<void> {
  * owner cookie. Extracted because five test files had grown byte-identical copies — the
  * slop gate flagged them, and a fix to one copy could silently miss the others.
  *
- * Returns a `json()` helper that carries the cookie so request bodies stay one-liners.
+ * `client` is the typed `hono/testing` client; the cookie is applied through the client's
+ * request options, so authenticated calls need no per-call headers.
  */
 export type HttpFixture = Awaited<ReturnType<typeof createHttpFixture>>;
 export type SeededApp = Awaited<ReturnType<typeof createSeededApp>>;
+
+/**
+ * Typed RPC client over a fixture app. `AppType` is the same contract the web client binds to,
+ * so error envelopes are typed next to success bodies. Hono 4's signature is
+ * `testClient(app, Env, executionCtx, options)`; `options` is the fourth argument and its
+ * `headers` are merged into every call.
+ */
+export function createTestClient(app: ReturnType<typeof createApp>, cookie?: string) {
+  return testClient(app as AppType, undefined, undefined, cookie ? { headers: { cookie } } : undefined);
+}
+
+/** Unwraps the `{ data }` success envelope from a typed client response. */
+export async function dataOf<T>(response: Promise<{ json(): Promise<unknown> }>): Promise<T> {
+  return ((await (await response).json()) as { data: T }).data;
+}
 
 /**
  * For tests that exercise the app itself (routes, CORS, the OpenAPI document) rather than
@@ -109,7 +127,8 @@ export async function createSeededApp() {
   await seed(ctx.db);
   resetPermissionCache();
   const organizationId = await resolveDefaultOrganizationId(ctx.db);
-  return { ctx, app: createApp(ctx, organizationId), organizationId, close: async () => {} };
+  const app = createApp(ctx, organizationId);
+  return { ctx, app, client: createTestClient(app), organizationId, close: async () => {} };
 }
 
 export async function createHttpFixture() {
@@ -131,21 +150,17 @@ export async function createHttpFixture() {
     get cookie() {
       return cookie;
     },
+    /**
+     * Typed client for authenticated calls. Rebuilt on access so it carries the cookie
+     * `signInAsOwner` set; before sign-in it sends none, which is what anonymous cases want.
+     */
+    get client() {
+      return createTestClient(app, cookie || undefined);
+    },
     /** Signs in as the seeded owner. Call after seeding org-specific data if order matters. */
     async signInAsOwner() {
       cookie = await loginOwner(app, ctx.db);
       return cookie;
-    },
-    json(body: unknown, method = "POST"): RequestInit {
-      return {
-        method,
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify(body),
-      };
-    },
-    async get<T>(path: string): Promise<{ data: T }> {
-      const res = await app.request(path, { headers: { cookie } });
-      return (await res.json()) as { data: T };
     },
     /** Data and cache are reset between tests; the shared schema is not. */
     close: async () => {},
@@ -159,6 +174,7 @@ export async function createHttpFixture() {
  * its cookie. Business tests need this because every private route now sits behind RBAC.
  */
 export async function loginOwner(app: ReturnType<typeof createApp>, db: AppContext["db"]): Promise<string> {
+  // Better Auth wildcard route: /api/v1/auth/* is proxied through one handler, so the typed client cannot address it.
   const signUp = await app.request("/api/v1/auth/sign-up/email", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -171,6 +187,7 @@ export async function loginOwner(app: ReturnType<typeof createApp>, db: AppConte
   if (!owner) throw new Error("role owner tidak ada — seed belum jalan?");
   await assignRole(db, { userId: user.id, roleId: owner.id });
 
+  // Same Better Auth wildcard as the sign-up call above; only the typed client's own routes are covered by it.
   const signIn = await app.request("/api/v1/auth/sign-in/email", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -185,6 +202,7 @@ export async function loginOwner(app: ReturnType<typeof createApp>, db: AppConte
 
 /** Creates a user through real Better Auth; returns its id. */
 export async function signUpUser(app: ReturnType<typeof createApp>, email: string): Promise<{ id: string }> {
+  // Better Auth wildcard route: /api/v1/auth/* is proxied, so the typed client cannot address it.
   const res = await app.request("/api/v1/auth/sign-up/email", {
     method: "POST",
     headers: { "content-type": "application/json" },

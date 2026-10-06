@@ -9,7 +9,7 @@ import { createUser } from "../../../features/identity/service.ts";
 import { permissions, roles } from "../../../features/rbac/schema.ts";
 import { assignRole, permissionsForUser, rolesForUser, seedRbac } from "../../../features/rbac/service.ts";
 import { createApp } from "../../../http/app.ts";
-import { createTestContext, truncateAll } from "../../support/fixtures.ts";
+import { createTestClient, createTestContext, truncateAll } from "../../support/fixtures.ts";
 
 let ctx: AppContext;
 let orgId: string;
@@ -23,12 +23,14 @@ const json = (body: unknown, method = "POST"): RequestInit => ({
 
 /** Signs up through the real Better Auth path — not by writing a user row directly. */
 async function signUp(email: string, password = "sandi-yang-panjang") {
+  // Better Auth wildcard route: /api/v1/auth/* is proxied, so the typed client cannot address it.
   const res = await app.request("/api/v1/auth/sign-up/email", json({ email, password, name: email.split("@")[0] }));
   expect(res.status).toBe(200);
   return (await res.json()) as { user: { id: string } };
 }
 
 async function signIn(email: string, password = "sandi-yang-panjang") {
+  // Same Better Auth wildcard as the sign-up call above.
   return app.request("/api/v1/auth/sign-in/email", json({ email, password }));
 }
 
@@ -97,7 +99,7 @@ describe("identity", () => {
   });
 
   test("anonymous request to a private route is 401 UNAUTHORIZED", async () => {
-    const res = await app.request("/api/v1/users");
+    const res = await createTestClient(app).api.v1.users.$get({ query: {} });
     expect(res.status).toBe(401);
     const body = (await res.json()) as { error: { code: string } };
     expect(body.error.code).toBe("UNAUTHORIZED");
@@ -106,7 +108,7 @@ describe("identity", () => {
   test("authenticated user without permission is 403 FORBIDDEN, not 401", async () => {
     const { user } = await signUp("tanpa-izin@example.test");
     const cookie = await sessionCookie("tanpa-izin@example.test");
-    const res = await app.request("/api/v1/users", { headers: { cookie } });
+    const res = await createTestClient(app, cookie).api.v1.users.$get({ query: {} });
     // 403 (not 401) proves the identity is recognised but the permission is missing.
     expect(res.status).toBe(403);
     const body = (await res.json()) as { error: { code: string } };
@@ -123,7 +125,7 @@ describe("identity", () => {
     expect(permissions).toContain("role.assign");
 
     const cookie = await sessionCookie("owner@example.test");
-    const res = await app.request("/api/v1/users", { headers: { cookie } });
+    const res = await createTestClient(app, cookie).api.v1.users.$get({ query: {} });
     expect(res.status).toBe(200);
   });
 
@@ -133,12 +135,12 @@ describe("identity", () => {
     const cookie = await sessionCookie("staff@example.test");
 
     // `staff` holds user.read — reading the user list is indeed allowed.
-    expect((await app.request("/api/v1/users", { headers: { cookie } })).status).toBe(200);
+    expect((await createTestClient(app, cookie).api.v1.users.$get({ query: {} })).status).toBe(200);
 
     // But it does not hold role.assign: that is what must be refused, and with 403.
-    const res = await app.request(`/api/v1/users/${user.id}/roles`, {
-      ...json({ roleKey: "owner" }),
-      headers: { "content-type": "application/json", cookie },
+    const res = await createTestClient(app, cookie).api.v1.users[":id"].roles.$post({
+      param: { id: user.id },
+      json: { roleKey: "owner" },
     });
     expect(res.status).toBe(403);
     const body = (await res.json()) as { error: { code: string; message: string } };
@@ -149,8 +151,8 @@ describe("identity", () => {
   test("/me reports the caller's own permissions", async () => {
     const { user } = await signUp("saya@example.test");
     const cookie = await sessionCookie("saya@example.test");
-    const res = (await (await app.request("/api/v1/me", { headers: { cookie } })).json()) as {
-      data: { userId: string; permissions: string[] };
+    const res = (await (await createTestClient(app, cookie).api.v1.me.$get()).json()) as {
+      data: { userId: string; permissions: readonly string[] };
     };
     expect(res.data.userId).toBe(user.id);
     // The new user has no role yet: empty permissions, not an error.
@@ -179,9 +181,9 @@ describe("identity", () => {
     const cookie = await sessionCookie("admin-audit@example.test");
 
     const target = await signUp("diaudit@example.test");
-    const res = await app.request(`/api/v1/users/${target.user.id}/roles`, {
-      ...json({ roleKey: "staff" }),
-      headers: { "content-type": "application/json", cookie },
+    const res = await createTestClient(app, cookie).api.v1.users[":id"].roles.$post({
+      param: { id: target.user.id },
+      json: { roleKey: "staff" },
     });
     expect(res.status).toBe(200);
 
@@ -234,16 +236,16 @@ describe("identity", () => {
     await assignRole(ctx.db, { userId: admin.user.id, roleId: await roleIdByKey("owner") });
     const cookie = await sessionCookie("admin-roles@example.test");
 
-    const res = await app.request("/api/v1/roles", { headers: { cookie } });
+    const res = await createTestClient(app, cookie).api.v1.roles.$get({ query: {} });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { data: { items: { key: string; isSystem: boolean }[]; total: number } };
     expect(body.data.items.map((r) => r.key).sort()).toEqual(["owner", "staff"]);
     expect(body.data.items.every((r) => r.isSystem)).toBe(true);
 
     // The statement catalogue is read from code: if the list were copied into the route, this would go stale.
-    const catalog = await app.request("/api/v1/roles/statements", { headers: { cookie } });
+    const catalog = await createTestClient(app, cookie).api.v1.roles.statements.$get();
     const catalogBody = (await catalog.json()) as {
-      data: { statements: Record<string, string[]>; permissions: string[] };
+      data: { statements: Record<string, readonly string[]>; permissions: readonly string[] };
     };
     expect(catalogBody.data.permissions).toContain("role.assign");
     expect(catalogBody.data.permissions).toContain("audit.read");

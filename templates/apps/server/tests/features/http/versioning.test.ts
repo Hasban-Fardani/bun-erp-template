@@ -12,7 +12,7 @@ afterAll(async () => {
 });
 
 test("v1 health route is mounted at the declared API prefix", async () => {
-  const response = await fixture.app.request("/api/v1/health", {
+  const response = await fixture.client.api.v1.health.$get(undefined, {
     headers: { "X-Request-Id": "version-contract-test" },
   });
   expect(response.status).toBe(200);
@@ -21,6 +21,7 @@ test("v1 health route is mounted at the declared API prefix", async () => {
 });
 
 test("unversioned API paths are not aliases for v1", async () => {
+  // `/api/health` is not a registered route, so the typed client has no path for it.
   const response = await fixture.app.request("/api/health");
   expect(response.status).toBe(404);
 });

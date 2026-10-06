@@ -2,14 +2,14 @@ import { expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { notifications } from "../../../features/notifications/schema.ts";
 import { notify } from "../../../features/notifications/service.ts";
-import { createHttpFixture, signUpUser } from "../../support/fixtures.ts";
+import { createHttpFixture, dataOf, signUpUser } from "../../support/fixtures.ts";
 
 type NotificationRow = { id: string; title: string; readAt: string | null };
 
 test("the database channel writes an inbox row that counts and marks read", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
-  const me = (await api.get<{ userId: string }>("/api/v1/me")).data;
+  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
 
   await notify(api.ctx, {
     organizationId: api.organizationId,
@@ -19,27 +19,24 @@ test("the database channel writes an inbox row that counts and marks read", asyn
     body: "Akun baru tersedia.",
   });
 
-  const unread = (await api.get<{ count: number }>("/api/v1/notifications/unread-count")).data;
+  const unread = await dataOf<{ count: number }>(api.client.api.v1.notifications["unread-count"].$get());
   expect(unread.count).toBe(1);
 
-  const list = (await api.get<{ items: NotificationRow[] }>("/api/v1/notifications")).data;
+  const list = await dataOf<{ items: NotificationRow[] }>(api.client.api.v1.notifications.$get({ query: {} }));
   expect(list.items.map((row) => row.title)).toEqual(["Akun dibuat"]);
   expect(list.items[0]?.readAt).toBeNull();
 
   const id = list.items[0]?.id as string;
-  const marked = await api.app.request(`/api/v1/notifications/${id}/read`, {
-    method: "POST",
-    headers: { cookie: api.cookie },
-  });
+  const marked = await api.client.api.v1.notifications[":id"].read.$post({ param: { id } });
   expect(marked.status).toBe(200);
 
-  expect((await api.get<{ count: number }>("/api/v1/notifications/unread-count")).data.count).toBe(0);
+  expect((await dataOf<{ count: number }>(api.client.api.v1.notifications["unread-count"].$get())).count).toBe(0);
 });
 
 test("an unknown channel is rejected", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
-  const me = (await api.get<{ userId: string }>("/api/v1/me")).data;
+  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
   await expect(
     notify(api.ctx, {
       organizationId: api.organizationId,
@@ -54,7 +51,7 @@ test("an unknown channel is rejected", async () => {
 test("the database channel writes one row per recipient", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
-  const me = (await api.get<{ userId: string }>("/api/v1/me")).data;
+  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
   const other = await signUpUser(api.app, "other@example.test");
 
   await notify(api.ctx, {
@@ -72,30 +69,35 @@ test("the database channel writes one row per recipient", async () => {
 test("read filter and mark-all-read follow the inbox contract", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
-  const me = (await api.get<{ userId: string }>("/api/v1/me")).data;
+  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
   const base = { organizationId: api.organizationId, recipients: [me.userId], type: "x" } as const;
 
   await notify(api.ctx, { ...base, title: "Satu" });
   await notify(api.ctx, { ...base, title: "Dua" });
 
-  const all = (await api.get<{ items: NotificationRow[] }>("/api/v1/notifications")).data;
-  const unread = (await api.get<{ items: NotificationRow[] }>("/api/v1/notifications?read=false")).data;
+  const all = await dataOf<{ items: NotificationRow[] }>(api.client.api.v1.notifications.$get({ query: {} }));
+  const unread = await dataOf<{ items: NotificationRow[] }>(
+    api.client.api.v1.notifications.$get({ query: { read: "false" } }),
+  );
   expect(all.items).toHaveLength(2);
   expect(unread.items).toHaveLength(2);
 
   const first = all.items[0]?.id as string;
-  await api.app.request(`/api/v1/notifications/${first}/read`, { method: "POST", headers: { cookie: api.cookie } });
+  await api.client.api.v1.notifications[":id"].read.$post({ param: { id: first } });
 
-  expect((await api.get<{ items: NotificationRow[] }>("/api/v1/notifications?read=false")).data.items).toHaveLength(1);
-  expect((await api.get<{ items: NotificationRow[] }>("/api/v1/notifications?read=true")).data.items).toHaveLength(1);
+  expect(
+    (await dataOf<{ items: NotificationRow[] }>(api.client.api.v1.notifications.$get({ query: { read: "false" } })))
+      .items,
+  ).toHaveLength(1);
+  expect(
+    (await dataOf<{ items: NotificationRow[] }>(api.client.api.v1.notifications.$get({ query: { read: "true" } })))
+      .items,
+  ).toHaveLength(1);
 
-  const cleared = await api.app.request("/api/v1/notifications/read-all", {
-    method: "POST",
-    headers: { cookie: api.cookie },
-  });
+  const cleared = await api.client.api.v1.notifications["read-all"].$post();
   const payload = (await cleared.json()) as { data: { updated: number } };
   expect(payload.data.updated).toBe(1);
-  expect((await api.get<{ count: number }>("/api/v1/notifications/unread-count")).data.count).toBe(0);
+  expect((await dataOf<{ count: number }>(api.client.api.v1.notifications["unread-count"].$get())).count).toBe(0);
 });
 
 test("a user cannot read or mark another user's notification", async () => {
@@ -110,27 +112,26 @@ test("a user cannot read or mark another user's notification", async () => {
     title: "Untuk pengguna lain",
   });
 
-  expect((await api.get<{ items: NotificationRow[] }>("/api/v1/notifications")).data.items).toEqual([]);
+  expect(
+    (await dataOf<{ items: NotificationRow[] }>(api.client.api.v1.notifications.$get({ query: {} }))).items,
+  ).toEqual([]);
 
   const row = (await api.ctx.db.select().from(notifications).where(eq(notifications.userId, other.id)))[0];
-  const response = await api.app.request(`/api/v1/notifications/${row?.id}/read`, {
-    method: "POST",
-    headers: { cookie: api.cookie },
-  });
+  const response = await api.client.api.v1.notifications[":id"].read.$post({ param: { id: row?.id as string } });
   expect(response.status).toBe(404);
 });
 
 test("the notifications API rejects an anonymous caller", async () => {
   const api = await createHttpFixture();
-  const response = await api.app.request("/api/v1/notifications", { method: "GET" });
+  const response = await api.client.api.v1.notifications.$get({ query: {} });
   expect(response.status).toBe(401);
 });
 
 test("the inbox accepts the list query the web client sends", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
-  const response = await api.app.request("/api/v1/notifications?page=1&perPage=25&sort=createdAt&dir=asc", {
-    headers: { cookie: api.cookie },
+  const response = await api.client.api.v1.notifications.$get({
+    query: { page: "1", perPage: "25", sort: "createdAt", dir: "asc" },
   });
   expect(response.status).toBe(200);
 });

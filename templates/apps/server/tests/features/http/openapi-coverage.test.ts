@@ -16,6 +16,7 @@ type Spec = { paths: Record<string, Record<string, Operation>>; components: { sc
 
 const spec = async (): Promise<Spec> => {
   const app = fixture.app;
+  // OpenAPI document fetch: raw by design, it is the generated document rather than a typed route.
   return (await (await app.request("/api/openapi.json")).json()) as Spec;
 };
 
@@ -97,6 +98,7 @@ test("skema body diturunkan dari zod — bukan salinan yang bisa basi", async ()
 test("global request ID and CORS also cover documentation routes", async () => {
   const origin = fixture.ctx.env.trustedOrigins[0];
   if (!origin) throw new Error("Test fixture requires a trusted origin");
+  // OpenAPI document fetch with CORS/request-id headers: same raw document call as `spec()`.
   const response = await fixture.app.request("/api/openapi.json", {
     headers: { "x-request-id": "docs-request", origin },
   });
@@ -106,6 +108,7 @@ test("global request ID and CORS also cover documentation routes", async () => {
 });
 
 test("Scalar reference remains at /api/docs and points to the OpenAPI document", async () => {
+  // Documentation HTML: not part of the typed JSON API contract.
   const response = await fixture.app.request("/api/docs");
   expect(response.status).toBe(200);
   expect(response.headers.get("content-type")).toContain("text/html");
@@ -117,7 +120,9 @@ test("Scalar reference remains at /api/docs and points to the OpenAPI document",
 
 test("HEAD uses GET headers and status while omitting the body", async () => {
   const headers = { "x-request-id": "head-request" };
+  // Method-contract baseline for the HEAD check below; both stay raw as a pair.
   const get = await fixture.app.request("/api/v1/health", { headers });
+  // HEAD has no typed client method; the test pins GET/HEAD parity on the same route.
   const head = await fixture.app.request("/api/v1/health", { method: "HEAD", headers });
   expect(head.status).toBe(get.status);
   expect(head.headers.get("x-request-id")).toBe(get.headers.get("x-request-id"));

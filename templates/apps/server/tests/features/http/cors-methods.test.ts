@@ -20,6 +20,7 @@ test("CORS mengizinkan setiap method yang benar-benar dipakai route", async () =
   const app = fixture.app;
   const used = new Set(app.routes.map((r) => r.method.toUpperCase()).filter((m) => m !== "ALL"));
   // Trusted origin from the test env; any endpoint will do — only the preflight headers are under test.
+  // CORS preflight is raw: OPTIONS is not a typed client method, and the preflight headers are the point.
   const res = await app.request("/api/v1/users", {
     method: "OPTIONS",
     headers: {
@@ -40,6 +41,7 @@ test("CORS mengizinkan setiap method yang benar-benar dipakai route", async () =
 
 test("CORS menolak method di luar daftar", async () => {
   const app = fixture.app;
+  // CORS preflight is raw: OPTIONS is not a typed client method, and the preflight headers are the point.
   const res = await app.request("/api/v1/users", {
     method: "OPTIONS",
     headers: { origin: "http://localhost:5173", "access-control-request-method": "TRACE" },
@@ -48,6 +50,7 @@ test("CORS menolak method di luar daftar", async () => {
 });
 
 test("CORS accepts the request ID header used by mobile RPC", async () => {
+  // CORS preflight is raw: OPTIONS is not a typed client method, and the preflight headers are the point.
   const response = await fixture.app.request("/api/v1/health", {
     method: "OPTIONS",
     headers: {

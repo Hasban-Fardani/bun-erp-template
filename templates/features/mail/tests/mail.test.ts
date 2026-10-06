@@ -5,7 +5,7 @@ import { createAppMailer, createMailEnqueue } from "../../../features/mail/wirin
 import { notify } from "../../../features/notifications/service.ts";
 import { runNextJob } from "../../../infra/jobs/queue.ts";
 import type { Logger } from "../../../infra/observability/logger.ts";
-import { createHttpFixture, createTestContext, testEnv, truncateAll } from "../../support/fixtures.ts";
+import { createHttpFixture, createTestContext, dataOf, testEnv, truncateAll } from "../../support/fixtures.ts";
 
 const logger: Logger = {
   trace: () => {},
@@ -42,7 +42,7 @@ test("a queued message is delivered by the worker through the registered mail jo
 test("the mail channel sends through the configured mailer", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
-  const me = (await api.get<{ userId: string }>("/api/v1/me")).data;
+  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
   const driver = createMemoryMailDriver();
 
   await notify(
