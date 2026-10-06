@@ -103,7 +103,6 @@ atomic with it:
 
 ```ts
 await notify(ctx, {
-  organizationId,
   recipients: [userId],
   type: "department.created",
   title: "Department created",

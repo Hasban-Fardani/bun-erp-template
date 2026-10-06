@@ -13,7 +13,6 @@ const departmentRef = {
   type: "object",
   properties: {
     id: { type: "string", format: "uuid" },
-    organizationId: { type: "string", format: "uuid" },
     name: { type: "string" },
     code: { type: "string" },
     isActive: { type: "boolean" },
@@ -27,11 +26,8 @@ const listData = {
   properties: { items: { type: "array", items: departmentRef }, ...listMetaSchemaProperties },
 };
 
-/**
- * Thin route: validation → policy → service → envelope (PRD §6). No business logic
- * here. Organization comes from the ACTOR (session), not from client input.
- */
-export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string) {
+/** Thin route: validation → policy → service → envelope (PRD §6). No business logic here. */
+export function departmentRoutes(ctx: AppContext) {
   return factory
     .createApp()
     .get(
@@ -47,9 +43,8 @@ export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string
 
       validate("query", ListDepartmentsInput),
       async (c) => {
-        const actor = c.get("actor");
         const input = c.req.valid("query");
-        const { items, total } = await listDepartments(ctx.db, actor.organizationId ?? fallbackOrganizationId, input);
+        const { items, total } = await listDepartments(ctx.db, input);
         return ok(c, { items, ...listMeta(input, total) });
       },
     )
@@ -64,12 +59,7 @@ export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string
       }),
 
       async (c) => {
-        const actor = c.get("actor");
-        const department = await findDepartment(
-          ctx.db,
-          actor.organizationId ?? fallbackOrganizationId,
-          c.req.param("id"),
-        );
+        const department = await findDepartment(ctx.db, c.req.param("id"));
         // Absent = 404. 403 is only for a failed authorization (PRD §12).
         if (!department) throw ApiError.notFound("Department not found");
         return ok(c, department);
@@ -90,7 +80,7 @@ export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(c, await createDepartment(ctx.db, actor.organizationId ?? fallbackOrganizationId, input, actor));
+        return ok(c, await createDepartment(ctx.db, input, actor));
       },
     )
     .patch(
@@ -108,16 +98,7 @@ export function departmentRoutes(ctx: AppContext, fallbackOrganizationId: string
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(
-          c,
-          await updateDepartment(
-            ctx.db,
-            actor.organizationId ?? fallbackOrganizationId,
-            c.req.param("id"),
-            input,
-            actor,
-          ),
-        );
+        return ok(c, await updateDepartment(ctx.db, c.req.param("id"), input, actor));
       },
     );
 }

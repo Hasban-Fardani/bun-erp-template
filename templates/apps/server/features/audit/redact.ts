@@ -58,9 +58,9 @@ export function redact<T extends Record<string, unknown>>(
 
 /** Allowlist per entity. A new entity must add its row here. */
 export const AUDIT_FIELDS = {
-  user: ["id", "name", "email", "emailVerified", "organizationId", "createdAt"],
-  role: ["id", "key", "name", "isSystem", "organizationId"],
-  userRole: ["userId", "roleId", "scopeType", "scopeId"],
+  user: ["id", "name", "email", "emailVerified", "createdAt"],
+  role: ["id", "key", "name", "isSystem"],
+  userRole: ["userId", "roleId"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AuditEntity = keyof typeof AUDIT_FIELDS;

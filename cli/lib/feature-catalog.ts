@@ -193,6 +193,17 @@ function manifestFiles(manifest: FeatureManifest): string[] {
   ];
 }
 
+/**
+ * `migrations/0002_departments.ts` -> `departments`. The installer renumbers the file into the
+ * app's next contiguous slot, so the catalog number is only an origin marker.
+ */
+export function migrationBaseName(source: string): string {
+  return source
+    .slice("migrations/".length)
+    .replace(/\.ts$/, "")
+    .replace(/^\d{4}_/, "");
+}
+
 /** Maps catalog-relative files onto their installed destinations under apps/*. */
 export function planFeatureInstall(manifest: FeatureManifest): PlannedFile[] {
   const { name } = manifest;

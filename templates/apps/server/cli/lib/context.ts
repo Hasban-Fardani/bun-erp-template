@@ -15,16 +15,12 @@ export async function createCliContext(options: Parameters<typeof createContext>
   return createContext({ ...options, env: options.env ?? loadEnv() });
 }
 
-export async function requireRoleByKey(db: Database, organizationId: string, key: string) {
-  const role = await findRoleByKey(db, organizationId, key);
+export async function requireRoleByKey(db: Database, key: string) {
+  const role = await findRoleByKey(db, key);
   if (role) return role;
-  const available = await db
-    .select({ key: roleTable.key })
-    .from(roleTable)
-    .where(eq(roleTable.organizationId, organizationId))
-    .orderBy(roleTable.key);
+  const available = await db.select({ key: roleTable.key }).from(roleTable).orderBy(roleTable.key);
   throw new Error(
-    `No role "${key}" in this organization. Available: ${available.map((row) => row.key).join(", ") || "none"}. Run bun erp role:list.`,
+    `No role "${key}". Available: ${available.map((row) => row.key).join(", ") || "none"}. Run bun erp role:list.`,
   );
 }
 

@@ -54,7 +54,7 @@ PostgreSQL is the only server database driver. The copied `.env.example` connect
 start the Compose database with `docker compose up -d postgres` if you do not already have one.
 Server SQLite is not configured; the mobile catalog app's SQLite store is independent.
 
-The seed at `apps/server/database/seed.ts` creates the default organization and the
+The seed at `apps/server/database/seed.ts` creates the permission catalogue and the
 system roles. `bun dev` runs this seed at startup; it does not create a user. Create an account
 through the CLI with the same `.env` database configuration used by the app:
 
@@ -67,14 +67,14 @@ must be at least 10 characters. With the development app running,
 outside the form.
 
 The seeded role keys are `owner` and `staff`; `admin` and `user` are not role keys. If the
-organization has no users, `user:create` defaults the first account to `owner`; later accounts
+database has no users, `user:create` defaults the first account to `owner`; later accounts
 default to `staff`. Use `--role` when you want an explicit role. `bun erp db:seed` is idempotent
 and can also run all feature seeders under `apps/server/database/seeders`; pass a seeder name to run only
 that one. Use a strong, unique password and never store it in this document.
 
 Manage roles and accounts with the rest of the CLI: `role:list`, `role:show <key>`, `role:create`,
 `role:edit` (`--permissions a,b` replaces the whole set), and `role:delete`; `user:list`,
-`user:show <email>`, `user:edit` (`--roles a,b` replaces organization-wide roles), `user:delete`,
+`user:show <email>`, `user:edit` (`--roles a,b` replaces the user's roles), `user:delete`,
 `user:grant`, `user:revoke`, and `user:passwd`. Destructive commands refuse to run without `--force`.
 
 `bun erp make:feature <name>` generates the server feature module (validation, policy, schema,

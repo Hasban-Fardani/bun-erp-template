@@ -2,9 +2,8 @@ import { resolve } from "node:path";
 import { sql } from "drizzle-orm";
 import { repoRoot } from "../../../../cli/lib/repo.ts";
 import { defineCommand } from "../../../../cli/registry.ts";
-import { resolveDefaultOrganizationId } from "../../bootstrap/context.ts";
 import { loadEnv } from "../../config/index.ts";
-import { organizations } from "../../database/schema.ts";
+import { roles } from "../../features/rbac/schema.ts";
 import { createApp } from "../../http/app.ts";
 import { createCliContext } from "../lib/context.ts";
 
@@ -12,7 +11,7 @@ export const commands = [
   defineCommand("route:list", async () => {
     // Routes are read from the app as actually assembled — not a hardcoded list that can go stale.
     const ctx = await createCliContext({ migrateOnStart: false });
-    const app = createApp(ctx, await resolveDefaultOrganizationId(ctx.db));
+    const app = createApp(ctx);
     const routes = app.routes
       .filter((r) => r.method !== "ALL")
       .map((r) => `${r.method.padEnd(6)} ${r.path}`)
@@ -31,8 +30,8 @@ export const commands = [
       const ctx = await createCliContext({ migrateOnStart: false });
       await ctx.db.execute(sql`select 1`);
       checks.push(["database reachable", true, loadEnv().DATABASE_DRIVER]);
-      const orgs = await ctx.db.select({ id: organizations.id }).from(organizations).limit(1);
-      checks.push(["organization seeded", orgs.length > 0, orgs.length > 0 ? "ok" : "run: bun erp db:seed"]);
+      const roleRows = await ctx.db.select({ id: roles.id }).from(roles).limit(1);
+      checks.push(["RBAC seeded", roleRows.length > 0, roleRows.length > 0 ? "ok" : "run: bun erp db:seed"]);
       await ctx.close();
     } catch (err) {
       checks.push(["database reachable", false, err instanceof Error ? err.message : String(err)]);

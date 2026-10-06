@@ -19,7 +19,7 @@ is wrapped. Web business requests use RPC `call()`; auth uses `lib/auth.ts`.
 | 400 | Malformed JSON |
 | 401 | No session |
 | 403 | Session lacks permission |
-| 404 | Row absent within organization |
+| 404 | Row absent |
 | 409 | State/unique conflict |
 | 422 | Input validation; field array |
 | 500 | Internal failure; details stay in logs |
@@ -29,4 +29,4 @@ asc/desc direction and optional search. Audit defaults to descending createdAt; 
 resource defaults live in their schemas. Unsupported sort produces 422.
 Data: `{ items, page, perPage, total, totalPages }`; totalPages is at least 1.
 JSON fields are camelCase, SQL fields snake_case.
-`PUT /users/:id/roles` replaces unscoped roles atomically; POST/DELETE manage assignments.
+`PUT /users/:id/roles` replaces a user's roles atomically; POST/DELETE manage assignments.

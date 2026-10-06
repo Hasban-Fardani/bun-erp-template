@@ -6,7 +6,6 @@ import { createHostFetch } from "../http/host.ts";
 import { createWebAssetsApp } from "../http/web-assets.ts";
 import { startJobWorker } from "../infra/jobs/worker.ts";
 import { createContext } from "./bootstrap.ts";
-import { resolveDefaultOrganizationId } from "./context.ts";
 
 const apiOnly = process.argv.includes("--api-only");
 const webDist = `${import.meta.dir}/../../web/dist`;
@@ -46,11 +45,10 @@ async function main(): Promise<void> {
     throw err;
   }
 
-  // Idempotent: a fresh clone without `db:seed` still has a default organization.
+  // Idempotent: a fresh clone without `db:seed` still has the RBAC catalogue and system roles.
   await seed(ctx.db);
 
-  const organizationId = await resolveDefaultOrganizationId(ctx.db);
-  const app = createApp(ctx, organizationId);
+  const app = createApp(ctx);
   const webApp = servesWeb ? createWebAssetsApp(webDist, ctx.env.isProduction) : undefined;
   const server = Bun.serve({
     port: ctx.env.APP_PORT,

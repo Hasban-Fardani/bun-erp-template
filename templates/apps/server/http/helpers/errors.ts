@@ -51,7 +51,7 @@ export class ApiError extends Error {
 
   /** 409 for a state conflict (unique code already taken), not 422 which means malformed input. */
   static conflict(message: string, path = "code"): ApiError {
-    return new ApiError(ErrorCode.conflict, 409, message, [{ path, message: "already in use in this organization" }]);
+    return new ApiError(ErrorCode.conflict, 409, message, [{ path, message: "already in use" }]);
   }
 
   static validation(issues: readonly z.core.$ZodIssue[]): ApiError {

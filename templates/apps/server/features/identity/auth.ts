@@ -2,7 +2,6 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
-import { resolveDefaultOrganizationId } from "../../database/organizations.ts";
 import { uuidv7 } from "../../database/uuidv7.ts";
 import { accounts, sessions, users, verifications } from "./schema.ts";
 
@@ -41,24 +40,6 @@ export function createAuth(env: Env, db: Database) {
           },
         }
       : {}),
-    user: {
-      additionalFields: {
-        // The property name must match the table definition; mapping to physical columns
-        // is Drizzle's job. Adding another fieldName makes the schema check fail.
-        organizationId: { type: "string", required: false },
-      },
-    },
-    databaseHooks: {
-      user: {
-        create: {
-          // Without this the new user's organization_id is NULL — invisible to every admin.
-          before: async (user) => {
-            const organizationId = await resolveDefaultOrganizationId(db);
-            return { data: { ...user, organizationId } };
-          },
-        },
-      },
-    },
   });
 }
 

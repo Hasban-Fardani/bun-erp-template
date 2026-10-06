@@ -32,7 +32,7 @@ const actorOf = (actor: { userId: string; traceId: string; label: string }) => (
 });
 
 /** User administration (needs RBAC). Sign-up/sign-in belongs to the Better Auth handlers. */
-export function identityRoutes(ctx: AppContext, organizationId: string) {
+export function identityRoutes(ctx: AppContext) {
   return factory
     .createApp()
     .get(
@@ -41,16 +41,15 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
       doc({
         tag: "users",
         permission: ACTION_PERMISSION.list,
-        summary: "Daftar pengguna organisasi",
+        summary: "Daftar pengguna",
         query: ListUsersInput,
         data: listData,
       }),
 
       validate("query", ListUsersInput),
       async (c) => {
-        const actor = c.get("actor");
         const input = c.req.valid("query");
-        const { items, total } = await listUsers(ctx.db, actor.organizationId ?? organizationId, input);
+        const { items, total } = await listUsers(ctx.db, input);
         return ok(c, { items, ...listMeta(input, total) });
       },
     )
@@ -60,8 +59,7 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
       doc({ tag: "users", permission: ACTION_PERMISSION.read, summary: "Detail pengguna", data: userRef }),
 
       async (c) => {
-        const actor = c.get("actor");
-        const user = await findUser(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"));
+        const user = await findUser(ctx.db, c.req.param("id"));
         if (!user) throw ApiError.notFound("User not found");
         return ok(c, user);
       },
@@ -81,7 +79,7 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(c, await createUser(ctx.db, actor.organizationId ?? organizationId, input, actorOf(actor)));
+        return ok(c, await createUser(ctx.db, input, actorOf(actor)));
       },
     )
     .delete(
@@ -96,10 +94,7 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
 
       async (c) => {
         const actor = c.get("actor");
-        return ok(
-          c,
-          await deleteUser(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"), actorOf(actor)),
-        );
+        return ok(c, await deleteUser(ctx.db, c.req.param("id"), actorOf(actor)));
       },
     )
     .patch(
@@ -117,10 +112,7 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(
-          c,
-          await updateUser(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"), input, actorOf(actor)),
-        );
+        return ok(c, await updateUser(ctx.db, c.req.param("id"), input, actorOf(actor)));
       },
     )
     .post(
@@ -138,16 +130,7 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(
-          c,
-          await assignUserRole(
-            ctx.db,
-            actor.organizationId ?? organizationId,
-            c.req.param("id"),
-            input,
-            actorOf(actor),
-          ),
-        );
+        return ok(c, await assignUserRole(ctx.db, c.req.param("id"), input, actorOf(actor)));
       },
     )
     .put(
@@ -156,23 +139,14 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
       doc({
         tag: "users",
         permission: ACTION_PERMISSION.replaceRoles,
-        summary: "Ganti seluruh peran organisasi pengguna",
+        summary: "Ganti seluruh peran pengguna",
         body: ReplaceRolesInput,
         data: userRef,
       }),
       validate("json", ReplaceRolesInput),
       async (c) => {
         const actor = c.get("actor");
-        return ok(
-          c,
-          await replaceUserRoles(
-            ctx.db,
-            actor.organizationId ?? organizationId,
-            c.req.param("id"),
-            c.req.valid("json").roleKeys,
-            actorOf(actor),
-          ),
-        );
+        return ok(c, await replaceUserRoles(ctx.db, c.req.param("id"), c.req.valid("json").roleKeys, actorOf(actor)));
       },
     )
     .delete(
@@ -187,16 +161,7 @@ export function identityRoutes(ctx: AppContext, organizationId: string) {
 
       async (c) => {
         const actor = c.get("actor");
-        return ok(
-          c,
-          await revokeUserRole(
-            ctx.db,
-            actor.organizationId ?? organizationId,
-            c.req.param("id"),
-            c.req.param("roleKey"),
-            actorOf(actor),
-          ),
-        );
+        return ok(c, await revokeUserRole(ctx.db, c.req.param("id"), c.req.param("roleKey"), actorOf(actor)));
       },
     );
 }

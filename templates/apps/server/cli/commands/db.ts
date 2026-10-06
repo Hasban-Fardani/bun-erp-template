@@ -51,9 +51,7 @@ export const commands = [
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
       const result = await seed(ctx.db);
-      process.stdout.write(
-        `Seeded ${result.organizations} organization(s), ${result.permissions} permission(s), ${result.roles} role(s).\n`,
-      );
+      process.stdout.write(`Seeded ${result.permissions} permission(s), ${result.roles} role(s).\n`);
       const selected = requestedSeeder ? [`${requestedSeeder}.ts`] : seederFiles;
       for (const file of selected) {
         const module = (await import(resolve(SEEDERS_DIR, file))) as { seed?: (database: Database) => Promise<void> };

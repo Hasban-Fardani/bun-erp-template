@@ -1,6 +1,8 @@
 # ADR-0004 — Organization from the beginning
 
-**Status:** Accepted; implemented in module schemas.
+**Status:** Superseded. The default server has no tenant concept (F3.0 Q27/Q28/Q33); tenant
+columns belong to the opt-in `organizations` feature on the Better Auth organization plugin.
+Kept as history for the decision that shaped the original module schemas.
 
 Single-tenant is the template default; business tables include organization_id from their
 first migration. Server context supplies it, never a client's body/query. Retrofitting it after

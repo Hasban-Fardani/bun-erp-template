@@ -3,7 +3,6 @@ import { formatIssues, parseKeyList } from "../../../../cli/lib/format.ts";
 import { parseCommandOptions } from "../../../../cli/lib/options.ts";
 import { resolveRequired } from "../../../../cli/lib/prompt.ts";
 import { defineCommand } from "../../../../cli/registry.ts";
-import { resolveDefaultOrganizationId } from "../../bootstrap/context.ts";
 import { loadEnv } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
 import { recordAudit, snapshot } from "../../features/audit/service.ts";
@@ -74,19 +73,10 @@ export const commands = [
     const env = loadEnv();
     const ctx = await createCliContext({ migrateOnStart: false, env });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
-      const existingUser = await ctx.db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.organizationId, organizationId))
-        .limit(1);
+      const existingUser = await ctx.db.select({ id: users.id }).from(users).limit(1);
       roleKey ??= existingUser.length === 0 ? "owner" : "staff";
 
-      const availableRoles = await ctx.db
-        .select({ key: roleTable.key })
-        .from(roleTable)
-        .where(eq(roleTable.organizationId, organizationId))
-        .orderBy(roleTable.key);
+      const availableRoles = await ctx.db.select({ key: roleTable.key }).from(roleTable).orderBy(roleTable.key);
       const roleKeys = availableRoles.map(({ key }) => key);
       if (!roleKeys.includes(roleKey)) {
         throw new Error(
@@ -96,7 +86,6 @@ export const commands = [
 
       const created = await createUser(
         ctx.db,
-        organizationId,
         { ...parsedInput.data, roleKey },
         { userId: null, traceId: `cli-${Date.now()}`, label: "cli" },
       );
@@ -135,7 +124,6 @@ export const commands = [
       const permissions = await permissionsForUser(ctx.db, user.id);
       process.stdout.write(`email:          ${user.email}\n`);
       process.stdout.write(`name:           ${user.name}\n`);
-      process.stdout.write(`organizationId: ${user.organizationId ?? "—"}\n`);
       process.stdout.write(`emailVerified:  ${user.emailVerified ? "yes" : "no"}\n`);
       process.stdout.write(`roles:          ${roles.map((role) => role.key).join(", ") || "—"}\n`);
       process.stdout.write(`permissions:    ${permissions.length}\n`);
@@ -171,14 +159,13 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
       const user = await requireUserByEmail(ctx.db, email);
       if (Object.keys(patch.data).length > 0) {
-        await updateUser(ctx.db, organizationId, user.id, patch.data, cliActor());
+        await updateUser(ctx.db, user.id, patch.data, cliActor());
       }
       if (parsed.values.has("roles")) {
         const roleKeys = parseKeyList(parsed.values.get("roles") ?? "");
-        await replaceUserRoles(ctx.db, organizationId, user.id, roleKeys, cliActor());
+        await replaceUserRoles(ctx.db, user.id, roleKeys, cliActor());
       }
       process.stdout.write(`Updated user ${email}.\n`);
     } finally {
@@ -199,9 +186,8 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
       const user = await requireUserByEmail(ctx.db, email);
-      await deleteUser(ctx.db, organizationId, user.id, cliActor());
+      await deleteUser(ctx.db, user.id, cliActor());
       process.stdout.write(`Deleted user ${email}.\n`);
     } finally {
       await ctx.close();
@@ -217,7 +203,6 @@ export const commands = [
     }
     // slop-ok: user lookups repeat the same not-found guard per command on purpose.
     const ctx = await createCliContext({ migrateOnStart: false });
-    const organizationId = await resolveDefaultOrganizationId(ctx.db);
     const userRows = await ctx.db.select().from(users).where(eq(users.email, email)).limit(1);
     const user = userRows[0];
     if (!user) {
@@ -225,28 +210,23 @@ export const commands = [
       await ctx.close();
       process.exit(1);
     }
-    const role = await findRoleByKey(ctx.db, organizationId, roleKey);
+    const role = await findRoleByKey(ctx.db, roleKey);
     if (!role) {
-      const available = await ctx.db
-        .select({ key: roleTable.key })
-        .from(roleTable)
-        .where(eq(roleTable.organizationId, organizationId))
-        .orderBy(roleTable.key);
+      const available = await ctx.db.select({ key: roleTable.key }).from(roleTable).orderBy(roleTable.key);
       process.stderr.write(
-        `No role "${roleKey}" in this organization. Available: ${available.map(({ key }) => key).join(", ") || "none"}. Run: bun erp role:list\n`,
+        `No role "${roleKey}". Available: ${available.map(({ key }) => key).join(", ") || "none"}. Run: bun erp role:list\n`,
       );
       await ctx.close();
       process.exit(1);
     }
     await assignRole(ctx.db, { userId: user.id, roleId: role.id });
     await recordAudit(ctx.db, {
-      organizationId,
       actorId: null,
       actorLabel: "cli",
       event: "user.role_assigned",
       subjectType: "user",
       subjectId: user.id,
-      after: snapshot("userRole", { userId: user.id, roleId: role.id, scopeType: null, scopeId: null }),
+      after: snapshot("userRole", { userId: user.id, roleId: role.id }),
       traceId: `cli-${Date.now()}`,
     });
     process.stdout.write(`Granted "${roleKey}" to ${email}.\n`);
@@ -264,9 +244,8 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
       const user = await requireUserByEmail(ctx.db, email);
-      await revokeUserRole(ctx.db, organizationId, user.id, roleKey, cliActor());
+      await revokeUserRole(ctx.db, user.id, roleKey, cliActor());
       process.stdout.write(`Revoked "${roleKey}" from ${email}.\n`);
     } finally {
       await ctx.close();
@@ -284,7 +263,6 @@ export const commands = [
     const password = newPassword ?? Array.from({ length: 3 }, () => Math.random().toString(36).slice(2, 6)).join("-");
     // slop-ok: user lookups repeat the same not-found guard per command on purpose.
     const ctx = await createCliContext({ migrateOnStart: false });
-    const organizationId = await resolveDefaultOrganizationId(ctx.db);
     const userRows = await ctx.db.select().from(users).where(eq(users.email, email)).limit(1);
     const user = userRows[0];
     if (!user) {
@@ -306,7 +284,6 @@ export const commands = [
           .values({ accountId: user.id, providerId: "credential", userId: user.id, password: hash });
       }
       await recordAudit(tx as unknown as Database, {
-        organizationId,
         actorId: null,
         actorLabel: "cli",
         event: "user.password_reset",

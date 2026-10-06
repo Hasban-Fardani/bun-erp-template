@@ -9,7 +9,6 @@ const statements = `-- Audit trail (PRD §12, ADR-0007). Append-only: no update/
 
 create table if not exists audit_logs (
   id uuid primary key default uuidv7(),
-  organization_id uuid references organizations (id),
   actor_id uuid,
   actor_label text not null default '',
   -- domain.action_result, e.g. user.role_assigned.
@@ -23,8 +22,7 @@ create table if not exists audit_logs (
   created_at timestamptz not null default now()
 );
 
-create index if not exists audit_logs_organization_created_idx
-  on audit_logs (organization_id, created_at);
+create index if not exists audit_logs_created_idx on audit_logs (created_at);
 
 create index if not exists audit_logs_event_idx on audit_logs (event);
 

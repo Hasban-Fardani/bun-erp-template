@@ -57,7 +57,7 @@ installed features share a single copy. `use-table-state.ts` is self-contained;
 | `wiring` | Infra kind: the composition-root operations to apply, from `context`, `bootstrap`, `cloudflare`, `jobs`, `notifications`. Every anchor must be present or the install fails. |
 | `permissionResource` | Server kind: key added to `apps/server/features/rbac/statements.ts` as `<resource>: [create, read, update, delete]`. |
 | `auditEntity` | Server kind: key added to `AUDIT_FIELDS` in `apps/server/features/audit/redact.ts`. |
-| `auditFields` | Server kind: optional snapshot allowlist for that key; defaults to `id, organizationId, createdAt, updatedAt`. |
+| `auditFields` | Server kind: optional snapshot allowlist for that key; defaults to `id, createdAt, updatedAt`. |
 | `requires` | Catalog packages (`templates/packages/<name>`); the installer installs them and adds `@bun-erp/<name>` to `apps/web` (or `apps/server` for infra) before writing files. An infra feature requires at least one. |
 | `nav` | Sidebar entry: `titleKey`, `url`, lucide `icon`, `permission`. |
 | `i18nKeys` | `en-US` and `id-ID` message keys the screen needs; keys already present are left alone. |
@@ -95,6 +95,7 @@ the diff.
   core `audit`/`rbac` modules, but never another optional feature. A web feature may import the
   core `identity` auth hooks and the shared `lib/` helpers.
 - Ship a test under `tests/`; the `tdd` gate fails an installed server feature without one.
-- Migrations are forward-only TypeScript modules; the base migration history is never rewritten,
-  so a feature whose table already exists in it ships no migration.
+- Migrations are forward-only TypeScript modules; a feature that creates a table ships its own
+  migration in `migrations/` and the installer numbers it into the app ledger, so the table exists
+  only once the feature is installed.
 - Keep `README.md` factual: what installs, what it needs, and how to verify it.

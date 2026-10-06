@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { type AppContext, resolveDefaultOrganizationId } from "../../../bootstrap/context.ts";
+import type { AppContext } from "../../../bootstrap/context.ts";
 import { seed } from "../../../database/seed.ts";
 import { redactEntity } from "../../../features/audit/redact.ts";
 import { auditLogs } from "../../../features/audit/schema.ts";
@@ -12,7 +12,6 @@ import { createApp } from "../../../http/app.ts";
 import { createTestClient, createTestContext, truncateAll } from "../../support/fixtures.ts";
 
 let ctx: AppContext;
-let orgId: string;
 let app: ReturnType<typeof createApp>;
 
 const json = (body: unknown, method = "POST"): RequestInit => ({
@@ -52,8 +51,7 @@ beforeEach(async () => {
   ctx ??= await createTestContext();
   await truncateAll(ctx);
   await seed(ctx.db);
-  orgId = await resolveDefaultOrganizationId(ctx.db);
-  app = createApp(ctx, orgId);
+  app = createApp(ctx);
 });
 
 afterAll(async () => {
@@ -89,7 +87,6 @@ describe("identity", () => {
   test("a user created through the CLI service can sign in through Better Auth", async () => {
     await createUser(
       ctx.db,
-      orgId,
       { name: "CLI User", email: "cli-user@example.test", password: "password-cli-yang-valid" },
       { userId: null, traceId: "test-cli-user-create", label: "cli" },
     );
@@ -167,7 +164,7 @@ describe("identity", () => {
   });
 
   test("seeding twice is idempotent and keeps two system roles", async () => {
-    const again = await seedRbac(ctx.db, orgId);
+    const again = await seedRbac(ctx.db);
     expect(again.roles).toBe(2);
     const roleRows = await ctx.db.select({ key: roles.key }).from(roles);
     expect(roleRows.map((r) => r.key).sort()).toEqual(["owner", "staff"]);
@@ -214,21 +211,12 @@ describe("identity", () => {
     expect(JSON.stringify(snapshot)).not.toContain("kunci-rahasia");
   });
 
-  test("a role can be scoped to a department, and scope survives the round trip", async () => {
+  test("an assigned role is returned by rolesForUser", async () => {
     const { user } = await signUp("manajer@example.test");
-
-    // Scope is tested directly at the service: the route only forwards its value.
-    await assignRole(ctx.db, {
-      userId: user.id,
-      roleId: await roleIdByKey("staff"),
-      scopeType: "department",
-      scopeId: "0199aaaa-0000-7000-8000-000000000000",
-    });
+    await assignRole(ctx.db, { userId: user.id, roleId: await roleIdByKey("staff") });
 
     const held = await rolesForUser(ctx.db, user.id);
-    expect(held.length).toBe(1);
-    expect(held[0]?.scopeType).toBe("department");
-    expect(held[0]?.scopeId).toBe("0199aaaa-0000-7000-8000-000000000000");
+    expect(held.map((role) => role.key)).toEqual(["staff"]);
   });
 
   test("role catalogue is readable and matches the code, not a copy", async () => {
@@ -255,12 +243,5 @@ describe("identity", () => {
       expect(resource && action).toBeTruthy();
       expect(catalogBody.data.statements[resource as string]).toContain(action as string);
     }
-  });
-
-  test("scope pair must be given together", async () => {
-    const { user } = await signUp("setengah@example.test");
-    await expect(
-      assignRole(ctx.db, { userId: user.id, roleId: await roleIdByKey("staff"), scopeType: "department" }),
-    ).rejects.toThrow(/together/);
   });
 });

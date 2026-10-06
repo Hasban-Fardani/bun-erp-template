@@ -1,23 +1,16 @@
 import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { organizations } from "../../database/schema.ts";
 
 /** Table names = the Better Auth contract, verified by the adapter. Passwords live in `account`. */
-export const users = pgTable(
-  "user",
-  {
-    id: uuid("id").primaryKey().default(sql`uuidv7()`),
-    name: text("name").notNull(),
-    email: text("email").notNull().unique(),
-    emailVerified: boolean("email_verified").notNull().default(false),
-    image: text("image"),
-    // Nullable: sign-up happens before an admin assigns an organization (ADR-0004).
-    organizationId: uuid("organization_id").references(() => organizations.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [index("user_organization_idx").on(table.organizationId)],
-);
+export const users = pgTable("user", {
+  id: uuid("id").primaryKey().default(sql`uuidv7()`),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const sessions = pgTable(
   "session",

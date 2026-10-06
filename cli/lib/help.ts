@@ -75,7 +75,7 @@ export const HELP_GROUPS: ReadonlyArray<{
       ["route:list", "List routes from the assembled Hono app"],
       ["env:list", "Show safe configuration values and warnings"],
       ["key:generate", "Generate the local authentication secret"],
-      ["role:list", "List available role keys for this organization"],
+      ["role:list", "List available role keys"],
       ["role:show <key>", "Show one role with its permissions"],
       ["role:create <key> [--name] [--description] [--permissions a,b]", "Create a custom role"],
       [
@@ -86,7 +86,7 @@ export const HELP_GROUPS: ReadonlyArray<{
       ["user:list", "List users and their roles"],
       ["user:show <email>", "Show one user with roles and permissions"],
       ["user:create <email> <password> [--role <key>] [--name <name>]", "Create a user in the configured database"],
-      ["user:edit <email> [--name] [--verified] [--roles a,b]", "Update a profile or replace organization-wide roles"],
+      ["user:edit <email> [--name] [--verified] [--roles a,b]", "Update a profile or replace a user's roles"],
       ["user:delete <email> --force", "Delete a user"],
       ["user:grant <email> [roleKey]", "Grant a role to a user"],
       ["user:revoke <email> <roleKey>", "Revoke a role from a user"],

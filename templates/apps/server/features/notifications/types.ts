@@ -5,7 +5,6 @@ export type NotificationChannelName = (typeof NOTIFICATION_CHANNELS)[number];
 
 /** What a feature asks for; each channel decides how to deliver it. */
 export type NotifyInput = {
-  organizationId: string;
   recipients: readonly string[];
   /** Stable `domain.event` name, like the audit event contract. */
   type: string;

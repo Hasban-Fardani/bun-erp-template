@@ -4,7 +4,6 @@ import { runSqlMigration } from "../sql-migration.ts";
 const statements = `
 create table notifications (
   id uuid primary key default uuidv7(),
-  organization_id uuid not null references organizations (id),
   user_id uuid not null references "user" (id) on delete cascade,
   type text not null,
   title text not null,
@@ -16,7 +15,6 @@ create table notifications (
 );
 
 create index notifications_user_idx on notifications (user_id, read_at, created_at);
-create index notifications_organization_idx on notifications (organization_id, created_at);
 `;
 
 export async function up(db: Database): Promise<void> {

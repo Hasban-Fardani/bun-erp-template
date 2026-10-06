@@ -48,7 +48,6 @@ test("the mail channel sends through the configured mailer", async () => {
   await notify(
     { ...api.ctx, mail: createMailer({ config: api.ctx.env, logger, driver }) },
     {
-      organizationId: api.organizationId,
       recipients: [me.userId],
       type: "user.created",
       title: "Akun dibuat",

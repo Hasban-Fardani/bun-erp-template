@@ -12,7 +12,6 @@ test("the database channel writes an inbox row that counts and marks read", asyn
   const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
 
   await notify(api.ctx, {
-    organizationId: api.organizationId,
     recipients: [me.userId],
     type: "user.created",
     title: "Akun dibuat",
@@ -39,7 +38,6 @@ test("an unknown channel is rejected", async () => {
   const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
   await expect(
     notify(api.ctx, {
-      organizationId: api.organizationId,
       recipients: [me.userId],
       type: "x",
       title: "x",
@@ -55,7 +53,6 @@ test("the database channel writes one row per recipient", async () => {
   const other = await signUpUser(api.app, "other@example.test");
 
   await notify(api.ctx, {
-    organizationId: api.organizationId,
     recipients: [me.userId, other.id],
     type: "user.created",
     title: "Akun dibuat",
@@ -70,7 +67,7 @@ test("read filter and mark-all-read follow the inbox contract", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
   const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
-  const base = { organizationId: api.organizationId, recipients: [me.userId], type: "x" } as const;
+  const base = { recipients: [me.userId], type: "x" } as const;
 
   await notify(api.ctx, { ...base, title: "Satu" });
   await notify(api.ctx, { ...base, title: "Dua" });
@@ -106,7 +103,6 @@ test("a user cannot read or mark another user's notification", async () => {
   const other = await signUpUser(api.app, "other@example.test");
 
   await notify(api.ctx, {
-    organizationId: api.organizationId,
     recipients: [other.id],
     type: "user.created",
     title: "Untuk pengguna lain",

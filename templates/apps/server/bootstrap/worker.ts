@@ -3,10 +3,8 @@ import { createJobRegistry } from "../features/jobs.ts";
 import { createApp } from "../http/app.ts";
 import { isApiPath } from "../http/routing.ts";
 import { usingWorkerContext } from "../infra/cloudflare/lifecycle.ts";
-import { requiresOrganizationId } from "../infra/cloudflare/routing.ts";
 import { runJobBatch } from "../infra/jobs/queue.ts";
 import { createCloudflareContext, createCloudflareInfrastructure, type WorkerBindings } from "./cloudflare-context.ts";
-import { resolveDefaultOrganizationId } from "./context.ts";
 
 const CLOUDFLARE_JOB_BATCH_SIZE = 1;
 
@@ -24,10 +22,7 @@ export default {
       return await usingWorkerContext(
         () => createCloudflareContext(bindings),
         async (context) => {
-          const organizationId = requiresOrganizationId(path, request.method)
-            ? await resolveDefaultOrganizationId(context.db)
-            : "";
-          return createApp(context, organizationId).fetch(request);
+          return createApp(context).fetch(request);
         },
         execution,
       );

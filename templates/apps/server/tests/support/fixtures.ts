@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { testClient } from "hono/testing";
 import { createContext } from "../../bootstrap/bootstrap.ts";
-import { type AppContext, resolveDefaultOrganizationId } from "../../bootstrap/context.ts";
+import type { AppContext } from "../../bootstrap/context.ts";
 import type { Env } from "../../config/index.ts";
 import { loadEnv, testDatabaseUrl } from "../../config/index.ts";
 import { rowsOf } from "../../database/migrate.ts";
@@ -126,9 +126,8 @@ export async function createSeededApp() {
   await truncateAll(ctx);
   await seed(ctx.db);
   resetPermissionCache();
-  const organizationId = await resolveDefaultOrganizationId(ctx.db);
-  const app = createApp(ctx, organizationId);
-  return { ctx, app, client: createTestClient(app), organizationId, close: async () => {} };
+  const app = createApp(ctx);
+  return { ctx, app, client: createTestClient(app), close: async () => {} };
 }
 
 export async function createHttpFixture() {
@@ -138,15 +137,13 @@ export async function createHttpFixture() {
   resetPermissionCache();
   await truncateAll(ctx);
   await seed(ctx.db);
-  const organizationId = await resolveDefaultOrganizationId(ctx.db);
 
   let cookie = "";
-  const app = createApp(ctx, organizationId);
+  const app = createApp(ctx);
 
   const api = {
     ctx,
     app,
-    organizationId,
     get cookie() {
       return cookie;
     },

@@ -36,7 +36,6 @@ export const SCHEMAS: Record<string, Record<string, unknown>> = {
       name: { type: "string" },
       email: { type: "string", format: "email" },
       emailVerified: { type: "boolean" },
-      organizationId: { type: ["string", "null"], format: "uuid" },
       createdAt: { type: "string", format: "date-time" },
       roles: {
         type: "array",
@@ -46,8 +45,6 @@ export const SCHEMAS: Record<string, Record<string, unknown>> = {
             roleId: uuid,
             key: { type: "string" },
             name: { type: "string" },
-            scopeType: { type: ["string", "null"], enum: ["organization", "department", null] },
-            scopeId: { type: ["string", "null"], format: "uuid" },
           },
         },
       },
@@ -62,7 +59,6 @@ export const SCHEMAS: Record<string, Record<string, unknown>> = {
       name: { type: "string" },
       description: { type: "string" },
       isSystem: { type: "boolean" },
-      organizationId: uuid,
       permissions: { type: "array", items: { type: "string" } },
     },
   },
@@ -70,7 +66,6 @@ export const SCHEMAS: Record<string, Record<string, unknown>> = {
     type: "object",
     properties: {
       id: uuid,
-      organizationId: { type: ["string", "null"], format: "uuid" },
       actorId: { type: ["string", "null"], format: "uuid" },
       actorLabel: { type: "string" },
       event: { type: "string", description: "Format `domain.aksi_hasil`, mis. user.created" },

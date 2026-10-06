@@ -11,7 +11,6 @@ export { redactEntity as snapshot };
 export type AuditLog = typeof auditLogs.$inferSelect;
 
 export type AuditEvent = {
-  organizationId?: string | null;
   actorId?: string | null;
   actorLabel?: string;
   /** `domain.action_result` — the name must stay stable, it is what investigations search for. */
@@ -26,7 +25,6 @@ export type AuditEvent = {
 /** Call from the service (not the route) inside a transaction; snapshots must go through redactEntity. */
 export async function recordAudit(db: Database, entry: AuditEvent): Promise<void> {
   await db.insert(auditLogs).values({
-    organizationId: entry.organizationId ?? null,
     actorId: entry.actorId ?? null,
     actorLabel: entry.actorLabel ?? "",
     event: entry.event,
@@ -40,11 +38,9 @@ export async function recordAudit(db: Database, entry: AuditEvent): Promise<void
 
 export async function listAuditLogs(
   db: Database,
-  organizationId: string,
   input: ListAuditInput,
 ): Promise<{ items: AuditLog[]; total: number }> {
   const where = and(
-    eq(auditLogs.organizationId, organizationId),
     input.search
       ? or(
           ilike(auditLogs.event, `%${input.search}%`),
@@ -81,7 +77,6 @@ export async function listAuditLogs(
 export async function auditChange(
   tx: Database,
   input: {
-    organizationId: string;
     actor: { userId: string | null; traceId: string; label?: string };
     event: string;
     subject: { type: string; id: string };
@@ -90,7 +85,6 @@ export async function auditChange(
   },
 ): Promise<void> {
   await recordAudit(tx, {
-    organizationId: input.organizationId,
     actorId: input.actor.userId,
     actorLabel: input.actor.label,
     event: input.event,

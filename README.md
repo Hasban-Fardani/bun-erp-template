@@ -28,7 +28,7 @@ database configuration from `.env`. Keep `APP_ENV=development` and point the con
 a local development database. See [development setup](docs/development.md) for database and port
 details.
 
-The seed creates the default organization and `owner`/`staff` role keys, but no login account.
+The seed creates the `owner`/`staff` role keys and the permission catalogue, but no login account.
 The first `bun erp user:create <email> <password>` account becomes the owner automatically; use
 `--role owner --name <name>` to be explicit. The app and CLI use the same database settings from
 `.env`. Create the initial account after applying migrations and seeding PostgreSQL. CLI and app

@@ -49,9 +49,9 @@ describe("departments", () => {
   });
 
   test("unknown key is rejected (strictObject)", async () => {
-    // `organizationId` is outside the typed input; the variable sidesteps the excess-property check
+    // `extra` is outside the typed input; the variable sidesteps the excess-property check
     // because runtime rejection is exactly what is under test.
-    const payload = { name: "A", code: "AA", organizationId: "spoof" };
+    const payload = { name: "A", code: "AA", extra: true };
     const res = await api.client.api.v1.departments.$post({ json: payload });
     expect(res.status).toBe(422);
   });
@@ -63,12 +63,12 @@ describe("departments", () => {
     expect(res.status).toBe(404);
   });
 
-  test("list is scoped to organization", async () => {
+  test("list returns the created rows with their fields", async () => {
     await api.client.api.v1.departments.$post({ json: { name: "A", code: "AA" } });
     const res = await api.client.api.v1.departments.$get({ query: { perPage: "10" } });
-    const body = (await res.json()) as { data: { items: { organizationId: string }[]; total: number } };
+    const body = (await res.json()) as { data: { items: { name: string; code: string }[]; total: number } };
     expect(body.data.total).toBe(1);
-    expect(body.data.items[0]?.organizationId).toBe(api.organizationId);
+    expect(body.data.items[0]).toMatchObject({ name: "A", code: "AA" });
   });
 
   test("unknown route returns NOT_FOUND envelope", async () => {

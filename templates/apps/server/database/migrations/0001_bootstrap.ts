@@ -1,8 +1,10 @@
 import type { Database } from "../index.ts";
 import { runSqlMigration } from "../sql-migration.ts";
 
-const statements = `-- Format: one file = one forward-only step, run in order.
--- Every business table carries organization_id from the start (ADR-0004).
+const statements = `-- Bootstrap: shared database primitives.
+--
+-- The default server has no tenant concept; an opt-in organizations feature adds one later
+-- (F3.0 Q27/Q33).
 
 -- PG18 owns uuidv7; older servers receive a compatible function without an extension.
 do $bootstrap$
@@ -22,16 +24,7 @@ begin
     $definition$;
   end if;
 end
-$bootstrap$;
-
-create table if not exists organizations (
-  id uuid primary key default uuidv7(),
-  name text not null,
-  slug text not null unique,
-  is_active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-)
+$bootstrap$
 `;
 
 export async function up(db: Database): Promise<void> {

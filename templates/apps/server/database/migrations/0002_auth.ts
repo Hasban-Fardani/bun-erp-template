@@ -6,10 +6,6 @@ const statements = `-- Better Auth identity tables (PRD §17 Phase 2 "Identity",
 -- Table and column names follow the Better Auth contract verbatim (snake_case), not
 -- our own taste: the Drizzle adapter compares the physical schema against getAuthTables() and
 -- refuses to run when they differ. Renaming means switching that check off.
---
--- organization_id on the user table is deliberately NULLABLE. Sign-up happens before an admin
--- assigns an organization, so forcing NOT NULL would make the first sign-up impossible.
--- The column exists from the start (ADR-0004) so no expand-contract is needed later.
 
 create table if not exists "user" (
   id uuid primary key default uuidv7(),
@@ -17,7 +13,6 @@ create table if not exists "user" (
   email text not null unique,
   email_verified boolean not null default false,
   image text,
-  organization_id uuid references organizations (id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

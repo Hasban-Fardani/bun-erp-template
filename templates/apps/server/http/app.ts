@@ -7,7 +7,7 @@ import { factory } from "./factory.ts";
 import { registerMiddleware } from "./middleware.ts";
 import { BETTER_AUTH_PATHS, BETTER_AUTH_TAGS, DOCUMENTATION, SCHEMAS, SECURITY_SCHEMES, SERVERS } from "./openapi.ts";
 
-export function createApp(ctx: AppContext, organizationId: string) {
+export function createApp(ctx: AppContext) {
   const app = factory.createApp();
   registerMiddleware(app, ctx);
 
@@ -30,7 +30,7 @@ export function createApp(ctx: AppContext, organizationId: string) {
   );
   app.get("/api/docs", Scalar({ url: "/api/openapi.json", pageTitle: "Bun ERP Template API" }));
 
-  const routes = app.route("/", apiRoutes(ctx, organizationId));
+  const routes = app.route("/", apiRoutes(ctx));
 
   registerErrorHandler(app, ctx);
 

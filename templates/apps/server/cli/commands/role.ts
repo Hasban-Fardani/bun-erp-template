@@ -1,9 +1,7 @@
-import { eq } from "drizzle-orm";
 import { formatIssues, humanizeKey, parseKeyList } from "../../../../cli/lib/format.ts";
 import { parseCommandOptions } from "../../../../cli/lib/options.ts";
 import { resolveRequired } from "../../../../cli/lib/prompt.ts";
 import { defineCommand } from "../../../../cli/registry.ts";
-import { resolveDefaultOrganizationId } from "../../bootstrap/context.ts";
 import { roles as roleTable } from "../../features/rbac/schema.ts";
 import {
   createRole,
@@ -19,11 +17,9 @@ export const commands = [
   defineCommand("role:list", async () => {
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
       const availableRoles = await ctx.db
         .select({ key: roleTable.key, name: roleTable.name, isSystem: roleTable.isSystem })
         .from(roleTable)
-        .where(eq(roleTable.organizationId, organizationId))
         .orderBy(roleTable.key);
       if (availableRoles.length === 0) {
         process.stdout.write("No roles found. Run `bun erp db:seed` first.\n");
@@ -46,8 +42,7 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
-      const role = await requireRoleByKey(ctx.db, organizationId, key);
+      const role = await requireRoleByKey(ctx.db, key);
       const permissions = await permissionsForRole(ctx.db, role.id);
       process.stdout.write(`key:         ${role.key}\n`);
       process.stdout.write(`name:        ${role.name}\n`);
@@ -81,12 +76,11 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
-      const role = await createRole(ctx.db, organizationId, input.data, cliActor());
+      const role = await createRole(ctx.db, input.data, cliActor());
       let permissionCount = 0;
       if (parsed.values.has("permissions")) {
         const keys = parseKeyList(parsed.values.get("permissions") ?? "");
-        await setRolePermissions(ctx.db, organizationId, role.id, keys, cliActor());
+        await setRolePermissions(ctx.db, role.id, keys, cliActor());
         permissionCount = keys.length;
       }
       process.stdout.write(`Created role "${role.key}" (${role.name}) with ${permissionCount} permission(s).\n`);
@@ -121,12 +115,11 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
-      const role = await requireRoleByKey(ctx.db, organizationId, key);
-      if (patch?.success) await updateRole(ctx.db, organizationId, role.id, patch.data, cliActor());
+      const role = await requireRoleByKey(ctx.db, key);
+      if (patch?.success) await updateRole(ctx.db, role.id, patch.data, cliActor());
       if (parsed.values.has("permissions")) {
         const keys = parseKeyList(parsed.values.get("permissions") ?? "");
-        await setRolePermissions(ctx.db, organizationId, role.id, keys, cliActor());
+        await setRolePermissions(ctx.db, role.id, keys, cliActor());
       }
       process.stdout.write(`Updated role "${role.key}".\n`);
     } finally {
@@ -149,9 +142,8 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const organizationId = await resolveDefaultOrganizationId(ctx.db);
-      const role = await requireRoleByKey(ctx.db, organizationId, key);
-      await deleteRole(ctx.db, organizationId, role.id, cliActor());
+      const role = await requireRoleByKey(ctx.db, key);
+      await deleteRole(ctx.db, role.id, cliActor());
       process.stdout.write(`Deleted role "${role.key}".\n`);
     } finally {
       await ctx.close();

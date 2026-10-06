@@ -24,15 +24,13 @@ keys in both locale catalogs.
 
 ## Migration
 
-The `departments` table already exists in the base migration history
-(`apps/server/database/migrations/0002_departments.ts`), so this feature ships no migration of its
-own. A feature that needs a new table declares `"migrations": ["migrations/<file>.ts"]` in its
-manifest; the installer numbers it into `apps/server/database/migrations/` as the next contiguous
-migration.
+The feature owns its table: `migrations/0002_departments.ts` is declared in `feature.json` and the
+installer numbers it into `apps/server/database/migrations/` as the next contiguous migration.
+The default install ships no departments table; it only exists after `features:install departments`.
 
 ## Notes
 
-- The table is organization-scoped; routes take the organization from the session actor, never
-  from client input.
+- The table is global to the server; the default server has no tenant concept, so no
+  organization column is involved. Tenant scoping belongs to the opt-in organizations feature.
 - Routes cover list/read/create/update. There is no delete route; `department.delete` stays in
   the statements for deployments that add one.

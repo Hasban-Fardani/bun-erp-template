@@ -17,7 +17,7 @@ const idRef = { type: "object", properties: { id: { type: "string" } } } as cons
  * Catalogue + RBAC management. System roles may be read and have their permissions changed,
  * but not deleted: `statements.ts` is the source of truth, and the seed will bring them back.
  */
-export function rbacRoutes(ctx: AppContext, organizationId: string) {
+export function rbacRoutes(ctx: AppContext) {
   const actorOf = (actor: { userId: string; traceId: string; label: string }) => ({
     userId: actor.userId,
     traceId: actor.traceId,
@@ -33,7 +33,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string) {
         doc({
           tag: "roles",
           permission: ACTION_PERMISSION.list,
-          summary: "Daftar role organisasi beserta izinnya",
+          summary: "Daftar role beserta izinnya",
           data: {
             type: "object",
             properties: { items: { type: "array", items: roleRef }, ...listMetaSchemaProperties },
@@ -42,10 +42,8 @@ export function rbacRoutes(ctx: AppContext, organizationId: string) {
 
         validate("query", ListRolesInput),
         async (c) => {
-          const actor = c.get("actor");
-          const orgId = actor.organizationId ?? organizationId;
           const input = c.req.valid("query");
-          const { items, total } = await listRoles(ctx.db, orgId, input);
+          const { items, total } = await listRoles(ctx.db, input);
           const withPermissions = await Promise.all(
             items.map(async (role) => ({ ...role, permissions: await permissionsForRole(ctx.db, role.id) })),
           );
@@ -67,7 +65,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string) {
         async (c) => {
           const actor = c.get("actor");
           const input = c.req.valid("json");
-          return ok(c, await createRole(ctx.db, actor.organizationId ?? organizationId, input, actorOf(actor)));
+          return ok(c, await createRole(ctx.db, input, actorOf(actor)));
         },
       )
       .patch(
@@ -85,10 +83,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string) {
         async (c) => {
           const actor = c.get("actor");
           const input = c.req.valid("json");
-          return ok(
-            c,
-            await updateRole(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"), input, actorOf(actor)),
-          );
+          return ok(c, await updateRole(ctx.db, c.req.param("id"), input, actorOf(actor)));
         },
       )
       .delete(
@@ -103,10 +98,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string) {
 
         async (c) => {
           const actor = c.get("actor");
-          return ok(
-            c,
-            await deleteRole(ctx.db, actor.organizationId ?? organizationId, c.req.param("id"), actorOf(actor)),
-          );
+          return ok(c, await deleteRole(ctx.db, c.req.param("id"), actorOf(actor)));
         },
       )
       .put(
@@ -127,16 +119,7 @@ export function rbacRoutes(ctx: AppContext, organizationId: string) {
         async (c) => {
           const actor = c.get("actor");
           const input = c.req.valid("json");
-          return ok(
-            c,
-            await setRolePermissions(
-              ctx.db,
-              actor.organizationId ?? organizationId,
-              c.req.param("id"),
-              input.permissions,
-              actorOf(actor),
-            ),
-          );
+          return ok(c, await setRolePermissions(ctx.db, c.req.param("id"), input.permissions, actorOf(actor)));
         },
       )
       /**

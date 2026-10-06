@@ -3,6 +3,7 @@ import { requireApps } from "../lib/apps.ts";
 import {
   catalogFeatureNames,
   installedFeatureNames,
+  migrationBaseName,
   planFeatureInstall,
   readFeatureManifest,
   type ServerFeatureManifest,
@@ -119,8 +120,9 @@ export const commands = [
     if (manifest.kind === "server" && manifest.migrations && manifest.migrations.length > 0) {
       const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
       for (const source of manifest.migrations) {
-        const rawName = source.slice("migrations/".length).replace(/\.ts$/, "");
-        const file = nextMigrationFile(existing, rawName);
+        // Catalog names carry their own number (0002_departments); the installer renumbers
+        // the file to the app's next free slot.
+        const file = nextMigrationFile(existing, migrationBaseName(source));
         await writeScaffold(resolve(MIGRATIONS_DIR, file), await Bun.file(resolve(catalogDir, source)).text());
         existing.push(file);
         migrationPaths.push(`apps/server/database/migrations/${file}`);

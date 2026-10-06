@@ -8,7 +8,6 @@ export const databaseChannel: NotificationChannelFactory = ({ db }) => ({
     if (input.recipients.length === 0) return;
     await db.insert(notifications).values(
       input.recipients.map((userId) => ({
-        organizationId: input.organizationId,
         userId,
         type: input.type,
         title: input.title,

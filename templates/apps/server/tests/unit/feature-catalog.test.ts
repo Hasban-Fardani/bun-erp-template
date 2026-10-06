@@ -1,8 +1,13 @@
 import { expect, test } from "bun:test";
-import { catalogFeatureNames, planFeatureInstall, readFeatureManifest } from "../../../../cli/lib/feature-catalog.ts";
+import {
+  catalogFeatureNames,
+  migrationBaseName,
+  planFeatureInstall,
+  readFeatureManifest,
+} from "../../../../cli/lib/feature-catalog.ts";
 import { planInfraWiring } from "../../../../cli/lib/infra-wiring.ts";
 import { repoRoot } from "../../../../cli/lib/repo.ts";
-import { addAuditEntity, addI18nKeys, addNavItem } from "../../../../cli/lib/scaffolding.ts";
+import { addAuditEntity, addI18nKeys, addNavItem, nextMigrationFile } from "../../../../cli/lib/scaffolding.ts";
 
 test("catalog discovery lists the departments feature", async () => {
   expect(await catalogFeatureNames(repoRoot)).toContain("departments");
@@ -22,6 +27,7 @@ test("the departments manifest is valid and plans the install destinations", asy
   });
   expect(manifest.i18nKeys["en-US"]["departments.title"]).toBe("Departments");
   expect(manifest.i18nKeys["id-ID"]["departments.title"]).toBe("Departemen");
+  expect(manifest.migrations).toEqual(["migrations/0002_departments.ts"]);
 
   const plan = planFeatureInstall(manifest);
   const destinations = plan.map((entry) => entry.destination).sort();
@@ -37,6 +43,15 @@ test("the departments manifest is valid and plans the install destinations", asy
       : `${repoRoot}/templates/features/departments`;
     expect(await Bun.file(`${base}/${entry.source}`).exists()).toBe(true);
   }
+});
+
+test("a catalog migration number is an origin marker, not the app ledger number", () => {
+  expect(migrationBaseName("migrations/0002_departments.ts")).toBe("departments");
+  const next = nextMigrationFile(
+    ["0001_bootstrap.ts", "0002_auth.ts"],
+    migrationBaseName("migrations/0002_departments.ts"),
+  );
+  expect(next).toBe("0003_departments.ts");
 });
 
 test("manifest validation rejects traversal, missing files, and name drift", async () => {
@@ -108,8 +123,8 @@ test("wiring helpers honor the manifest instead of regenerating defaults", () =>
     '  user: ["id"],',
     "} as const satisfies Record<string, readonly string[]>;",
   ].join("\n");
-  const wiredAudit = addAuditEntity(audit, "department", ["id", "name", "code", "isActive", "organizationId"]);
-  expect(wiredAudit.source).toContain('"department": ["id", "name", "code", "isActive", "organizationId"],');
+  const wiredAudit = addAuditEntity(audit, "department", ["id", "name", "code", "isActive"]);
+  expect(wiredAudit.source).toContain('"department": ["id", "name", "code", "isActive"],');
 
   const en = 'export const enUS = {\n  "a": "A",\n} as const;';
   const wiredEn = addI18nKeys(en, { name: "departments" }, "en-US", {

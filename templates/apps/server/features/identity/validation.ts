@@ -28,8 +28,6 @@ export const createUserSchema = z.strictObject({
 
 export const updateUserSchema = z.strictObject({
   name: z.string().trim().min(1).max(120).optional(),
-  // Only a holder of `user.update` can change the organization; the value comes from the server.
-  organizationId: z.uuid().nullable().optional(),
   emailVerified: z.boolean().optional(),
 });
 
@@ -40,9 +38,6 @@ export const assignRoleSchema = z.strictObject({
     .min(1)
     .max(64)
     .regex(/^[a-z0-9_-]+$/, "use lowercase letters, digits, dash, or underscore"),
-  // Scope is optional: empty means the role applies to the whole organization.
-  scopeType: z.enum(["organization", "department"]).optional(),
-  scopeId: z.uuid().optional(),
 });
 
 export const ListUsersInput = z.compile(listUsersSchema);

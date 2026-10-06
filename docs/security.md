@@ -1,7 +1,8 @@
 # Security
 
-Private routes authorize before parsing input. Organization comes from server context;
-RBAC grants are server-enforced, including distinctions between 401, 403 and 404.
+Private routes authorize before parsing input. RBAC grants are server-enforced, including
+distinctions between 401, 403 and 404. The default server has no tenant concept; an opt-in
+`organizations` feature adds tenant scoping later.
 
 Secrets live in ignored environment files or deployment secrets. `env:list` displays secret
 presence only. Pino log redaction is in `infra/observability/logger.ts`; audit snapshots use

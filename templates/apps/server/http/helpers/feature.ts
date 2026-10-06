@@ -22,7 +22,7 @@ export type FeatureDefinition<
   name: Name;
   /** Mount segment under /api/v1 when it differs from the feature name (e.g. audit → audit-logs). */
   path?: Path;
-  routes: (ctx: AppContext, fallbackOrganizationId: string) => Router;
+  routes: (ctx: AppContext) => Router;
 };
 
 export function defineFeature<
@@ -61,11 +61,10 @@ export function registerFeatures<
 >(
   app: HonoBase<AppEnv, S, BasePath, CurrentPath>,
   ctx: AppContext,
-  organizationId: string,
   features: Features,
 ): HonoBase<AppEnv, S | FeatureSchemas<Features, typeof API_PREFIX>, BasePath, CurrentPath> {
   for (const feature of features) {
-    app.route(`${API_PREFIX}/${feature.path ?? feature.name}`, feature.routes(ctx, organizationId));
+    app.route(`${API_PREFIX}/${feature.path ?? feature.name}`, feature.routes(ctx));
   }
   return app;
 }

@@ -1,5 +1,5 @@
 import { hashPassword } from "better-auth/crypto";
-import { and, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 /** Re-export: the CLI (cli/) uses the same hash primitives, not a duplicate. */
 export { hashPassword };
@@ -23,9 +23,8 @@ export type PublicUser = {
   name: string;
   email: string;
   emailVerified: boolean;
-  organizationId: string | null;
   createdAt: Date;
-  roles: { roleId: string; key: string; name: string; scopeType: string | null; scopeId: string | null }[];
+  roles: { roleId: string; key: string; name: string }[];
   permissions: string[];
 };
 
@@ -51,8 +50,6 @@ async function rolesAndPermissionsFor(
         roleId: rbacRoles.id,
         key: rbacRoles.key,
         name: rbacRoles.name,
-        scopeType: userRoles.scopeType,
-        scopeId: userRoles.scopeId,
       })
       .from(userRoles)
       .innerJoin(rbacRoles, eq(rbacRoles.id, userRoles.roleId))
@@ -67,7 +64,7 @@ async function rolesAndPermissionsFor(
 
   for (const row of roleRows) {
     const list = roles.get(row.userId) ?? [];
-    list.push({ roleId: row.roleId, key: row.key, name: row.name, scopeType: row.scopeType, scopeId: row.scopeId });
+    list.push({ roleId: row.roleId, key: row.key, name: row.name });
     roles.set(row.userId, list);
   }
   for (const row of permissionRows) {
@@ -85,22 +82,16 @@ async function toPublicUser(db: Database, user: User): Promise<PublicUser> {
     name: user.name,
     email: user.email,
     emailVerified: user.emailVerified,
-    organizationId: user.organizationId,
     createdAt: user.createdAt,
     roles: roles.get(user.id) ?? [],
     permissions: permissions.get(user.id) ?? [],
   };
 }
 
-export async function listUsers(
-  db: Database,
-  organizationId: string,
-  input: ListUsersInput,
-): Promise<{ items: PublicUser[]; total: number }> {
-  const where = and(
-    eq(users.organizationId, organizationId),
-    input.search ? or(ilike(users.name, `%${input.search}%`), ilike(users.email, `%${input.search}%`)) : undefined,
-  );
+export async function listUsers(db: Database, input: ListUsersInput): Promise<{ items: PublicUser[]; total: number }> {
+  const where = input.search
+    ? or(ilike(users.name, `%${input.search}%`), ilike(users.email, `%${input.search}%`))
+    : undefined;
 
   const [rows, count] = await Promise.all([
     db
@@ -124,7 +115,6 @@ export async function listUsers(
       name: r.name,
       email: r.email,
       emailVerified: r.emailVerified,
-      organizationId: r.organizationId,
       createdAt: r.createdAt,
       roles: roles.get(r.id) ?? [],
       permissions: permissions.get(r.id) ?? [],
@@ -133,12 +123,8 @@ export async function listUsers(
   };
 }
 
-export async function findUser(db: Database, organizationId: string, id: string): Promise<PublicUser | undefined> {
-  const rows = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.organizationId, organizationId), eq(users.id, id)))
-    .limit(1);
+export async function findUser(db: Database, id: string): Promise<PublicUser | undefined> {
+  const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
   const user = rows[0];
   return user ? toPublicUser(db, user) : undefined;
 }
@@ -149,32 +135,25 @@ export async function findUser(db: Database, organizationId: string, id: string)
  */
 export async function updateUser(
   db: Database,
-  organizationId: string,
   id: string,
   input: UpdateUserInput,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
   return db.transaction(async (tx) => {
-    const beforeRows = await tx
-      .select()
-      .from(users)
-      .where(and(eq(users.organizationId, organizationId), eq(users.id, id)))
-      .limit(1);
+    const beforeRows = await tx.select().from(users).where(eq(users.id, id)).limit(1);
     const before = beforeRows[0];
     if (!before) throw ApiError.notFound("User not found");
 
-    const patch: Partial<Pick<User, "name" | "organizationId" | "emailVerified" | "updatedAt">> = {
+    const patch: Partial<Pick<User, "name" | "emailVerified" | "updatedAt">> = {
       updatedAt: new Date(),
     };
     if (input.name !== undefined) patch.name = input.name;
-    if (input.organizationId !== undefined) patch.organizationId = input.organizationId;
     if (input.emailVerified !== undefined) patch.emailVerified = input.emailVerified;
 
     const rows = await tx.update(users).set(patch).where(eq(users.id, id)).returning();
     const after = rows[0] as User;
 
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "user.updated",
       subject: { type: "user", id: id },
@@ -192,7 +171,6 @@ export async function updateUser(
  */
 export async function createUser(
   db: Database,
-  organizationId: string,
   input: CreateUserInput,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
@@ -205,7 +183,6 @@ export async function createUser(
       .values({
         name: input.name,
         email: input.email,
-        organizationId,
         emailVerified: true,
       })
       .returning();
@@ -219,13 +196,12 @@ export async function createUser(
     });
 
     if (input.roleKey) {
-      const role = await findRoleByKey(tx as unknown as Database, organizationId, input.roleKey);
+      const role = await findRoleByKey(tx as unknown as Database, input.roleKey);
       if (!role) throw ApiError.notFound(`Role not found: ${input.roleKey}`);
       await assignRole(tx as unknown as Database, { userId: user.id, roleId: role.id });
     }
 
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "user.created",
       subject: { type: "user", id: user.id },
@@ -237,23 +213,21 @@ export async function createUser(
 }
 
 /**
- * Deletes a user from the organization. Sessions/credentials follow via ON DELETE CASCADE;
+ * Deletes a user. Sessions/credentials follow via ON DELETE CASCADE;
  * the audit trail is deliberately left alive — actorId has no FK (deleting a user must not destroy evidence).
  */
 export async function deleteUser(
   db: Database,
-  organizationId: string,
   id: string,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ id: string }> {
   return db.transaction(async (tx) => {
-    const before = await findUserInOrg(tx as unknown as Database, organizationId, id);
+    const before = await findUserOrThrow(tx as unknown as Database, id);
     if (before.id === actor.userId) throw ApiError.conflict("Cannot delete yourself");
 
     await tx.delete(users).where(eq(users.id, id));
 
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "user.deleted",
       subject: { type: "user", id: id },
@@ -263,52 +237,33 @@ export async function deleteUser(
   });
 }
 
-/** The user must exist IN THIS ORGANIZATION — a client-supplied id must not cross organizations. */
-async function findUserInOrg(db: Database, organizationId: string, userId: string) {
-  const rows = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.organizationId, organizationId), eq(users.id, userId)))
-    .limit(1);
+/** A client-supplied id must point at an existing row; absent = 404, never a silent write. */
+async function findUserOrThrow(db: Database, userId: string) {
+  const rows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!rows[0]) throw ApiError.notFound("User not found");
   return rows[0];
 }
 
-/**
- * Assigns a role. The role is looked up by `key` within the actor's organization, never by a raw
- * client-supplied id — that prevents assigning another organization's role.
- */
+/** Assigns a role by `key`, never by a raw client-supplied id. */
 export async function assignUserRole(
   db: Database,
-  organizationId: string,
   userId: string,
-  input: { roleKey: string; scopeType?: string; scopeId?: string },
+  input: { roleKey: string },
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
   return db.transaction(async (tx) => {
-    const user = await findUserInOrg(tx as unknown as Database, organizationId, userId);
+    const user = await findUserOrThrow(tx as unknown as Database, userId);
 
-    const role = await findRoleByKey(tx as unknown as Database, organizationId, input.roleKey);
+    const role = await findRoleByKey(tx as unknown as Database, input.roleKey);
     if (!role) throw ApiError.notFound(`Role not found: ${input.roleKey}`);
 
-    await assignRole(tx as unknown as Database, {
-      userId,
-      roleId: role.id,
-      scopeType: input.scopeType,
-      scopeId: input.scopeId,
-    });
+    await assignRole(tx as unknown as Database, { userId, roleId: role.id });
 
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "user.role_assigned",
       subject: { type: "user", id: userId },
-      after: snapshot("userRole", {
-        userId,
-        roleId: role.id,
-        scopeType: input.scopeType ?? null,
-        scopeId: input.scopeId ?? null,
-      }),
+      after: snapshot("userRole", { userId, roleId: role.id }),
     });
 
     return toPublicUser(tx as unknown as Database, user);
@@ -317,57 +272,51 @@ export async function assignUserRole(
 
 export async function revokeUserRole(
   db: Database,
-  organizationId: string,
   userId: string,
   roleKey: string,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
   return db.transaction(async (tx) => {
-    const user = await findUserInOrg(tx as unknown as Database, organizationId, userId);
+    const user = await findUserOrThrow(tx as unknown as Database, userId);
 
-    const role = await findRoleByKey(tx as unknown as Database, organizationId, roleKey);
+    const role = await findRoleByKey(tx as unknown as Database, roleKey);
     if (!role) throw ApiError.notFound(`Role not found: ${roleKey}`);
 
     const removed = await revokeRole(tx as unknown as Database, userId, role.id);
     if (!removed) throw ApiError.notFound("User does not hold this role");
 
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "user.role_revoked",
       subject: { type: "user", id: userId },
-      before: snapshot("userRole", { userId, roleId: role.id, scopeType: null, scopeId: null }),
+      before: snapshot("userRole", { userId, roleId: role.id }),
     });
 
     return toPublicUser(tx as unknown as Database, user);
   });
 }
 
-/** Replace organization-wide roles atomically; scoped assignments are managed separately. */
+/** Replaces a user's roles atomically. */
 export async function replaceUserRoles(
   db: Database,
-  organizationId: string,
   userId: string,
   keys: readonly string[],
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
   const result = await db.transaction(async (tx) => {
     const database = tx as unknown as Database;
-    const user = await findUserInOrg(database, organizationId, userId);
+    const user = await findUserOrThrow(database, userId);
     const wanted = [];
     for (const key of new Set(keys)) {
-      const role = await findRoleByKey(database, organizationId, key);
+      const role = await findRoleByKey(database, key);
       if (!role) throw ApiError.notFound(`Role not found: ${key}`);
       wanted.push(role);
     }
     const before = await toPublicUser(database, user);
-    await tx
-      .delete(userRoles)
-      .where(and(eq(userRoles.userId, userId), isNull(userRoles.scopeType), isNull(userRoles.scopeId)));
+    await tx.delete(userRoles).where(eq(userRoles.userId, userId));
     for (const role of wanted) await assignRole(database, { userId, roleId: role.id });
     const after = await toPublicUser(database, user);
     await auditChange(database, {
-      organizationId,
       actor,
       event: "user.roles_replaced",
       subject: { type: "user", id: userId },

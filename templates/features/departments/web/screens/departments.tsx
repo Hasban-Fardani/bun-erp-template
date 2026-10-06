@@ -12,7 +12,7 @@ import { useSession } from "../../identity/hooks/index.ts";
 import { useDepartments } from "../hooks/index.ts";
 import type { Department } from "../types/index.ts";
 
-/** Reference list screen: the active organization's departments, sorted and searchable. */
+/** Reference list screen: departments, sorted and searchable. */
 export function DepartmentsScreen() {
   const { t, formatRelativeTime } = useI18n();
   const labels = useResourceTableLabels();

@@ -10,7 +10,6 @@ import type { PermissionKey } from "../rbac/statements.ts";
  */
 export type Actor = {
   userId: string;
-  organizationId: string | null;
   permissions: readonly PermissionKey[];
   traceId: string;
   /** Display name, so `/me` can answer the whole identity question in one request. */
@@ -32,11 +31,9 @@ export async function resolveActor(c: Context, ctx: AppContext): Promise<Actor |
     id: string;
     name?: string | null;
     email?: string | null;
-    organizationId?: string | null;
   };
   return {
     userId: user.id,
-    organizationId: user.organizationId ?? null,
     permissions: await permissionsForUser(ctx.db, user.id),
     traceId: (c.get("requestId") as string | undefined) ?? "",
     name: user.name ?? "",

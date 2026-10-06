@@ -52,7 +52,7 @@ export function UserSheet({ open, onOpenChange, user, onSave, saving, canAssignR
       name: user?.name ?? "",
       email: user?.email ?? "",
       password: "",
-      roleKey: user?.roles.find((role) => !role.scopeType)?.key ?? "staff",
+      roleKey: user?.roles[0]?.key ?? "staff",
     },
     onSubmit: ({ value }) => {
       const values: UserFormValues = { ...value, roleKey: value.roleKey || undefined };

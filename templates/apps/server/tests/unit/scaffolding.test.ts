@@ -27,7 +27,7 @@ test("generator names normalize to safe lowercase paths", () => {
 });
 
 test("migration generator continues a contiguous sequence and refuses gaps", () => {
-  expect(nextMigrationFile(["0001_organizations.ts", "0002_posts.ts"], "Add Inventory")).toBe("0003_add_inventory.ts");
+  expect(nextMigrationFile(["0001_bootstrap.ts", "0002_posts.ts"], "Add Inventory")).toBe("0003_add_inventory.ts");
   expect(() => nextMigrationFile(["0001_first.ts", "0003_third.ts"], "fourth")).toThrow(/not contiguous/);
 });
 
@@ -79,9 +79,9 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
   expect(policy).toContain("PermissionKey");
 
   const route = contents.get("apps/server/features/sales-orders/route.ts") ?? "";
-  expect(route).toContain("export function salesOrdersRoutes(");
+  expect(route).toContain("export function salesOrdersRoutes(ctx: AppContext)");
   expect(route).toContain('tag: "sales-orders"');
-  expect(route).toContain("fallbackOrganizationId");
+  expect(route).not.toContain("organization");
 
   const feature = contents.get("apps/server/features/sales-orders/feature.ts") ?? "";
   expect(feature).toContain('import { defineFeature } from "../../http/helpers/feature.ts";');
@@ -92,11 +92,11 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
   const service = contents.get("apps/server/features/sales-orders/service.ts") ?? "";
   expect(service).toContain("export async function listSalesOrders(");
   expect(service).toContain('event: "sales-orders.created"');
-  expect(service).toContain("organizationId, ...input");
+  expect(service).toContain("values({ ...input })");
 
   const schema = contents.get("apps/server/features/sales-orders/schema.ts") ?? "";
   expect(schema).toContain('"sales_orders"');
-  expect(schema).toContain("organizations");
+  expect(schema).not.toContain("organizations");
 });
 
 test("make:feature wires permissions and routes without touching duplicates", () => {
@@ -113,12 +113,12 @@ test("make:feature wires permissions and routes without touching duplicates", ()
 
   const auditFields = [
     "export const AUDIT_FIELDS = {",
-    '  role: ["id", "key", "name", "isSystem", "organizationId"],',
+    '  role: ["id", "key", "name", "isSystem"],',
     "} as const satisfies Record<string, readonly string[]>;",
   ].join("\n");
   const audited = addAuditEntity(auditFields, "sales-orders");
   expect(audited.status).toBe("added");
-  expect(audited.source).toContain('"sales-orders": ["id", "organizationId", "createdAt", "updatedAt"]');
+  expect(audited.source).toContain('"sales-orders": ["id", "createdAt", "updatedAt"]');
   expect(addAuditEntity(audited.source, "sales-orders").status).toBe("present");
   expect(addAuditEntity("export const AUDIT_FIELDS = {};", "sales-orders").status).toBe("skipped");
 
@@ -131,7 +131,7 @@ test("make:feature wires permissions and routes without touching duplicates", ()
     "] as const satisfies readonly FeatureDefinition[];",
     "",
     "export function registerRoutes() {",
-    "  return registerFeatures(app, ctx, organizationId, FEATURES);",
+    "  return registerFeatures(app, ctx, FEATURES);",
     "}",
   ].join("\n");
   const mounted = addRouteMount(routes, { name: "sales-orders", camel: "salesOrders" });

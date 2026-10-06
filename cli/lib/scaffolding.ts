@@ -77,7 +77,6 @@ import { runSqlMigration } from "../sql-migration.ts";
 const statements = \`
 create table if not exists ${intent.table} (
   id uuid primary key default uuidv7(),
-  organization_id uuid not null references organizations (id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -171,25 +170,17 @@ export const ACTION_PERMISSION = {
 function renderFeatureSchema(input: { table: string; camel: string }): string {
   const { table, camel } = input;
   return `import { sql } from "drizzle-orm";
-import { index, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
-import { organizations } from "../../database/schema.ts";
+import { pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /**
  * ${camel} table. Add the feature's domain columns from the product spec, then align the
  * generated migration before running db:migrate.
  */
-export const ${camel} = pgTable(
-  "${table}",
-  {
-    id: uuid("id").primaryKey().default(sql\`uuidv7()\`),
-    organizationId: uuid("organization_id")
-      .notNull()
-      .references(() => organizations.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [index("${table}_organization_idx").on(table.organizationId)],
-);
+export const ${camel} = pgTable("${table}", {
+  id: uuid("id").primaryKey().default(sql\`uuidv7()\`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 `;
 }
 
@@ -221,7 +212,7 @@ export type List${pascal}Input = z.output<typeof List${pascal}Input>;
 
 function renderFeatureService(input: { resource: string; camel: string; pascal: string }): string {
   const { resource, camel, pascal } = input;
-  return `import { and, eq, sql } from "drizzle-orm";
+  return `import { eq, sql } from "drizzle-orm";
 import { ApiError } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
 import { orderByColumn } from "../../http/helpers/sort.ts";
@@ -233,56 +224,39 @@ import type { Create${pascal}Input, List${pascal}Input, Update${pascal}Input } f
 export type ${pascal} = typeof ${camel}.$inferSelect;
 
 /**
- * Transaction boundary lives here. Organization comes from the server context, never from
- * client input; every write records an audit snapshot. Extend the queries with the domain
- * rules from the product spec.
+ * Transaction boundary lives here; every write records an audit snapshot. Extend the queries
+ * with the domain rules from the product spec.
  */
 export async function list${pascal}(
   db: Database,
-  organizationId: string,
   input: List${pascal}Input,
 ): Promise<{ items: ${pascal}[]; total: number }> {
-  const where = eq(${camel}.organizationId, organizationId);
   const [items, count] = await Promise.all([
     db
       .select()
       .from(${camel})
-      .where(where)
       .orderBy(...orderByColumn(${camel}, input.sort, input.dir))
       .limit(input.perPage)
       .offset(toOffset(input).offset),
-    db.select({ total: sql<number>\`count(*)::int\` }).from(${camel}).where(where),
+    db.select({ total: sql<number>\`count(*)::int\` }).from(${camel}),
   ]);
   return { items, total: count[0]?.total ?? 0 };
 }
 
-export async function find${pascal}(
-  db: Database,
-  organizationId: string,
-  id: string,
-): Promise<${pascal} | undefined> {
-  const rows = await db
-    .select()
-    .from(${camel})
-    .where(and(eq(${camel}.organizationId, organizationId), eq(${camel}.id, id)))
-    .limit(1);
+export async function find${pascal}(db: Database, id: string): Promise<${pascal} | undefined> {
+  const rows = await db.select().from(${camel}).where(eq(${camel}.id, id)).limit(1);
   return rows[0];
 }
 
 export async function create${pascal}(
   db: Database,
-  organizationId: string,
   input: Create${pascal}Input,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<${pascal}> {
   return db.transaction(async (tx) => {
-    const rows = await tx
-      .insert(${camel})
-      .values({ organizationId, ...input })
-      .returning();
+    const rows = await tx.insert(${camel}).values({ ...input }).returning();
     const after = rows[0] as ${pascal};
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "${resource}.created",
       subject: { type: "${resource}", id: after.id },
@@ -294,24 +268,22 @@ export async function create${pascal}(
 
 export async function update${pascal}(
   db: Database,
-  organizationId: string,
   id: string,
   input: Update${pascal}Input,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<${pascal}> {
   return db.transaction(async (tx) => {
-    const before = await find${pascal}(tx as unknown as Database, organizationId, id);
+    const before = await find${pascal}(tx as unknown as Database, id);
     if (!before) throw ApiError.notFound("${pascal} not found");
 
     const rows = await tx
       .update(${camel})
       .set({ ...input, updatedAt: new Date() })
-      .where(and(eq(${camel}.organizationId, organizationId), eq(${camel}.id, id)))
+      .where(eq(${camel}.id, id))
       .returning();
     const after = rows[0] as ${pascal};
 
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "${resource}.updated",
       subject: { type: "${resource}", id: after.id },
@@ -324,18 +296,16 @@ export async function update${pascal}(
 
 export async function delete${pascal}(
   db: Database,
-  organizationId: string,
   id: string,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ id: string }> {
   return db.transaction(async (tx) => {
-    const before = await find${pascal}(tx as unknown as Database, organizationId, id);
+    const before = await find${pascal}(tx as unknown as Database, id);
     if (!before) throw ApiError.notFound("${pascal} not found");
 
-    await tx.delete(${camel}).where(and(eq(${camel}.organizationId, organizationId), eq(${camel}.id, id)));
+    await tx.delete(${camel}).where(eq(${camel}.id, id));
 
     await auditChange(tx as unknown as Database, {
-      organizationId,
       actor,
       event: "${resource}.deleted",
       subject: { type: "${resource}", id: id },
@@ -367,8 +337,8 @@ const listData = {
   properties: { items: { type: "array", items: ${camel}Ref }, ...listMetaSchemaProperties },
 };
 
-/** Thin route: validation → policy → service → envelope. Organization comes from the actor. */
-export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) {
+/** Thin route: validation → policy → service → envelope. */
+export function ${camel}Routes(ctx: AppContext) {
   return factory.createApp()
     .get(
       "/",
@@ -382,13 +352,8 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       }),
       validate("query", List${pascal}Input),
       async (c) => {
-        const actor = c.get("actor");
         const input = c.req.valid("query");
-        const { items, total } = await list${pascal}(
-          ctx.db,
-          actor.organizationId ?? fallbackOrganizationId,
-          input,
-        );
+        const { items, total } = await list${pascal}(ctx.db, input);
         return ok(c, { items, ...listMeta(input, total) });
       },
     )
@@ -402,8 +367,7 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
         data: ${camel}Ref,
       }),
       async (c) => {
-        const actor = c.get("actor");
-        const row = await find${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, c.req.param("id"));
+        const row = await find${pascal}(ctx.db, c.req.param("id"));
         if (!row) throw ApiError.notFound("${pascal} not found");
         return ok(c, row);
       },
@@ -422,7 +386,7 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(c, await create${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, input, actor));
+        return ok(c, await create${pascal}(ctx.db, input, actor));
       },
     )
     .patch(
@@ -439,10 +403,7 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(
-          c,
-          await update${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, c.req.param("id"), input, actor),
-        );
+        return ok(c, await update${pascal}(ctx.db, c.req.param("id"), input, actor));
       },
     )
     .delete(
@@ -456,7 +417,7 @@ export function ${camel}Routes(ctx: AppContext, fallbackOrganizationId: string) 
       }),
       async (c) => {
         const actor = c.get("actor");
-        return ok(c, await delete${pascal}(ctx.db, actor.organizationId ?? fallbackOrganizationId, c.req.param("id"), actor));
+        return ok(c, await delete${pascal}(ctx.db, c.req.param("id"), actor));
       },
     );
 }
@@ -532,7 +493,7 @@ export type WiringResult = { source: string; status: "added" | "present" | "skip
 export function addAuditEntity(
   source: string,
   resource: string,
-  fields: readonly string[] = ["id", "organizationId", "createdAt", "updatedAt"],
+  fields: readonly string[] = ["id", "createdAt", "updatedAt"],
 ): WiringResult {
   const escaped = resource.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   if (new RegExp(`^\\s{2}"?${escaped}"?:\\s`, "m").test(source)) return { source, status: "present" };

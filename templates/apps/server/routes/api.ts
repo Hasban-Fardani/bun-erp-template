@@ -24,7 +24,7 @@ const FEATURES = [
 ] as const satisfies readonly FeatureDefinition[];
 
 /** `routes/api.ts` only registers routes — it holds no business logic (PRD §6). */
-export function apiRoutes(ctx: AppContext, organizationId: string) {
+export function apiRoutes(ctx: AppContext) {
   const app = factory
     .createApp()
     .get(
@@ -74,7 +74,6 @@ export function apiRoutes(ctx: AppContext, organizationId: string) {
             userId: { type: "string" },
             name: { type: "string" },
             email: { type: "string" },
-            organizationId: { type: ["string", "null"] },
             permissions: { type: "array", items: { type: "string" } },
           },
         },
@@ -85,11 +84,10 @@ export function apiRoutes(ctx: AppContext, organizationId: string) {
           userId: actor.userId,
           name: actor.name,
           email: actor.email,
-          organizationId: actor.organizationId,
           permissions: actor.permissions,
         });
       },
     );
 
-  return registerFeatures(app, ctx, organizationId, FEATURES);
+  return registerFeatures(app, ctx, FEATURES);
 }

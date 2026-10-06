@@ -8,7 +8,7 @@ column and source before relying on it.
 | [0001 TanStack file routing](0001-web-router.md) | Generated file routes, authenticated layout and per-route chunks |
 | [0002 Valkey queue direction](0002-broker-valkey.md) | Superseded by ADR-0015 |
 | [0003 UUIDv7](0003-primary-key-uuidv7.md) | PostgreSQL defaults plus UUIDv7 support for PG16/17 |
-| [0004 Organization scope](0004-organization-id-sejak-awal.md) | Present in reference feature schemas |
+| [0004 Organization scope](0004-organization-id-sejak-awal.md) | Superseded — tenant columns belong to the opt-in `organizations` feature (F3.0) |
 | [0005 Spreadsheets](0005-spreadsheet-exceljs.md) | Deferred; no spreadsheet library installed |
 | [0006 Capacity](0006-deployment-target.md) | Deployment target; capacity still needs measurement |
 | [0007 Audit redaction](0007-audit-redaction.md) | Present in audit writes and logging safeguards |
