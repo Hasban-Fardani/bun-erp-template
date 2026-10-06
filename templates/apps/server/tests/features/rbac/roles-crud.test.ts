@@ -121,4 +121,22 @@ describe("roles CRUD", () => {
     expect(events).toContain("role.permissions_set");
     expect(events).toContain("role.deleted");
   });
+
+  test("a malformed role id is 422, not 500", async () => {
+    const removed = await api.client.api.v1.roles[":id"].$delete({ param: { id: "not-a-uuid" } });
+    expect(removed.status).toBe(422);
+    const permissions = await api.client.api.v1.roles[":id"].permissions.$put({
+      param: { id: "not-a-uuid" },
+      json: { permissions: [] },
+    });
+    expect(permissions.status).toBe(422);
+  });
+
+  test("two concurrent creates with the same key yield one 200 and one 409", async () => {
+    const [first, second] = await Promise.all([
+      api.client.api.v1.roles.$post({ json: { key: "race", name: "Race" } }),
+      api.client.api.v1.roles.$post({ json: { key: "race", name: "Race" } }),
+    ]);
+    expect([first.status, second.status].sort((a, b) => a - b)).toEqual([200, 409]);
+  });
 });

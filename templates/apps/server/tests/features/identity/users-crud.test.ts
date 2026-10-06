@@ -111,4 +111,40 @@ describe("users CRUD", () => {
     const res = await api.client.api.v1.users[":id"].$delete({ param: { id: data.userId } });
     expect(res.status).toBe(409);
   });
+
+  test("a malformed user id is 422, not 500", async () => {
+    const get = await api.app.request("/api/v1/users/not-a-uuid", { headers: { cookie: api.cookie } });
+    expect(get.status).toBe(422);
+    const del = await api.app.request("/api/v1/users/not-a-uuid", {
+      method: "DELETE",
+      headers: { cookie: api.cookie },
+    });
+    expect(del.status).toBe(422);
+    const roles = await api.app.request("/api/v1/users/not-a-uuid/roles", {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: api.cookie },
+      body: JSON.stringify({ roleKey: "staff" }),
+    });
+    expect(roles.status).toBe(422);
+  });
+
+  test("two concurrent creates with the same email yield one 200 and one 409", async () => {
+    const payload = { name: "Race", email: "race@test.dev", password: "sandi-yang-panjang" };
+    const [first, second] = await Promise.all([
+      api.client.api.v1.users.$post({ json: payload }),
+      api.client.api.v1.users.$post({ json: payload }),
+    ]);
+    expect([first.status, second.status].sort((a, b) => a - b)).toEqual([200, 409]);
+  });
+
+  test("two concurrent role assignments yield one 200 and one 409", async () => {
+    const created = await api.client.api.v1.users.$post({
+      json: { name: "Race", email: "race-role@test.dev", password: "sandi-yang-panjang" },
+    });
+    const { data } = (await created.json()) as { data: { id: string } };
+    const assign = () =>
+      api.client.api.v1.users[":id"].roles.$post({ param: { id: data.id }, json: { roleKey: "staff" } });
+    const [first, second] = await Promise.all([assign(), assign()]);
+    expect([first.status, second.status].sort((a, b) => a - b)).toEqual([200, 409]);
+  });
 });

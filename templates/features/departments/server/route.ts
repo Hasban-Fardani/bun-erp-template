@@ -4,6 +4,7 @@ import { doc } from "../../http/helpers/api-docs.ts";
 import { authorize } from "../../http/helpers/authorize.ts";
 import { ApiError, ok } from "../../http/helpers/errors.ts";
 import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-query.ts";
+import { idParam } from "../../http/helpers/params.ts";
 import { validate } from "../../http/helpers/validate.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
 import {
@@ -68,6 +69,7 @@ export function departmentRoutes(ctx: AppContext) {
         data: departmentRef,
       }),
 
+      validate("param", idParam),
       async (c) => {
         const department = await findDepartment(ctx.db, c.req.param("id"));
         // Absent = 404. 403 is only for a failed authorization (PRD §12).
@@ -104,6 +106,7 @@ export function departmentRoutes(ctx: AppContext) {
         data: departmentRef,
       }),
 
+      validate("param", idParam),
       validate("json", UpdateDepartmentInput),
       async (c) => {
         const actor = c.get("actor");
@@ -121,6 +124,7 @@ export function departmentRoutes(ctx: AppContext) {
         data: departmentRef,
       }),
 
+      validate("param", idParam),
       async (c) => {
         const actor = c.get("actor");
         return ok(c, await deleteDepartment(ctx.db, c.req.param("id"), actor));
@@ -136,6 +140,7 @@ export function departmentRoutes(ctx: AppContext) {
         data: departmentRef,
       }),
 
+      validate("param", idParam),
       async (c) => {
         const actor = c.get("actor");
         return ok(c, await restoreDepartment(ctx.db, c.req.param("id"), actor));
@@ -151,6 +156,7 @@ export function departmentRoutes(ctx: AppContext) {
         data: departmentRef,
       }),
 
+      validate("param", idParam),
       async (c) => {
         const actor = c.get("actor");
         return ok(c, await forceDeleteDepartment(ctx.db, c.req.param("id"), actor));

@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
 import { uuidv7 } from "../../database/uuidv7.ts";
+import { recordAudit, snapshot } from "../audit/service.ts";
 import { accounts, sessions, users, verifications } from "./schema.ts";
 
 /** Better Auth instance; split out so CLI/tests can use it without a server. */
@@ -22,11 +23,40 @@ export function createAuth(env: Env, db: Database) {
       provider: "pg",
       schema: { user: users, session: sessions, account: accounts, verification: verifications },
     }),
+    // A user created by Better Auth (self sign-up or a plugin) leaves an audit trail too;
+    // the admin create path records its own event, so this hook never double-writes.
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            await recordAudit(db, {
+              actorId: null,
+              actorLabel: "self-sign-up",
+              event: "user.created",
+              subjectType: "user",
+              subjectId: user.id,
+              after: snapshot("user", user as unknown as Record<string, unknown>),
+            });
+          },
+        },
+      },
+    },
+    rateLimit: {
+      // On everywhere by default; Better Auth keeps stricter built-in rules for sign-in/sign-up.
+      enabled: env.AUTH_RATE_LIMIT_ENABLED,
+      window: 60,
+      max: 100,
+    },
     advanced: {
       database: { generateId: () => uuidv7() },
+      // TRUST_PROXY declares that a reverse proxy sets `x-forwarded-for`. Without it the header
+      // is not read, so a client cannot pick its own rate-limit bucket by spoofing it.
+      ipAddress: env.TRUST_PROXY ? { ipAddressHeaders: ["x-forwarded-for"] } : { ipAddressHeaders: [] },
     },
     emailAndPassword: {
       enabled: true,
+      // Public self sign-up is opt-in; accounts normally come from `bun erp user:create`.
+      disableSignUp: !env.AUTH_SIGNUP_ENABLED,
       minPasswordLength: 10,
       // Email password reset does not exist yet; the transport is the opt-in mail feature.
       // Leaving it on would hand users a button that never sends anything.

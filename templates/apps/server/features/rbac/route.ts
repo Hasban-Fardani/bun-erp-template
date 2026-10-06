@@ -4,6 +4,7 @@ import { doc } from "../../http/helpers/api-docs.ts";
 import { authorize } from "../../http/helpers/authorize.ts";
 import { ok } from "../../http/helpers/errors.ts";
 import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-query.ts";
+import { idParam } from "../../http/helpers/params.ts";
 import { validate } from "../../http/helpers/validate.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
 import { createRole, deleteRole, listRoles, permissionsForRole, setRolePermissions, updateRole } from "./service.ts";
@@ -79,6 +80,7 @@ export function rbacRoutes(ctx: AppContext) {
           data: roleRef,
         }),
 
+        validate("param", idParam),
         validate("json", UpdateRoleInput),
         async (c) => {
           const actor = c.get("actor");
@@ -96,6 +98,7 @@ export function rbacRoutes(ctx: AppContext) {
           data: idRef,
         }),
 
+        validate("param", idParam),
         async (c) => {
           const actor = c.get("actor");
           return ok(c, await deleteRole(ctx.db, c.req.param("id"), actorOf(actor)));
@@ -115,6 +118,7 @@ export function rbacRoutes(ctx: AppContext) {
           },
         }),
 
+        validate("param", idParam),
         validate("json", SetRolePermissionsInput),
         async (c) => {
           const actor = c.get("actor");

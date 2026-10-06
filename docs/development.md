@@ -130,13 +130,16 @@ Manage roles and accounts with the rest of the CLI: `role:list`, `role:show <key
 `user:grant`, `user:revoke`, and `user:passwd`. Destructive commands refuse to run without `--force`.
 
 `bun erp make:feature <name>` generates the server feature module (validation, policy, schema,
-service, route, test, README) plus a create-table migration, then registers the permission keys,
+service, route, test) plus a create-table migration, then registers the permission keys,
 audit entity, and explicit route mount. It also generates the web feature (types, api/queries,
 hooks, screen, route page), wires the sidebar entry and both locale catalogs, and regenerates
-`apps/web/src/routeTree.gen.ts` with a web build. `make:migration create_posts_table` and
-`add_status_to_posts_table` fill the table and column names into the SQL template, and
-`make:seeder users` normalizes a `-seeder` suffix to `users.ts`. After generating a feature, add
-the domain fields and run `bun erp db:migrate` followed by `bun erp db:seed`.
+`apps/web/src/routeTree.gen.ts` with a web build. Optimistic locking is emitted by default;
+`--no-version` leaves it out. Soft delete is opt-in: pass `--soft-delete` only for master data that
+history references, never for append-only or high-volume tables (logs, events, jobs, notifications,
+sessions, join tables). `--sequence <key>` with `--prefix`/`--padding` adds the numbering column.
+`make:migration create_posts_table` and `add_status_to_posts_table` fill the table and column names
+into the SQL template, and `make:seeder users` normalizes a `-seeder` suffix to `users.ts`. After
+generating a feature, add the domain fields and run `bun erp db:migrate` followed by `bun erp db:seed`.
 
 `bun erp apps` lists workspace apps with build, port, and test status; `apps:status <name>` shows
 one app's entry point, scripts, build output, and environment file; `apps:create <name> <server|web|mobile>`
