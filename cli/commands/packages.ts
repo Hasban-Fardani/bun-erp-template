@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { refreshGuidelines } from "../lib/guidelines.ts";
 import { parseCommandOptions } from "../lib/options.ts";
 import {
   catalogPackageNames,
@@ -35,6 +36,9 @@ export const commands = [
 
     await copyCatalogPackage(repoRoot, name, { from: parsed.values.get("from") });
     await Bun.$`bun install`.quiet();
+    if ((await refreshGuidelines(repoRoot)) === "updated") {
+      process.stdout.write("Updated AGENTS.md guidelines block.\n");
+    }
 
     process.stdout.write(
       `Installed packages/${name}.\n` +
