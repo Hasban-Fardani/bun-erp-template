@@ -1,9 +1,10 @@
 import { createUuid } from "@bun-erp/utils";
-import { createJobRegistry } from "../features/jobs.ts";
+import { createJobRegistry, createSchedules } from "../features/jobs.ts";
 import { createApp } from "../http/app.ts";
 import { isApiPath } from "../http/routing.ts";
 import { usingWorkerContext } from "../infra/cloudflare/lifecycle.ts";
 import { runJobBatch } from "../infra/jobs/queue.ts";
+import { runDueSchedules } from "../infra/jobs/scheduler.ts";
 import { createCloudflareContext, createCloudflareInfrastructure, type WorkerBindings } from "./cloudflare-context.ts";
 
 const CLOUDFLARE_JOB_BATCH_SIZE = 1;
@@ -45,10 +46,15 @@ export default {
       (async () => {
         const context = createCloudflareInfrastructure(bindings);
         try {
+          const tick = await runDueSchedules(context.db, createSchedules(context), context.logger);
           const count = await runJobBatch(context.db, createJobRegistry(context), context.logger, {
             limit: CLOUDFLARE_JOB_BATCH_SIZE,
           });
-          context.logger.info({ event: "jobs.schedule.completed", processed: count });
+          context.logger.info({
+            event: "jobs.schedule.completed",
+            enqueued: tick.enqueued.length,
+            processed: count,
+          });
         } catch {
           context.logger.error({ event: "jobs.schedule.failed" });
         } finally {

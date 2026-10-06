@@ -238,6 +238,13 @@ async function finish(
     returning id
   `),
   );
+  if (rows.length === 1 && status !== "pending") {
+    // A schedule mirrors the terminal outcome of the job its tick enqueued; manual jobs match no row.
+    await db.execute(sql`
+      update job_schedules set last_status = ${status}, last_error = ${errorCode ?? null}, updated_at = now()
+      where name = ${job.name}
+    `);
+  }
   return rows.length === 1;
 }
 

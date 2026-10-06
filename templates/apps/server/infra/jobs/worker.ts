@@ -2,14 +2,18 @@ import type { Database } from "../../database/index.ts";
 import type { Logger } from "../observability/logger.ts";
 import { runJobBatch } from "./queue.ts";
 import type { JobRegistry } from "./registry.ts";
+import { runDueSchedules, type ScheduleDefinition } from "./scheduler.ts";
 
 export type JobWorkerOptions = {
   db: Database;
   registry: JobRegistry;
   logger: Logger;
+  /** Declared schedules; the worker runs one tick on its own interval before job batches. */
+  schedules?: readonly ScheduleDefinition[];
   batchSize?: number;
   pollIntervalMs?: number;
   errorBackoffMs?: number;
+  scheduleTickIntervalMs?: number;
 };
 
 /** A stoppable polling loop shared by local development and the standalone Bun worker. */
@@ -17,7 +21,9 @@ export function startJobWorker(options: JobWorkerOptions): { stop: () => void; d
   const batchSize = options.batchSize ?? 10;
   const pollIntervalMs = options.pollIntervalMs ?? 1_000;
   const errorBackoffMs = options.errorBackoffMs ?? 2_000;
+  const scheduleTickIntervalMs = options.scheduleTickIntervalMs ?? 5_000;
   let stopping = false;
+  let lastTickAt = 0;
 
   options.logger.info({ event: "jobs.worker.started", pollIntervalMs, batchSize });
   const done = poll()
@@ -37,6 +43,16 @@ export function startJobWorker(options: JobWorkerOptions): { stop: () => void; d
   async function poll(): Promise<void> {
     while (!stopping) {
       try {
+        const now = Date.now();
+        if (options.schedules?.length && now - lastTickAt >= scheduleTickIntervalMs) {
+          lastTickAt = now;
+          try {
+            await runDueSchedules(options.db, options.schedules, options.logger);
+          } catch (error) {
+            // A schedule failure must not stall ordinary job processing.
+            options.logger.error({ event: "jobs.scheduler.tick_failed", errorCode: errorCode(error) });
+          }
+        }
         const processed = await runJobBatch(options.db, options.registry, options.logger, { limit: batchSize });
         if (processed === 0 && !stopping) await wait(pollIntervalMs);
       } catch (error) {
