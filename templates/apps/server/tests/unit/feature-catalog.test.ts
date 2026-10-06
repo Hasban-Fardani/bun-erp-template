@@ -214,15 +214,21 @@ async function writeInfraFixture(root: string, manifest: unknown): Promise<void>
   }
 }
 
+/** Sorted install destinations for a catalog feature; the manifest tests share the plan read. */
+async function installDestinations(name: string): Promise<string[]> {
+  const manifest = await readFeatureManifest(repoRoot, name);
+  return planFeatureInstall(manifest)
+    .map((entry) => entry.destination)
+    .sort();
+}
+
 test("the mail infra manifest validates and plans server-only destinations", async () => {
   const manifest = await readFeatureManifest(repoRoot, "mail");
   if (manifest.kind !== "infra") throw new Error("mail must stay an infra feature");
   expect(manifest.requires).toEqual(["mail"]);
   expect(manifest.wiring).toEqual(["context", "bootstrap", "cloudflare", "jobs", "notifications"]);
 
-  const destinations = planFeatureInstall(manifest)
-    .map((entry) => entry.destination)
-    .sort();
+  const destinations = await installDestinations("mail");
   expect(destinations).toContain("apps/server/features/mail/wiring.ts");
   expect(destinations).toContain("apps/server/features/mail/channel.ts");
   expect(destinations).toContain("apps/server/tests/features/mail/mail.test.ts");
@@ -249,8 +255,21 @@ test("infra-kind validation rejects web wiring, unknown operations, and an empty
     await writeInfraFixture(root, { ...infraManifest, wiring: ["context", "context"] });
     await expect(readFeatureManifest(root, "probe")).rejects.toThrow(/twice/);
 
+    // An infra feature that adds no catalog package may leave `requires` empty.
     await writeInfraFixture(root, { ...infraManifest, requires: [] });
-    await expect(readFeatureManifest(root, "probe")).rejects.toThrow(/at least one/);
+    const withoutPackage = await readFeatureManifest(root, "probe");
+    expect(withoutPackage.requires).toEqual([]);
+
+    // Migrations belong to server and infra kinds; the installer numbers them into the ledger.
+    await writeInfraFixture(root, {
+      ...infraManifest,
+      requires: [],
+      migrations: ["migrations/0001_probe.ts"],
+    });
+    await Bun.write(`${root}/templates/features/probe/migrations/0001_probe.ts`, "");
+    const withMigration = await readFeatureManifest(root, "probe");
+    if (withMigration.kind !== "infra") throw new Error("probe must stay an infra feature");
+    expect(withMigration.migrations).toEqual(["migrations/0001_probe.ts"]);
 
     await writeInfraFixture(root, {
       ...infraManifest,
@@ -286,6 +305,53 @@ test("infra wiring edits the composition root and is idempotent", async () => {
   expect(registry?.source).toContain("mailChannel");
   const jobs = edits.find((entry) => entry.path === "apps/server/features/jobs.ts");
   expect(jobs?.source).toContain("registerMailJobs(registry, ctx.mail);");
+});
+
+test("the organizations manifest is an infra feature without a package, with a migration", async () => {
+  const manifest = await readFeatureManifest(repoRoot, "organizations");
+  if (manifest.kind !== "infra") throw new Error("organizations must stay an infra feature");
+  expect(manifest.requires).toEqual([]);
+  expect(manifest.wiring).toEqual(["auth-plugin", "auth-schema", "session-field", "schema-export"]);
+  expect(manifest.migrations).toEqual(["migrations/0001_organizations.ts"]);
+
+  const destinations = await installDestinations("organizations");
+  expect(new Set(destinations)).toEqual(
+    new Set([
+      "apps/server/features/organizations/plugin.ts",
+      "apps/server/features/organizations/schema.ts",
+      "apps/server/tests/features/organizations/organizations.test.ts",
+    ]),
+  );
+  expect(destinations.some((destination) => destination.startsWith("apps/web/"))).toBe(false);
+});
+
+test("organizations wiring registers the plugin, schema map, session field, and export", async () => {
+  const manifest = await readFeatureManifest(repoRoot, "organizations");
+  if (manifest.kind !== "infra") throw new Error("organizations must stay an infra feature");
+  const edits = await planInfraWiring(repoRoot, manifest);
+  const paths = edits.map((entry) => entry.path).sort();
+  expect(paths).toEqual([
+    "apps/server/database/schema.ts",
+    "apps/server/features/identity/auth.ts",
+    "apps/server/features/identity/schema.ts",
+  ]);
+  for (const edit of edits) expect(["added", "present"]).toContain(edit.status);
+
+  // One operation per file still composes: auth-plugin and auth-schema edit the same file.
+  const auth = edits.find((entry) => entry.path === "apps/server/features/identity/auth.ts");
+  expect(auth?.source).toContain('import { createOrganizationPlugin } from "../organizations/plugin.ts";');
+  expect(auth?.source).toContain("plugins: [createOrganizationPlugin()],");
+  expect(auth?.source).toContain("organization: organizations");
+  expect(auth?.source).toContain("member: members");
+  expect(auth?.source).toContain("invitation: invitations");
+
+  const identity = edits.find((entry) => entry.path === "apps/server/features/identity/schema.ts");
+  expect(identity?.source).toContain('activeOrganizationId: uuid("active_organization_id"),');
+
+  const schema = edits.find((entry) => entry.path === "apps/server/database/schema.ts");
+  expect(schema?.source).toContain(
+    'export { invitationRelations, invitations, memberRelations, members, organizationRelations, organizations } from "../features/organizations/schema.ts";',
+  );
 });
 
 test("web-kind validation rejects server wiring and unknown kinds", async () => {

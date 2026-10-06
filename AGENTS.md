@@ -36,7 +36,10 @@ data, or business rules without a separate product spec.
   `bun erp init` that adds the server re-fits the real client.
 - Server domain code lives in apps/server/features/<feature>; install the reference module with
   `bun erp features:install departments` (catalog: templates/features) and follow
-  skills/feature-development/SKILL.md. Drizzle declarations are named schema.ts.
+  skills/feature-development/SKILL.md. Drizzle declarations are named schema.ts. The tenant layer is
+  opt-in: `bun erp features:install organizations` registers the Better Auth `organization` plugin
+  (organizations, members, invitations, active organization on the session) and its migration; the
+  default server stays tenant-free and RBAC stays independent of organizations.
 - The default web app is login + overview (Beranda) + notifications. The admin screens are web-kind
   catalog features: `bun erp features:install users` (also roles, audit) copies the presentation,
   page wrapper, design spec, navigation row and locale keys, and installs the `data-table` catalog

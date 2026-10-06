@@ -47,15 +47,19 @@ A manifest is one of two kinds:
 - `web` ships presentation only — web files, page, design spec, navigation and i18n. The API,
   permissions and audit trail are core (`identity`, `rbac`, `audit`), so nothing server-side is
   wired. `users`, `roles` and `audit` are the reference web features.
-- `infra` ships server infrastructure — it installs a catalog package, copies app-side wiring files
-  and edits the composition root named by its `wiring` operations (`context.ts`, `bootstrap.ts`,
-  jobs, channel registry). It has no routes, permissions, audit, navigation or i18n. `mail` is the
-  reference infra feature: the default server keeps only the database notification channel, and
-  `bun erp features:install mail` brings back the `@bun-erp/mail` transport.
+- `infra` ships server infrastructure — it copies app-side wiring files and edits the composition
+  root named by its `wiring` operations (`context.ts`, `bootstrap.ts`, jobs, channel registry, or
+  the Better Auth plugin/schema/session/export anchors). It may install a catalog package and ship a
+  forward-only migration, and has no routes, permissions, audit, navigation or i18n. `mail` is the
+  package-installing reference: the default server keeps only the database notification channel, and
+  `bun erp features:install mail` brings back the `@bun-erp/mail` transport. `organizations` is the
+  Better Auth reference: `bun erp features:install organizations` adds the opt-in tenant layer
+  (organization plugin, tables and session field) without adding routes or permissions.
 
 A web feature may declare `requires` catalog packages; the installer installs them and adds the
 `@bun-erp/<name>` workspace dependency to `apps/web` before writing any file. An infra feature adds
-its package dependency to `apps/server` instead. Shared table helpers
+its package dependency to `apps/server` instead and may leave `requires` empty when it only wires
+core files. Shared table helpers
 (`use-table-state.ts`, `resource-table-labels.ts`) live once under `templates/features/_shared/web/`
 and are declared in each manifest's `files.shared`; the installer copies them into
 `apps/web/src/lib/` and skips them when already present. The installer refuses to overwrite an

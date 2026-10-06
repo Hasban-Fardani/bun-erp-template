@@ -32,6 +32,7 @@ server app is installed; the root `cli/` never imports `apps/**`.
 | Add rich text editing UI | templates/packages/editor (install with bun erp packages:install editor) | Lazy React entry, composable Lexical UI and JSON value |
 | Compose email or PDF documents | templates/packages/email, templates/packages/pdf (install on demand) | Opt-in rendering components with separate runtime boundaries |
 | Send mail from the server | `bun erp features:install mail` (templates/packages/mail) | Opt-in transport; the default server keeps only the database notification channel |
+| Add tenant scoping | `bun erp features:install organizations` (templates/features/organizations) | Opt-in Better Auth `organization` plugin: organization/member/invitation tables and the session's active organization; no new routes or permissions |
 
 ## Runtime modes
 
@@ -75,6 +76,12 @@ Features communicate through public service functions. Do not reach into another
 as an untracked shortcut. The Hono route tree is also the source of the Hono RPC type and generated
 OpenAPI document. Cloudflare serves Workers Assets from the Worker entry and sends /api/* through
 the same Hono app.
+
+Better Auth serves its own endpoints under `/api/v1/auth/*` through one wildcard handler. The
+opt-in `organizations` feature extends that plugin set instead of mounting feature routes: it
+registers the Better Auth `organization` plugin, adds its tables to the drizzle adapter and to
+`database/schema.ts`, and adds `activeOrganizationId` to the session. The default server stays
+tenant-free and RBAC stays independent of organizations (Q28/Q33).
 
 Route files register typed handlers directly on the Hono chain and compose feature routers with
 app.route(). This preserves path and RPC inference; generic controller functions can erase it.

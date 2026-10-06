@@ -20,9 +20,21 @@ export type FeatureKind = "server" | "web" | "infra";
 /**
  * The wiring operations an infra manifest may name. The installer implements each one against a
  * fixed core file and fails the install when its anchor is missing, so the manifest can only
- * request wiring the installer knows how to perform.
+ * request wiring the installer knows how to perform. Mail uses the composition-root operations;
+ * organizations uses the Better Auth operations (`auth-plugin`, `auth-schema`, `session-field`,
+ * `schema-export`).
  */
-export const INFRA_WIRING_OPS = ["context", "bootstrap", "cloudflare", "jobs", "notifications"] as const;
+export const INFRA_WIRING_OPS = [
+  "context",
+  "bootstrap",
+  "cloudflare",
+  "jobs",
+  "notifications",
+  "auth-plugin",
+  "auth-schema",
+  "session-field",
+  "schema-export",
+] as const;
 
 export type InfraWiringOp = (typeof INFRA_WIRING_OPS)[number];
 
@@ -71,11 +83,13 @@ export type WebFeatureManifest = {
 export type InfraFeatureManifest = {
   kind: "infra";
   name: string;
-  /** Catalog packages the feature installs; an infra feature wires at least one. */
+  /** Catalog packages the feature installs; empty when it only wires core files. */
   requires: readonly string[];
   /** Named wiring operations; see INFRA_WIRING_OPS. */
   wiring: readonly InfraWiringOp[];
   files: { server: readonly string[]; tests: readonly string[] };
+  /** Optional forward-only migrations, numbered into apps/server/database/migrations/ on install. */
+  migrations?: readonly string[];
 };
 
 export type FeatureManifest = ServerFeatureManifest | WebFeatureManifest | InfraFeatureManifest;
@@ -179,7 +193,9 @@ export async function readFeatureManifest(root: string, name: string): Promise<F
 
 /** Files relative to the feature's own catalog directory. */
 function manifestFiles(manifest: FeatureManifest): string[] {
-  if (manifest.kind === "infra") return [...manifest.files.server, ...manifest.files.tests];
+  if (manifest.kind === "infra") {
+    return [...manifest.files.server, ...manifest.files.tests, ...(manifest.migrations ?? [])];
+  }
   if (manifest.kind === "web") {
     return [...manifest.files.web, manifest.files.page, ...(manifest.files.design ? [manifest.files.design] : [])];
   }
@@ -274,13 +290,13 @@ function validateFeatureManifest(raw: unknown, directoryName: string): FeatureMa
 
   const filesRecord = asRecord(record.files, "files must be an object");
   if (kind === "infra") {
-    for (const key of ["permissionResource", "auditEntity", "auditFields", "nav", "i18nKeys", "migrations"]) {
+    for (const key of ["permissionResource", "auditEntity", "auditFields", "nav", "i18nKeys"]) {
       if (record[key] !== undefined) throw new Error(`${key} is not part of an infra feature manifest`);
     }
     for (const key of ["web", "shared", "page", "design"]) {
       if (filesRecord[key] !== undefined) throw new Error(`files.${key} is not allowed in an infra feature manifest`);
     }
-    if (requires.length === 0) throw new Error("an infra feature must require at least one catalog package");
+    // `requires` may be empty: an infra feature can wire core files without adding a package.
     const wiring = stringArray(record, "wiring");
     const seen = new Set<string>();
     for (const op of wiring) {
@@ -297,12 +313,16 @@ function validateFeatureManifest(raw: unknown, directoryName: string): FeatureMa
       if (!file.startsWith("server/")) throw new Error(`server file must start with server/: ${file}`);
     for (const file of tests)
       if (!file.startsWith("tests/")) throw new Error(`test file must start with tests/: ${file}`);
+    const migrations = optionalStringArray(record, "migrations") ?? [];
+    for (const file of migrations)
+      if (!file.startsWith("migrations/")) throw new Error(`migration must start with migrations/: ${file}`);
     return {
       kind,
       name,
       requires,
       wiring: wiring as InfraWiringOp[],
       files: { server, tests },
+      ...(migrations.length > 0 ? { migrations } : {}),
     };
   }
 

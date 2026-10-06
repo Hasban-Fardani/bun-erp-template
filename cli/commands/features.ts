@@ -117,7 +117,8 @@ export const commands = [
     }
 
     const migrationPaths: string[] = [];
-    if (manifest.kind === "server" && manifest.migrations && manifest.migrations.length > 0) {
+    // Server and infra features create tables; a web feature never ships a migration.
+    if (manifest.kind !== "web" && manifest.migrations && manifest.migrations.length > 0) {
       const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
       for (const source of manifest.migrations) {
         // Catalog names carry their own number (0002_departments); the installer renumbers

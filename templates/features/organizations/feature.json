@@ -1,0 +1,12 @@
+{
+  "$comment": "Infra-kind catalog feature. Read by `bun erp features:install`; paths are relative to this directory.",
+  "name": "organizations",
+  "kind": "infra",
+  "requires": [],
+  "wiring": ["auth-plugin", "auth-schema", "session-field", "schema-export"],
+  "files": {
+    "server": ["server/plugin.ts", "server/schema.ts"],
+    "tests": ["tests/organizations.test.ts"]
+  },
+  "migrations": ["migrations/0001_organizations.ts"]
+}
