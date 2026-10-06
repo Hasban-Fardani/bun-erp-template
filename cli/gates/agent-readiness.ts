@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { REQUIRED_AGENT_SKILLS } from "./agent-skills.ts";
-import { CODEGRAPH_VERSION, codegraphCommand } from "./codegraph.ts";
+import { CODEGRAPH_VERSION } from "./codegraph.ts";
 
 export type AgentReadinessInput = {
   installedSkills: string[];
@@ -8,8 +8,8 @@ export type AgentReadinessInput = {
   /** Files the index must contain; callers pass only the ones that exist on disk (apps ship empty). */
   requiredIndexedFiles?: readonly string[];
   indexError?: string;
-  cliVersion?: string;
-  cliError?: string;
+  /** `indexed_with_version` from the CodeGraph index metadata; absent on an index built by an old CLI. */
+  indexVersion?: string;
 };
 
 const REQUIRED_INDEXED_FILES = ["apps/server/http/app.ts", "apps/web/src/main.tsx"] as const;
@@ -19,12 +19,13 @@ export function evaluateAgentReadiness(input: AgentReadinessInput): string[] {
   for (const skill of REQUIRED_AGENT_SKILLS) {
     if (!input.installedSkills.includes(skill)) findings.push(`Install the project skill .agents/skills/${skill}.`);
   }
-  if (input.indexError) findings.push(`CodeGraph index is unavailable: ${input.indexError}`);
-  if (input.cliError) {
-    findings.push(`CodeGraph CLI is unavailable: ${input.cliError}`);
-  } else if (input.cliVersion && input.cliVersion !== CODEGRAPH_VERSION) {
+  if (input.indexError) {
+    findings.push(`CodeGraph index is unavailable: ${input.indexError}`);
+  } else if (!input.indexVersion) {
+    findings.push("CodeGraph index does not record its version; run bun erp init.");
+  } else if (input.indexVersion !== CODEGRAPH_VERSION) {
     findings.push(
-      `CodeGraph CLI reports ${input.cliVersion}; the project pins ${CODEGRAPH_VERSION}. Run bun erp init.`,
+      `CodeGraph indexed this project with ${input.indexVersion}; the project pins ${CODEGRAPH_VERSION}. Run bun erp init.`,
     );
   }
   const indexedFiles = new Set(input.indexedFiles);
@@ -49,32 +50,15 @@ export async function checkAgentReadiness(root: string): Promise<string[]> {
 
   let indexedFiles: string[] = [];
   let indexError: string | undefined;
+  let indexVersion: string | undefined;
   const indexPath = `${root}/.codegraph/codegraph.db`;
   try {
     if (!(await Bun.file(indexPath).exists())) throw new Error("missing .codegraph/codegraph.db");
-    // Bun's SQLite cannot open a WAL database read-only when the `-shm` sidecar is absent (a fresh
-    // `bun erp init` leaves none), so open read-write and only ever read from it.
-    const database = new Database(indexPath);
-    try {
-      indexedFiles = database
-        .query<{ path: string }, []>("SELECT path FROM files")
-        .all()
-        .map(({ path }) => path);
-    } finally {
-      database.close();
-    }
+    const index = readIndex(indexPath);
+    indexedFiles = index.indexedFiles;
+    indexVersion = index.indexVersion;
   } catch (error) {
     indexError = error instanceof Error ? error.message : String(error);
-  }
-
-  let cliVersion: string | undefined;
-  let cliError: string | undefined;
-  try {
-    const probe = Bun.spawnSync(codegraphCommand("--version"), { cwd: root, stdout: "pipe", stderr: "pipe" });
-    if (probe.exitCode !== 0) throw new Error(probe.stderr.toString().trim() || `exit ${probe.exitCode}`);
-    cliVersion = probe.stdout.toString().trim().split(/\s+/).filter(Boolean).pop();
-  } catch (error) {
-    cliError = error instanceof Error ? error.message : String(error);
   }
 
   return evaluateAgentReadiness({
@@ -82,7 +66,44 @@ export async function checkAgentReadiness(root: string): Promise<string[]> {
     indexedFiles,
     requiredIndexedFiles,
     indexError,
-    cliVersion,
-    cliError,
+    indexVersion,
   });
+}
+
+type IndexRead = { indexedFiles: string[]; indexVersion?: string };
+
+/**
+ * Bun's SQLite refuses a read-only WAL database when the `-shm` sidecar is absent (a fresh
+ * `bun erp init` leaves none), so fall back to a read-write open and still only read. The pinned
+ * CLI version comes from the index metadata: no `bunx` probe, so the gate stays offline.
+ */
+function readIndex(path: string): IndexRead {
+  try {
+    return readIndexFrom(new Database(path, { readonly: true }));
+  } catch {
+    return readIndexFrom(new Database(path));
+  }
+}
+
+function readIndexFrom(database: Database): IndexRead {
+  try {
+    const indexedFiles = database
+      .query<{ path: string }, []>("SELECT path FROM files")
+      .all()
+      .map(({ path }) => path);
+    return { indexedFiles, indexVersion: readIndexVersion(database) };
+  } finally {
+    database.close();
+  }
+}
+
+function readIndexVersion(database: Database): string | undefined {
+  try {
+    return database
+      .query<{ value: string }, []>("SELECT value FROM project_metadata WHERE key = 'indexed_with_version'")
+      .get()?.value;
+  } catch {
+    // Old index without metadata: the caller reports the missing version.
+    return undefined;
+  }
 }

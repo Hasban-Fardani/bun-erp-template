@@ -53,8 +53,7 @@ export const commands = [
         DEFAULT_APPS,
       );
     } else {
-      process.stderr.write("Usage: bun erp init --apps server,web [--yes]\n");
-      process.exit(1);
+      throw new Error("Usage: bun erp init --apps server,web [--yes]");
     }
 
     const installed: string[] = [];

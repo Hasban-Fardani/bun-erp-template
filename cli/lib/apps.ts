@@ -13,10 +13,9 @@ export async function requireApps(names: readonly string[]): Promise<void> {
     if (!(await isAppInstalled(name))) missing.push(`apps/${name}`);
   }
   if (missing.length === 0) return;
-  process.stderr.write(
-    `${missing.join(", ")} not installed. Run \`bun erp init\` (or \`bun erp apps:create <name> <server|web|mobile>\`) first.\n`,
+  throw new Error(
+    `${missing.join(", ")} not installed. Run \`bun erp init\` (or \`bun erp apps:create <name> <server|web|mobile>\`) first.`,
   );
-  process.exit(1);
 }
 
 function printAppTable(apps: WorkspaceApp[]): void {

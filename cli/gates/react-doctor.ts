@@ -3,6 +3,8 @@
  * warnings upstream but are treated as blocking here: page complexity is exactly what made
  * the list pages unmaintainable, so it must fail the build rather than scroll past.
  */
+import { join } from "node:path";
+
 const BLOCKING_WARNING_RULES = new Set(["no-high-complexity-react-function"]);
 
 export async function findReactDoctorIssues(root: string): Promise<string[]> {
@@ -16,9 +18,16 @@ async function inspectReact(root: string, directory: string): Promise<string[]> 
   const webDir = `${root}/${directory}`;
   if (!(await Bun.file(`${webDir}/package.json`).exists())) return [];
 
+  // The pinned root devDependency, not `bunx react-doctor`: a bare bunx can resolve another
+  // version and reach the network on every run.
+  const binary = join(root, "node_modules/.bin/react-doctor");
+  if (!(await Bun.file(binary).exists())) {
+    return [`react-doctor is not installed at ${binary} — run bun install.`];
+  }
+
   // Scan authored source only. `dist` also contains the Cloudflare Worker entry,
   // which necessarily includes server environment names and is not browser code.
-  const proc = Bun.spawn(["bunx", "react-doctor", "src", "--no-score", "--json", "--json-compact"], {
+  const proc = Bun.spawn([binary, "src", "--no-score", "--json", "--json-compact"], {
     cwd: webDir,
     stdout: "pipe",
     stderr: "pipe",

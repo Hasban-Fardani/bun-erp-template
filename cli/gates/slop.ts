@@ -84,12 +84,23 @@ async function governanceFindings(root: string): Promise<string[]> {
     stdout: "pipe",
     stderr: "pipe",
   });
-  const [out, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
   if (code === 0) return [];
-  return out
+  const findings = out
     .split("\n")
     .filter((line) => /^[A-Z_]+ /.test(line))
     .map((line) => line.trim());
+  // A crashed validator exits non-zero without a rule-prefixed line; an empty result would read
+  // as "clean", so the crash itself becomes the finding.
+  if (findings.length === 0) {
+    const detail = (err.trim() || out.trim() || "no output").split("\n").slice(0, 3).join(" / ");
+    return [`slop validator failed (exit ${code}): ${detail}`];
+  }
+  return findings;
 }
 
 /** "This file stores X" restates the file name and rots as soon as the file changes. */
