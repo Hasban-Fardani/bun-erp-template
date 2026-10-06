@@ -6,6 +6,7 @@ support and package assessments can age. Start at [documentation](../README.md).
 | Investigation | When to load |
 |---|---|
 | [Hardcoded paths](hardcoded-paths.md) | Investigating portability/configuration |
+| [Laravel parity gaps](laravel-parity-gap.md) | Planning framework-level capabilities |
 | [Gate audit](gate-audit.md) | Understanding past enforcement gaps |
 | [Form toolkit](metronic-utils.md) | Evaluating a justified form dependency |
 | [Tables](ui-tables.md) | Investigating table presentation |
