@@ -5,8 +5,9 @@ Sources: `http/helpers/errors.ts`, `routes/api.ts`, module routes and `http/help
 required terms, not the full behavior. `bun erp --help` owns command names.
 
 Business success: `{ data, meta: { requestId } }`.
-Application error: `{ error: { code, message, fields? }, meta: { requestId } }`.
-`fields` is an array of `{ path, message }`; validation and conflict errors may include it.
+Application error: `{ error: { code, message, fields?, details? }, meta: { requestId } }`.
+`fields` is an array of `{ path, message }`; validation errors include it. `details` carries
+machine-readable extras such as `{ currentVersion }` on a stale optimistic-locking write.
 For enveloped requests the request ID matches `X-Request-Id`.
 
 Exceptions: Better Auth `/api/v1/auth/*` owns its responses; health/readiness return direct

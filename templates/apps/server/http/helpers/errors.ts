@@ -19,7 +19,7 @@ export type FieldError = { path: string; message: string };
 
 /** Single error shape for the whole API (PRD §12). */
 export type ApiErrorBody = {
-  error: { code: ErrorCodeValue; message: string; fields?: FieldError[] };
+  error: { code: ErrorCodeValue; message: string; fields?: FieldError[]; details?: Record<string, unknown> };
   meta: { requestId: string };
 };
 
@@ -27,13 +27,22 @@ export class ApiError extends Error {
   readonly code: ErrorCodeValue;
   readonly status: number;
   readonly fields: FieldError[] | undefined;
+  /** Machine-readable extras (for example the current row version); never secrets. */
+  readonly details: Record<string, unknown> | undefined;
 
-  constructor(code: ErrorCodeValue, status: number, message: string, fields?: FieldError[]) {
+  constructor(
+    code: ErrorCodeValue,
+    status: number,
+    message: string,
+    fields?: FieldError[],
+    details?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.status = status;
     this.fields = fields;
+    this.details = details;
   }
 
   static notFound(message = "Resource not found"): ApiError {
@@ -52,6 +61,19 @@ export class ApiError extends Error {
   /** 409 for a state conflict (unique code already taken), not 422 which means malformed input. */
   static conflict(message: string, path = "code"): ApiError {
     return new ApiError(ErrorCode.conflict, 409, message, [{ path, message: "already in use" }]);
+  }
+
+  /** 409 for a stale optimistic-locking write; `details.currentVersion` is the row's live version. */
+  static versionConflict(currentVersion: number): ApiError {
+    return new ApiError(
+      ErrorCode.conflict,
+      409,
+      `Stale write: the row is now at version ${currentVersion}`,
+      undefined,
+      {
+        currentVersion,
+      },
+    );
   }
 
   static validation(issues: readonly z.core.$ZodIssue[]): ApiError {

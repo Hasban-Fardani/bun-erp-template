@@ -45,7 +45,12 @@ test("migration names follow Laravel conventions before falling back to a stub",
 test("scaffold output follows the feature, migration, and seeder contracts", () => {
   expect(renderMigrationSource()).toContain("export async function up(_database: Database)");
   expect(renderMigrationSource()).toContain("before running db:migrate");
-  expect(renderMigrationSource({ mode: "create", table: "posts" })).toContain("create table if not exists posts");
+  const createSql = renderMigrationSource({ mode: "create", table: "posts" });
+  expect(createSql).toContain("create table if not exists posts");
+  expect(createSql).toContain("deleted_at timestamptz");
+  expect(createSql).toContain("version integer not null default 0");
+  expect(createSql).not.toContain("number text not null");
+  expect(renderMigrationSource({ mode: "create", table: "posts", numbering: true })).toContain("number text not null");
   expect(renderMigrationSource({ mode: "alter", table: "posts", column: "status" })).toContain(
     "add column status text not null default ''",
   );
@@ -91,12 +96,49 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
 
   const service = contents.get("apps/server/features/sales-orders/service.ts") ?? "";
   expect(service).toContain("export async function listSalesOrders(");
-  expect(service).toContain('event: "sales-orders.created"');
-  expect(service).toContain("values({ ...input })");
+  expect(service).toContain('"sales-orders.created"');
+  expect(service).toContain("notDeleted(salesOrders)");
+  expect(service).toContain("async function requireSalesOrders(");
+  expect(service).toContain("bumpVersion(salesOrders)");
+  expect(service).toContain("versionGuard(salesOrders, id, expectedVersion)");
+  expect(service).toContain("ApiError.versionConflict");
+  expect(service).toContain("softDeleteRow(tx as unknown as Database, salesOrders, id)");
+  expect(service).toContain("export async function restoreSalesOrders(");
+  expect(service).toContain("export async function forceDeleteSalesOrders(");
+  expect(service).not.toContain("nextNumber");
 
   const schema = contents.get("apps/server/features/sales-orders/schema.ts") ?? "";
   expect(schema).toContain('"sales_orders"');
   expect(schema).not.toContain("organizations");
+  expect(schema).toContain("deletedAt: softDelete()");
+  expect(schema).toContain("version: version()");
+  expect(schema).toContain('from "../../database/soft-delete.ts"');
+  expect(schema).toContain('from "../../database/optimistic-locking.ts"');
+
+  const validation = contents.get("apps/server/features/sales-orders/validation.ts") ?? "";
+  expect(validation).toContain("expectedVersion: z.number().int().min(0)");
+  expect(validation).toContain("includeDeleted: z.stringbool()");
+
+  const generatedRoute = contents.get("apps/server/features/sales-orders/route.ts") ?? "";
+  expect(generatedRoute).toContain('"/:id/restore"');
+  expect(generatedRoute).toContain('"/:id/force"');
+});
+
+test("make:feature can allocate a numbering sequence on create", () => {
+  const numbered = renderFeatureScaffold("Sales Orders", {
+    sequence: { key: "sales-order", prefix: "SO-", padding: 4 },
+  });
+  const contents = new Map(numbered.files.map((file) => [file.path, file.contents]));
+  const schema = contents.get("apps/server/features/sales-orders/schema.ts") ?? "";
+  expect(schema).toContain('number: text("number").notNull()');
+
+  const service = contents.get("apps/server/features/sales-orders/service.ts") ?? "";
+  expect(service).toContain('await nextNumber(tx, "sales-order", { prefix: "SO-", padding: 4 })');
+  expect(service).toContain('from "../../database/numbering.ts"');
+
+  const plain = renderFeatureScaffold("Sales Orders");
+  const plainService = plain.files.find((file) => file.path.endsWith("service.ts"))?.contents ?? "";
+  expect(plainService).not.toContain("nextNumber");
 });
 
 test("make:feature wires permissions and routes without touching duplicates", () => {

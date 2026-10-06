@@ -5,7 +5,7 @@
   "requires": ["data-table"],
   "permissionResource": "department",
   "auditEntity": "department",
-  "auditFields": ["id", "name", "code", "isActive"],
+  "auditFields": ["id", "name", "code", "isActive", "deletedAt", "version"],
   "nav": {
     "titleKey": "navigation.departments",
     "url": "/departments",

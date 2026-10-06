@@ -15,7 +15,12 @@ export function registerErrorHandler(app: Hono<AppEnv>, ctx: AppContext) {
     const id = requestId(c);
     if (err instanceof ApiError) {
       const body: ApiErrorBody = {
-        error: { code: err.code, message: err.message, ...(err.fields ? { fields: err.fields } : {}) },
+        error: {
+          code: err.code,
+          message: err.message,
+          ...(err.fields ? { fields: err.fields } : {}),
+          ...(err.details ? { details: err.details } : {}),
+        },
         meta: { requestId: id },
       };
       return c.json(body, err.status as 400);

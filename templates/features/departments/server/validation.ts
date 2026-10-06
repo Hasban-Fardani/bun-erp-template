@@ -16,6 +16,8 @@ export const createDepartmentSchema = z.strictObject({
 });
 
 export const updateDepartmentSchema = z.strictObject({
+  // Optimistic locking: the caller sends the version it read; a stale value is a 409.
+  expectedVersion: z.number().int().min(0),
   name: z.string().trim().min(1).max(120).optional(),
   code: z
     .string()
@@ -29,6 +31,7 @@ export const updateDepartmentSchema = z.strictObject({
 export const listDepartmentsSchema = z.strictObject({
   ...listQueryParts({ sortable: ["name", "code", "createdAt"], defaultSort: "name" }),
   search: z.string().trim().max(120).optional(),
+  includeDeleted: z.stringbool().default(false),
 });
 
 export const CreateDepartmentInput = z.compile(createDepartmentSchema);
