@@ -5,7 +5,7 @@
   "ui_code_requested": true,
   "approved_by": "owner",
   "approved_at": "2026-10-06",
-  "mock_paths": ["docs/riset/ui-tables.md"],
+  "mock_paths": ["docs/ui-states.md"],
   "style": {
     "contrast_min_ratio": 4.8,
     "unique_font_sizes": 7,
@@ -33,7 +33,7 @@
       "reference_refs": ["shadcnspace table-01", "datatables"],
       "patterns": ["operational:dense-table", "operational:server-pagination"],
       "tradeoff": "One shared component means pagination, sorting and the empty state cannot be forgotten on a new list \u2014 which is exactly how three pages drifted apart before.",
-      "mock_path": "docs/riset/ui-tables.md",
+      "mock_path": "docs/ui-states.md",
       "authored_device": "status-first-code-column-next-to-name",
       "reference_evidence": [
         {
@@ -50,7 +50,7 @@
         },
         {
           "url": "https://datatables.net/manual/styling/classes",
-          "observed_artifact": "docs/riset/ui-tables.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "info_format": "1-25 / 137",
             "page_sizes": "10, 25, 50, 100"
@@ -69,7 +69,7 @@
         },
         {
           "url": "https://datatables.net/manual/styling/classes",
-          "observed_artifact": "docs/riset/ui-tables.md",
+          "observed_artifact": "docs/ui-states.md",
           "copied": "range label, page-size selector, first/prev/next/last",
           "deviated": "No per-column filter row; the toolbar holds a single search box",
           "reason": "Operators here run narrow org data; per-column filters add chrome without a use case."
@@ -98,7 +98,7 @@
         },
         {
           "url": "https://datatables.net/manual/styling/classes",
-          "observed_artifact": "docs/riset/ui-tables.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "info_format": "1-25 / 137",
             "page_sizes": "10, 25, 50, 100"

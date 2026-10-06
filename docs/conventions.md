@@ -2,7 +2,7 @@
 
 - Bun only; use exact dependency versions. Do not add a dependency when Bun or a Web Platform API fits.
 - Strict TypeScript; add meaningful types and do not bypass contracts with any assertions.
-- Comments explain why and use English. User-facing copy follows ui-copy.md and may be localized.
+- Comments explain why and use English. User-facing copy follows ui-states.md and may be localized.
 - Technical identifiers, configuration keys, enum values and API contract labels use English.
 - Server features use route, validation, service, policy and schema files; add api/components/hooks/providers/stores/types only when useful to that feature.
 - A service owns its transaction and transactional audit. Route code authorizes before validation and stays thin.

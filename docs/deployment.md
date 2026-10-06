@@ -22,8 +22,8 @@ server as the non-root `bun` user. It starts the queue worker alongside HTTP han
 manager, not a committed env file. `compose.yaml` is a local development stack with PostgreSQL and
 local storage; it binds the app port to loopback and is not a production preset. Production still needs
 HTTPS at a reverse proxy, a strong `BETTER_AUTH_SECRET`, `APP_ENV=production`, and durable database
-backups. The current template has no file upload feature or storage adapter, so do not add file-backed
-features to production until an object-storage adapter and its configuration are implemented.
+backups. The current template has no file upload feature; the `@bun-erp/storage` package supplies the
+server drivers and configuration (see operations.md) before a deployment adds file-backed features.
 
 For a separately hosted frontend, set `APP_WEB_MODE=separate`, build the Vite app, and use
 `bun erp server:api`; set `VITE_API_BASE_URL` to the public

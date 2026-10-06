@@ -6,7 +6,7 @@ description: Use when building or changing UI components, page layout, theme or 
 # UI rules
 
 Use existing `packages/ui/src` atomic components and theme tokens. Read
-[UI copy](../../docs/ui-copy.md) and [UI states](../../docs/ui-states.md).
+[UI states and interaction copy](../../docs/ui-states.md).
 This skill is self-contained; no external antislop core file is required.
 
 - Start with the operator's task, permissions and recovery path.

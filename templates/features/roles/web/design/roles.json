@@ -5,7 +5,7 @@
   "ui_code_requested": true,
   "approved_by": "owner",
   "approved_at": "2026-09-23",
-  "mock_paths": ["docs/riset/ui-tables.md"],
+  "mock_paths": ["docs/ui-states.md"],
   "style": {
     "contrast_min_ratio": 4.8,
     "unique_font_sizes": 6,
@@ -33,7 +33,7 @@
       "reference_refs": ["shadcnspace table-01", "datatables"],
       "patterns": ["operational:dense-table", "operational:server-pagination"],
       "tradeoff": "The count of permissions is what an admin compares between roles; putting it in its own right-aligned column makes the scan a comparison instead of a hunt.",
-      "mock_path": "docs/riset/ui-tables.md",
+      "mock_path": "docs/ui-states.md",
       "authored_device": "permission-count-as-the-load-bearing-column",
       "reference_evidence": [
         {
@@ -50,7 +50,7 @@
         },
         {
           "url": "https://datatables.net/manual/styling/classes",
-          "observed_artifact": "docs/riset/ui-tables.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "info_format": "1-25 / 137",
             "page_sizes": "10, 25, 50, 100"
@@ -69,7 +69,7 @@
         },
         {
           "url": "https://datatables.net/manual/styling/classes",
-          "observed_artifact": "docs/riset/ui-tables.md",
+          "observed_artifact": "docs/ui-states.md",
           "copied": "range label, page-size selector, first/prev/next/last",
           "deviated": "No per-column filter row; the toolbar holds a single search box",
           "reason": "Operators here run narrow org data; per-column filters add chrome without a use case."
@@ -98,7 +98,7 @@
         },
         {
           "url": "https://datatables.net/manual/styling/classes",
-          "observed_artifact": "docs/riset/ui-tables.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "info_format": "1-25 / 137",
             "page_sizes": "10, 25, 50, 100"

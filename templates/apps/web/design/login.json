@@ -5,7 +5,7 @@
   "ui_code_requested": true,
   "approved_by": "owner",
   "approved_at": "2026-09-23",
-  "mock_paths": ["docs/riset/login-entry-screens.md"],
+  "mock_paths": ["docs/ui-states.md"],
   "style": {
     "contrast_min_ratio": 4.8,
     "unique_font_sizes": 7,
@@ -33,12 +33,12 @@
       "reference_refs": ["https://ui.shadcn.com/blocks/login", "https://dashboard.stripe.com/login"],
       "patterns": ["operational:two-column-entry", "operational:form-column-single-job"],
       "tradeoff": "Needs a second column worth reading; on a template the honest content is the module list, so the panel argues instead of decorating. Costs horizontal room below lg, which is why the panel is dropped on phones.",
-      "mock_path": "docs/riset/login-entry-screens.md",
+      "mock_path": "docs/ui-states.md",
       "authored_device": "module-inventory-panel-read-from-navigation-source",
       "reference_evidence": [
         {
           "url": "https://ui.shadcn.com/blocks/login",
-          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "variants_shipped": "5",
             "two_column_variants": "2",
@@ -62,7 +62,7 @@
       "reference_fidelity": [
         {
           "url": "https://ui.shadcn.com/blocks/login",
-          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "observed_artifact": "docs/ui-states.md",
           "copied": "the two-column entry shape, and the idea that the second column must carry content rather than decoration",
           "deviated": "the panel lists this build's modules instead of a customer logo wall",
           "reason": "a template has no customers to name, and inventing logos or uptime numbers is fabrication; naming its own modules is the honest version of the same device"
@@ -82,12 +82,12 @@
       "reference_refs": ["https://vercel.com/login"],
       "patterns": ["operational:centred-card"],
       "tradeoff": "Cheapest and impossible to get wrong, but a template then looks like every other template and the operator learns nothing before signing in.",
-      "mock_path": "docs/riset/login-entry-screens.md",
+      "mock_path": "docs/ui-states.md",
       "authored_device": "none-beyond-typography",
       "reference_evidence": [
         {
           "url": "https://vercel.com/login",
-          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "form_width_px": "320",
             "input_height_px": "40",
@@ -98,7 +98,7 @@
         },
         {
           "url": "https://ui.shadcn.com/blocks/login",
-          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "single_card_variants": "3",
             "form_max_width_px": "384"
@@ -110,7 +110,7 @@
       "reference_fidelity": [
         {
           "url": "https://vercel.com/login",
-          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "observed_artifact": "docs/ui-states.md",
           "copied": "restraint: one column, one action, no second panel",
           "deviated": "input height kept at 44px rather than Vercel's 40px",
           "reason": "the measured band across the sample is 40-53px; 44px sits inside it and matches the rest of this app's controls"
@@ -118,5 +118,5 @@
       ]
     }
   ],
-  "notes": "The right-hand form column is fixed by measurement, not taste: 44px inputs and 16px text come from the login-entry-screens research, and 16px prevents mobile Safari from zooming on focus. The panel lists modules read from the same source the sidebar uses, so it cannot drift. Nothing about servers, sessions, or permissions appears on screen."
+  "notes": "The right-hand form column is fixed by measurement, not taste: 44px inputs and 16px text are recorded in the measured facts above, and 16px prevents mobile Safari from zooming on focus. The panel lists modules read from the same source the sidebar uses, so it cannot drift. Nothing about servers, sessions, or permissions appears on screen."
 }

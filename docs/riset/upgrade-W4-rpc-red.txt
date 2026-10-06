@@ -1,4 +1,0 @@
-RED [ "bad.ts: handwritten API path", "bad.ts: server import must use import type" ]
-GREEN []
-
-exit_code=0

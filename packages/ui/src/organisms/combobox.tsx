@@ -13,7 +13,7 @@ import { PopoverContent } from "../molecules/popover.tsx";
  * parts already installed. It exists because a plain select with many options is a scroll hunt:
  * above a handful of entries the user needs to type to narrow, not read a list.
  *
- * The threshold is enforced by `check:shadcn` — see docs/ui-components.md.
+ * The threshold is enforced by `check:shadcn` — see skills/ui-registry/SKILL.md.
  */
 
 export type ComboboxOption = { value: string; label: string; hint?: string };

@@ -1,6 +1,6 @@
 [test]
-# Default is 5s. These are integration tests: each file builds a PGlite database and runs the
-# real migrations, so a cold run on a small VPS can exceed 5s and fail for no real reason.
+# Default is 5s. These are integration tests: each file runs the real migrations against a
+# disposable PostgreSQL database, so a cold run on a small VPS can exceed 5s and fail for no real reason.
 timeout = 30000
 # Catalog sources wait under templates/ until `bun erp packages:install` or `bun erp apps:create`
 # copies them into packages/ or apps/. Their tests need the installed workspace dependencies, so

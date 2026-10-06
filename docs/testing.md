@@ -36,4 +36,4 @@ Mobile web-asset builds do not prove Android/iOS plugin execution, encryption, d
 store submission. CI produces Android debug and iOS simulator artifacts; device tests remain
 separate. See mobile.md.
 
-Historical run counts are recorded in tasks and riset; do not reuse them as current evidence.
+Historical run counts are recorded in docs/tasks; do not reuse them as current evidence.

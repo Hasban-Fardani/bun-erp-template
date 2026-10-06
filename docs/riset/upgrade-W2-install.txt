@@ -1,7 +1,0 @@
-[2.13ms] ".env"
-bun install v1.4.2 (744846f84)
-Resolving dependencies
-Resolved, downloaded and extracted [30]
-Saved lockfile
-
-Checked 209 installs across 356 packages (no changes) [847.00ms]

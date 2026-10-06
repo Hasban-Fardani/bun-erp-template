@@ -44,7 +44,7 @@ Cloudflare currently requires integrated hosting. These are the only runtime ada
 
 Run `bun erp init` once after cloning or copying the template. It installs the app combination,
 runs the first `bun install`, indexes the project, and installs the required agent skills.
-Development commands do not refresh or install agent tooling. See docs/agent-init.md and
+Development commands do not refresh or install agent tooling. See docs/development.md and
 docs/README.md.
 
 Browser QA uses Playwright only: set `QA_EMAIL` and `QA_PASSWORD`, start `bun dev`, install the

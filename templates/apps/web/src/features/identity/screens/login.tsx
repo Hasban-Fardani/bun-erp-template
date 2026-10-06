@@ -24,7 +24,7 @@ import { useLogin } from "../hooks/index.ts";
  * customers to name, and inventing logos or uptime numbers would be fabrication; naming its own
  * modules is the honest version of that device.
  *
- * The form column carries the measured density from docs/riset/login-entry-screens.md: 44px
+ * The form column carries the measured density recorded in the login design spec: 44px
  * inputs with 16px text. The 16px is load-bearing, not taste — below it, mobile Safari zooms the
  * viewport on focus, and the recovery link sits on the password label row the way comparable
  * products place it.

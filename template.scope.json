@@ -17,7 +17,7 @@
         "id": "client-name",
         "regex": "\\b(flora|idar|danari|daness|hasban)\\b",
         "reason": "Nama client/owner tidak boleh bocor ke repo template publik",
-        "allowIn": ["docs/tasks/**", "docs/riset/**", "*.local", ".gitignore", "LICENSE", "template.scope.json"],
+        "allowIn": ["docs/tasks/**", "*.local", ".gitignore", "LICENSE", "template.scope.json"],
         "flags": "i"
       },
       {

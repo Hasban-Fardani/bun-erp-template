@@ -1,6 +1,0 @@
-$ bun erp.ts check
-Checked 126 files in 116ms. No fixes applied.
-apps/server/modules/departments/route.ts(45,11): error TS2554: Expected 3 arguments, but got 4.
-tsc failed with exit 1
-error: script "erp" exited with code 1
-exit_code=1

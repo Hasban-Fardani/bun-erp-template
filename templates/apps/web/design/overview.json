@@ -5,7 +5,7 @@
   "ui_code_requested": true,
   "approved_by": "owner",
   "approved_at": "2026-10-05",
-  "mock_paths": ["docs/riset/shadcn-charts-blocks.md", "docs/riset/login-entry-screens.md"],
+  "mock_paths": ["docs/architecture.md", "docs/ui-states.md"],
   "style": {
     "contrast_min_ratio": 4.8,
     "unique_font_sizes": 6,
@@ -33,12 +33,12 @@
       "reference_refs": ["https://ui.shadcn.com/blocks", "https://ui.shadcn.com/blocks/login"],
       "patterns": ["operational:permission-filtered-grid", "operational:module-inventory"],
       "tradeoff": "A grid of reachable areas orients a new operator without inventing data. It carries no KPIs on purpose: a template has no business numbers, and a chart fed placeholder values would be a lie about the deployment.",
-      "mock_path": "docs/riset/login-entry-screens.md",
+      "mock_path": "docs/ui-states.md",
       "authored_device": "module-grid-read-from-the-same-navigation-source-the-sidebar-uses",
       "reference_evidence": [
         {
           "url": "https://ui.shadcn.com/blocks",
-          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "observed_artifact": "docs/architecture.md",
           "measured_facts": {
             "block": "dashboard-01",
             "composition": "sidebar-header-cards-chart-table"
@@ -48,7 +48,7 @@
         },
         {
           "url": "https://ui.shadcn.com/blocks/login",
-          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "observed_artifact": "docs/ui-states.md",
           "measured_facts": {
             "two_column_variants": "2",
             "single_card_variants": "3"
@@ -60,14 +60,14 @@
       "reference_fidelity": [
         {
           "url": "https://ui.shadcn.com/blocks",
-          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "observed_artifact": "docs/architecture.md",
           "copied": "the sidebar/header shell and a card grid for the content column",
           "deviated": "no charts and no KPI cards",
           "reason": "an ERP template has no business data; a chart with fabricated numbers would misrepresent the deployment, and the audit rules forbid it."
         },
         {
           "url": "https://ui.shadcn.com/blocks/login",
-          "observed_artifact": "docs/riset/login-entry-screens.md",
+          "observed_artifact": "docs/ui-states.md",
           "copied": "the entry surface names what the account can reach",
           "deviated": "no cover panel and no metrics",
           "reason": "an authenticated operator already knows the product; the useful content is the list of areas their role opens, read from the navigation source."
@@ -80,12 +80,12 @@
       "reference_refs": ["https://ui.shadcn.com/charts/"],
       "patterns": ["operational:permission-filtered-grid"],
       "tradeoff": "Rejected: the chart components exist, but there is no domain data to fill them. Shipping trend lines over invented values would fabricate the state of the business.",
-      "mock_path": "docs/riset/shadcn-charts-blocks.md",
+      "mock_path": "docs/architecture.md",
       "authored_device": "none",
       "reference_evidence": [
         {
           "url": "https://ui.shadcn.com/charts/",
-          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "observed_artifact": "docs/architecture.md",
           "measured_facts": {
             "families": "area-bar-line-pie-radar-radial",
             "data_source": "sample-records"
@@ -95,7 +95,7 @@
         },
         {
           "url": "https://ui.shadcn.com/blocks",
-          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "observed_artifact": "docs/architecture.md",
           "measured_facts": {
             "block": "dashboard-01",
             "content": "chart-and-recent-sales-table"
@@ -107,7 +107,7 @@
       "reference_fidelity": [
         {
           "url": "https://ui.shadcn.com/charts/",
-          "observed_artifact": "docs/riset/shadcn-charts-blocks.md",
+          "observed_artifact": "docs/architecture.md",
           "copied": "nothing",
           "deviated": "charts are not mounted on the landing screen",
           "reason": "the anti-slop rules ban fabricated metrics; the charts wait for a product spec that supplies real data."

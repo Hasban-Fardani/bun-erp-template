@@ -3,7 +3,7 @@
   "surface_class": "operational_surface",
   "status": "INHERITED",
   "ui_code_requested": true,
-  "mock_paths": ["docs/riset/ui-tables.md"],
+  "mock_paths": ["docs/ui-states.md"],
   "style": {
     "contrast_min_ratio": 4.8,
     "unique_font_sizes": 7,
