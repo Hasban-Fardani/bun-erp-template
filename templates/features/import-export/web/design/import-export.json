@@ -1,0 +1,122 @@
+{
+  "feature_id": "import-export",
+  "surface_class": "operational_surface",
+  "status": "IMPLEMENTED",
+  "ui_code_requested": true,
+  "approved_by": "owner",
+  "approved_at": "2026-10-07",
+  "mock_paths": ["docs/ui-states.md"],
+  "style": {
+    "contrast_min_ratio": 4.8,
+    "unique_font_sizes": 7,
+    "unique_weights": 2,
+    "accent_hues": 1,
+    "nested_card_depth": 0,
+    "icon_libraries": 1,
+    "radius_styles": 3,
+    "browser_surfaces_themed": true,
+    "reduced_motion_respected": true,
+    "section_scaffolds_repeated": 0,
+    "hero_cliche_stack": false,
+    "kicker_above_heading": false,
+    "gradient_multistop": false,
+    "emoji_as_icon": false,
+    "motion_unmapped": false,
+    "invented_identity_assets": [],
+    "fabricated_portrait": false,
+    "copy_forbidden_hits": []
+  },
+  "options": [
+    {
+      "option_id": "stepwise-wizard-with-report",
+      "role": "primary",
+      "reference_refs": ["shadcnspace table-01", "datatables"],
+      "patterns": ["operational:dense-table", "operational:server-pagination", "operational:status-first"],
+      "tradeoff": "Three explicit steps (choose, check, watch) cost one extra click versus a single form, and in exchange a bad file is visible before anything is written.",
+      "mock_path": "docs/ui-states.md",
+      "authored_device": "dry-run-report-before-write-with-row-level-errors",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "measured_facts": {
+            "header_height": "44.5px",
+            "row_height": "57px",
+            "cell_padding": "p-3 ps-6",
+            "hover": "bg-muted/50"
+          },
+          "mechanism": "dense-table-with-visible-row-separators",
+          "application": "The error report reuses the table density so row numbers and columns line up with the source file."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/ui-states.md",
+          "measured_facts": {
+            "info_format": "1-25 / 137",
+            "page_sizes": "10, 25, 50, 100"
+          },
+          "mechanism": "footer-with-page-size-selector-and-range-label",
+          "application": "Import history is a server-paged table with the same footer, so a long history stays scannable."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "copied": "44px header, full-opacity separators, hover on the row",
+          "deviated": "The wizard itself is a two-column field grid, not a card stack",
+          "reason": "Two fields (data type and file) do not earn a card each; a grid keeps them on one line at desktop width."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/ui-states.md",
+          "copied": "range label, page-size selector, first/prev/next/last",
+          "deviated": "No per-column filter row; the toolbar holds one search box",
+          "reason": "Import history is searched by data type label, not by five columns."
+        }
+      ]
+    },
+    {
+      "option_id": "single-form-with-toast",
+      "role": "alternate",
+      "reference_refs": ["shadcnspace table-01"],
+      "patterns": ["operational:dense-table"],
+      "tradeoff": "Rejected: one submit means the first feedback arrives after rows are already written, and the user cannot see which line failed until the batch finishes.",
+      "authored_device": "none",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "measured_facts": {
+            "header_height": "44.5px",
+            "row_height": "57px",
+            "cell_padding": "p-3 ps-6",
+            "hover": "bg-muted/50"
+          },
+          "mechanism": "dense-table-with-visible-row-separators",
+          "application": "Same table density, but with no report step to attach it to."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/ui-states.md",
+          "measured_facts": {
+            "info_format": "1-25 / 137",
+            "page_sizes": "10, 25, 50, 100"
+          },
+          "mechanism": "footer-with-page-size-selector-and-range-label",
+          "application": "The history table keeps the footer even without a report step."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "/tmp/sspace-tables.png",
+          "copied": "dense rows and separators",
+          "deviated": "No progress view",
+          "reason": "A single request cannot report per-row progress, so the cancel and resume actions have nowhere to live."
+        }
+      ]
+    }
+  ],
+  "notes": "Import/export is an operational surface: the wizard's job is to make a bad file visible before it writes, so the dry-run report is the visual centerpiece, and the history table uses the shared ResourceTable frame with the export action in its header. Progress uses the shared Progress atom; status uses one badge with a single accent hue."
+}
