@@ -26,5 +26,6 @@ append-only or high-volume tables (logs, events, jobs, notifications, sessions, 
 8. Add route, service and migration tests. Keep feature tests under apps/server/tests/features/<feature>.
 9. Run bun erp check and bun erp test; report the actual results.
 
-Organization scope comes from server context. Use rowsOf() for driver-neutral raw query results.
-Unauthorized is 401; missing permission is 403; missing organization-scoped rows are 404.
+The actor comes from the session, never from input. The default server is tenant-free; organizations
+are the opt-in `organizations` feature. Use rowsOf() for driver-neutral raw query results.
+Unauthorized is 401; missing permission is 403; a missing row is 404.
