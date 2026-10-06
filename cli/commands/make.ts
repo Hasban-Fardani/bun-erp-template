@@ -62,10 +62,10 @@ export const commands = [
     const navPath = "apps/web/src/config/navigation.ts";
     const nav = addNavItem(await Bun.file(resolve(repoRoot, navPath)).text(), scaffold);
     if (nav.status === "added") await Bun.write(resolve(repoRoot, navPath), nav.source);
-    const enPath = "packages/i18n/src/messages/en-US.ts";
+    const enPath = "packages/i18n/src/utils/messages/en-US.ts";
     const en = addI18nKeys(await Bun.file(resolve(repoRoot, enPath)).text(), scaffold, "en-US");
     if (en.status === "added") await Bun.write(resolve(repoRoot, enPath), en.source);
-    const idPath = "packages/i18n/src/messages/id-ID.ts";
+    const idPath = "packages/i18n/src/utils/messages/id-ID.ts";
     const id = addI18nKeys(await Bun.file(resolve(repoRoot, idPath)).text(), scaffold, "id-ID");
     if (id.status === "added") await Bun.write(resolve(repoRoot, idPath), id.source);
 
@@ -124,7 +124,7 @@ export const commands = [
     if (en.status === "added" && id.status === "added") {
       process.stdout.write(`Added i18n keys: ${scaffold.name}.* and navigation.${scaffold.name}\n`);
     } else {
-      process.stdout.write(`Add the ${scaffold.name}.* i18n keys to packages/i18n/src/messages\n`);
+      process.stdout.write(`Add the ${scaffold.name}.* i18n keys to packages/i18n/src/utils/messages\n`);
     }
     process.stdout.write("Regenerated apps/web/src/routeTree.gen.ts\n");
     process.stdout.write("Next: add the domain fields, then run bun erp db:migrate && bun erp db:seed.\n");

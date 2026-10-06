@@ -30,8 +30,8 @@ const WIRING_FILES = {
   audit: "apps/server/features/audit/redact.ts",
   routes: "apps/server/routes/api.ts",
   nav: "apps/web/src/config/navigation.ts",
-  enUS: "packages/i18n/src/messages/en-US.ts",
-  idID: "packages/i18n/src/messages/id-ID.ts",
+  enUS: "packages/i18n/src/utils/messages/en-US.ts",
+  idID: "packages/i18n/src/utils/messages/id-ID.ts",
 } as const;
 
 const WEB_MANIFEST = "apps/web/package.json";
