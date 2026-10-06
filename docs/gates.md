@@ -11,13 +11,16 @@ prints that catalog as a table.
 ## How the chain works
 
 1. `cli/gates/<name>.ts` implements the check and returns findings (a typed array or `string[]`).
-2. `cli/lib/gates.ts` defines `GATE_CATALOG` and `runGate`, the dispatcher every standalone command
-   uses.
-3. `cli/gates/parallel-gates.ts` derives the `check` job list from the catalog in catalog order;
-   `check:fast` runs the file-level subset named in `FAST_GATE_NAMES`.
+2. `cli/lib/gates.ts` defines `GATE_CATALOG` and `GATE_IMPLEMENTATIONS`, the catalog-keyed dispatch
+   map every standalone command uses through `runGate`. A catalog entry without an implementation is
+   a type error, so a gate can never silently fall through to another gate's runner.
+3. `cli/gates/parallel-gates.ts` derives the `check` job list from the catalog in catalog order and
+   runs the pure gates in-process through `collectGateFindings`; only gates whose implementation
+   shells out to another binary (`impeccable`, `react`, `readiness`, `scope`, `slop`) stay in a child
+   process. `check:fast` runs the file-level subset named in `FAST_GATE_NAMES`.
 4. `cli/commands/check.ts` registers the `check:*` commands and `check:gate`; `check:gate <name>`
    looks the command up in the catalog and forwards any extra arguments.
-5. `bun erp check` runs Biome, `tsc` and all 25 gates (up to six at a time); `bun erp check:fast`
+5. `bun erp check` runs Biome, `tsc` and all 25 gates (up to eight at a time); `bun erp check:fast`
    skips the typecheck, the React audit and the slower gates for the inner loop. Neither runs tests
    or builds — use `bun erp test` and the app build for those.
 
@@ -35,7 +38,7 @@ prints that catalog as a table.
 | docs | `check:docs` | `cli/gates/docs-guard.ts` | Relative Markdown links resolve; every package has a matching `llms.txt` | Never |
 | impeccable | `check:impeccable` | `cli/gates/impeccable.ts` | The pinned Impeccable design detector reports 0 anti-pattern findings on every UI surface | UI directories that are not installed |
 | language | `check:language` | `cli/gates/language-guard.ts` | Indonesian identifiers and technical enum values in first-party source | Never; it scans the directories that exist |
-| migrations | `check:migrations` | `cli/commands/check.ts` (inline) | Migration modules are named `NNNN_snake_case.ts` | `apps/server` is not installed |
+| migrations | `check:migrations` | `cli/gates/migrations.ts` | Migration modules are named `NNNN_snake_case.ts` | `apps/server` is not installed |
 | mobile | `check:mobile` | `cli/gates/mobile-gate.ts` | Capacitor version pin, entry files, offline SQLite encryption, release workflow | `apps/mobile` is not installed |
 | motion | `check:motion` | `cli/gates/motion-gate.ts` | Inline keyframes and looping animations without a reduced-motion escape | `packages/ui/src/styles.css` is missing |
 | package-targets | `check:package-targets` | `cli/gates/package-targets.ts` | Multi-target packages keep source under `src/<target>/` | Packages without `src/` |
@@ -68,7 +71,8 @@ them.
 
 1. Write `cli/gates/<name>.ts` exporting an async function that returns findings. Keep it read-only
    and report paths relative to the repo root; it must not import `cli/tasks/` or `apps/**`.
-2. Add an entry to `GATE_CATALOG` in `cli/lib/gates.ts` (`name`, `command`, `file`, `summary`).
+2. Add an entry to `GATE_CATALOG` in `cli/lib/gates.ts` (`name`, `command`, `file`, `summary`) and
+   its implementation to `GATE_IMPLEMENTATIONS`; TypeScript fails the build until both exist.
    `bun erp check` picks it up automatically in catalog order.
 3. Register the standalone command in `cli/commands/check.ts` with `guard(...)` and
    `runGate("<name>")`, or forward an existing command.

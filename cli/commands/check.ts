@@ -29,17 +29,11 @@ export const commands = [
       return;
     }
     if (!name) {
-      process.stderr.write(
-        "Usage: bun erp check:gate <name>\nRun `bun erp check:gate --list` to list available gates.\n",
-      );
-      process.exit(1);
+      throw new Error("Usage: bun erp check:gate <name>\nRun `bun erp check:gate --list` to list available gates.");
     }
     const legacyCommand = CHECK_GATE_COMMANDS[name];
     if (!legacyCommand) {
-      process.stderr.write(
-        `Unknown check gate: ${name}. Available: ${Object.keys(CHECK_GATE_COMMANDS).sort().join(", ")}\n`,
-      );
-      process.exit(1);
+      throw new Error(`Unknown check gate: ${name}. Available: ${Object.keys(CHECK_GATE_COMMANDS).sort().join(", ")}`);
     }
     if (!(await runCommand(legacyCommand, forwardedArgs))) {
       throw new Error(`Check gate command is not registered: ${legacyCommand}`);
@@ -77,8 +71,8 @@ export const commands = [
   defineCommand("check", async () => {
     // biome and tsc run first: a type error explains most of the gate noise below, so seeing
     // them first saves reading twelve reports to find the cause.
-    const { runProjectChecks } = await import("../gates/parallel-gates.ts");
-    process.stdout.write("Running project checks (up to 6 in parallel)…\n");
+    const { defaultConcurrency, runProjectChecks } = await import("../gates/parallel-gates.ts");
+    process.stdout.write(`Running project checks (up to ${defaultConcurrency()} in parallel)…\n`);
     const results = await runProjectChecks(repoRoot, {
       onResult: (r) => process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`),
     });
@@ -109,11 +103,7 @@ export const commands = [
 
   // Readiness gate: the checks that only matter when this stops being a laptop project.
   defineCommand("check:prod", async () => {
-    await guard("readiness", async () => {
-      const { checkReadiness } = await import("../gates/readiness.ts");
-      const findings = (await checkReadiness(repoRoot)).map((f) => `${f.rule}: ${f.detail}`);
-      if (findings.length > 0) throw new GateFailure(findings);
-    });
+    await guard("readiness", () => runGate("readiness"));
     process.stdout.write("check:prod: OK\n");
   }),
 
@@ -123,13 +113,8 @@ export const commands = [
       process.stdout.write("apps/server is not installed; no migrations to check.\n");
       return;
     }
-    const files = [...new Bun.Glob("*").scanSync({ cwd: MIGRATIONS_DIR })].sort();
-    const bad = files.filter((file) => !/^\d{4}_[a-z0-9_]+\.ts$/.test(file));
-    if (bad.length > 0) {
-      process.stderr.write(`Migration modules must be NNNN_snake_case.ts: ${bad.join(", ")}\n`);
-      process.exit(1);
-    }
-    process.stdout.write(`${files.length} TypeScript migration module(s) named correctly.\n`);
+    await guard("migrations", () => runGate("migrations"));
+    process.stdout.write("Migration modules named correctly.\n");
   }),
 
   defineCommand("check:scope", async () => {

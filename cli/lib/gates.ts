@@ -1,14 +1,15 @@
+import { join } from "node:path";
 import { checkScope } from "../gates/scope.ts";
 import { validateSkills } from "../gates/skills.ts";
 import { loadTasks, validateTasks } from "../gates/tasks.ts";
-import { GateFailure, repoRoot, SKILLS_DIR, TASKS_DIR } from "./repo.ts";
+import { GateFailure, repoRoot } from "./repo.ts";
 
 export type GateCatalogEntry = {
   /** `check:gate <name>` key; also the name shown in `check` output. */
   readonly name: string;
   /** Registered CLI command that runs this gate on its own. */
   readonly command: string;
-  /** Repo-relative module implementing the gate; migrations run inline in cli/commands/check.ts. */
+  /** Repo-relative module implementing the gate. */
   readonly file: string;
   /** One sentence: what a failure means. */
   readonly summary: string;
@@ -138,7 +139,7 @@ export const GATE_CATALOG = [
   {
     name: "migrations",
     command: "check:migrations",
-    file: "cli/commands/check.ts",
+    file: "cli/gates/migrations.ts",
     summary: "Migration modules are named NNNN_snake_case.ts.",
   },
   {
@@ -180,84 +181,96 @@ export const CHECK_GATE_COMMANDS: Readonly<Record<string, string>> = Object.from
   GATE_CATALOG.map(({ name, command }) => [name, command]),
 );
 
-/** Gates read repo files directly — used by `check` and callable on their own. */
-export async function runGate(kind: GateName): Promise<void> {
-  let findings: string[];
-  if (kind === "agents") {
-    const { checkAgentReadiness } = await import("../gates/agent-readiness.ts");
-    findings = await checkAgentReadiness(repoRoot);
-  } else if (kind === "skills") {
-    findings = (await validateSkills(SKILLS_DIR)).map((f) => `${f.file}: ${f.message}`);
-  } else if (kind === "task") {
-    findings = validateTasks(await loadTasks(TASKS_DIR)).map((f) => `${f.file}: ${f.message}`);
-  } else if (kind === "tdd") {
-    const { checkTdd } = await import("../gates/tdd.ts");
-    findings = (await checkTdd(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
-  } else if (kind === "scope") {
-    findings = (await checkScope(repoRoot)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`);
-  } else if (kind === "slop") {
-    const { findCodeSlop } = await import("../gates/slop.ts");
-    findings = await findCodeSlop(repoRoot);
-  } else if (kind === "platform") {
-    const { checkPlatform } = await import("../gates/platform.ts");
-    findings = (await checkPlatform(repoRoot)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`);
-  } else if (kind === "copy") {
-    const { checkUserCopy } = await import("../gates/copy-guard.ts");
-    findings = (await checkUserCopy(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — "${f.text}" (${f.why})`);
-  } else if (kind === "surface") {
-    const { checkInteractiveSurface } = await import("../gates/interactive-surface.ts");
-    findings = (await checkInteractiveSurface(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
-  } else if (kind === "design") {
-    const { checkDesign } = await import("../gates/design-gate.ts");
-    const { checkContrast } = await import("../gates/contrast-gate.ts");
-    findings = [
-      ...(await checkDesign(repoRoot)).map((f) => `${f.screen} ${f.code}/${f.severity} — ${f.detail}`),
-      ...(await checkContrast(repoRoot)),
-    ];
-  } else if (kind === "impeccable") {
-    const { checkImpeccable } = await import("../gates/impeccable.ts");
-    findings = await checkImpeccable(repoRoot);
-  } else if (kind === "shadcn") {
-    const { checkShadcn } = await import("../gates/shadcn-guard.ts");
-    findings = (await checkShadcn(repoRoot)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
-  } else if (kind === "ui") {
-    const { checkUiCompleteness } = await import("../gates/ui-completeness.ts");
-    findings = (await checkUiCompleteness(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
-  } else if (kind === "motion") {
-    const { checkMotion } = await import("../gates/motion-gate.ts");
-    findings = (await checkMotion(repoRoot)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
-  } else if (kind === "architecture") {
-    const { checkArchitecture } = await import("../gates/architecture-guard.ts");
-    findings = await checkArchitecture(repoRoot);
-  } else if (kind === "language") {
+type GateImplementation = (root: string) => Promise<string[]>;
+
+/**
+ * Catalog-driven dispatch: every `GATE_CATALOG` name maps to a lazy loader for its implementation.
+ * `Record<GateName, GateImplementation>` makes a missing entry a type error, so a gate can never
+ * silently fall through to another gate's runner. Exported so the dispatch test asserts the same
+ * mapping at runtime.
+ */
+export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>> = {
+  agents: async (root) => (await import("../gates/agent-readiness.ts")).checkAgentReadiness(root),
+  architecture: async (root) => (await import("../gates/architecture-guard.ts")).checkArchitecture(root),
+  language: async (root) => {
     const { checkTechnicalLanguage } = await import("../gates/language-guard.ts");
-    findings = (await checkTechnicalLanguage(repoRoot)).map(
+    return (await checkTechnicalLanguage(root)).map(
       (f) =>
         `${f.file}: Indonesian term "${f.term}" in ${f.location}; use English for technical names and closed values`,
     );
-  } else if (kind === "mobile") {
+  },
+  mobile: async (root) => {
     const { checkMobile } = await import("../gates/mobile-gate.ts");
-    findings = (await checkMobile(repoRoot)).map((f) => `${f.rule}: ${f.detail}`);
-  } else if (kind === "package-targets") {
-    const { checkPackageTargets } = await import("../gates/package-targets.ts");
-    findings = await checkPackageTargets(repoRoot);
-  } else if (kind === "versioning") {
+    return (await checkMobile(root)).map((f) => `${f.rule}: ${f.detail}`);
+  },
+  versioning: async (root) => {
     const { checkWorkspaceVersions } = await import("../gates/versioning.ts");
-    findings = (await checkWorkspaceVersions(repoRoot)).map(
+    return (await checkWorkspaceVersions(root)).map(
       (f) => `${f.packageName}: ${f.detail} Found ${f.version}; expected ${f.expected}.`,
     );
-  } else if (kind === "docs") {
-    const { checkDocs } = await import("../gates/docs-guard.ts");
-    findings = await checkDocs(repoRoot);
-  } else if (kind === "rpc") {
-    const { checkRpc } = await import("../gates/rpc-guard.ts");
-    findings = await checkRpc(repoRoot);
-  } else if (kind === "ci") {
-    const { checkCi } = await import("../gates/ci-guard.ts");
-    findings = await checkCi(repoRoot);
-  } else {
-    const { findReactDoctorIssues } = await import("../gates/react-doctor.ts");
-    findings = await findReactDoctorIssues(repoRoot);
-  }
+  },
+  docs: async (root) => (await import("../gates/docs-guard.ts")).checkDocs(root),
+  rpc: async (root) => (await import("../gates/rpc-guard.ts")).checkRpc(root),
+  ci: async (root) => (await import("../gates/ci-guard.ts")).checkCi(root),
+  scope: async (root) => (await checkScope(root)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`),
+  slop: async (root) => (await import("../gates/slop.ts")).findCodeSlop(root),
+  platform: async (root) => {
+    const { checkPlatform } = await import("../gates/platform.ts");
+    return (await checkPlatform(root)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`);
+  },
+  copy: async (root) => {
+    const { checkUserCopy } = await import("../gates/copy-guard.ts");
+    return (await checkUserCopy(root)).map((f) => `${f.file}:${f.line} ${f.rule} — "${f.text}" (${f.why})`);
+  },
+  design: async (root) => {
+    const { checkDesign } = await import("../gates/design-gate.ts");
+    const { checkContrast } = await import("../gates/contrast-gate.ts");
+    return [
+      ...(await checkDesign(root)).map((f) => `${f.screen} ${f.code}/${f.severity} — ${f.detail}`),
+      ...(await checkContrast(root)),
+    ];
+  },
+  impeccable: async (root) => (await import("../gates/impeccable.ts")).checkImpeccable(root),
+  ui: async (root) => {
+    const { checkUiCompleteness } = await import("../gates/ui-completeness.ts");
+    return (await checkUiCompleteness(root)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  },
+  motion: async (root) => {
+    const { checkMotion } = await import("../gates/motion-gate.ts");
+    return (await checkMotion(root)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  },
+  shadcn: async (root) => {
+    const { checkShadcn } = await import("../gates/shadcn-guard.ts");
+    return (await checkShadcn(root)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
+  },
+  surface: async (root) => {
+    const { checkInteractiveSurface } = await import("../gates/interactive-surface.ts");
+    return (await checkInteractiveSurface(root)).map((f) => `${f.file}:${f.line} ${f.rule} — ${f.detail}`);
+  },
+  react: async (root) => (await import("../gates/react-doctor.ts")).findReactDoctorIssues(root),
+  migrations: async (root) => (await import("../gates/migrations.ts")).checkMigrations(root),
+  "package-targets": async (root) => (await import("../gates/package-targets.ts")).checkPackageTargets(root),
+  skills: async (root) => (await validateSkills(join(root, "skills"))).map((f) => `${f.file}: ${f.message}`),
+  task: async (root) => validateTasks(await loadTasks(join(root, "docs/tasks"))).map((f) => `${f.file}: ${f.message}`),
+  tdd: async (root) => {
+    const { checkTdd } = await import("../gates/tdd.ts");
+    return (await checkTdd(root)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);
+  },
+  readiness: async (root) => {
+    const { checkReadiness } = await import("../gates/readiness.ts");
+    return (await checkReadiness(root)).map((f) => `${f.rule}: ${f.detail}`);
+  },
+};
+
+/** Run a catalog gate against `root` and return its findings without throwing or exiting. */
+export async function collectGateFindings(kind: GateName, root: string = repoRoot): Promise<string[]> {
+  const implementation = GATE_IMPLEMENTATIONS[kind];
+  if (!implementation) throw new Error(`Gate "${kind}" has no implementation in GATE_IMPLEMENTATIONS.`);
+  return implementation(root);
+}
+
+/** Gates read repo files directly — used by `check` and callable on their own. */
+export async function runGate(kind: GateName, root: string = repoRoot): Promise<void> {
+  const findings = await collectGateFindings(kind, root);
   if (findings.length > 0) throw new GateFailure(findings);
 }

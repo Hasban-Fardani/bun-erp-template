@@ -83,9 +83,11 @@ async function checkNoRealDomains(root: string): Promise<Check> {
   // Matches this deployment's own names only; the list lives in template.scope.json's spirit.
   // Kept narrow so it cannot accidentally ban a legitimate generic word.
   // The regex is assembled from fragments: this file is a gate that forbids real deployment
-  // names, so naming one literally would make the gate accuse itself (which it did).
-  const TLD = [".web", ".id\b"].join("");
-  const suspicious = new RegExp(["dana", "rifamily|"].join("") + TLD, "i");
+  // names, so naming one literally would make the gate accuse itself (which it did). `\b` needs
+  // the double backslash or a normal string turns it into a backspace character.
+  const deploymentName = ["dana", "rifamily"].join("");
+  const deploymentDomain = "\\.web\\.id\\b";
+  const suspicious = new RegExp(`${deploymentName}|${deploymentDomain}`, "i");
   for (const file of out.split("\n").filter(Boolean)) {
     if (/\.(png|jpg|lock)$/.test(file)) continue;
     const body = await Bun.file(`${root}/${file}`)
