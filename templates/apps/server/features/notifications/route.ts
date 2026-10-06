@@ -3,6 +3,7 @@ import { factory } from "../../http/factory.ts";
 import { doc } from "../../http/helpers/api-docs.ts";
 import { ApiError, ok } from "../../http/helpers/errors.ts";
 import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-query.ts";
+import { idParam } from "../../http/helpers/params.ts";
 import { validate } from "../../http/helpers/validate.ts";
 import { authorizeActor } from "./policy.ts";
 import { countUnread, listNotifications, markAllRead, markRead } from "./service.ts";
@@ -80,6 +81,7 @@ export function notificationRoutes(ctx: AppContext) {
         summary: "Tandai satu notifikasi dibaca",
         data: { type: "object", properties: { id: { type: "string" } } },
       }),
+      validate("param", idParam),
       async (c) => {
         const actor = await authorizeActor(c, ctx);
         const id = c.req.param("id");

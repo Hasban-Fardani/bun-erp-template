@@ -6,6 +6,8 @@
 - Technical identifiers, configuration keys, enum values and API contract labels use English.
 - Server features use route, validation, service, policy and schema files; add api/components/hooks/providers/stores/types only when useful to that feature.
 - A service owns its transaction and transactional audit. Route code authorizes before validation and stays thin.
+- `make:feature` emits optimistic locking by default; soft delete is opt-in (`--soft-delete`) and only for master data that history references — never for append-only or high-volume tables (logs, events, jobs, notifications, sessions, join tables).
+- Validate `:id` path params with the shared `idParam` schema (`http/helpers/params.ts`); a malformed uuid is a 422, never a database 500.
 - API routes stay under /api/v1. Preserve the typed Hono route chain and generated OpenAPI coverage.
 - Migrations are forward-only numbered TypeScript modules exporting up(database); never reset an applied ledger.
 - Keep job handlers idempotent, use an idempotency key for repeatable side effects, and never store credentials in job payloads.

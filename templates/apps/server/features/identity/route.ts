@@ -4,6 +4,7 @@ import { doc } from "../../http/helpers/api-docs.ts";
 import { authorize } from "../../http/helpers/authorize.ts";
 import { ApiError, ok } from "../../http/helpers/errors.ts";
 import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-query.ts";
+import { idParam, idRoleKeyParam } from "../../http/helpers/params.ts";
 import { validate } from "../../http/helpers/validate.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
 import {
@@ -58,6 +59,7 @@ export function identityRoutes(ctx: AppContext) {
       authorize(ctx, ACTION_PERMISSION.read),
       doc({ tag: "users", permission: ACTION_PERMISSION.read, summary: "Detail pengguna", data: userRef }),
 
+      validate("param", idParam),
       async (c) => {
         const user = await findUser(ctx.db, c.req.param("id"));
         if (!user) throw ApiError.notFound("User not found");
@@ -92,6 +94,7 @@ export function identityRoutes(ctx: AppContext) {
         data: { type: "object", properties: { id: { type: "string" } } },
       }),
 
+      validate("param", idParam),
       async (c) => {
         const actor = c.get("actor");
         return ok(c, await deleteUser(ctx.db, c.req.param("id"), actorOf(actor)));
@@ -108,6 +111,7 @@ export function identityRoutes(ctx: AppContext) {
         data: userRef,
       }),
 
+      validate("param", idParam),
       validate("json", UpdateUserInput),
       async (c) => {
         const actor = c.get("actor");
@@ -126,6 +130,7 @@ export function identityRoutes(ctx: AppContext) {
         data: userRef,
       }),
 
+      validate("param", idParam),
       validate("json", AssignRoleInput),
       async (c) => {
         const actor = c.get("actor");
@@ -143,6 +148,7 @@ export function identityRoutes(ctx: AppContext) {
         body: ReplaceRolesInput,
         data: userRef,
       }),
+      validate("param", idParam),
       validate("json", ReplaceRolesInput),
       async (c) => {
         const actor = c.get("actor");
@@ -159,6 +165,7 @@ export function identityRoutes(ctx: AppContext) {
         data: userRef,
       }),
 
+      validate("param", idRoleKeyParam),
       async (c) => {
         const actor = c.get("actor");
         return ok(c, await revokeUserRole(ctx.db, c.req.param("id"), c.req.param("roleKey"), actorOf(actor)));

@@ -53,6 +53,10 @@ const rawSchema = z
     BETTER_AUTH_URL: z.url(),
     BETTER_AUTH_SECRET: z.string().default(""),
     AUTH_TRUSTED_ORIGINS: z.string().default(""),
+    /** Public email/password self sign-up. Off by default: admins create accounts (CLI `user:create`). */
+    AUTH_SIGNUP_ENABLED: boolOr("false"),
+    /** Better Auth rate limiting; the auth endpoints keep their stricter built-in rules. */
+    AUTH_RATE_LIMIT_ENABLED: boolOr("true"),
     // Google OAuth dormant (ADR-0009): the provider activates only when BOTH are set.
     GOOGLE_CLIENT_ID: z.string().default(""),
     GOOGLE_CLIENT_SECRET: z.string().default(""),

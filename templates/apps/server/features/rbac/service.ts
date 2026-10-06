@@ -1,4 +1,4 @@
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, eq, ilike, notInArray, or, sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
@@ -19,55 +19,60 @@ async function requireRoleInTx(tx: Pick<Database, "select">, id: string): Promis
   return role;
 }
 
-/** Syncs the permission catalogue + system roles from code; idempotent. */
+/** Syncs the permission catalogue + system roles from code; idempotent, one transaction. */
 export async function seedRbac(db: Database): Promise<{ permissions: number; roles: number }> {
-  await db
-    .insert(permissions)
-    .values(allPermissions.map((key) => ({ key })))
-    .onConflictDoNothing({ target: permissions.key });
+  return db.transaction(async (tx) => {
+    await tx
+      .insert(permissions)
+      .values(allPermissions.map((key) => ({ key })))
+      .onConflictDoNothing({ target: permissions.key });
 
-  await db
-    .delete(permissions)
-    .where(sql`${permissions.key} not in ${sql.raw(`(${allPermissions.map((k) => `'${k}'`).join(", ")})`)}`);
+    // Permissions retired from code leave the catalogue; their role_permissions rows cascade.
+    await tx.delete(permissions).where(notInArray(permissions.key, [...allPermissions]));
 
-  const permissionRows = await db.select({ id: permissions.id, key: permissions.key }).from(permissions);
-  const idByKey = new Map(permissionRows.map((r) => [r.key, r.id]));
+    const permissionRows = await tx.select({ id: permissions.id, key: permissions.key }).from(permissions);
+    const idByKey = new Map(permissionRows.map((r) => [r.key, r.id]));
 
-  let roleCount = 0;
-  for (const [key, definition] of Object.entries(systemRoles) as [
-    SystemRoleKey,
-    (typeof systemRoles)[SystemRoleKey],
-  ][]) {
-    const rows = await db
-      .insert(roles)
-      .values({
-        key,
-        name: definition.name,
-        description: definition.description,
-        isSystem: true,
-      })
-      .onConflictDoUpdate({
-        target: roles.key,
-        set: { name: definition.name, description: definition.description, isSystem: true, updatedAt: new Date() },
-      })
-      .returning({ id: roles.id });
+    let roleCount = 0;
+    for (const [key, definition] of Object.entries(systemRoles) as [
+      SystemRoleKey,
+      (typeof systemRoles)[SystemRoleKey],
+    ][]) {
+      const rows = await tx
+        .insert(roles)
+        .values({
+          key,
+          name: definition.name,
+          description: definition.description,
+          isSystem: true,
+        })
+        .onConflictDoUpdate({
+          target: roles.key,
+          set: { name: definition.name, description: definition.description, isSystem: true, updatedAt: new Date() },
+        })
+        .returning({ id: roles.id });
 
-    const roleId = rows[0]?.id;
-    if (!roleId) continue;
-    roleCount += 1;
+      const roleId = rows[0]?.id;
+      if (!roleId) continue;
+      roleCount += 1;
 
-    const wanted = definition.permissions
-      .map((p) => idByKey.get(p))
-      .filter((id): id is string => typeof id === "string");
+      const wanted = definition.permissions
+        .map((p) => idByKey.get(p))
+        .filter((id): id is string => typeof id === "string");
 
-    // Full sync: a system role must match its definition in code exactly.
-    await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
-    if (wanted.length > 0) {
-      await db.insert(rolePermissions).values(wanted.map((permissionId) => ({ roleId, permissionId })));
+      // Insert only what is missing: admin edits survive a restart, while permissions added to
+      // the code definition still propagate on the next boot. Deleting first would leave the role
+      // empty for a concurrent replica and would wipe every admin grant.
+      if (wanted.length > 0) {
+        await tx
+          .insert(rolePermissions)
+          .values(wanted.map((permissionId) => ({ roleId, permissionId })))
+          .onConflictDoNothing({ target: [rolePermissions.roleId, rolePermissions.permissionId] });
+      }
     }
-  }
 
-  return { permissions: permissionRows.length, roles: roleCount };
+    return { permissions: permissionRows.length, roles: roleCount };
+  });
 }
 
 /** Union of permissions across all of a user's roles. Per-record filtering is the module policy's job. */

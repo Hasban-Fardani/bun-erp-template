@@ -173,4 +173,16 @@ describe("departments", () => {
     const restoreGone = await api.client.api.v1.departments[":id"].restore.$post({ param: { id: data.id } });
     expect(restoreGone.status).toBe(404);
   });
+
+  test("a malformed department id is 422, not 500", async () => {
+    const malformed = "not-a-uuid";
+    const get = await api.client.api.v1.departments[":id"].$get({ param: { id: malformed } });
+    expect(get.status).toBe(422);
+    const removed = await api.client.api.v1.departments[":id"].$delete({ param: { id: malformed } });
+    expect(removed.status).toBe(422);
+    const restore = await api.client.api.v1.departments[":id"].restore.$post({ param: { id: malformed } });
+    expect(restore.status).toBe(422);
+    const force = await api.client.api.v1.departments[":id"].force.$delete({ param: { id: malformed } });
+    expect(force.status).toBe(422);
+  });
 });

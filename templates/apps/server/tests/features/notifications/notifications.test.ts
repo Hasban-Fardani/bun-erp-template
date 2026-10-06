@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { notifications } from "../../../features/notifications/schema.ts";
 import { notify } from "../../../features/notifications/service.ts";
-import { createHttpFixture, dataOf, signUpUser } from "../../support/fixtures.ts";
+import { createFixtureUser, createHttpFixture, dataOf } from "../../support/fixtures.ts";
 
 type NotificationRow = { id: string; title: string; readAt: string | null };
 
@@ -50,7 +50,7 @@ test("the database channel writes one row per recipient", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
   const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
-  const other = await signUpUser(api.app, "other@example.test");
+  const other = await createFixtureUser(api.ctx.db, "other@example.test");
 
   await notify(api.ctx, {
     recipients: [me.userId, other.id],
@@ -100,7 +100,7 @@ test("read filter and mark-all-read follow the inbox contract", async () => {
 test("a user cannot read or mark another user's notification", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();
-  const other = await signUpUser(api.app, "other@example.test");
+  const other = await createFixtureUser(api.ctx.db, "other@example.test");
 
   await notify(api.ctx, {
     recipients: [other.id],
@@ -130,4 +130,11 @@ test("the inbox accepts the list query the web client sends", async () => {
     query: { page: "1", perPage: "25", sort: "createdAt", dir: "asc" },
   });
   expect(response.status).toBe(200);
+});
+
+test("a malformed notification id is 422, not 500", async () => {
+  const api = await createHttpFixture();
+  await api.signInAsOwner();
+  const response = await api.client.api.v1.notifications[":id"].read.$post({ param: { id: "not-a-uuid" } });
+  expect(response.status).toBe(422);
 });

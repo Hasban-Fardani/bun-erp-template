@@ -2,7 +2,7 @@ import type { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AppContext } from "../bootstrap/context.ts";
 import type { AppEnv } from "./factory.ts";
-import { ApiError, type ApiErrorBody, ErrorCode, requestId } from "./helpers/errors.ts";
+import { ApiError, type ApiErrorBody, ErrorCode, isUniqueViolation, requestId } from "./helpers/errors.ts";
 
 export function registerErrorHandler(app: Hono<AppEnv>, ctx: AppContext) {
   app.notFound(() => {
@@ -12,6 +12,8 @@ export function registerErrorHandler(app: Hono<AppEnv>, ctx: AppContext) {
   app.onError((err, c) => {
     if (err instanceof HTTPException && err.status === 400)
       err = new ApiError("BAD_REQUEST", 400, "Malformed request body");
+    // A unique-index rejection is a state conflict: two creates raced and one lost.
+    if (isUniqueViolation(err)) err = ApiError.duplicate();
     const id = requestId(c);
     if (err instanceof ApiError) {
       const body: ApiErrorBody = {

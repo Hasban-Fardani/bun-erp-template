@@ -63,6 +63,11 @@ export class ApiError extends Error {
     return new ApiError(ErrorCode.conflict, 409, message, [{ path, message: "already in use" }]);
   }
 
+  /** 409 for a database-enforced uniqueness conflict (a concurrent create), not malformed input. */
+  static duplicate(message = "Resource already exists"): ApiError {
+    return new ApiError(ErrorCode.conflict, 409, message);
+  }
+
   /** 409 for a stale optimistic-locking write; `details.currentVersion` is the row's live version. */
   static versionConflict(currentVersion: number): ApiError {
     return new ApiError(
@@ -97,4 +102,19 @@ export function ok<T>(c: Context, data: T) {
 
 export function requestId(c: Context): string {
   return c.get("requestId") as string;
+}
+
+/**
+ * PostgreSQL SQLSTATE 23505: a unique index rejected the write. Drizzle wraps driver errors in
+ * `DrizzleQueryError` with the driver error as `cause`, so the chain is inspected, not just the top.
+ */
+export function isUniqueViolation(error: unknown): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < 5 && current !== undefined && current !== null; depth += 1) {
+    if (typeof current === "object" && "code" in current && (current as { code?: unknown }).code === "23505") {
+      return true;
+    }
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
 }

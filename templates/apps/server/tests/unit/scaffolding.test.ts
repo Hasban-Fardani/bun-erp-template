@@ -47,10 +47,13 @@ test("scaffold output follows the feature, migration, and seeder contracts", () 
   expect(renderMigrationSource()).toContain("before running db:migrate");
   const createSql = renderMigrationSource({ mode: "create", table: "posts" });
   expect(createSql).toContain("create table if not exists posts");
-  expect(createSql).toContain("deleted_at timestamptz");
+  expect(createSql).not.toContain("deleted_at timestamptz");
   expect(createSql).toContain("version integer not null default 0");
   expect(createSql).not.toContain("number text not null");
-  expect(renderMigrationSource({ mode: "create", table: "posts", numbering: true })).toContain("number text not null");
+  const optInSql = renderMigrationSource({ mode: "create", table: "posts", numbering: true, softDelete: true });
+  expect(optInSql).toContain("deleted_at timestamptz");
+  expect(optInSql).toContain("number text not null");
+  expect(renderMigrationSource({ mode: "create", table: "posts", version: false })).not.toContain("version integer");
   expect(renderMigrationSource({ mode: "alter", table: "posts", column: "status" })).toContain(
     "add column status text not null default ''",
   );
@@ -97,31 +100,70 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
   const service = contents.get("apps/server/features/sales-orders/service.ts") ?? "";
   expect(service).toContain("export async function listSalesOrders(");
   expect(service).toContain('"sales-orders.created"');
-  expect(service).toContain("notDeleted(salesOrders)");
   expect(service).toContain("async function requireSalesOrders(");
   expect(service).toContain("bumpVersion(salesOrders)");
   expect(service).toContain("versionGuard(salesOrders, id, expectedVersion)");
   expect(service).toContain("ApiError.versionConflict");
-  expect(service).toContain("softDeleteRow(tx as unknown as Database, salesOrders, id)");
-  expect(service).toContain("export async function restoreSalesOrders(");
-  expect(service).toContain("export async function forceDeleteSalesOrders(");
+  // Soft delete is opt-in: the default module must not carry its filters or lifecycle helpers.
+  expect(service).not.toContain("notDeleted");
+  expect(service).not.toContain("softDeleteRow");
+  expect(service).not.toContain("restoreSalesOrders");
+  expect(service).not.toContain("forceDeleteSalesOrders");
   expect(service).not.toContain("nextNumber");
 
   const schema = contents.get("apps/server/features/sales-orders/schema.ts") ?? "";
   expect(schema).toContain('"sales_orders"');
   expect(schema).not.toContain("organizations");
-  expect(schema).toContain("deletedAt: softDelete()");
+  expect(schema).not.toContain("deletedAt");
+  expect(schema).not.toContain("soft-delete.ts");
   expect(schema).toContain("version: version()");
-  expect(schema).toContain('from "../../database/soft-delete.ts"');
   expect(schema).toContain('from "../../database/optimistic-locking.ts"');
 
   const validation = contents.get("apps/server/features/sales-orders/validation.ts") ?? "";
   expect(validation).toContain("expectedVersion: z.number().int().min(0)");
-  expect(validation).toContain("includeDeleted: z.stringbool()");
+  expect(validation).not.toContain("includeDeleted");
 
   const generatedRoute = contents.get("apps/server/features/sales-orders/route.ts") ?? "";
-  expect(generatedRoute).toContain('"/:id/restore"');
-  expect(generatedRoute).toContain('"/:id/force"');
+  expect(generatedRoute).not.toContain('"/:id/restore"');
+  expect(generatedRoute).not.toContain('"/:id/force"');
+  // Every `:id` route validates the shared uuid param before the service sees it.
+  expect(generatedRoute).toContain('validate("param", idParam)');
+  expect(generatedRoute).toContain('import { idParam } from "../../http/helpers/params.ts";');
+});
+
+test("make:feature opts into soft delete and out of optimistic locking per flag", () => {
+  const soft = renderFeatureScaffold("Sales Orders", { softDelete: true });
+  const softContents = new Map(soft.files.map((file) => [file.path, file.contents]));
+  const softSchema = softContents.get("apps/server/features/sales-orders/schema.ts") ?? "";
+  expect(softSchema).toContain("deletedAt: softDelete()");
+  expect(softSchema).toContain('from "../../database/soft-delete.ts"');
+
+  const softService = softContents.get("apps/server/features/sales-orders/service.ts") ?? "";
+  expect(softService).toContain("notDeleted(salesOrders)");
+  expect(softService).toContain("softDeleteRow(tx as unknown as Database, salesOrders, id)");
+  expect(softService).toContain("export async function restoreSalesOrders(");
+  expect(softService).toContain("export async function forceDeleteSalesOrders(");
+
+  const softValidation = softContents.get("apps/server/features/sales-orders/validation.ts") ?? "";
+  expect(softValidation).toContain("includeDeleted: z.stringbool()");
+
+  const softRoute = softContents.get("apps/server/features/sales-orders/route.ts") ?? "";
+  expect(softRoute).toContain('"/:id/restore"');
+  expect(softRoute).toContain('"/:id/force"');
+
+  const plain = renderFeatureScaffold("Sales Orders", { version: false });
+  const plainContents = new Map(plain.files.map((file) => [file.path, file.contents]));
+  const plainSchema = plainContents.get("apps/server/features/sales-orders/schema.ts") ?? "";
+  expect(plainSchema).not.toContain("version: version()");
+  expect(plainSchema).not.toContain("optimistic-locking.ts");
+
+  const plainValidation = plainContents.get("apps/server/features/sales-orders/validation.ts") ?? "";
+  expect(plainValidation).not.toContain("expectedVersion");
+
+  const plainService = plainContents.get("apps/server/features/sales-orders/service.ts") ?? "";
+  expect(plainService).not.toContain("bumpVersion");
+  expect(plainService).not.toContain("versionGuard");
+  expect(plainService).not.toContain("ApiError.versionConflict");
 });
 
 test("make:feature can allocate a numbering sequence on create", () => {

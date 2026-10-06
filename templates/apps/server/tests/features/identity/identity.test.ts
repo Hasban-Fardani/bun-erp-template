@@ -20,12 +20,17 @@ const json = (body: unknown, method = "POST"): RequestInit => ({
   body: JSON.stringify(body),
 });
 
-/** Signs up through the real Better Auth path — not by writing a user row directly. */
+/**
+ * Creates a user through the same service `bun erp user:create` uses. Public self sign-up is
+ * disabled by default; the Better Auth sign-up path itself is covered in auth-hardening.test.ts.
+ */
 async function signUp(email: string, password = "sandi-yang-panjang") {
-  // Better Auth wildcard route: /api/v1/auth/* is proxied, so the typed client cannot address it.
-  const res = await app.request("/api/v1/auth/sign-up/email", json({ email, password, name: email.split("@")[0] }));
-  expect(res.status).toBe(200);
-  return (await res.json()) as { user: { id: string } };
+  const user = await createUser(
+    ctx.db,
+    { name: email.split("@")[0] ?? "User", email, password },
+    { userId: null, traceId: "test-identity", label: "test" },
+  );
+  return { user };
 }
 
 async function signIn(email: string, password = "sandi-yang-panjang") {
@@ -59,7 +64,7 @@ afterAll(async () => {
 });
 
 describe("identity", () => {
-  test("sign-up through Better Auth creates a uuidv7 primary key", async () => {
+  test("user creation allocates a uuidv7 primary key", async () => {
     const { user } = await signUp("orang@example.test");
     expect(user.id).toMatch(/^[0-9a-f-]{36}$/);
     // uuidv7 — the 15th digit marks version 7 (not 4 like a random uuid).
