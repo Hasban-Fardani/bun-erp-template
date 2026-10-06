@@ -1,6 +1,6 @@
 import { ConfigError, loadEnv } from "../config/index.ts";
 import { seed } from "../database/seed.ts";
-import { createJobRegistry } from "../features/jobs.ts";
+import { createJobRegistry, createSchedules } from "../features/jobs.ts";
 import { createApp } from "../http/app.ts";
 import { createHostFetch } from "../http/host.ts";
 import { createWebAssetsApp } from "../http/web-assets.ts";
@@ -55,7 +55,12 @@ async function main(): Promise<void> {
     fetch: createHostFetch(app.fetch, webApp?.fetch),
   });
   const jobWorker = process.argv.includes("--with-jobs")
-    ? startJobWorker({ db: ctx.db, registry: createJobRegistry(ctx), logger: ctx.logger })
+    ? startJobWorker({
+        db: ctx.db,
+        registry: createJobRegistry(ctx),
+        schedules: createSchedules(ctx),
+        logger: ctx.logger,
+      })
     : undefined;
 
   ctx.logger.info({
