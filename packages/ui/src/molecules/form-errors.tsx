@@ -1,3 +1,5 @@
+import { FieldError } from "./field-primitives.tsx";
+
 /** TanStack validators may return field maps or individual messages. Keep one accessible summary. */
 export function FormErrors({ errors }: { errors: readonly unknown[] }) {
   const messages = errors.flatMap(function collect(error): string[] {
@@ -14,4 +16,19 @@ export function FormErrors({ errors }: { errors: readonly unknown[] }) {
       ))}
     </ul>
   );
+}
+
+/**
+ * Field-level errors for a single control: TanStack Form hands back strings, `Error` instances, or
+ * unknown values, so normalize them here once instead of in every form.
+ */
+export function FormFieldError({ id, errors }: { id: string; errors: readonly unknown[] }) {
+  const messages = errors.flatMap((error) => {
+    if (error == null) return [];
+    if (typeof error === "string") return [{ message: error }];
+    if (error instanceof Error) return [{ message: error.message }];
+    return [{ message: String(error) }];
+  });
+
+  return <FieldError id={id} className="text-xs" errors={messages} />;
 }

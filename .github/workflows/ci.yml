@@ -54,7 +54,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup
       - run: bun erp build
+  mobile-detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
+      - id: check
+        run: |
+          if [ -f apps/mobile/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
   mobile-build:
+    needs: mobile-detect
+    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
+    if: needs.mobile-detect.outputs.present == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -106,7 +123,7 @@ jobs:
             .data/qa/*.png
   ci-ok:
     if: always()
-    needs: [gates, test-postgres, build-web, mobile-build, e2e]
+    needs: [gates, test-postgres, build-web, mobile-detect, mobile-build, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -114,4 +131,4 @@ jobs:
         env:
           RESULTS: ${{ toJSON(needs) }}
         run: |
-          python3 -c 'import json,os,sys; sys.exit(any(job["result"] != "success" for job in json.loads(os.environ["RESULTS"]).values()))'
+          python3 -c 'import json,os,sys; r=json.loads(os.environ["RESULTS"]); sys.exit(any(j["result"] != "success" and not (n == "mobile-build" and j["result"] == "skipped") for n,j in r.items()))'

@@ -13,7 +13,7 @@
       "!**/node_modules",
       "!**/dist",
       "!**/.data",
-      "!tools/governance",
+      "!gates/governance",
       "!**/routeTree.gen.ts"
     ]
   },

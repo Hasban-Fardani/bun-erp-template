@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "bun-erp-template",
-  "main": "apps/server/cloudflare-entry.ts",
+  "main": "apps/server/bootstrap/cloudflare-entry.ts",
   "compatibility_date": "2026-10-04",
   "compatibility_flags": ["nodejs_compat"],
   "limits": { "cpu_ms": 10 },

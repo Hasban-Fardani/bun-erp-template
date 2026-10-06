@@ -17,8 +17,9 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "skipLibCheck": true,
+    "incremental": true,
     "noEmit": true
   },
-  "include": ["apps/**/*.ts", "apps/**/*.tsx", "tools/**/*.ts", "packages/**/*.ts", "packages/**/*.tsx"],
-  "exclude": ["node_modules", "dist", ".data", "tools/governance"]
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "gates/**/*.ts", "packages/**/*.ts", "packages/**/*.tsx", "cli/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".data", "gates/governance"]
 }

@@ -10,7 +10,24 @@ concurrency:
   group: mobile-native-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: check
+        run: |
+          if [ -f apps/mobile/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
   android:
+    needs: detect
+    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
+    if: needs.detect.outputs.present == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -39,6 +56,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   ios-simulator:
+    needs: detect
+    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
+    if: needs.detect.outputs.present == 'true'
     runs-on: macos-latest
     timeout-minutes: 30
     steps:

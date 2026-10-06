@@ -5,7 +5,7 @@ Recorded on 2026-10-04 for this working tree; not a future guarantee.
 - 65 existing Markdown files reviewed; old content reduced about 83%. New mobile guides are separate.
 - Active guidance is indexed in [docs](../README.md); ADR implementation state is explicit.
 - Historical measurements/evidence remain separate; original long reports are in Git `f3271b2`.
-- `bun erp.ts check`: 18 checks passed, sampled wall time 13.59s → 10.97s (~19% faster).
+- `bun erp check`: 18 checks passed, sampled wall time 13.59s → 10.97s (~19% faster).
   Biome, TypeScript and 16 gates now overlap. This is one measured run per version, not a benchmark median.
 - `bun erp test`: 83 backend + 4 web passed. Failure aggregation also covers an unavailable executable.
 - `bun erp build` and `bun erp mobile:build`: exit 0. Capacitor CLI/config on Bun: exit 0.

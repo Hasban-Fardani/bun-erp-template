@@ -16,8 +16,24 @@ concurrency:
   group: mobile-release-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: check
+        run: |
+          if [ -f apps/mobile/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
   android-play-internal:
-    if: github.event_name == 'push' || inputs.platform == 'both' || inputs.platform == 'android'
+    needs: detect
+    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
+    if: needs.detect.outputs.present == 'true' && (github.event_name == 'push' || inputs.platform == 'both' || inputs.platform == 'android')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: mobile-release
@@ -113,7 +129,8 @@ jobs:
           retention-days: 30
 
   ios-testflight:
-    if: github.event_name == 'push' || inputs.platform == 'both' || inputs.platform == 'ios'
+    needs: detect
+    if: needs.detect.outputs.present == 'true' && (github.event_name == 'push' || inputs.platform == 'both' || inputs.platform == 'ios')
     runs-on: macos-latest
     timeout-minutes: 60
     environment: mobile-release

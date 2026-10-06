@@ -1,11 +1,25 @@
 # React mobile with Capacitor
 
+## Catalog app
+
+Mobile is not part of the default workspace. The template ships `apps/server` + `apps/web`; the
+React + Capacitor app waits in `templates/apps/mobile/` and is installed on demand:
+
+    bun erp apps:create mobile mobile
+    bun install
+
+The commands below assume the created app is `apps/mobile`. With another name, replace `apps/mobile`
+with `apps/<name>`. `bun erp mobile:*` prints this instruction when `apps/mobile` is absent, and
+every gate and CI job skips the mobile contract instead of failing.
+
 ## Source ownership
 
-apps/mobile has a distinct React entry at src/main.tsx, screens under src/pages and its own Vite
-build. Feature-specific code lives under src/features. It imports shared presentation from
-packages/ui and pure cross-platform functions from packages/utils; it never imports apps/web source.
-There is no shared web entry or web screen copied into the mobile app.
+apps/mobile has a distinct React entry at src/main.tsx, screens under src/screens and its own Vite
+build. There is no router: main.tsx renders the current screen directly, so a new screen is added by
+writing src/screens/<name>.tsx and wiring it in main.tsx. Feature-specific code lives under
+src/features. It imports shared presentation from packages/ui and pure cross-platform functions from
+packages/utils; it never imports apps/web source. There is no shared web entry or web screen copied
+into the mobile app.
 
 The mobile RPC client uses the server Hono AppType under /api/v1 and sends a request ID. Native
 authentication is not implemented; cookie behavior has not been validated on device.
@@ -65,4 +79,6 @@ Artifacts download as a single GitHub zip: the iOS one contains the `App.app` bu
 on a simulator with `xcrun simctl install booted App.app`.
 .github/workflows/mobile-release.yml uploads signed Android builds to Google Play internal testing
 and iOS builds to TestFlight when the copied project supplies signing/store credentials. It does not
-promote a public production release. Native CI artifacts are not proof of device QA or store approval.
+promote a public production release. Both mobile workflows skip cleanly while `apps/mobile` is
+absent; `bun erp apps:create <name> mobile` installs the app and enables them. Native CI artifacts
+are not proof of device QA or store approval.

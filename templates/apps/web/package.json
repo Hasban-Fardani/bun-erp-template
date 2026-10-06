@@ -1,0 +1,42 @@
+{
+  "name": "@bun-erp/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "bunx --bun biome check .",
+    "format": "bunx --bun biome format --write .",
+    "preview": "vite preview",
+    "dev:cloudflare": "vite --mode cloudflare",
+    "build:cloudflare": "vite build --mode cloudflare",
+    "deploy:cloudflare": "vite build --mode cloudflare && wrangler deploy --config dist/bun_erp_template/wrangler.json"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.103.1",
+    "@tanstack/react-router": "1.170.38",
+    "lucide-react": "0.544.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.5",
+    "hono": "4.13.8",
+    "@bun-erp/ui": "workspace:*",
+    "@bun-erp/utils": "workspace:*",
+    "@bun-erp/storage": "workspace:*",
+    "@bun-erp/i18n": "workspace:*",
+    "@tanstack/react-form": "1.33.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.62.5",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "4.3.3",
+    "vite": "8.3.0",
+    "wrangler": "4.147.0",
+    "@bun-erp/server": "workspace:*",
+    "@tanstack/router-plugin": "1.168.40"
+  }
+}

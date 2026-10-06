@@ -1,0 +1,23 @@
+{
+  "name": "@bun-erp/mail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "description": "App-agnostic server mail transport: driver registry, log/memory/SMTP drivers, message resolution",
+  "scripts": {
+    "check": "bunx --bun tsc --noEmit -p tsconfig.json",
+    "test": "bun test tests"
+  },
+  "exports": {
+    "./server": "./src/server/index.ts",
+    "./llms.txt": "./llms.txt"
+  },
+  "dependencies": {
+    "@bun-erp/utils": "workspace:*",
+    "nodemailer": "10.0.15"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "8.0.2"
+  }
+}

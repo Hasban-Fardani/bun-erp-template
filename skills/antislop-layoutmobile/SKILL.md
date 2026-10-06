@@ -6,7 +6,8 @@ description: Use when changing responsive layouts, touch interaction or Capacito
 # Responsive and mobile layout
 
 Share atomic UI from `packages/ui`; web and mobile own separate React entries and pages.
-Mobile source and packaging live in `apps/mobile`.
+Mobile is a catalog app: install it with `bun erp apps:create <name> mobile`; its source and
+packaging then live in `apps/mobile`.
 Read [mobile](../../docs/mobile.md) for native boundaries and
 [UI states](../../docs/ui-states.md) for feedback. No missing antislop core is required.
 

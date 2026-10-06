@@ -8,19 +8,18 @@
   "allowed": {
     "topLevelDirs": [
       "apps",
-      "tools",
+      "cli",
+      "gates",
       "docs",
       "skills",
-      "scripts",
+      "templates",
       ".githooks",
-      "platform",
-      "tests",
       ".github",
       ".agents",
       "packages"
     ],
-    "apps": ["apps/server", "apps/web", "apps/mobile"],
-    "note": "Deployment-specific business features stay out of this template. The template contains reusable foundations and reference features."
+    "apps": [],
+    "note": "Deployment-specific business features stay out of this template. The template contains reusable foundations and reference features. apps/ ships empty; app catalogs live in templates/apps and are installed by `bun erp init`."
   },
   "forbidden": {
     "paths": [".env", ".env.local", ".env.production", ".data"],
@@ -41,7 +40,11 @@
       }
     ]
   },
-  "featureReferenceExample": "apps/server/features/identity",
-  "coreFeatures": ["apps/server/features/identity", "apps/server/features/rbac", "apps/server/features/audit"],
-  "featureSecondaryExamples": ["apps/server/features/departments"]
+  "featureReferenceExample": "templates/apps/server/features/identity",
+  "coreFeatures": [
+    "templates/apps/server/features/identity",
+    "templates/apps/server/features/rbac",
+    "templates/apps/server/features/audit"
+  ],
+  "featureSecondaryExamples": ["templates/features/departments"]
 }

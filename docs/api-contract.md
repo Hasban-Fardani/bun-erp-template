@@ -1,6 +1,6 @@
 # API contract
 
-Sources: `http/errors.ts`, `http/routes.ts`, module routes and `http/list-query.ts`.
+Sources: `http/helpers/errors.ts`, `routes/api.ts`, module routes and `http/helpers/list-query.ts`.
 `openapi-coverage.test.ts` checks coverage; `check:prod` checks this document's presence and
 required terms, not the full behavior. `bun erp --help` owns command names.
 

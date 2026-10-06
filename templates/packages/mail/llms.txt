@@ -1,0 +1,25 @@
+# @bun-erp/mail
+
+Server-only, app-agnostic mail transport for the Bun ERP workspace. Install with
+`bun erp features:install mail`; the package alone is not wired into the app.
+
+## Public exports
+
+- `@bun-erp/mail/server`: `createMailer(options)`, `createMailRegistry()`, `MailDriverRegistry`,
+  `resolveMail(message, config)`, `htmlToText(html)`, `escapeHtml(value)`.
+- Types: `Mailer`, `MailMessage`, `MailAddress`, `MailAttachment`, `MailConfig`, `MailLogger`,
+  `MailEnqueue`, `MailDriver`, `MailDriverContext`, `ResolvedMail`, `MailPayload`.
+
+## Contract
+
+- `createMailer({ config, logger, enqueue? })` takes plain objects; it never imports app code.
+- `send()` resolves defaults (from-address, text fallback) and calls the selected driver.
+- `queue()` writes a JSON-safe `mail.send` payload through `enqueue`; without `enqueue` it sends
+  inline and returns the driver message id.
+- Drivers: `log` (structured line, default), `memory` (in-process capture for tests), `smtp`
+  (lazy `nodemailer` import; unavailable on Cloudflare Workers).
+
+## Read first
+
+- `README.md`: install path, exports, driver behavior, config keys, and test split.
+- `src/server/types.ts`: the full public contract.

@@ -6,7 +6,7 @@
 - [Package exports](./package.json)
 - [Core catalog and formatting API](./src/index.ts)
 - [React provider and hooks](./src/react.tsx)
-- [Catalogs](./src/catalogs/)
+- [Catalogs](./src/messages/)
 - [Tests](./tests/)
 - [Project i18n conventions](../../docs/i18n.md)
 

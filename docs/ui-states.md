@@ -1,7 +1,8 @@
 # UI states
 
-Source: `packages/ui/src/molecules/table-states.tsx`, `packages/ui/src/organisms/data-table.tsx` and
-`packages/ui/src/organisms/resource-table.tsx`. Use existing components.
+Source: `packages/ui/src/molecules/table-states.tsx` and, once installed,
+`packages/data-table/src/server-table.tsx` / `packages/data-table/src/resource-table.tsx` from the
+`data-table` catalog package. Use existing components.
 
 | State | Feedback |
 |---|---|

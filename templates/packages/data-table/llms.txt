@@ -1,0 +1,32 @@
+# @bun-erp/data-table
+
+Composable React table primitives for the Bun ERP workspace, built on TanStack Table v9.2.4.
+
+## Read first
+
+- `README.md`: package purpose, exports, local-first meaning, and limits.
+- `docs/usage.md`: local table, primitive composition, and Hono RPC + TanStack Query app-owned recipe.
+
+## Public exports
+
+- `@bun-erp/data-table`: `DataTable`, `useLocalDataTable`, `Column<T>()`, `createColumnHelper<T>()`, `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `Filter`, `Pagination`.
+- `@bun-erp/data-table/local`: local `DataTable`, hook, and column helper only.
+- `@bun-erp/data-table/primitives`: semantic table/filter/pagination UI without the TanStack adapter import.
+- `@bun-erp/data-table/server`: `useServerDataTable`, `ServerDataTableOptions<T>`, `ServerTableState`, `ServerColumn<T>`, `createServerColumnHelper<T>()`.
+- `@bun-erp/data-table/resource-table`: app-facing `ResourceTable` server-paged list frame (search, sorting, pagination, list states) that composes `@bun-erp/ui`.
+- `@bun-erp/data-table/server-table`: app-facing server `DataTable`, `Column<T>`, `DataTableLabels`, and `Pagination` for screens that own the toolbar; composes `@bun-erp/ui`.
+- `@bun-erp/data-table/styles.css`: optional neutral styles.
+
+## Data modes
+
+- Local mode receives the complete in-memory array and enables browser filtering, sorting, and pagination.
+- Server mode receives externally loaded rows plus total `rowCount`, controlled pagination/sorting/filter state, and matching callbacks. All three operations are manual; no client row models run.
+- “Local-first” means in-memory behavior only. The package does not implement persistence, offline storage, syncing, networking, Hono, or TanStack Query.
+- Hono RPC client construction, Query keys/fetches/loading/errors, API state mapping, cursor translation, and persistence belong to apps.
+
+## Implementation notes
+
+- v9 features are opt-in through feature sets; local row-model factories are registered only for local mode.
+- Imports are ESM and the CSS is opt-in. Avoid adding umbrella feature registries or network/storage dependencies.
+- Pagination state uses zero-based `pageIndex`; API query mapping is app-owned.
+- TanStack Virtual stays optional and separate from pagination.

@@ -20,7 +20,7 @@ function fakeStringStorage(): StringStorage {
 test("a store namespaces typed JSON records per feature", async () => {
   const store = createKeyValueStore(createMemoryAdapter());
   await store.put("identity", "session", { name: "Example", roles: ["owner"] });
-  await store.put("departments", "draft-1", { name: "Draft" });
+  await store.put("reports", "draft-1", { name: "Draft" });
 
   expect(await store.get<{ name: string }>("identity", "session")).toMatchObject({ value: { name: "Example" } });
   expect((await store.list("identity")).map((record) => record.key)).toEqual(["session"]);

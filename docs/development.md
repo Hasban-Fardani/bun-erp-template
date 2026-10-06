@@ -4,22 +4,26 @@ From a clean clone:
 
     cp .env.example .env
     bun install --frozen-lockfile
-    bun erp init
+    bun erp init                    # choose the app combination (default server+web)
     bun erp db:migrate
     bun erp db:seed
     bun erp user:create <email> <password> --role owner --name <name>
     bun dev
 
-Run `bun erp init` once after copying the template. It configures project-local CodeGraph and copies
-the approved agent skills; see agent-init.md. Development commands do not sync or install agent
-tooling. Never commit `.env` or credentials.
+The template ships `apps/` empty; `bun erp init` is the single door. It offers the seven
+combinations (server, web, mobile, server+web, server+mobile, web+mobile, server+web+mobile) as a
+numbered choice list, copies the chosen catalogs from `templates/apps/`, registers the workspaces,
+runs the first `bun install`, and configures project-local CodeGraph and the approved agent skills
+(see agent-init.md). Non-interactive runs use `bun erp init --apps server,web --yes`; `--no-agents`
+skips the agent tooling (CI still runs it because `check:agents` verifies the index). Development
+commands do not sync or install agent tooling. Never commit `.env` or credentials.
 
 ## Install size
 
 The git repository is small (a few MB); the disk footprint comes from `node_modules`. A full
 development install is around 0.9 GB because it carries the whole toolchain: Biome, TypeScript,
 Playwright, the Vite/Rolldown bundler, the Cloudflare Workers runtime (`workerd`/`miniflare`), and
-the Capacitor mobile tooling.
+the Capacitor mobile tooling when the mobile catalog app is installed.
 
 For a run-only environment (CI, containers, a VPS), install runtime dependencies only:
 
@@ -48,9 +52,9 @@ together.
 
 PostgreSQL is the only server database driver. The copied `.env.example` connects to local PostgreSQL;
 start the Compose database with `docker compose up -d postgres` if you do not already have one.
-Server SQLite is not configured; mobile's SQLite store is independent.
+Server SQLite is not configured; the mobile catalog app's SQLite store is independent.
 
-The seed at `apps/server/platform/database/seed.ts` creates the default organization and the
+The seed at `apps/server/database/seed.ts` creates the default organization and the
 system roles. `bun dev` runs this seed at startup; it does not create a user. Create an account
 through the CLI with the same `.env` database configuration used by the app:
 
@@ -65,7 +69,7 @@ outside the form.
 The seeded role keys are `owner` and `staff`; `admin` and `user` are not role keys. If the
 organization has no users, `user:create` defaults the first account to `owner`; later accounts
 default to `staff`. Use `--role` when you want an explicit role. `bun erp db:seed` is idempotent
-and can also run all feature seeders under `apps/server/seeders`; pass a seeder name to run only
+and can also run all feature seeders under `apps/server/database/seeders`; pass a seeder name to run only
 that one. Use a strong, unique password and never store it in this document.
 
 Manage roles and accounts with the rest of the CLI: `role:list`, `role:show <key>`, `role:create`,
@@ -83,9 +87,12 @@ hooks, screen, route page), wires the sidebar entry and both locale catalogs, an
 the domain fields and run `bun erp db:migrate` followed by `bun erp db:seed`.
 
 `bun erp apps` lists workspace apps with build, port, and test status; `apps:status <name>` shows
-one app's entry point, scripts, build output, and environment file; `apps:create <name>` adds a
-minimal Bun workspace app under `apps/` and registers it in the root workspaces (run `bun install`
-afterwards).
+one app's entry point, scripts, build output, and environment file; `apps:create <name> <server|web|mobile>`
+adds a workspace app under `apps/` (server scaffolds inline; web and mobile copy their catalog under
+`templates/apps/`) and registers it in the root workspaces (run `bun install` afterwards). Adding a
+web or mobile app without a server app installs it in detached mode: the RPC client is a stub and
+`@bun-erp/server` is not a dependency. A later `bun erp init` that includes the server re-fits the
+typed client.
 
 `bun erp doctor` verifies configuration, database connectivity and the seed. Use `bun erp --help`
 for the current command list. See mobile.md for native packaging and testing.md for test prerequisites.

@@ -11,7 +11,7 @@ idempotent. bun erp db:status reports pending work.
 
 ## Background jobs
 
-Feature writes can enqueue a job through apps/server/platform/jobs/queue.ts. Enqueue inside the same
+Feature writes can enqueue a job through apps/server/infra/jobs/queue.ts. Enqueue inside the same
 database transaction when both records must commit or roll back together. The PostgreSQL-backed
 queue claims due jobs with a lease and SKIP LOCKED, retries failures with bounded backoff, and
 retains terminal rows in dead state. This provides durable at-least-once execution, not exactly-once
@@ -34,14 +34,22 @@ belongs in PostgreSQL or configured object storage, not an application directory
 
 ## Mail
 
-`ctx.mail` (apps/server/platform/mail) is the single mail entry point. Features call
+The default server ships no mail transport; `notify()` delivers through the database channel only.
+Install mail when the deployment needs it:
+
+```
+bun erp features:install mail
+```
+
+That command installs the `@bun-erp/mail` catalog package and wires `ctx.mail`, the `mail.send` job
+and the notifications `mail` channel into the composition root. After that, features call
 `ctx.mail.send(message)` for immediate delivery or `ctx.mail.queue(message)` to store a `mail.send`
 job and let the worker retry transient failures. The queue path stores the already-rendered HTML, so
 the worker needs no email renderer. `to` accepts a string or `{ address, name }`; `html` is optional
 when `text` is present, and a plain-text body is derived from the HTML otherwise.
 
 Transport is selected by MAIL_DRIVER and resolved through `MailDriverRegistry`, so a project can
-register its own HTTP provider without editing the core:
+register its own HTTP provider without editing the package:
 
 - `log` (default) writes a structured `mail.sent` line and sends nothing — visible, never silent.
 - `smtp` sends through nodemailer using SMTP_HOST/SMTP_PORT/SMTP_SECURE/SMTP_USERNAME/SMTP_PASSWORD.
@@ -49,15 +57,17 @@ register its own HTTP provider without editing the core:
   or a custom HTTP driver there.
 - `memory` captures messages in-process and is the seam tests assert against.
 
-Compose the body with `@bun-erp/email` components and `renderEmailDocument`, then pass the HTML to
-the mailer; the package stays opt-in because the correct transport depends on the deployment.
+Compose the body with `@bun-erp/email` components and `renderEmailDocument` (install the package with
+`bun erp packages:install email`), then pass the HTML to the mailer; the package stays opt-in because
+the correct transport depends on the deployment. The `MAIL_*` and `SMTP_*` config keys live in the
+core schema, so one validated environment serves both install states.
 
 ## Object storage
 
 Storage lives in one package, `@bun-erp/storage`, with a subpath per platform so imports stay
 explicit and a bundler never pulls the wrong runtime:
 
-- `@bun-erp/storage/server` — object store for Bun and Cloudflare. `apps/server/platform/storage.ts`
+- `@bun-erp/storage/server` — object store for Bun and Cloudflare. `apps/server/infra/storage.ts`
   maps the validated environment onto `ServerStorageConfig` and exposes `ctx.storage`.
 - `@bun-erp/storage` — the runtime-neutral browser/mobile key/value store.
 - `@bun-erp/storage/browser` — IndexedDB and Web Storage adapters.
@@ -103,9 +113,9 @@ await notify(ctx, {
 ```
 
 - `database` (default) writes one `notifications` row per recipient: the in-app inbox.
-- `mail` looks up each recipient's email and sends through `ctx.mail.queue`, so delivery is retried
-  by the worker. Register a webhook or push channel by adding a factory to
-  `createNotificationRegistry`.
+- `mail` exists only after `bun erp features:install mail`; it looks up each recipient's email and
+  sends through `ctx.mail.queue`, so delivery is retried by the worker. Register a webhook or push
+  channel by adding a factory to `createNotificationRegistry`.
 
 The API is self-scoped (`requireActor`, no permission key): `GET /api/v1/notifications`,
 `GET /api/v1/notifications/unread-count`, `POST /api/v1/notifications/:id/read`, and

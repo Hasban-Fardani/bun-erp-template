@@ -1,0 +1,62 @@
+{
+  "$comment": "Feature catalog manifest. Read by `bun erp features:install`; paths are relative to this directory.",
+  "name": "departments",
+  "kind": "server",
+  "requires": ["data-table"],
+  "permissionResource": "department",
+  "auditEntity": "department",
+  "auditFields": ["id", "name", "code", "isActive", "organizationId"],
+  "nav": {
+    "titleKey": "navigation.departments",
+    "url": "/departments",
+    "icon": "Building2",
+    "permission": "department.read"
+  },
+  "i18nKeys": {
+    "en-US": {
+      "navigation.departments": "Departments",
+      "departments.title": "Departments",
+      "departments.caption": "Departments",
+      "departments.search": "Search departments…",
+      "departments.empty": "No departments yet.",
+      "departments.noMatch": "No departments match your search.",
+      "departments.permissionDenied": "You do not have permission to view departments.",
+      "departments.column.name": "Name",
+      "departments.column.code": "Code",
+      "departments.column.status": "Status",
+      "departments.column.created": "Created",
+      "departments.status.active": "Active",
+      "departments.status.inactive": "Inactive"
+    },
+    "id-ID": {
+      "navigation.departments": "Departemen",
+      "departments.title": "Departemen",
+      "departments.caption": "Data departemen",
+      "departments.search": "Cari departemen…",
+      "departments.empty": "Belum ada departemen.",
+      "departments.noMatch": "Tidak ada departemen yang cocok.",
+      "departments.permissionDenied": "Anda tidak punya izin melihat departemen.",
+      "departments.column.name": "Nama",
+      "departments.column.code": "Kode",
+      "departments.column.status": "Status",
+      "departments.column.created": "Dibuat",
+      "departments.status.active": "Aktif",
+      "departments.status.inactive": "Nonaktif"
+    }
+  },
+  "files": {
+    "server": [
+      "server/feature.ts",
+      "server/policy.ts",
+      "server/route.ts",
+      "server/schema.ts",
+      "server/service.ts",
+      "server/validation.ts"
+    ],
+    "web": ["web/api/queries.ts", "web/hooks/index.ts", "web/screens/departments.tsx", "web/types/index.ts"],
+    "shared": ["_shared/web/use-table-state.ts", "_shared/web/resource-table-labels.ts"],
+    "tests": ["tests/departments.test.ts"],
+    "page": "web/pages/departments.tsx",
+    "design": "web/design/departments.json"
+  }
+}

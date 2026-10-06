@@ -3,7 +3,8 @@
 bun erp check launches Biome, TypeScript and read-only gates concurrently. All results are collected,
 including failures; checks do not build or rewrite files.
 
-bun erp test runs the server, web, mobile and shared package suites in sequence. Server tests use
+bun erp test runs the server, web and shared package suites in sequence, plus the mobile suite when
+the catalog app is installed. Server tests use
 app.request() without a listening port and run in one worker with a 15-second test timeout: their
 shared database fixture is truncated between tests, and migration tests close and rebuild that
 same context. Running server files concurrently can close a database during an active request or
@@ -17,8 +18,9 @@ Schema changes need schema/migration parity. Queue tests cover deduplication, co
 success, retry and terminal failure. Offline storage tests exercise JSON records, namespace
 isolation and deletion through a fake adapter; they do not replace native SQLCipher/device checks.
 
-Web tests cover routes, data-table loading/error states and RPC behavior. TypeScript checks the
-generated TanStack route tree. The web build verifies that file routes split into lazy chunks.
+Web tests cover routes, form feedback and RPC behavior; the opt-in data-table package carries its
+own table state tests and runs them once installed. TypeScript checks the generated TanStack route
+tree. The web build verifies that file routes split into lazy chunks.
 Browser QA needs a running API, built web preview and local test credentials. Artifacts live in
 ignored .data/qa.
 

@@ -5,7 +5,10 @@ description: Use when editing the React mobile app, Capacitor configuration, nat
 
 # Mobile development
 
-1. Keep the mobile entry in `apps/mobile/src/main.tsx` and screens under `apps/mobile/src/pages`.
+Mobile is a catalog app: install it with `bun erp apps:create <name> mobile` before editing. The
+paths below assume the created app is `apps/mobile`.
+
+1. Keep the mobile entry in `apps/mobile/src/main.tsx` and screens under `apps/mobile/src/screens`.
 2. Put native-only behavior in `apps/mobile`; import reusable presentation from `@bun-erp/ui`.
 3. Use the typed client in `apps/mobile/src/lib/rpc.ts` and the shared server `AppType`. Keep API calls under `/api/v1`.
 4. Send structured diagnostics through `apps/mobile/src/lib/logger.ts`; use event names and safe IDs. Keep credentials and user data out of logs.

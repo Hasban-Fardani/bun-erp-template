@@ -22,7 +22,7 @@ clients, or feature state. Shared, reduced-motion-aware list animation is expose
 ## Import examples
 
 ```tsx
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
+import { Button } from "@bun-erp/ui/atoms/button.tsx";
 import { useSoftAutoAnimate } from "@bun-erp/ui/lib/use-auto-animate.ts";
 import { Table, TableBody, TableCell, TableRow } from "@bun-erp/ui/molecules/table";
 import { DatePicker } from "@bun-erp/ui/organisms/date-picker";
@@ -61,8 +61,9 @@ Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toggle, Toggl
 
 Combobox continues to use the repository’s Radix and cmdk composition because the current official
 registry source uses Base UI. Date Picker, Questionnaire, Toast and Typography are implemented from
-the official documentation patterns because those docs do not publish registry JSON items. Chart
-and Data Table patterns have separate package ownership and are not duplicated here.
+the official documentation patterns because those docs do not publish registry JSON items. Data
+Table patterns have separate package ownership; chart patterns live in the opt-in charts package
+(`bun erp packages:install charts`). Neither is duplicated here.
 
 ## Blocks and custom patterns
 
@@ -74,9 +75,9 @@ multi-step controlled-answer composition. Custom source references and rationale
 
 ## Migration notes
 
-`organisms/data-table.tsx`, `organisms/resource-table.tsx` and the existing dashboard chart and
-sparkline modules remain legacy compatibility exports until their dedicated packages land. New
-Data Table usage belongs in `@bun-erp/data-table`; chart examples and renderers belong in the lazy,
-runtime-isolated `@bun-erp/charts` package. `molecules/table` is the shadcn Table primitive and stays
-in this package. The existing TanStack Table and Recharts dependency pins remain only for those
-legacy modules during migration.
+The legacy `organisms/data-table.tsx` and `organisms/resource-table.tsx` modules now live in the
+dedicated table package as `/server-table` and `/resource-table`. The sparkline and `MetricList`
+moved to the opt-in, runtime-isolated charts package (`bun erp packages:install charts`) as
+`/sparkline` and `/metric-list`. `@bun-erp/ui` no longer depends on TanStack Table, a chart renderer,
+or either optional package. `molecules/table` is the shadcn Table primitive and stays in this
+package.

@@ -1,0 +1,61 @@
+{
+  "name": "@bun-erp/data-table",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Composable, typed TanStack Table primitives for Bun ERP applications",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./server": {
+      "types": "./src/server.tsx",
+      "import": "./src/server.tsx",
+      "default": "./src/server.tsx"
+    },
+    "./local": {
+      "types": "./src/local.ts",
+      "import": "./src/local.ts",
+      "default": "./src/local.ts"
+    },
+    "./primitives": {
+      "types": "./src/primitives.tsx",
+      "import": "./src/primitives.tsx",
+      "default": "./src/primitives.tsx"
+    },
+    "./resource-table": {
+      "types": "./src/resource-table.tsx",
+      "import": "./src/resource-table.tsx",
+      "default": "./src/resource-table.tsx"
+    },
+    "./server-table": {
+      "types": "./src/server-table.tsx",
+      "import": "./src/server-table.tsx",
+      "default": "./src/server-table.tsx"
+    },
+    "./styles.css": "./src/styles.css",
+    "./llms.txt": "./llms.txt"
+  },
+  "sideEffects": [
+    "./src/styles.css"
+  ],
+  "scripts": {
+    "check": "bunx --bun tsc --noEmit -p tsconfig.json",
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@bun-erp/ui": "workspace:*",
+    "@tanstack/react-table": "9.2.4",
+    "lucide-react": "0.544.0"
+  },
+  "peerDependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

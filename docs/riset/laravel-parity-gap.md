@@ -13,7 +13,7 @@ Routing, middleware, `/api/v1` versioning, and the error contract; ORM (Drizzle 
 builder); forward-only migrations; seeders (`db:seed`, `make:seeder`); authentication through
 better-auth (sessions, email/password, dormant Google OAuth); authorization through RBAC permission
 keys with a permission cache; validation with zod; i18n; structured logging; OpenAPI; an
-Artisan-like CLI (`erp.ts`); the Bun test harness plus Playwright browser QA.
+Artisan-like CLI (`cli/`); the Bun test harness plus Playwright browser QA.
 
 Platform services landed as "P0" are at parity: Mail (`log`/`smtp`/`memory` drivers, queue or
 sync), object storage (`local`/`s3`/`r2`/`memory`, S3 presign, multi-platform package), database
@@ -66,5 +66,5 @@ why the package can look unused.
 ## Method
 
 Inventory taken from the current tree: `apps/server/platform`, `apps/server/features`,
-`apps/server/http`, `erp.ts` command list, `packages/*`, and the config schema. Statuses reflect
+`apps/server/http`, `cli/` command list, `packages/*`, and the config schema. Statuses reflect
 grep plus source reading, not a formal audit.

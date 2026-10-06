@@ -33,7 +33,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           CLOUDFLARE_APP_URL: ${{ vars.CLOUDFLARE_APP_URL }}
-        run: bun scripts/cloudflare-preflight.ts
+        run: bun cli/tasks/cloudflare-preflight.ts
       - run: bun erp check
       - run: bun erp test
       - run: bun erp cloudflare:build

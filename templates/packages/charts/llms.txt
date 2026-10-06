@@ -1,0 +1,56 @@
+# @bun-erp/charts
+
+> Small, browser-only React chart components. Import a family subpath only where its screen is needed; never import this package from the server or Cloudflare Worker entry.
+
+## Quick use
+
+```tsx
+import { AreaChart } from "@bun-erp/charts/area";
+
+const rows = [
+  { period: "Jan", actual: 18, target: 20 },
+  { period: "Feb", actual: 24, target: 22 },
+];
+
+<AreaChart
+  label="Actual and target by month"
+  data={rows}
+  categoryKey="period"
+  series={[
+    { dataKey: "actual", label: "Actual" },
+    { dataKey: "target", label: "Target" },
+  ]}
+  variant="linear"
+/>
+```
+
+## Entry points
+
+- `@bun-erp/charts/area` — `AreaChart`; patterns: default, linear, step, legend, stacked, stacked-expand, icons, gradient, axes, interactive.
+- `@bun-erp/charts/bar` — `BarChart`; patterns: default, horizontal, multiple, stacked, label, label-custom, mixed, active, negative, interactive.
+- `@bun-erp/charts/line` — `LineChart`; patterns: default, linear, step, multiple, dots, dots-custom, dots-colors, label, label-custom, interactive.
+- `@bun-erp/charts/pie` — `PieChart`; patterns: simple, separator-none, label, label-custom, label-list, legend, donut, donut-active, donut-text, stacked, interactive.
+- `@bun-erp/charts/radar` — `RadarChart`; patterns: default, dots, lines-only, label-custom, grid-custom, grid-none, grid-circle, grid-circle-no-lines, grid-circle-fill, grid-fill, multiple, legend.
+- `@bun-erp/charts/radial` — `RadialChart`; patterns: simple, label, grid, text, shape, stacked.
+- `@bun-erp/charts/atoms/chart-frame` — accessible responsive chart boundary and palette.
+- `@bun-erp/charts/sparkline` — `Sparkline`; area/line micro-charts with a lazy Recharts renderer and dimension-preserving accessible skeleton.
+- `@bun-erp/charts/metric-list` — `MetricList`; compact label, sparkline, value, and delta rows.
+- `@bun-erp/charts/primitives` — selected Recharts primitives for custom compositions.
+
+All chart data, axis keys, labels, formatting, and selection callbacks are supplied by the consuming feature. These components do not include demo business data or fetch from an API.
+
+## Local-first and remote data
+
+The charts are presentation-only. A feature can supply local arrays directly or use TanStack Query with the Hono RPC client and pass the returned rows. Keep RPC contracts, query keys, loading states, and offline persistence in the feature; do not add server, database, or query-client dependencies to this package.
+
+## Loading and bundle size
+
+Use a direct family import inside the file-based route or lazy screen that needs it. Avoid a barrel import for all chart families. The package is not referenced by the API Worker entry; keep it out of server imports. Recharts is a runtime dependency of this optional UI package.
+
+## Sources and license
+
+- API patterns follow the official [shadcn chart gallery](https://ui.shadcn.com/charts/) and its [component guide](https://ui.shadcn.com/docs/components/chart).
+- The charts use [Recharts](https://github.com/recharts/recharts), distributed under MIT; see the upstream license before redistributing a built product.
+- `Sparkline` and `MetricList` are adapted from [dashboardcn](https://github.com/NoahGdev/dashboardcn) (MIT); see `THIRD_PARTY_NOTICES-dashboard.md`.
+- shadcn/ui is MIT licensed; see [upstream license](https://github.com/shadcn-ui/ui/blob/main/LICENSE.md).
+- This package is a maintained, typed implementation of the gallery patterns, not a verbatim copy of each gallery demo. No upstream demo data is bundled.

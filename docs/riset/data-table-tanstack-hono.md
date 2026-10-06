@@ -1,8 +1,9 @@
 # TanStack Data Table and Hono RPC
 
-Research verified against the official docs on 2026-10-04. The implementation lives in
-[`@bun-erp/data-table`](../../packages/data-table/README.md); this note records the decisions that
-guide changes to it.
+Research verified against the official docs on 2026-10-04. The implementation waits in the opt-in
+catalog at [`templates/packages/data-table`](../../templates/packages/data-table/README.md) and
+installs with `bun erp packages:install data-table`; this note records the decisions that guide
+changes to it.
 
 ## Findings
 
@@ -38,9 +39,9 @@ empty states accessible while retaining the previous rows during a page transiti
 - `@bun-erp/data-table/server` provides the controlled manual adapter for externally loaded rows.
 - `@bun-erp/data-table/styles.css` is opt-in; the package has no Hono, Query, router, auth, storage,
   or application-schema dependency.
-- Feature-owned Hono + Query examples live in
-  [`packages/data-table/docs/usage.md`](../../packages/data-table/docs/usage.md). Package API
-  pointers for agents are in [`packages/data-table/llms.txt`](../../packages/data-table/llms.txt).
+- Feature-owned Hono + Query examples live in the catalog's
+  [`docs/usage.md`](../../templates/packages/data-table/docs/usage.md). Package API pointers for
+  agents are in its [`llms.txt`](../../templates/packages/data-table/llms.txt).
 
 ## Sources
 

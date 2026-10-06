@@ -4,7 +4,7 @@ Private routes authorize before parsing input. Organization comes from server co
 RBAC grants are server-enforced, including distinctions between 401, 403 and 404.
 
 Secrets live in ignored environment files or deployment secrets. `env:list` displays secret
-presence only. Pino log redaction is in `platform/observability/logger.ts`; audit snapshots use
+presence only. Pino log redaction is in `infra/observability/logger.ts`; audit snapshots use
 entity allowlists plus secret filtering. Neither control replaces the other.
 
 Email/password auth uses Better Auth. Google is dormant unless both credentials are set.

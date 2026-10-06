@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY . .
 RUN bun install --frozen-lockfile
+# The template ships apps/ empty; the image installs the reference combination without agent wiring.
+RUN bun erp init --apps server,web --yes --no-agents
 RUN APP_DEPLOY_TARGET=bun APP_WEB_MODE=integrated bun erp build
 RUN bun install --production --frozen-lockfile
 
@@ -23,4 +25,4 @@ RUN mkdir -p /app/.data/storage && chown -R bun:bun /app/.data
 USER bun
 EXPOSE 3000
 
-CMD ["bun", "apps/server/server.ts", "--with-jobs"]
+CMD ["bun", "apps/server/bootstrap/server.ts", "--with-jobs"]

@@ -14,5 +14,6 @@ Use stable event names such as `http.request.slow_or_failed` and attach low-risk
 record values; use the registered route template if one is available. Keep success logs quiet,
 and log an error once at the boundary that can act on it. Never log a secret to explain a failure.
 
-Mobile code calls `createMobileLogger(area)` from `apps/mobile/src/lib/logger.ts`. The mobile
+Mobile code calls `createMobileLogger(area)` from `apps/mobile/src/lib/logger.ts` (install the catalog
+app with `bun erp apps:create <name> mobile` first). The mobile
 gate blocks direct `console` calls elsewhere. Debug events are disabled in production builds.

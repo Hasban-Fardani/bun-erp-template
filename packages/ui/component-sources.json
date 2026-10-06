@@ -70,11 +70,6 @@
       "reference": "https://ui.shadcn.com/docs/components/base/combobox",
       "rationale": "Retains the Radix Popover and cmdk implementation instead of adopting the registry’s Base UI dependency."
     },
-    "packages/ui/src/organisms/data-table.tsx": {
-      "registry": "custom",
-      "reference": "https://ui.shadcn.com/docs/components/data-table",
-      "rationale": "Adapts the upstream table pattern for server-side paging, mobile cards and explicit query states."
-    },
     "packages/ui/src/organisms/dropdown-menu.tsx": {
       "registry": "custom",
       "reference": "https://ui.shadcn.com/docs/components/base/dropdown-menu",
@@ -84,11 +79,6 @@
       "registry": "custom",
       "reference": "https://ui.shadcn.com/docs/components/base/dialog",
       "rationale": "Provides a small app-facing Modal wrapper around Radix Dialog."
-    },
-    "packages/ui/src/organisms/resource-table.tsx": {
-      "registry": "custom",
-      "reference": "https://ui.shadcn.com/docs/components/data-table",
-      "rationale": "Provides a shared server-data table frame while each feature supplies columns and query behavior."
     },
     "packages/ui/src/organisms/sheet.tsx": {
       "registry": "custom",

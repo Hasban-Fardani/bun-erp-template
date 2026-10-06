@@ -1,0 +1,33 @@
+import type { Env } from "../config/index.ts";
+import { loadEnv } from "../config/index.ts";
+import { createDatabase } from "../database/index.ts";
+import { migrate } from "../database/migrate.ts";
+import { createAuth } from "../features/identity/auth.ts";
+import { createLogger } from "../infra/observability/logger.ts";
+import { createStorage } from "../infra/storage.ts";
+import type { AppContext } from "./context.ts";
+
+export type BootstrapOptions = {
+  env?: Env;
+  /** `false` for commands that handle their own migrations. */
+  migrateOnStart?: boolean;
+  migrationsDir?: string;
+};
+
+const MIGRATIONS_DIR = `${import.meta.dir}/../database/migrations`;
+
+export async function createContext(options: BootstrapOptions = {}): Promise<AppContext> {
+  const env = options.env ?? loadEnv();
+  const logger = createLogger(env);
+  const { db, close } = createDatabase(env);
+
+  if (options.migrateOnStart !== false) {
+    const ran = await migrate(db, options.migrationsDir ?? MIGRATIONS_DIR);
+    if (ran.length > 0) logger.info({ event: "database.migrated", migrations: ran });
+  }
+
+  const auth = createAuth(env, db);
+  const storage = createStorage({ env });
+
+  return { env, db, logger, auth, storage, close };
+}

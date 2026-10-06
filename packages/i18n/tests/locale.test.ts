@@ -56,7 +56,7 @@ test("reads and writes the canonical preference without propagating storage erro
 });
 
 test("falls back to the English message when a localized key is absent", () => {
-  expect(resolveMessage("common.cancel", {}, enUS)).toBe("Cancel");
+  expect(resolveMessage("common.loading", {}, enUS)).toBe("Loading…");
 });
 
 test("formats numbers, dates, and relative times for the active locale", () => {

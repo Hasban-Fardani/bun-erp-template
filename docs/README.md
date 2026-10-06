@@ -20,6 +20,6 @@ decision has been implemented.
 | Reusable package boundaries and imports | [Architecture](architecture.md), each package's package.json exports |
 | Architecture decisions | [ADR index](adr/README.md) |
 
-tasks/ records work and verification with human-owned status. riset/ contains archived research and
-command output only. Neither directory is current implementation guidance; consult it only when
-reviewing the referenced historical change.
+`docs/tasks/` records work and verification with human-owned status. `docs/riset/` contains archived
+research and command output only. Neither directory is current implementation guidance; consult it
+only when reviewing the referenced historical change.

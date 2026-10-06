@@ -134,10 +134,20 @@ export interface NotificationItemProps {
   time: ReactNode;
   /** Beside the time, such as a menu or a mark-as-read button. */
   trailing?: ReactNode;
+  /** Accessible label for the unread dot; keep it localized. */
+  unreadLabel?: string;
 }
 
 /** One notification. The whole row opens it; buttons in `actions` and `trailing` sit above that. */
-export function NotificationItem({ actions, className, notification, onOpen, time, trailing }: NotificationItemProps) {
+export function NotificationItem({
+  actions,
+  className,
+  notification,
+  onOpen,
+  time,
+  trailing,
+  unreadLabel,
+}: NotificationItemProps) {
   return (
     <li
       data-read={notification.read || undefined}
@@ -163,7 +173,7 @@ export function NotificationItem({ actions, className, notification, onOpen, tim
         {actions ? <div className="relative mt-1 flex flex-wrap gap-2">{actions}</div> : null}
       </div>
       <div className="relative flex shrink-0 flex-col items-end gap-2">
-        {!notification.read && <UnreadDot className="mt-1.5" />}
+        {!notification.read && <UnreadDot className="mt-1.5" label={unreadLabel} />}
         {trailing}
       </div>
     </li>

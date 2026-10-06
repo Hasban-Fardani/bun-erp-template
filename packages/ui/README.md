@@ -30,25 +30,25 @@ Import from the layer that owns the behavior. The source file uses the same name
 |---|---|
 | `atoms` | `CornerFrame`, `DeltaBadge` |
 | `molecules` | `DistributionBar`, `MetricValue`, `SegmentedMeter`, `TickBar` |
-| `organisms` | `ActivityRings`, `BarList`, `Breakdown`, `Comparison`, `DotPlot`, `FunnelChart`, `MetricList`, `RadialGauge`, `Sparkline`, `Timeline` |
+| `organisms` | `ActivityRings`, `BarList`, `Breakdown`, `Comparison`, `DotPlot`, `FunnelChart`, `RadialGauge`, `Timeline` |
 
-`Sparkline` is a legacy dashboard chart that loads its Recharts renderer on demand; its skeleton
-reserves the same height while that chunk is loading. The other visual components use native HTML or SVG.
-`SegmentedMeter` and `RadialGauge` require an `aria-label` so their value has an accessible name.
-Keep chart data and query state in the consuming feature; these components only render the props
-they receive.
+The visual components use native HTML or SVG. `SegmentedMeter` and `RadialGauge` require an
+`aria-label` so their value has an accessible name. Keep chart data and query state in the consuming
+feature; these components only render the props they receive. `Sparkline` and `MetricList` moved to
+the opt-in `@bun-erp/charts` package (`bun erp packages:install charts`), where their renderer still
+loads on demand.
 
-`molecules/table` contains the shadcn Table primitive. The existing TanStack-backed `DataTable` and
-dashboard chart modules are legacy exports slated for dedicated `@bun-erp/data-table` and
-`@bun-erp/charts` packages. Forms use TanStack Form. Email and PDF components live in
-`@bun-erp/email` and `@bun-erp/pdf` because their
-renderers have different runtime and delivery constraints.
+`molecules/table` contains the shadcn Table primitive. The TanStack-backed `ResourceTable` and
+server `DataTable`, and the renderer-backed `Sparkline` and `MetricList`, moved to the dedicated
+table and chart packages; this package depends on neither. Forms use TanStack Form. Email and PDF
+components live in the opt-in `@bun-erp/email` and `@bun-erp/pdf` packages (`bun erp packages:install
+email` / `pdf`) because their renderers have different runtime and delivery constraints.
 
 The exact allowed registry URLs are in [registry-allowlist.json](registry-allowlist.json) and
 `components.json`. Review component provenance before adding source: the UI catalog pins vendored
-shadcn files to an upstream commit and records each composed pattern; email and PDF catalogs pin
-their vendored files and preserve their MIT notices. Run `bun erp check:shadcn` to catch unreviewed,
-stale or unlicensed entries.
+shadcn files to an upstream commit and records each composed pattern; the installed email and PDF
+packages pin their vendored files and preserve their MIT notices. Run `bun erp check:shadcn` to catch
+unreviewed, stale or unlicensed entries.
 
 See [atomic design and package boundaries](../../docs/architecture.md#atomic-design) and the
 [UI registry skill](../../skills/ui-registry/SKILL.md).

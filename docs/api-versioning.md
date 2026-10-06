@@ -1,6 +1,6 @@
 # API versioning
 
-The current public contract is `/api/v1`. `apps/server/http/routes.ts` owns the prefix, and
+The current public contract is `/api/v1`. `apps/server/routes/api.ts` owns the prefix, and
 Hono derives the `AppType` RPC contract from the same registered route chain. Web and mobile
 clients import that type only; both call `rpc` under the `api.v1` chain.
 
