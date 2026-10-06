@@ -27,7 +27,7 @@ server app is installed; the root `cli/` never imports `apps/**`.
 | Store offline mobile data | apps/mobile/src/features/offline/stores/offline-store.ts | Encrypted native SQLite / browser IndexedDB adapter |
 | Change shared presentation | packages/ui/src | Atomic layers, tokens and approved upstream component references |
 | Add cross-app pure logic | packages/utils/src | Runtime-neutral code used by at least two app workspaces |
-| Change a quality gate | gates, cli | Read-only checks and CLI orchestration |
+| Change a quality gate | cli/gates, cli | Read-only checks and CLI orchestration |
 | Localize shared app copy and formats | packages/i18n | Typed catalogs, locale resolution and React provider |
 | Add rich text editing UI | templates/packages/editor (install with bun erp packages:install editor) | Lazy React entry, composable Lexical UI and JSON value |
 | Compose email or PDF documents | templates/packages/email, templates/packages/pdf (install on demand) | Opt-in rendering components with separate runtime boundaries |

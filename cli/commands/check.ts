@@ -1,13 +1,31 @@
-import { directoryExists } from "../../gates/exists.ts";
-import { CHECK_GATE_COMMANDS, runGate } from "../lib/gates.ts";
+import { directoryExists } from "../gates/exists.ts";
+import { CHECK_GATE_COMMANDS, GATE_CATALOG, runGate } from "../lib/gates.ts";
 import { GateFailure, guard, MIGRATIONS_DIR, repoRoot } from "../lib/repo.ts";
 import { defineCommand, runCommand } from "../registry.ts";
+
+/** Aligned name/command/file/summary table for `check:gate --list`, sorted by gate name. */
+function gateTable(): string {
+  const rows = [...GATE_CATALOG].sort((a, b) => a.name.localeCompare(b.name));
+  const cells = [
+    ["NAME", "COMMAND", "SOURCE FILE", "SUMMARY"],
+    ...rows.map((gate) => [gate.name, gate.command, gate.file, gate.summary]),
+  ];
+  const widths = [0, 1, 2, 3].map((column) => Math.max(...cells.map((row) => row[column]?.length ?? 0)));
+  return `${cells
+    .map((row) =>
+      row
+        .map((cell, column) => cell.padEnd(widths[column] ?? 0))
+        .join("  ")
+        .trimEnd(),
+    )
+    .join("\n")}\n`;
+}
 
 export const commands = [
   defineCommand("check:gate", async (args) => {
     const [name, ...forwardedArgs] = args;
     if (name === "--list" || name === "list") {
-      process.stdout.write(`Available gates: ${Object.keys(CHECK_GATE_COMMANDS).sort().join(", ")}\n`);
+      process.stdout.write(gateTable());
       return;
     }
     if (!name) {
@@ -59,7 +77,7 @@ export const commands = [
   defineCommand("check", async () => {
     // biome and tsc run first: a type error explains most of the gate noise below, so seeing
     // them first saves reading twelve reports to find the cause.
-    const { runProjectChecks } = await import("../../gates/parallel-gates.ts");
+    const { runProjectChecks } = await import("../gates/parallel-gates.ts");
     process.stdout.write("Running project checks (up to 6 in parallel)…\n");
     const results = await runProjectChecks(repoRoot, {
       onResult: (r) => process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`),
@@ -75,7 +93,7 @@ export const commands = [
 
   defineCommand("check:fast", async () => {
     // The inner loop: file-level gates only. The full `check` (tsc + React audit) stays for CI.
-    const { runFastChecks } = await import("../../gates/parallel-gates.ts");
+    const { runFastChecks } = await import("../gates/parallel-gates.ts");
     process.stdout.write("Running fast checks (no typecheck or React audit)…\n");
     const results = await runFastChecks(repoRoot, {
       onResult: (r) => process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`),
@@ -92,7 +110,7 @@ export const commands = [
   // Readiness gate: the checks that only matter when this stops being a laptop project.
   defineCommand("check:prod", async () => {
     await guard("readiness", async () => {
-      const { checkReadiness } = await import("../../gates/readiness.ts");
+      const { checkReadiness } = await import("../gates/readiness.ts");
       const findings = (await checkReadiness(repoRoot)).map((f) => `${f.rule}: ${f.detail}`);
       if (findings.length > 0) throw new GateFailure(findings);
     });

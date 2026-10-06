@@ -40,7 +40,7 @@ export async function findCodeSlop(root: string): Promise<string[]> {
 
 /** Everything the repo owns: app source, the CLI and its gates, plus catalog packages, apps and features. */
 function sourceFiles(root: string): string[] {
-  return ["apps", "packages", "templates/packages", "templates/apps", "templates/features", "gates", "cli"].flatMap(
+  return ["apps", "packages", "templates/packages", "templates/apps", "templates/features", "cli/gates", "cli"].flatMap(
     (dir) =>
       [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter(
         (p) => !p.includes("node_modules") && !p.endsWith("/routeTree.gen.ts"),
@@ -73,7 +73,7 @@ async function governanceFindings(root: string): Promise<string[]> {
     "templates/apps/web/src",
     "templates/apps/mobile/src",
     "packages/ui/src",
-    "gates",
+    "cli/gates",
   ];
   const targets: string[] = [];
   for (const dir of targetDirs) {

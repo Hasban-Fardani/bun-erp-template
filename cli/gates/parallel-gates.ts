@@ -1,3 +1,5 @@
+import { GATE_CATALOG } from "../lib/gates.ts";
+
 export type GateResult = { name: string; ok: boolean; output: string; ms: number };
 export type CheckJob = { name: string; argv: readonly string[] };
 export type CheckRunOptions = {
@@ -7,32 +9,11 @@ export type CheckRunOptions = {
 
 const DEFAULT_CONCURRENCY = 6;
 
-const GATES: readonly { name: string; command: string }[] = [
-  { name: "agents", command: "check:agents" },
-  { name: "architecture", command: "check:architecture" },
-  { name: "language", command: "check:language" },
-  { name: "mobile", command: "check:mobile" },
-  { name: "versioning", command: "check:versioning" },
-  { name: "docs", command: "check:docs" },
-  { name: "rpc", command: "check:rpc" },
-  { name: "ci", command: "check:ci" },
-  { name: "scope", command: "check:scope" },
-  { name: "slop", command: "check:slop" },
-  { name: "platform", command: "check:platform" },
-  { name: "copy", command: "check:copy" },
-  { name: "design", command: "check:design" },
-  { name: "ui", command: "check:ui" },
-  { name: "motion", command: "check:motion" },
-  { name: "shadcn", command: "check:shadcn" },
-  { name: "surface", command: "check:surface" },
-  { name: "react", command: "check:react" },
-  { name: "migrations", command: "check:migrations" },
-  { name: "package-targets", command: "check:package-targets" },
-  { name: "skills", command: "skills:validate" },
-  { name: "task", command: "check:task" },
-  { name: "tdd", command: "check:tdd" },
-  { name: "readiness", command: "check:prod" },
-];
+/** The `check` runner derives its job list from the catalog in cli/lib/gates.ts. */
+const GATES: readonly { name: string; command: string }[] = GATE_CATALOG.map(({ name, command }) => ({
+  name,
+  command,
+}));
 
 async function runOne(root: string, job: CheckJob): Promise<GateResult> {
   const started = performance.now();

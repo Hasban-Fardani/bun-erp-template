@@ -25,4 +25,4 @@ This skill is self-contained; no external antislop core file is required.
 
 Verify build and browser interactions, long values, empty/error states and both themes.
 Responsive changes also load [mobile layout](../antislop-layoutmobile/SKILL.md).
-`gates/*` owns enforced gate behavior; this guidance must not be used to silence a finding.
+`cli/gates/*` owns enforced gate behavior; this guidance must not be used to silence a finding.

@@ -26,22 +26,22 @@ const PATH_ALLOWED = new Set([
   "apps/server/cli/commands/env.ts",
   "apps/server/cli/tasks/dev.ts",
   // Gate modules join paths; Bun has no path API, so node:path is the correct choice here.
-  "gates/copy-guard.ts",
-  "gates/architecture-guard.ts",
-  "gates/mobile-gate.ts",
-  "gates/versioning.ts",
+  "cli/gates/copy-guard.ts",
+  "cli/gates/architecture-guard.ts",
+  "cli/gates/mobile-gate.ts",
+  "cli/gates/versioning.ts",
   // Vendored verbatim from the governance repo, with only import extensions and null-checks
   // touched. Rewriting them to Bun APIs would make future diffs against upstream unreadable.
-  "gates/governance",
-  "gates/design-gate.ts",
-  "gates/interactive-surface.ts",
-  "gates/shadcn-guard.ts",
-  "gates/ui-completeness.ts",
+  "cli/gates/governance",
+  "cli/gates/design-gate.ts",
+  "cli/gates/interactive-surface.ts",
+  "cli/gates/shadcn-guard.ts",
+  "cli/gates/ui-completeness.ts",
   "apps/web/vite.config.ts",
-  "gates/scope.ts",
-  "gates/skills.ts",
-  "gates/slop.ts",
-  "gates/tasks.ts",
+  "cli/gates/scope.ts",
+  "cli/gates/skills.ts",
+  "cli/gates/slop.ts",
+  "cli/gates/tasks.ts",
 ]);
 
 /**
@@ -56,7 +56,7 @@ const NODE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
 const SCAN_GLOBS = [
   "apps/**/*.ts",
   "apps/**/*.tsx",
-  "gates/**/*.ts",
+  "cli/gates/**/*.ts",
   "packages/**/*.ts",
   "packages/**/*.tsx",
   // Opt-in package sources wait in the catalog; they must stay as Bun-first as an installed copy.
@@ -94,7 +94,7 @@ export async function checkPlatform(root: string): Promise<PlatformFinding[]> {
       // Vendored governance validators: copied verbatim, so their Node imports are upstream's
       // choice, not a decision made here. Rewriting them would make diffs against the source
       // unreadable, and the exemption is directory-scoped on purpose.
-      if (file.startsWith("gates/governance/")) continue;
+      if (file.startsWith("cli/gates/governance/")) continue;
 
       const body = await Bun.file(`${root}/${file}`).text();
       // Catalog app copies keep their installed path for exemptions: templates/apps/<x> behaves like apps/<x>.
@@ -112,7 +112,7 @@ export async function checkPlatform(root: string): Promise<PlatformFinding[]> {
         findings.push({
           rule: "NODE_BUILTIN",
           path: `${file}:${index + 1}`,
-          detail: `uses node:${namespace} — use the Bun equivalent (Bun.file, Bun.write, Bun.Glob, Bun.spawn, Bun.$) or document an exemption in gates/platform.ts`,
+          detail: `uses node:${namespace} — use the Bun equivalent (Bun.file, Bun.write, Bun.Glob, Bun.spawn, Bun.$) or document an exemption in cli/gates/platform.ts`,
         });
       }
     }

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { validateRegistryContract, validateVendoredSourceCatalog } from "../../../../gates/shadcn-guard.ts";
+import { validateRegistryContract, validateVendoredSourceCatalog } from "../../../../cli/gates/shadcn-guard.ts";
 
 const approved = [
   { name: "@shadcn", url: "https://ui.shadcn.com/r/styles/new-york-v4/{name}.json" },

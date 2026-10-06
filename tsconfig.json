@@ -20,6 +20,6 @@
     "incremental": true,
     "noEmit": true
   },
-  "include": ["apps/**/*.ts", "apps/**/*.tsx", "gates/**/*.ts", "packages/**/*.ts", "packages/**/*.tsx", "cli/**/*.ts"],
-  "exclude": ["node_modules", "dist", ".data", "gates/governance"]
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx", "cli/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".data", "cli/gates/governance"]
 }

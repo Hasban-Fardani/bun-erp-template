@@ -13,6 +13,7 @@ decision has been implemented.
 | Auth, RBAC, audit and secrets | [Security](security.md) |
 | Queue behavior, logs, health and backup | [Operations](operations.md), [Logging](logging.md) |
 | CI, deployment targets and releases | [CI](ci.md), [Deployment](deployment.md) |
+| Quality gates and how to add one | [Gates](gates.md) |
 | Mobile structure, offline storage and native builds | [Mobile](mobile.md) |
 | UI feedback and interaction copy | [UI states](ui-states.md), [UI copy](ui-copy.md) |
 | Accessible list motion | [Mobile](mobile.md), [shared UI package guide](../packages/ui/llms.txt) |

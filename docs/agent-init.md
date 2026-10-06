@@ -3,7 +3,7 @@
 Run `bun erp init` from the repository root before code exploration or development. It is the single
 door: it installs the chosen app combination from `templates/apps/` (numbered choice list, or
 `--apps server,web --yes`; `--no-agents` skips the tooling below), runs the first `bun install`, then
-pins and syncs the local CodeGraph index at the release in `gates/codegraph.ts`, wires the CodeGraph
+pins and syncs the local CodeGraph index at the release in `cli/gates/codegraph.ts`, wires the CodeGraph
 MCP server into every detected agent (opencode included, normalized to opencode's real schema),
 aligns an older global `codegraph` to the pinned release, and installs the required Matthew Pocock
 and Petr Kindlmann QA skills when any are missing. Re-running it updates the index, repairs missing
@@ -15,14 +15,14 @@ For a nontrivial feature or architecture change, invoke `grill-me` before implem
 the open design decisions with the user. Read the relevant project skill and canonical docs before
 editing. Use CodeGraph to locate and trace code first; use exact-text search after narrowing scope.
 
-`bun erp check:agents` verifies every skill listed in `gates/agent-skills.ts`, that the pinned
+`bun erp check:agents` verifies every skill listed in `cli/gates/agent-skills.ts`, that the pinned
 CodeGraph CLI resolves and reports the pinned version, and that the index contains the entry files of
 the installed apps (the server and web entries once those apps are installed; a missing app is not
 required). QA browser work uses Playwright only; Cypress skills and Cypress test files
 are outside the approved toolchain. `bun erp check` includes this gate. Initialize first when it
 reports a missing skill, an unavailable or drifted CLI, or an index entry.
 
-Tool versions are pinned in `gates/codegraph.ts` and `cli/tasks/init-agents.ts`. CodeGraph CLI reference:
+Tool versions are pinned in `cli/gates/codegraph.ts` and `cli/tasks/init-agents.ts`. CodeGraph CLI reference:
 [project quickstart](https://github.com/colbymchenry/codegraph/blob/main/site/src/content/docs/getting-started/quickstart.md).
 The skills are vendored from [Matthew Pocock's skills repository](https://github.com/mattpocock/skills)
 and [Petr Kindlmann's QA skills repository](https://github.com/petrkindlmann/qa-skills). Two skill

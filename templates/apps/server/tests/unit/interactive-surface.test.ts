@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkInteractiveSurface } from "../../../../gates/interactive-surface.ts";
+import { checkInteractiveSurface } from "../../../../cli/gates/interactive-surface.ts";
 
 test("persistent errors stay contextual and new inline alerts require review", async () => {
   const root = `${process.env.TMPDIR ?? "/tmp"}/erp-surface-${Bun.randomUUIDv7()}`;

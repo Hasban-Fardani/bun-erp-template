@@ -12,8 +12,8 @@
 - Shared UI follows atomic design and the approved registry contract. See skills/ui-registry/SKILL.md.
 - Add code to packages/utils only when two or more app workspaces share pure, runtime-neutral logic. See skills/cross-platform-utilities/SKILL.md.
 - Logger redaction and audit field allowlists are separate safeguards; never log secrets.
-- Node built-ins are restricted by gates/platform.ts; check the gate before adding one.
-- `gates/` holds read-only gates and governance checks; `cli/tasks/` holds helpers the CLI invokes. Both are TypeScript, but a gate never mutates the repo and a task is never imported by a gate.
+- Node built-ins are restricted by cli/gates/platform.ts; check the gate before adding one.
+- `cli/gates/` holds read-only gates and governance checks; `cli/tasks/` holds helpers the CLI invokes. Both are TypeScript, but a gate never mutates the repo and a task is never imported by a gate. See docs/gates.md.
 
 bun erp check runs lint, types and read-only gates concurrently. It does not run tests or builds.
 Run bun erp test and the relevant app build when the change requires them.
@@ -32,7 +32,7 @@ Catalog apps keep their real package names, so `init` lands `@bun-erp/server`, `
 the server app exists; without it they install detached (`src/lib/rpc.ts` stub, no `@bun-erp/server`
 dependency) and a later `init` that adds the server re-fits the typed client. Server- and
 database-facing CLI commands live in `apps/server/cli/commands/`; the registry discovers them only
-while the server app is installed, and root `cli/` and `gates/` never import `apps/**`.
+while the server app is installed, and root `cli/` — its gates included — never imports `apps/**`.
 
 ## Feature catalog
 

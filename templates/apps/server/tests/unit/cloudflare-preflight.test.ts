@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { validateCloudflarePreflight } from "../../../../gates/cloudflare-preflight.ts";
+import { validateCloudflarePreflight } from "../../../../cli/gates/cloudflare-preflight.ts";
 
 const validEnvironment = {
   CLOUDFLARE_API_TOKEN: "test-token",

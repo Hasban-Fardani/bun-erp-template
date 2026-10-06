@@ -9,7 +9,8 @@ data, or business rules without a separate product spec.
 ## Start with the smallest useful context
 
 - Use docs/README.md to select one canonical document; do not load the whole docs tree.
-- Read docs/architecture.md and docs/conventions.md before code changes.
+- Read docs/architecture.md and docs/conventions.md before code changes; docs/gates.md catalogs
+  every check gate and how to add one.
 - Use the matching skill from skills/README.md; source gates are the enforceable rules.
 - Run `bun erp init` once after cloning or copying the template. It installs the chosen app
   combination (choice list; `--apps server,web --yes` in CI), runs the first `bun install`, indexes
@@ -28,8 +29,8 @@ data, or business rules without a separate product spec.
   `bun erp init` (combination choice) or `bun erp apps:create <name> <server|web|mobile>`. Server-
   and database-facing CLI commands (`db:*`, `user:*`, `role:*`, `jobs:*`, `route:list`, `doctor`,
   `env:list`) live in the server catalog under `apps/server/cli/` and appear in `bun erp --help` only
-  once the server app is installed. Never import `apps/**` from root `cli/` or `gates/`; the template
-  must typecheck and pass `bun erp check` with `apps/` empty.
+  once the server app is installed. Never import `apps/**` from root `cli/` (including `cli/gates/`);
+  the template must typecheck and pass `bun erp check` with `apps/` empty.
 - Web and mobile bind the server's typed Hono contract when a server app exists. Without a server
   they install in detached mode (`src/lib/rpc.ts` stub, no `@bun-erp/server` dependency); a later
   `bun erp init` that adds the server re-fits the real client.

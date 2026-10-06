@@ -1,4 +1,4 @@
-import { validateCloudflarePreflight } from "../../gates/cloudflare-preflight.ts";
+import { validateCloudflarePreflight } from "../gates/cloudflare-preflight.ts";
 
 const config = (await Bun.file("wrangler.jsonc").json()) as {
   hyperdrive?: { id?: string }[];

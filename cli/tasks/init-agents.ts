@@ -1,8 +1,8 @@
 import { mkdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { AGENT_SKILL_SOURCES } from "../../gates/agent-skills.ts";
-import { CODEGRAPH_VERSION, codegraphCommand, codegraphMcpCommand } from "../../gates/codegraph.ts";
+import { AGENT_SKILL_SOURCES } from "../gates/agent-skills.ts";
+import { CODEGRAPH_VERSION, codegraphCommand, codegraphMcpCommand } from "../gates/codegraph.ts";
 
 const root = resolve(import.meta.dir, "../..");
 const SKILLS_CLI_VERSION = "1.7.0";

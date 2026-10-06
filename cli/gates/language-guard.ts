@@ -78,7 +78,12 @@ export async function checkTechnicalLanguage(root: string): Promise<LanguageFind
   const files = ["apps", "packages/ui", "packages/utils", "templates/apps", "templates/features", "cli"].flatMap(
     (dir) =>
       [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter(
-        (file) => !file.endsWith("/routeTree.gen.ts") && !file.includes("/node_modules/"),
+        (file) =>
+          !file.endsWith("/routeTree.gen.ts") &&
+          !file.includes("/node_modules/") &&
+          // Gates lived outside this scan before moving under cli/; the TypeScript scanner desyncs
+          // on the vendored governance and contrast sources, and gate code names are not user-facing.
+          !file.startsWith("cli/gates/"),
       ),
   );
 

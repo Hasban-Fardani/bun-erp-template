@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkArchitecture } from "../../../../gates/architecture-guard.ts";
+import { checkArchitecture } from "../../../../cli/gates/architecture-guard.ts";
 
 test("atomic and application boundaries reject forbidden imports and permit shared UI", async () => {
   const root = `${process.env.TMPDIR ?? "/tmp"}/erp-architecture-${Bun.randomUUIDv7()}`;

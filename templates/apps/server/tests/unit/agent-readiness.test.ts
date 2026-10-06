@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { type AgentReadinessInput, evaluateAgentReadiness } from "../../../../gates/agent-readiness.ts";
-import { REQUIRED_AGENT_SKILLS } from "../../../../gates/agent-skills.ts";
-import { CODEGRAPH_VERSION } from "../../../../gates/codegraph.ts";
+import { type AgentReadinessInput, evaluateAgentReadiness } from "../../../../cli/gates/agent-readiness.ts";
+import { REQUIRED_AGENT_SKILLS } from "../../../../cli/gates/agent-skills.ts";
+import { CODEGRAPH_VERSION } from "../../../../cli/gates/codegraph.ts";
 
 const BASE: AgentReadinessInput = {
   installedSkills: [...REQUIRED_AGENT_SKILLS],

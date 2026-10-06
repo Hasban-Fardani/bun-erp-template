@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkTdd } from "../../../../gates/tdd.ts";
+import { checkTdd } from "../../../../cli/gates/tdd.ts";
 
 async function writeFixture(withTest: boolean): Promise<string> {
   const root = `/tmp/erp-tdd-${crypto.randomUUID()}`;

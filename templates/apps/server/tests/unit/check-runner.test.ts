@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { runChecksParallel } from "../../../../gates/parallel-gates.ts";
+import { runChecksParallel } from "../../../../cli/gates/parallel-gates.ts";
 
 test("independent checks all finish and preserve failure output", async () => {
   const completed: string[] = [];
