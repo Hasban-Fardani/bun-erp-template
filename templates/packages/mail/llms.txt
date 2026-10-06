@@ -5,8 +5,10 @@ Server-only, app-agnostic mail transport for the Bun ERP workspace. Install with
 
 ## Public exports
 
-- `@bun-erp/mail/server`: `createMailer(options)`, `createMailRegistry()`, `MailDriverRegistry`,
-  `resolveMail(message, config)`, `htmlToText(html)`, `escapeHtml(value)`.
+- `@bun-erp/mail` (alias of `/server`, the package is server-only): `createMailer(options)`,
+  `createMailRegistry()`, `MailDriverRegistry`, `resolveMail(message, config)`, `htmlToText(html)`,
+  `escapeHtml(value)`.
+- `@bun-erp/mail/server`: the same surface when the server subpath reads better.
 - Types: `Mailer`, `MailMessage`, `MailAddress`, `MailAttachment`, `MailConfig`, `MailLogger`,
   `MailEnqueue`, `MailDriver`, `MailDriverContext`, `ResolvedMail`, `MailPayload`.
 

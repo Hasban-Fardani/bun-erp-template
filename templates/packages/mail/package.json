@@ -10,6 +10,7 @@
     "test": "bun test tests"
   },
   "exports": {
+    ".": "./src/server/index.ts",
     "./server": "./src/server/index.ts",
     "./llms.txt": "./llms.txt"
   },
