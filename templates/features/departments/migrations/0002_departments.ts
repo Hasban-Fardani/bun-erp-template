@@ -8,6 +8,8 @@ create table if not exists departments (
   name text not null,
   code text not null,
   is_active boolean not null default true,
+  deleted_at timestamptz,
+  version integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

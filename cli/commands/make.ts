@@ -24,12 +24,24 @@ import { defineCommand } from "../registry.ts";
 export const commands = [
   defineCommand("make:feature", async (args) => {
     await requireApps(["server", "web"]);
-    const rawName = resolveRequired(args[0], "Feature name");
-    if (!rawName || rawName.startsWith("--")) {
-      process.stderr.write("Usage: bun erp make:feature <name>\n");
+    const parsed = parseCommandOptions(args, { values: ["sequence", "prefix", "padding"] });
+    const rawName = resolveRequired(parsed.positional[0], "Feature name");
+    if (!rawName) {
+      process.stderr.write(
+        "Usage: bun erp make:feature <name> [--sequence <key>] [--prefix <prefix>] [--padding <digits>]\n",
+      );
       process.exit(1);
     }
-    const scaffold = renderFeatureScaffold(rawName);
+    const paddingRaw = parsed.values.get("padding");
+    const padding = paddingRaw === undefined ? undefined : Number(paddingRaw);
+    if (padding !== undefined && (!Number.isInteger(padding) || padding < 0)) {
+      throw new Error("--padding must be a non-negative integer");
+    }
+    const sequenceKey = parsed.values.get("sequence");
+    const scaffold = renderFeatureScaffold(
+      rawName,
+      sequenceKey ? { sequence: { key: sequenceKey, prefix: parsed.values.get("prefix"), padding } } : {},
+    );
     const web = renderWebFeatureScaffold(scaffold);
     for (const file of [...scaffold.files, ...web.files]) {
       const path = resolve(repoRoot, file.path);
@@ -43,7 +55,7 @@ export const commands = [
     const migrationPath = `apps/server/database/migrations/${migrationFile}`;
     await writeScaffold(
       resolve(MIGRATIONS_DIR, migrationFile),
-      renderMigrationSource({ mode: "create", table: scaffold.table }),
+      renderMigrationSource({ mode: "create", table: scaffold.table, numbering: sequenceKey !== undefined }),
     );
 
     const statementsPath = "apps/server/features/rbac/statements.ts";

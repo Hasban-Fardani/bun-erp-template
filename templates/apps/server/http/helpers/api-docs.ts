@@ -15,7 +15,7 @@ const AUTHENTICATED_ERRORS: Readonly<Record<number, string>> = {
   401: "No session",
   403: "Authenticated, but the caller lacks the permission",
   404: "Not found",
-  409: "Conflict — the value is already taken",
+  409: "Conflict — the value is already taken or the row version is stale",
   422: "Input validation failed",
 };
 

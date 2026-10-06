@@ -84,13 +84,93 @@ describe("departments", () => {
     const { data } = (await created.json()) as { data: { id: string } };
     const patched = await api.client.api.v1.departments[":id"].$patch({
       param: { id: data.id },
-      json: { name: "B" },
+      json: { name: "B", expectedVersion: 0 },
     });
     expect(patched.status).toBe(200);
     const missing = await api.client.api.v1.departments[":id"].$patch({
       param: { id: "0199aaaa-0000-7000-8000-000000000000" },
-      json: { name: "B" },
+      json: { name: "B", expectedVersion: 0 },
     });
     expect(missing.status).toBe(404);
+  });
+
+  test("a stale expectedVersion is 409 with the current version", async () => {
+    const created = await api.client.api.v1.departments.$post({ json: { name: "A", code: "AA" } });
+    const { data } = (await created.json()) as { data: { id: string; version: number } };
+    expect(data.version).toBe(0);
+
+    const updated = await api.client.api.v1.departments[":id"].$patch({
+      param: { id: data.id },
+      json: { name: "B", expectedVersion: data.version },
+    });
+    expect(updated.status).toBe(200);
+    const fresh = (await updated.json()) as { data: { version: number } };
+    expect(fresh.data.version).toBe(1);
+
+    const stale = await api.client.api.v1.departments[":id"].$patch({
+      param: { id: data.id },
+      json: { name: "C", expectedVersion: data.version },
+    });
+    expect(stale.status).toBe(409);
+    const body = (await stale.json()) as {
+      error: { code: string; details?: { currentVersion?: number } };
+    };
+    expect(body.error.code).toBe("CONFLICT");
+    expect(body.error.details?.currentVersion).toBe(1);
+
+    // expectedVersion is part of the contract, not an optional hint; the typed client cannot
+    // express a missing required field, so this one case uses app.request directly.
+    const withoutVersion = await api.app.request(`/api/v1/departments/${data.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", cookie: api.cookie },
+      body: JSON.stringify({ name: "D" }),
+    });
+    expect(withoutVersion.status).toBe(422);
+  });
+
+  test("soft delete hides the row until includeDeleted, and restore returns it", async () => {
+    const created = await api.client.api.v1.departments.$post({ json: { name: "A", code: "AA" } });
+    const { data } = (await created.json()) as { data: { id: string } };
+
+    const removed = await api.client.api.v1.departments[":id"].$delete({ param: { id: data.id } });
+    expect(removed.status).toBe(200);
+    const removedBody = (await removed.json()) as { data: { deletedAt: string | null } };
+    expect(removedBody.data.deletedAt).not.toBeNull();
+
+    const gone = await api.client.api.v1.departments[":id"].$get({ param: { id: data.id } });
+    expect(gone.status).toBe(404);
+
+    const hidden = await api.client.api.v1.departments.$get({ query: { perPage: "10" } });
+    expect(((await hidden.json()) as { data: { total: number } }).data.total).toBe(0);
+
+    const shown = await api.client.api.v1.departments.$get({
+      query: { perPage: "10", includeDeleted: "true" },
+    });
+    expect(((await shown.json()) as { data: { total: number } }).data.total).toBe(1);
+
+    const restored = await api.client.api.v1.departments[":id"].restore.$post({ param: { id: data.id } });
+    expect(restored.status).toBe(200);
+    const restoredBody = (await restored.json()) as { data: { deletedAt: string | null } };
+    expect(restoredBody.data.deletedAt).toBeNull();
+
+    const back = await api.client.api.v1.departments[":id"].$get({ param: { id: data.id } });
+    expect(back.status).toBe(200);
+  });
+
+  test("force delete removes a soft-deleted row permanently", async () => {
+    const created = await api.client.api.v1.departments.$post({ json: { name: "A", code: "AA" } });
+    const { data } = (await created.json()) as { data: { id: string } };
+    await api.client.api.v1.departments[":id"].$delete({ param: { id: data.id } });
+
+    const purged = await api.client.api.v1.departments[":id"].force.$delete({ param: { id: data.id } });
+    expect(purged.status).toBe(200);
+
+    const shown = await api.client.api.v1.departments.$get({
+      query: { perPage: "10", includeDeleted: "true" },
+    });
+    expect(((await shown.json()) as { data: { total: number } }).data.total).toBe(0);
+
+    const restoreGone = await api.client.api.v1.departments[":id"].restore.$post({ param: { id: data.id } });
+    expect(restoreGone.status).toBe(404);
   });
 });

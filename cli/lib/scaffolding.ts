@@ -54,7 +54,13 @@ export function nextMigrationFile(existingFiles: readonly string[], rawName: str
   return file;
 }
 
-export type MigrationIntent = { mode: "create" | "alter" | "stub"; table?: string; column?: string };
+export type MigrationIntent = {
+  mode: "create" | "alter" | "stub";
+  table?: string;
+  column?: string;
+  /** Create-mode only: add the sequence-backed `number` column. */
+  numbering?: boolean;
+};
 
 /** Reads Laravel's naming convention: create_x_table, add_y_to_x_table, alter_x_table. */
 export function parseMigrationName(rawName: string): MigrationIntent {
@@ -70,13 +76,16 @@ export function parseMigrationName(rawName: string): MigrationIntent {
 
 export function renderMigrationSource(intent?: MigrationIntent): string {
   if (intent?.mode === "create" && intent.table) {
+    const numberColumn = intent.numbering ? "\n  number text not null," : "";
     return `import type { Database } from "../index.ts";
 import { runSqlMigration } from "../sql-migration.ts";
 
 /** Creates the ${intent.table} table. Add the feature's domain columns and indexes before applying. */
 const statements = \`
 create table if not exists ${intent.table} (
-  id uuid primary key default uuidv7(),
+  id uuid primary key default uuidv7(),${numberColumn}
+  deleted_at timestamptz,
+  version integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -130,18 +139,26 @@ export type FeatureScaffold = {
   files: ReadonlyArray<{ path: string; contents: string }>;
 };
 
-export function renderFeatureScaffold(rawName: string): FeatureScaffold {
+export type FeatureScaffoldOptions = {
+  /** When set, create allocates a formatted number through the row-locked `nextNumber` helper. */
+  sequence?: { key: string; prefix?: string; padding?: number };
+};
+
+export function renderFeatureScaffold(rawName: string, options: FeatureScaffoldOptions = {}): FeatureScaffold {
   const name = toKebabName(rawName, "Feature");
   const pascal = toPascalName(name);
   const camel = `${pascal[0]?.toLowerCase() ?? ""}${pascal.slice(1)}`;
   const table = toSnakeName(name);
   const files: Array<{ path: string; contents: string }> = [
     { path: `apps/server/features/${name}/policy.ts`, contents: renderFeaturePolicy(name) },
-    { path: `apps/server/features/${name}/schema.ts`, contents: renderFeatureSchema({ table, camel }) },
+    {
+      path: `apps/server/features/${name}/schema.ts`,
+      contents: renderFeatureSchema({ table, camel, sequenced: options.sequence !== undefined }),
+    },
     { path: `apps/server/features/${name}/validation.ts`, contents: renderFeatureValidation(pascal) },
     {
       path: `apps/server/features/${name}/service.ts`,
-      contents: renderFeatureService({ resource: name, camel, pascal }),
+      contents: renderFeatureService({ resource: name, camel, pascal, sequence: options.sequence }),
     },
     { path: `apps/server/features/${name}/route.ts`, contents: renderFeatureRoutes({ name, camel, pascal }) },
     { path: `apps/server/features/${name}/feature.ts`, contents: renderFeatureModule({ name, camel }) },
@@ -167,17 +184,23 @@ export const ACTION_PERMISSION = {
 `;
 }
 
-function renderFeatureSchema(input: { table: string; camel: string }): string {
-  const { table, camel } = input;
+function renderFeatureSchema(input: { table: string; camel: string; sequenced: boolean }): string {
+  const { table, camel, sequenced } = input;
+  const numberColumn = sequenced ? '\n  number: text("number").notNull(),' : "";
+  const pgImports = sequenced ? "pgTable, text, timestamp, uuid" : "pgTable, timestamp, uuid";
   return `import { sql } from "drizzle-orm";
-import { pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import { ${pgImports} } from "drizzle-orm/pg-core";
+import { version } from "../../database/optimistic-locking.ts";
+import { softDelete } from "../../database/soft-delete.ts";
 
 /**
  * ${camel} table. Add the feature's domain columns from the product spec, then align the
  * generated migration before running db:migrate.
  */
 export const ${camel} = pgTable("${table}", {
-  id: uuid("id").primaryKey().default(sql\`uuidv7()\`),
+  id: uuid("id").primaryKey().default(sql\`uuidv7()\`),${numberColumn}
+  deletedAt: softDelete(),
+  version: version(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -194,10 +217,14 @@ import { listQueryParts } from "../../http/helpers/list-query.ts";
  */
 export const create${pascal}Schema = z.strictObject({});
 
-export const update${pascal}Schema = z.strictObject({});
+export const update${pascal}Schema = z.strictObject({
+  // Optimistic locking: the caller sends the version it read; a stale value is a 409.
+  expectedVersion: z.number().int().min(0),
+});
 
 export const list${pascal}Schema = z.strictObject({
   ...listQueryParts({ sortable: ["createdAt"], defaultSort: "createdAt" }),
+  includeDeleted: z.stringbool().default(false),
 });
 
 export const Create${pascal}Input = z.compile(create${pascal}Schema);
@@ -210,58 +237,86 @@ export type List${pascal}Input = z.output<typeof List${pascal}Input>;
 `;
 }
 
-function renderFeatureService(input: { resource: string; camel: string; pascal: string }): string {
-  const { resource, camel, pascal } = input;
-  return `import { eq, sql } from "drizzle-orm";
+function renderFeatureService(input: {
+  resource: string;
+  camel: string;
+  pascal: string;
+  sequence?: { key: string; prefix?: string; padding?: number };
+}): string {
+  const { resource, camel, pascal, sequence } = input;
+  const numberingImport = sequence ? '\nimport { nextNumber } from "../../database/numbering.ts";' : "";
+  const createValues = sequence
+    ? `{\n      ...input,\n      number: await nextNumber(tx, ${JSON.stringify(sequence.key)}, ${renderSequenceOptions(sequence)}),\n    }`
+    : "{ ...input }";
+  return `import { and, eq, sql } from "drizzle-orm";
+import type { Database } from "../../database/index.ts";
+import { bumpVersion, versionGuard } from "../../database/optimistic-locking.ts";
+import { forceDeleteRow, notDeleted, restoreRow, softDeleteRow } from "../../database/soft-delete.ts";${numberingImport}
 import { ApiError } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
 import { orderByColumn } from "../../http/helpers/sort.ts";
-import type { Database } from "../../database/index.ts";
 import { auditChange, snapshot } from "../audit/service.ts";
 import { ${camel} } from "./schema.ts";
 import type { Create${pascal}Input, List${pascal}Input, Update${pascal}Input } from "./validation.ts";
 
 export type ${pascal} = typeof ${camel}.$inferSelect;
 
+type Actor = { userId: string | null; traceId: string; label?: string };
+
 /**
- * Transaction boundary lives here; every write records an audit snapshot. Extend the queries
- * with the domain rules from the product spec.
+ * Transaction boundary lives here; every write records an audit snapshot. Reads exclude
+ * soft-deleted rows unless the caller asks for them.
  */
 export async function list${pascal}(
   db: Database,
   input: List${pascal}Input,
 ): Promise<{ items: ${pascal}[]; total: number }> {
+  const where = input.includeDeleted ? undefined : notDeleted(${camel});
   const [items, count] = await Promise.all([
     db
       .select()
       .from(${camel})
+      .where(where)
       .orderBy(...orderByColumn(${camel}, input.sort, input.dir))
       .limit(input.perPage)
       .offset(toOffset(input).offset),
-    db.select({ total: sql<number>\`count(*)::int\` }).from(${camel}),
+    db.select({ total: sql<number>\`count(*)::int\` }).from(${camel}).where(where),
   ]);
   return { items, total: count[0]?.total ?? 0 };
 }
 
-export async function find${pascal}(db: Database, id: string): Promise<${pascal} | undefined> {
-  const rows = await db.select().from(${camel}).where(eq(${camel}.id, id)).limit(1);
+export async function find${pascal}(
+  db: Database,
+  id: string,
+  options: { includeDeleted?: boolean } = {},
+): Promise<${pascal} | undefined> {
+  const where = options.includeDeleted
+    ? eq(${camel}.id, id)
+    : and(eq(${camel}.id, id), notDeleted(${camel}));
+  const rows = await db.select().from(${camel}).where(where).limit(1);
   return rows[0];
+}
+
+/** Loads the row (optionally including deleted) or 404s before any write. */
+async function require${pascal}(
+  db: Database,
+  id: string,
+  options: { includeDeleted?: boolean } = {},
+): Promise<${pascal}> {
+  const before = await find${pascal}(db, id, options);
+  if (!before) throw ApiError.notFound("${pascal} not found");
+  return before;
 }
 
 export async function create${pascal}(
   db: Database,
   input: Create${pascal}Input,
-  actor: { userId: string | null; traceId: string; label?: string },
+  actor: Actor,
 ): Promise<${pascal}> {
   return db.transaction(async (tx) => {
-    const rows = await tx.insert(${camel}).values({ ...input }).returning();
+    const rows = await tx.insert(${camel}).values(${createValues}).returning();
     const after = rows[0] as ${pascal};
-    await auditChange(tx as unknown as Database, {
-      actor,
-      event: "${resource}.created",
-      subject: { type: "${resource}", id: after.id },
-      after: snapshot("${resource}", after as unknown as Record<string, unknown>),
-    });
+    await record${pascal}Event(tx as unknown as Database, actor, "${resource}.created", after.id, undefined, after);
     return after;
   });
 }
@@ -270,26 +325,26 @@ export async function update${pascal}(
   db: Database,
   id: string,
   input: Update${pascal}Input,
-  actor: { userId: string | null; traceId: string; label?: string },
+  actor: Actor,
 ): Promise<${pascal}> {
   return db.transaction(async (tx) => {
-    const before = await find${pascal}(tx as unknown as Database, id);
-    if (!before) throw ApiError.notFound("${pascal} not found");
+    const { expectedVersion, ...patch } = input;
+    const before = await require${pascal}(tx as unknown as Database, id);
 
+    // One statement: the data change and the version bump happen together, guarded by the version.
     const rows = await tx
       .update(${camel})
-      .set({ ...input, updatedAt: new Date() })
-      .where(eq(${camel}.id, id))
+      .set({ ...patch, updatedAt: new Date(), version: bumpVersion(${camel}) })
+      .where(versionGuard(${camel}, id, expectedVersion))
       .returning();
-    const after = rows[0] as ${pascal};
+    const after = rows[0];
+    if (!after) {
+      const current = await find${pascal}(tx as unknown as Database, id, { includeDeleted: true });
+      if (!current) throw ApiError.notFound("${pascal} not found");
+      throw ApiError.versionConflict(current.version);
+    }
 
-    await auditChange(tx as unknown as Database, {
-      actor,
-      event: "${resource}.updated",
-      subject: { type: "${resource}", id: after.id },
-      before: snapshot("${resource}", before as unknown as Record<string, unknown>),
-      after: snapshot("${resource}", after as unknown as Record<string, unknown>),
-    });
+    await record${pascal}Event(tx as unknown as Database, actor, "${resource}.updated", after.id, before, after);
     return after;
   });
 }
@@ -297,24 +352,75 @@ export async function update${pascal}(
 export async function delete${pascal}(
   db: Database,
   id: string,
-  actor: { userId: string | null; traceId: string; label?: string },
+  actor: Actor,
+): Promise<${pascal}> {
+  return db.transaction(async (tx) => {
+    const before = await require${pascal}(tx as unknown as Database, id);
+
+    const after = await softDeleteRow(tx as unknown as Database, ${camel}, id);
+    if (!after) throw ApiError.notFound("${pascal} not found");
+
+    await record${pascal}Event(tx as unknown as Database, actor, "${resource}.deleted", id, before, after);
+    return after;
+  });
+}
+
+export async function restore${pascal}(
+  db: Database,
+  id: string,
+  actor: Actor,
+): Promise<${pascal}> {
+  return db.transaction(async (tx) => {
+    const before = await require${pascal}(tx as unknown as Database, id, { includeDeleted: true });
+
+    const after = await restoreRow(tx as unknown as Database, ${camel}, id);
+    if (!after) throw ApiError.notFound("${pascal} not found");
+
+    await record${pascal}Event(tx as unknown as Database, actor, "${resource}.restored", id, before, after);
+    return after;
+  });
+}
+
+export async function forceDelete${pascal}(
+  db: Database,
+  id: string,
+  actor: Actor,
 ): Promise<{ id: string }> {
   return db.transaction(async (tx) => {
-    const before = await find${pascal}(tx as unknown as Database, id);
-    if (!before) throw ApiError.notFound("${pascal} not found");
+    const before = await require${pascal}(tx as unknown as Database, id, { includeDeleted: true });
 
-    await tx.delete(${camel}).where(eq(${camel}.id, id));
+    await forceDeleteRow(tx as unknown as Database, ${camel}, id);
 
-    await auditChange(tx as unknown as Database, {
-      actor,
-      event: "${resource}.deleted",
-      subject: { type: "${resource}", id: id },
-      before: snapshot("${resource}", before as unknown as Record<string, unknown>),
-    });
+    await record${pascal}Event(tx as unknown as Database, actor, "${resource}.force_deleted", id, before, undefined);
     return { id };
   });
 }
+
+/** One audit shape for every ${resource} state change; the event name is the only variable. */
+async function record${pascal}Event(
+  db: Database,
+  actor: Actor,
+  event: string,
+  id: string,
+  before: ${pascal} | undefined,
+  after: ${pascal} | undefined,
+): Promise<void> {
+  await auditChange(db, {
+    actor,
+    event,
+    subject: { type: "${resource}", id },
+    ...(before ? { before: snapshot("${resource}", before) } : {}),
+    ...(after ? { after: snapshot("${resource}", after) } : {}),
+  });
+}
 `;
+}
+
+function renderSequenceOptions(sequence: { prefix?: string; padding?: number }): string {
+  const parts: string[] = [];
+  if (sequence.prefix !== undefined) parts.push(`prefix: ${JSON.stringify(sequence.prefix)}`);
+  if (sequence.padding !== undefined) parts.push(`padding: ${sequence.padding}`);
+  return parts.length > 0 ? `{ ${parts.join(", ")} }` : "{}";
 }
 
 function renderFeatureRoutes(input: { name: string; camel: string; pascal: string }): string {
@@ -327,10 +433,25 @@ import { ApiError, ok } from "../../http/helpers/errors.ts";
 import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-query.ts";
 import { validate } from "../../http/helpers/validate.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
-import { create${pascal}, delete${pascal}, find${pascal}, list${pascal}, update${pascal} } from "./service.ts";
+import {
+  create${pascal},
+  delete${pascal},
+  find${pascal},
+  forceDelete${pascal},
+  list${pascal},
+  restore${pascal},
+  update${pascal},
+} from "./service.ts";
 import { Create${pascal}Input, List${pascal}Input, Update${pascal}Input } from "./validation.ts";
 
-const ${camel}Ref = { type: "object", properties: { id: { type: "string" } } } as const;
+const ${camel}Ref = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    deletedAt: { type: "string", format: "date-time", nullable: true },
+    version: { type: "integer" },
+  },
+} as const;
 
 const listData = {
   type: "object",
@@ -419,6 +540,34 @@ export function ${camel}Routes(ctx: AppContext) {
         const actor = c.get("actor");
         return ok(c, await delete${pascal}(ctx.db, c.req.param("id"), actor));
       },
+    )
+    .post(
+      "/:id/restore",
+      authorize(ctx, ACTION_PERMISSION.delete),
+      doc({
+        tag: "${name}",
+        permission: ACTION_PERMISSION.delete,
+        summary: "Restore ${name}",
+        data: ${camel}Ref,
+      }),
+      async (c) => {
+        const actor = c.get("actor");
+        return ok(c, await restore${pascal}(ctx.db, c.req.param("id"), actor));
+      },
+    )
+    .delete(
+      "/:id/force",
+      authorize(ctx, ACTION_PERMISSION.delete),
+      doc({
+        tag: "${name}",
+        permission: ACTION_PERMISSION.delete,
+        summary: "Force delete ${name}",
+        data: ${camel}Ref,
+      }),
+      async (c) => {
+        const actor = c.get("actor");
+        return ok(c, await forceDelete${pascal}(ctx.db, c.req.param("id"), actor));
+      },
     );
 }
 `;
@@ -441,7 +590,11 @@ import { createHttpFixture, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;
 
-const json = (body: unknown, method = "POST"): RequestInit => api.json(body, method);
+const json = (body: unknown, method = "POST"): RequestInit => ({
+  method,
+  headers: { "content-type": "application/json", cookie: api.cookie },
+  body: JSON.stringify(body),
+});
 
 // slop-ok: the HTTP fixture lifecycle is deliberately identical across feature tests
 beforeEach(async () => {
@@ -459,22 +612,41 @@ describe("${name}", () => {
     expect(res.status).toBe(401);
   });
 
-  test("create, list, update, and delete round-trip", async () => {
+  test("create, list, update, delete, and restore round-trip", async () => {
     const created = await api.app.request("/api/v1/${name}", json({}));
     expect(created.status).toBe(200);
-    const body = (await created.json()) as { data: { id: string } };
+    const body = (await created.json()) as { data: { id: string; version: number } };
 
     const listed = await api.app.request("/api/v1/${name}?perPage=10", { headers: { cookie: api.cookie } });
     expect(((await listed.json()) as { data: { total: number } }).data.total).toBe(1);
 
-    const patched = await api.app.request(\`/api/v1/${name}/\${body.data.id}\`, json({}, "PATCH"));
+    const patched = await api.app.request(
+      \`/api/v1/${name}/\${body.data.id}\`,
+      json({ expectedVersion: body.data.version }, "PATCH"),
+    );
     expect(patched.status).toBe(200);
+
+    // The same version cannot be used twice: optimistic locking answers 409.
+    const stale = await api.app.request(
+      \`/api/v1/${name}/\${body.data.id}\`,
+      json({ expectedVersion: body.data.version }, "PATCH"),
+    );
+    expect(stale.status).toBe(409);
 
     const removed = await api.app.request(\`/api/v1/${name}/\${body.data.id}\`, {
       method: "DELETE",
       headers: { cookie: api.cookie },
     });
     expect(removed.status).toBe(200);
+
+    const hidden = await api.app.request(\`/api/v1/${name}?perPage=10\`, { headers: { cookie: api.cookie } });
+    expect(((await hidden.json()) as { data: { total: number } }).data.total).toBe(0);
+
+    const restored = await api.app.request(\`/api/v1/${name}/\${body.data.id}/restore\`, {
+      method: "POST",
+      headers: { cookie: api.cookie },
+    });
+    expect(restored.status).toBe(200);
   });
 
   test("missing id is 404, not 403", async () => {

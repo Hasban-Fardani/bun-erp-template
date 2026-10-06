@@ -32,5 +32,8 @@ The default install ships no departments table; it only exists after `features:i
 
 - The table is global to the server; the default server has no tenant concept, so no
   organization column is involved. Tenant scoping belongs to the opt-in organizations feature.
-- Routes cover list/read/create/update. There is no delete route; `department.delete` stays in
-  the statements for deployments that add one.
+- Routes cover list/read/create/update plus data safety: `DELETE /:id` soft-deletes (the row keeps
+  its history), `POST /:id/restore` brings it back, and `DELETE /:id/force` removes it for good.
+  Default reads and lists exclude deleted rows; `?includeDeleted=true` opts in.
+- `PATCH /:id` requires `expectedVersion` (the version last read). A stale version is a 409 whose
+  `error.details.currentVersion` carries the live version.

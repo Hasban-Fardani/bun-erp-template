@@ -70,7 +70,7 @@ export async function renderGuidelinesBlock(root: string): Promise<string> {
       ? `- Packages: ${packages.join("; ")}`
       : "- Packages: none installed — catalog: `templates/packages`",
     features.length > 0
-      ? `- Features: ${features.join("; ")}`
+      ? `- Features: ${features.join("; ")}; catalog guide: \`templates/features/README.md\``
       : "- Features: none installed — catalog guide: `templates/features/README.md`",
     GUIDELINES_END,
   ];
