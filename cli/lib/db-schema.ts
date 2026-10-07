@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { fileIndex } from "./file-index.ts";
 
 /**
  * Database schema introspection without a connection. Drizzle declarations
@@ -285,12 +285,13 @@ function parseMigrationFile(text: string, source: string): SchemaTable[] {
 
 /** Merged Drizzle + migration schema, sorted by table name. */
 export async function collectDbSchema(root: string): Promise<SchemaTable[]> {
-  const schemaFiles = [
-    ...new Bun.Glob("features/*/schema.ts").scanSync({ cwd: resolve(root, "apps/server") }),
-    ...new Bun.Glob("infra/**/schema.ts").scanSync({ cwd: resolve(root, "apps/server") }),
-  ].sort();
-  const schemaSources = schemaFiles.map((file) => `apps/server/${file}`);
-  const texts = await Promise.all(schemaSources.map((file) => Bun.file(resolve(root, file)).text()));
+  const index = fileIndex(root);
+  const schemaSources = (
+    await Promise.all([index.files("apps/server/features/*/schema.ts"), index.files("apps/server/infra/**/schema.ts")])
+  )
+    .flat()
+    .sort();
+  const texts = await Promise.all(schemaSources.map((file) => index.text(file)));
 
   const tableExports = new Map<string, string>();
   for (const text of texts) {
@@ -305,11 +306,10 @@ export async function collectDbSchema(root: string): Promise<SchemaTable[]> {
     for (const table of parseDrizzleFile(text, source, tableExports)) merged.set(table.name, table);
   }
 
-  const migrationDir = resolve(root, "apps/server/database/migrations");
-  const migrationFiles = [...new Bun.Glob("*.ts").scanSync({ cwd: migrationDir })].sort();
+  const migrationFiles = await index.files("apps/server/database/migrations/*.ts");
   for (const file of migrationFiles) {
-    const source = `apps/server/database/migrations/${file}`;
-    for (const table of parseMigrationFile(await Bun.file(resolve(migrationDir, file)).text(), source)) {
+    const source = file;
+    for (const table of parseMigrationFile(await index.text(file), source)) {
       const existing = merged.get(table.name);
       if (!existing) {
         merged.set(table.name, table);

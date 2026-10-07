@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { fileIndex } from "./file-index.ts";
 
 /**
  * Feature catalog: `templates/features/<name>/` holds everything `bun erp features:install`
@@ -108,14 +109,10 @@ const PACKAGE_NAME = /^[a-z][a-z0-9-]*$/;
 
 /** Catalog features are directories with a manifest; a directory alone is not a feature. */
 export async function catalogFeatureNames(root: string): Promise<string[]> {
-  try {
-    return [...new Bun.Glob("*/feature.json").scanSync({ cwd: resolve(root, CATALOG_DIR) })]
-      .map((file) => file.split("/")[0])
-      .filter((name): name is string => Boolean(name))
-      .sort();
-  } catch {
-    return [];
-  }
+  return (await fileIndex(root).files("templates/features/*/feature.json"))
+    .map((file) => file.split("/")[2])
+    .filter((name): name is string => Boolean(name))
+    .sort();
 }
 
 /**
@@ -124,6 +121,7 @@ export async function catalogFeatureNames(root: string): Promise<string[]> {
  */
 export async function installedFeatureNames(root: string): Promise<string[]> {
   const names = await catalogFeatureNames(root);
+  const index = fileIndex(root);
   const installed: string[] = [];
   for (const name of names) {
     const manifest = await readFeatureManifest(root, name);
@@ -132,24 +130,16 @@ export async function installedFeatureNames(root: string): Promise<string[]> {
       continue;
     }
     if (manifest.kind === "infra") {
-      try {
-        const serverFiles = [...new Bun.Glob(`${name}/**/*`).scanSync({ cwd: resolve(root, "apps/server/features") })];
-        if (serverFiles.length > 0) installed.push(name);
-      } catch {
-        // An absent features directory means nothing is installed.
-      }
+      const serverFiles = await index.files(`apps/server/features/${name}/**/*`);
+      if (serverFiles.length > 0) installed.push(name);
       continue;
     }
     if (await Bun.file(resolve(root, `apps/web/src/pages/_authenticated/${name}.tsx`)).exists()) {
       installed.push(name);
       continue;
     }
-    try {
-      const webFiles = [...new Bun.Glob(`${name}/**/*`).scanSync({ cwd: resolve(root, "apps/web/src/features") })];
-      if (webFiles.length > 0) installed.push(name);
-    } catch {
-      // apps/web/src/features is always present in the template; an absent directory means no web files.
-    }
+    const webFiles = await index.files(`apps/web/src/features/${name}/**/*`);
+    if (webFiles.length > 0) installed.push(name);
   }
   return installed;
 }

@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 /**
@@ -15,9 +16,10 @@ const SLOP_OK = /slop-ok:\s*\S+/;
 
 export async function findCodeSlop(root: string): Promise<string[]> {
   const findings: string[] = [];
+  const index = fileIndex(root);
 
-  for (const rel of sourceFiles(root)) {
-    const lines = (await Bun.file(join(root, rel)).text()).split("\n");
+  for (const rel of await sourceFiles(root)) {
+    const lines = (await index.text(rel)).split("\n");
 
     for (const [index, line] of lines.entries()) {
       if (SLOP_OK.test(line)) continue;
@@ -43,18 +45,22 @@ export async function findCodeSlop(root: string): Promise<string[]> {
 }
 
 /** Everything the repo owns: app source, the CLI, plus catalog packages, apps and features. */
-function sourceFiles(root: string): string[] {
+async function sourceFiles(root: string): Promise<string[]> {
+  const index = fileIndex(root);
   // Disjoint roots: `cli` already covers `cli/gates`, so listing both scanned those files twice.
-  return ["apps", "packages", "templates/packages", "templates/apps", "templates/features", "cli"].flatMap((dir) =>
-    [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter(
-      (p) => !p.includes("node_modules") && !p.endsWith("/routeTree.gen.ts"),
+  const scanned = await Promise.all(
+    ["apps", "packages", "templates/packages", "templates/apps", "templates/features", "cli"].map((dir) =>
+      index.files(`${dir}/**/*.{ts,tsx}`),
     ),
   );
+  return scanned.flat().filter((p) => !p.includes("node_modules") && !p.endsWith("/routeTree.gen.ts"));
 }
 
 /**
  * The governance validator catches cross-file patterns (passthrough, unused export, duplicates)
- * that need an AST. It runs as a subprocess so there is a single source of rules.
+ * that need an AST. It runs in a Worker thread: the validator stays vendored verbatim (upstream
+ * re-sync matters), so its sync IO runs off the gate's shared event loop, and there is still a
+ * single source of rules. `slop-worker.ts` mirrors the validator CLI's argument contract.
  */
 async function governanceFindings(root: string): Promise<string[]> {
   const validator = join(import.meta.dir, "governance/slop-validator.ts");
@@ -83,28 +89,20 @@ async function governanceFindings(root: string): Promise<string[]> {
   for (const dir of targetDirs) {
     if (await directoryExists(join(root, dir))) targets.push(join(root, dir));
   }
-  const proc = Bun.spawn(["bun", validator, ...targets], {
-    cwd: root,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const [out, err, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  if (code === 0) return [];
-  const findings = out
-    .split("\n")
-    .filter((line) => /^[A-Z_]+ /.test(line))
-    .map((line) => line.trim());
-  // A crashed validator exits non-zero without a rule-prefixed line; an empty result would read
-  // as "clean", so the crash itself becomes the finding.
-  if (findings.length === 0) {
-    const detail = (err.trim() || out.trim() || "no output").split("\n").slice(0, 3).join(" / ");
-    return [`slop validator failed (exit ${code}): ${detail}`];
+  if (targets.length === 0) return [];
+
+  const worker = new Worker(new URL("./governance/slop-worker.ts", import.meta.url).href);
+  try {
+    const result = await new Promise<{ findings?: string[]; error?: string }>((resolve) => {
+      worker.onmessage = (event) => resolve(event.data as { findings?: string[]; error?: string });
+      worker.onerror = (event) => resolve({ error: event.message });
+      worker.postMessage({ dirs: targets });
+    });
+    if (result.error !== undefined) return [`slop validator failed: ${result.error}`];
+    return result.findings ?? [];
+  } finally {
+    worker.terminate();
   }
-  return findings;
 }
 
 /** "This file stores X" restates the file name and rots as soon as the file changes. */

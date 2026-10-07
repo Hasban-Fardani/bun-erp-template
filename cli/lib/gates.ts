@@ -184,6 +184,12 @@ export const GATE_CATALOG = [
     file: "cli/gates/worker-gate.ts",
     summary: "The Worker bundle stays free of Bun globals, new Node built-ins, DDL paths and over-budget size.",
   },
+  {
+    name: "bun-first",
+    command: "check:bun-first",
+    file: "cli/gates/bun-first.ts",
+    summary: "CLI, server catalog and shared packages use Bun's async APIs instead of sync Node built-ins.",
+  },
 ] as const satisfies readonly GateCatalogEntry[];
 
 export type GateName = (typeof GATE_CATALOG)[number]["name"];
@@ -274,6 +280,7 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
     return (await checkReadiness(root)).map((f) => `${f.rule}: ${f.detail}`);
   },
   worker: async (root) => (await import("../gates/worker-gate.ts")).checkWorker(root),
+  "bun-first": async (root) => (await import("../gates/bun-first.ts")).checkBunFirst(root),
 };
 
 /** Run a catalog gate against `root` and return its findings without throwing or exiting. */

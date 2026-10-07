@@ -1,3 +1,5 @@
+import { fileIndex } from "../lib/file-index.ts";
+
 const requiredPairs = [
   ["color-background", "color-foreground"],
   ["color-surface", "color-foreground"],
@@ -570,11 +572,12 @@ export function checkComponentClassContrast(source: string, file: string, styles
 }
 
 export async function checkContrast(root: string): Promise<string[]> {
+  const index = fileIndex(root);
   const stylesheetPath = `${root}/packages/ui/src/styles.css`;
   if (!(await Bun.file(stylesheetPath).exists())) {
     return ["packages/ui/src/styles.css: missing; theme-token contrast cannot be verified"];
   }
-  const stylesheet = await Bun.file(stylesheetPath).text();
+  const stylesheet = await index.text("packages/ui/src/styles.css");
   const lightBlock = cssBlock(stylesheet, /@theme\s*\{([\s\S]*?)\n\}/);
   const darkBlock = cssBlock(stylesheet, /\[data-theme=["']dark["']\]\s*\{([\s\S]*?)\n\}/);
   if (!lightBlock || !darkBlock) return ["packages/ui/src/styles.css: light and dark theme token blocks are required"];
@@ -603,13 +606,9 @@ export async function checkContrast(root: string): Promise<string[]> {
     "templates/features/*/web/**/*.tsx",
     "templates/packages/*/src/**/*.tsx",
   ];
-  const componentFiles = [
-    ...new Set(componentGlobs.flatMap((pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: root })])),
-  ];
+  const componentFiles = await index.files(componentGlobs);
   const componentFindings = await Promise.all(
-    componentFiles.map(async (file) =>
-      checkComponentClassContrast(await Bun.file(`${root}/${file}`).text(), file, stylesheet),
-    ),
+    componentFiles.map(async (file) => checkComponentClassContrast(await index.text(file), file, stylesheet)),
   );
   return [
     ...checkPalette("light theme", lightPalette),

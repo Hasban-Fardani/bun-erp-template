@@ -1,3 +1,5 @@
+import { fileIndex } from "../lib/file-index.ts";
+
 /**
  * Motion gate. The UI/UX audit found motion that ignored `prefers-reduced-motion`: a looping
  * spinner and pulse with no escape, and overlay keyframes declared without a disable block. A
@@ -55,9 +57,10 @@ export async function checkMotion(root: string): Promise<MotionFinding[]> {
   const findings: MotionFinding[] = [];
   findings.push(...(await stylesheetGuard(root)));
 
-  const files = [...new Set(UI_GLOBS.flatMap((pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: root })]))];
+  const index = fileIndex(root);
+  const files = await index.files(UI_GLOBS);
   for (const file of files) {
-    const code = await Bun.file(`${root}/${file}`).text();
+    const code = await index.text(file);
     findings.push(...inlineAnimation(file, code));
     if (!DECORATIVE_PRIMITIVES.has(file)) findings.push(...loopingAnimation(file, code));
   }

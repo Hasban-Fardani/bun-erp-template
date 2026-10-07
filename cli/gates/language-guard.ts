@@ -1,5 +1,6 @@
 import { LanguageVariant, SyntaxKind } from "typescript/unstable/ast";
 import { createScanner } from "typescript/unstable/ast/scanner";
+import { fileIndex } from "../lib/file-index.ts";
 
 const INDONESIAN_TECHNICAL_WORDS = new Set([
   "kertas",
@@ -71,24 +72,27 @@ export function checkTechnicalLanguageSource(source: string, file: string): Lang
 
 export async function checkTechnicalLanguage(root: string): Promise<LanguageFinding[]> {
   const findings: LanguageFinding[] = [];
+  const index = fileIndex(root);
   // Email and PDF packages are pinned upstream templates; their registry provenance gates cover
   // origin and licensing, while this first-party naming rule stays focused on application code.
   // templates/apps holds the mobile catalog copy, which is first-party and must stay English-named.
   // templates/features holds first-party catalog features, checked before they are installed.
-  const files = ["apps", "packages/ui", "packages/utils", "templates/apps", "templates/features", "cli"].flatMap(
-    (dir) =>
-      [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter(
-        (file) =>
-          !file.endsWith("/routeTree.gen.ts") &&
-          !file.includes("/node_modules/") &&
-          // Gates lived outside this scan before moving under cli/; the TypeScript scanner desyncs
-          // on the vendored governance and contrast sources, and gate code names are not user-facing.
-          !file.startsWith("cli/gates/"),
-      ),
+  const scanned = await Promise.all(
+    ["apps", "packages/ui", "packages/utils", "templates/apps", "templates/features", "cli"].map((dir) =>
+      index.files(`${dir}/**/*.{ts,tsx}`),
+    ),
+  );
+  const files = scanned.flat().filter(
+    (file) =>
+      !file.endsWith("/routeTree.gen.ts") &&
+      !file.includes("/node_modules/") &&
+      // Gates lived outside this scan before moving under cli/; the TypeScript scanner desyncs
+      // on the vendored governance and contrast sources, and gate code names are not user-facing.
+      !file.startsWith("cli/gates/"),
   );
 
   for (const file of files) {
-    const source = await Bun.file(`${root}/${file}`).text();
+    const source = await index.text(file);
     findings.push(...checkTechnicalLanguageSource(source, file));
   }
   return findings;

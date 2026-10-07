@@ -25,7 +25,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     title: "Quality",
     commands: [
       ["check", "Run all code, type, and project gates in parallel"],
-      ["check:fast", "Run the fast gates only (no typecheck or React audit); use for the inner loop"],
+      ["check:fast", "Run the fast gates only (no Biome, typecheck or React audit); use for the inner loop"],
       ["check:prod", "Check production deployment readiness"],
       ["check:gate <name>", "Run one focused gate; use --list to see names"],
       ["test", "Run backend, web, and package test suites (mobile when installed)"],

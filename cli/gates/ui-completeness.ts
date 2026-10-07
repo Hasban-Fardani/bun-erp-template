@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 /**
@@ -30,23 +31,22 @@ const CATALOG_PACKAGE_GLOBS = ["templates/packages/*/src/**/*.tsx"];
 
 export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
   const findings: UiFinding[] = [];
+  const index = fileIndex(root);
 
   for (const dir of SCREEN_DIRS) {
     const base = join(root, dir);
     // apps/mobile/src/screens only exists after `bun erp apps:create <name> mobile`.
     if (!(await directoryExists(base))) continue;
-    const glob = new Bun.Glob("**/*.tsx");
-    for (const rel of glob.scanSync({ cwd: base })) {
-      const file = `${dir}/${rel}`;
-      const code = await Bun.file(join(root, file)).text();
+    for (const file of await index.files(`${dir}/**/*.tsx`)) {
+      const code = await index.text(file);
       findings.push(...focusIndicator(file, code));
       if (!dir.startsWith("packages/")) findings.push(...listStates(file, code));
     }
   }
 
   for (const pattern of CATALOG_PACKAGE_GLOBS) {
-    for (const file of new Bun.Glob(pattern).scanSync({ cwd: root })) {
-      findings.push(...focusIndicator(file, await Bun.file(join(root, file)).text()));
+    for (const file of await index.files(pattern)) {
+      findings.push(...focusIndicator(file, await index.text(file)));
     }
   }
 
@@ -74,10 +74,11 @@ const TABLE_COMPONENTS = [
 
 async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
   const out: UiFinding[] = [];
+  const index = fileIndex(root);
 
   for (const component of TABLE_COMPONENTS) {
     if (!(await Bun.file(join(root, component)).exists())) continue;
-    const code = await Bun.file(join(root, component)).text();
+    const code = await index.text(component);
     // A component that never renders rows owes the user nothing; keep this honest.
     if (/<DataTable|<table/.test(code)) {
       if (!/data-testid="table-refreshing"|labels\.refreshing/.test(code)) {
@@ -113,8 +114,8 @@ async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
     "templates/apps/web/src/features/**/*.tsx",
     "templates/features/*/web/**/*.tsx",
   ];
-  for (const file of new Set(featureGlobs.flatMap((pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: root })]))) {
-    const code = await Bun.file(join(root, file)).text();
+  for (const file of await index.files(featureGlobs)) {
+    const code = await index.text(file);
     if (!/<ResourceTable/.test(code)) continue;
     const missing = [
       /\bpending\s*=/.test(code) ? null : "pending (refetch)",
@@ -188,10 +189,11 @@ function listStates(file: string, code: string): UiFinding[] {
  */
 async function themeSwitch(root: string): Promise<UiFinding[]> {
   const out: UiFinding[] = [];
+  const index = fileIndex(root);
   // The catalog config ships the same claim as the installed app, so both are checked.
   for (const configPath of ["apps/web/src/config/ui.ts", "templates/apps/web/src/config/ui.ts"]) {
     if (!(await Bun.file(join(root, configPath)).exists())) continue;
-    const config = await Bun.file(join(root, configPath)).text();
+    const config = await index.text(configPath);
     if (!/"dark"/.test(config)) continue;
 
     const stylesheetPath = join(root, "packages/ui/src/styles.css");
@@ -203,7 +205,7 @@ async function themeSwitch(root: string): Promise<UiFinding[]> {
       });
       continue;
     }
-    const css = await Bun.file(stylesheetPath).text();
+    const css = await index.text("packages/ui/src/styles.css");
     // A second mode needs its own token block, selected by an attribute or media query.
     if (/\.dark\b|\[data-theme=|@media\s*\(prefers-color-scheme:\s*dark\)/.test(css)) continue;
 

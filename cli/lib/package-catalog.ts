@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { fileIndex } from "./file-index.ts";
 
 /**
  * Opt-in package catalog: `templates/packages/<name>/` waits until a deployment needs it.
@@ -10,26 +11,18 @@ export const PACKAGE_CATALOG_DIR = "templates/packages";
 export const PACKAGES_DIR = "packages";
 
 /** Catalog packages are detected by their manifest, because Bun.Glob matches files, not directories. */
-export function catalogPackageNames(root: string): string[] {
-  try {
-    return [...new Bun.Glob("*/package.json").scanSync({ cwd: resolve(root, PACKAGE_CATALOG_DIR) })]
-      .map((file) => file.split("/")[0])
-      .filter((name): name is string => Boolean(name))
-      .sort();
-  } catch {
-    return [];
-  }
+export async function catalogPackageNames(root: string): Promise<string[]> {
+  return (await fileIndex(root).files("templates/packages/*/package.json"))
+    .map((file) => file.split("/")[2])
+    .filter((name): name is string => Boolean(name))
+    .sort();
 }
 
-export function installedPackageNames(root: string): string[] {
-  try {
-    return [...new Bun.Glob("*/package.json").scanSync({ cwd: resolve(root, PACKAGES_DIR) })]
-      .map((file) => file.split("/")[0])
-      .filter((name): name is string => Boolean(name))
-      .sort();
-  } catch {
-    return [];
-  }
+export async function installedPackageNames(root: string): Promise<string[]> {
+  return (await fileIndex(root).files("packages/*/package.json"))
+    .map((file) => file.split("/")[1])
+    .filter((name): name is string => Boolean(name))
+    .sort();
 }
 
 /**
@@ -46,7 +39,7 @@ export async function copyCatalogPackage(root: string, name: string, options: { 
   if (clone && from) await Bun.$`git clone --depth 1 ${from} ${clone}`.quiet();
   const sourceRoot = clone ?? (from ? resolve(root, from) : resolve(root, PACKAGE_CATALOG_DIR, name));
   if (!(await Bun.file(resolve(sourceRoot, "package.json")).exists())) {
-    const available = catalogPackageNames(root);
+    const available = await catalogPackageNames(root);
     throw new Error(
       `No package "${name}" in ${PACKAGE_CATALOG_DIR} or at ${sourceRoot}.` +
         (available.length > 0 ? ` Available: ${available.join(", ")}` : " The catalog is empty."),

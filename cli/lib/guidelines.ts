@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { installedFeatureNames } from "./feature-catalog.ts";
+import { fileIndex } from "./file-index.ts";
 import { installedPackageNames } from "./package-catalog.ts";
 
 /**
@@ -24,16 +25,10 @@ export function applyGuidelinesBlock(source: string, block: string): { source: s
 }
 
 async function installedAppEntries(root: string): Promise<string[]> {
-  let names: string[];
-  try {
-    names = [...new Bun.Glob("*/package.json").scanSync({ cwd: resolve(root, "apps") })]
-      .map((file) => file.split("/")[0])
-      .filter((name): name is string => Boolean(name))
-      .sort();
-  } catch {
-    // `apps/` ships empty; a missing directory means no apps, not an error.
-    return [];
-  }
+  const names = (await fileIndex(root).files("apps/*/package.json"))
+    .map((file) => file.split("/")[1])
+    .filter((name): name is string => Boolean(name))
+    .sort();
   const entries: string[] = [];
   for (const name of names) {
     const manifest = (await Bun.file(resolve(root, "apps", name, "package.json")).json()) as { name?: string };
@@ -58,7 +53,7 @@ async function featureEntries(root: string): Promise<string[]> {
 /** Deterministic, sorted, and small: one line per catalog area, guide paths included. */
 export async function renderGuidelinesBlock(root: string): Promise<string> {
   const apps = await installedAppEntries(root);
-  const packages = installedPackageNames(root).map((name) => `\`${name}\` (\`packages/${name}/llms.txt\`)`);
+  const packages = (await installedPackageNames(root)).map((name) => `\`${name}\` (\`packages/${name}/llms.txt\`)`);
   const features = await featureEntries(root);
   const lines = [
     GUIDELINES_START,

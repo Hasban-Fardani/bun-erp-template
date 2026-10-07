@@ -1,4 +1,5 @@
 import { dirname, relative, resolve } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 const LEVELS = ["atoms", "molecules", "organisms", "templates"];
@@ -8,14 +9,15 @@ const SHARED_TANSTACK = new Set(["@tanstack/react-table"]);
 /** Shared presentation stays usable without either application's runtime. */
 export async function checkArchitecture(root: string): Promise<string[]> {
   const findings: string[] = [];
+  const index = fileIndex(root);
   const files: string[] = [];
   for (const dir of ["apps/web/src", "apps/mobile/src", "packages/ui/src"]) {
     // apps/mobile/src only exists after `bun erp apps:create <name> mobile`.
     if (!(await directoryExists(`${root}/${dir}`))) continue;
-    files.push(...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root }));
+    files.push(...(await index.files(`${dir}/**/*.{ts,tsx}`)));
   }
   for (const file of files) {
-    const code = await Bun.file(`${root}/${file}`).text();
+    const code = await index.text(file);
     const imports = new Bun.Transpiler({ loader: "tsx" }).scanImports(code).map(({ path }) => path);
     // Bun removes type-only imports, so retain those boundaries during the source scan.
     for (const match of code.matchAll(/(?:import|export)\s+type\s+[^;]+?\s+from\s+["']([^"']+)["']/g)) {
@@ -45,7 +47,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
     }
   }
 
-  for (const file of new Bun.Glob("packages/ui/src/**/*.tsx").scanSync({ cwd: root })) {
+  for (const file of await index.files("packages/ui/src/**/*.tsx")) {
     const layer = file.split("/")[3] ?? "";
     if (!LEVELS.includes(layer)) {
       findings.push(
@@ -57,7 +59,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
   for (const app of ["web", "mobile"]) {
     for (const dir of ["pages", "screens"]) {
       if (!(await directoryExists(`${root}/apps/${app}/src/${dir}`))) continue;
-      const pageFiles = new Bun.Glob(`apps/${app}/src/${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root });
+      const pageFiles = await index.files(`apps/${app}/src/${dir}/**/*.{ts,tsx}`);
       for (const file of pageFiles) {
         if (/-page\.(?:ts|tsx)$/.test(file))
           findings.push(`${file}: PAGE_SUFFIX — use the route or screen name without -page`);
@@ -67,13 +69,13 @@ export async function checkArchitecture(root: string): Promise<string[]> {
 
   const routeConfigPath = `${root}/apps/web/vite.config.ts`;
   if (await Bun.file(routeConfigPath).exists()) {
-    const routeConfig = await Bun.file(routeConfigPath).text();
+    const routeConfig = await index.text("apps/web/vite.config.ts");
     if (!/autoCodeSplitting\s*:\s*true/.test(routeConfig)) {
       findings.push("apps/web/vite.config.ts: WEB_LAZY_DEFAULT — file routes must be code-split by default");
     }
   }
 
-  const utilityFiles = [...new Bun.Glob("packages/utils/src/**/*.ts").scanSync({ cwd: root })];
+  const utilityFiles = await index.files("packages/utils/src/**/*.ts");
   const consumers = new Set<string>();
   const consumerFiles: string[] = [];
   const appSourceRoots = ["apps/server", "apps/web/src", "apps/mobile/src"];
@@ -84,10 +86,10 @@ export async function checkArchitecture(root: string): Promise<string[]> {
   for (const pattern of ["apps/server/**/*.{ts,tsx}", "apps/web/src/**/*.{ts,tsx}", "apps/mobile/src/**/*.{ts,tsx}"]) {
     const base = pattern.slice(0, pattern.indexOf("/**"));
     if (!(await directoryExists(`${root}/${base}`))) continue;
-    consumerFiles.push(...new Bun.Glob(pattern).scanSync({ cwd: root }));
+    consumerFiles.push(...(await index.files(pattern)));
   }
   for (const file of consumerFiles) {
-    const source = await Bun.file(`${root}/${file}`).text();
+    const source = await index.text(file);
     const imports = new Bun.Transpiler({ loader: file.endsWith(".tsx") ? "tsx" : "ts" }).scanImports(source);
     if (imports.some(({ path }) => path === "@bun-erp/utils" || path.startsWith("@bun-erp/utils/"))) {
       consumers.add(file.startsWith("apps/server/") ? "server" : file.startsWith("apps/web/") ? "web" : "mobile");
@@ -99,7 +101,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
   if (hasServerApp && installedRoots >= 2 && consumers.size < 2)
     findings.push("packages/utils: UTILS_NOT_CROSS_PLATFORM — require consumers in at least two apps");
   for (const file of utilityFiles) {
-    const source = await Bun.file(`${root}/${file}`).text();
+    const source = await index.text(file);
     const imports = new Bun.Transpiler({ loader: "ts" }).scanImports(source).map(({ path }) => path);
     if (
       imports.some(

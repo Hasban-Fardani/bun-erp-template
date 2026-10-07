@@ -1,3 +1,5 @@
+import { run } from "../lib/repo.ts";
+
 /**
  * Points `core.hooksPath` at `.githooks` so pushes run the Biome check.
  *
@@ -6,21 +8,26 @@
  */
 const root = import.meta.dirname ? `${import.meta.dirname}/../..` : process.cwd();
 
-function git(args: readonly string[]): { ok: boolean; output: string } {
+async function git(args: readonly string[]): Promise<{ ok: boolean; output: string }> {
   try {
-    const proc = Bun.spawnSync(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
-    return { ok: proc.exitCode === 0, output: proc.stdout.toString().trim() };
+    const result = await run(["git", ...args], "git", {
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+      check: false,
+    });
+    return { ok: result.exitCode === 0, output: result.stdout.trim() };
   } catch {
     return { ok: false, output: "" };
   }
 }
 
-if (!git(["rev-parse", "--is-inside-work-tree"]).ok) {
+if (!(await git(["rev-parse", "--is-inside-work-tree"])).ok) {
   process.stderr.write("No Git work tree here; skipping the project pre-push hook.\n");
   process.exit(0);
 }
 
-const existing = git(["config", "--local", "--get", "core.hooksPath"]);
+const existing = await git(["config", "--local", "--get", "core.hooksPath"]);
 if (existing.ok && existing.output && existing.output !== ".githooks") {
   process.stderr.write(
     `Preserving existing Git hooks path (${existing.output}); set core.hooksPath=.githooks to enable the project pre-push check.\n`,
@@ -28,7 +35,7 @@ if (existing.ok && existing.output && existing.output !== ".githooks") {
   process.exit(0);
 }
 
-if (!git(["config", "--local", "core.hooksPath", ".githooks"]).ok) {
+if (!(await git(["config", "--local", "core.hooksPath", ".githooks"])).ok) {
   process.stderr.write("Could not install project Git hooks; run `git config core.hooksPath .githooks` manually.\n");
   process.exit(0);
 }

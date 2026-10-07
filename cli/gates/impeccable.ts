@@ -1,4 +1,6 @@
 import { join } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
+import { run } from "../lib/repo.ts";
 import { directoryExists } from "./exists.ts";
 
 /**
@@ -32,7 +34,7 @@ const UI_SURFACES = [
 
 export async function impeccableTargets(root: string): Promise<string[]> {
   const candidates: string[] = [...UI_SURFACES];
-  for (const feature of new Bun.Glob("templates/features/*/web").scanSync({ cwd: root })) {
+  for (const feature of await fileIndex(root).files("templates/features/*/web")) {
     candidates.push(feature);
   }
 
@@ -46,13 +48,8 @@ export async function impeccableTargets(root: string): Promise<string[]> {
 type ImpeccableRun = { exitCode: number; stdout: string; stderr: string };
 
 async function runImpeccable(argv: string[], root: string): Promise<ImpeccableRun> {
-  const proc = Bun.spawn(argv, { cwd: root, stdout: "pipe", stderr: "pipe" });
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  return { exitCode, stdout, stderr };
+  const result = await run(argv, "impeccable", { cwd: root, stdout: "pipe", stderr: "pipe", check: false });
+  return { exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
 }
 
 /** Human-readable findings go to stderr; stdout carries `--json` output only. */

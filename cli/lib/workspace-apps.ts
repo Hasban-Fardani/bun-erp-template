@@ -1,3 +1,4 @@
+import { fileIndex } from "./file-index.ts";
 import { toKebabName, type WiringResult } from "./scaffolding.ts";
 
 /** Workspace apps are deployment units: discovered from the root manifest, never a second registry. */
@@ -59,8 +60,8 @@ export async function readWorkspaceApp(root: string, selector: string): Promise<
   const scripts = appManifest.scripts ?? {};
   const entry = appManifest.main ?? appManifest.module ?? (await firstExisting(`${root}/${dir}`, ENTRY_CANDIDATES));
   const port = await resolvePort(`${root}/${dir}`, scripts, entry);
-  const build = await buildStatus(`${root}/${dir}`);
-  const tests = testStatus(`${root}/${dir}`);
+  const build = await buildStatus(root, dir);
+  const tests = await testStatus(root, dir);
 
   return {
     dir,
@@ -111,13 +112,14 @@ async function resolvePort(
   return undefined;
 }
 
-async function buildStatus(dir: string): Promise<{ dir: string; updatedAt: Date | null } | undefined> {
+async function buildStatus(root: string, dir: string): Promise<{ dir: string; updatedAt: Date | null } | undefined> {
+  const index = fileIndex(root);
   for (const candidate of BUILD_DIRS) {
-    const files = [...new Bun.Glob(`${candidate}/**/*`).scanSync({ cwd: dir })];
+    const files = await index.files(`${dir}/${candidate}/**/*`);
     if (files.length === 0) continue;
     let newest = 0;
     for (const file of files) {
-      const modified = Bun.file(`${dir}/${file}`).lastModified;
+      const modified = Bun.file(`${root}/${file}`).lastModified;
       if (modified > newest) newest = modified;
     }
     return { dir: candidate, updatedAt: newest > 0 ? new Date(newest) : null };
@@ -125,9 +127,10 @@ async function buildStatus(dir: string): Promise<{ dir: string; updatedAt: Date 
   return undefined;
 }
 
-function testStatus(dir: string): { dir: string; files: number } | undefined {
+async function testStatus(root: string, dir: string): Promise<{ dir: string; files: number } | undefined> {
+  const index = fileIndex(root);
   for (const candidate of ["tests", "test"]) {
-    const files = [...new Bun.Glob(`${candidate}/**/*.test.ts`).scanSync({ cwd: dir })];
+    const files = await index.files(`${dir}/${candidate}/**/*.test.ts`);
     if (files.length > 0) return { dir: candidate, files: files.length };
   }
   return undefined;

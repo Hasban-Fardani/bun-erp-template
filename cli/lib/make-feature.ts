@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { planFeatureWiring } from "./feature-wiring.ts";
+import { fileIndex } from "./file-index.ts";
 import { writeScaffold } from "./scaffold.ts";
 import {
   type FeatureScaffold,
@@ -37,8 +38,9 @@ export async function planMakeFeature(
     }
   }
 
-  const migrationsDir = resolve(root, "apps/server/database/migrations");
-  const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: migrationsDir })];
+  const existing = (await fileIndex(root).files("apps/server/database/migrations/*.ts")).map(
+    (file) => file.split("/").at(-1) ?? "",
+  );
   const migrationFile = nextMigrationFile(existing, `create_${scaffold.table}_table`);
 
   // Plan every wiring edit before writing anything: a missing anchor aborts the whole command.

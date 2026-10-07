@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { fileIndex } from "./file-index.ts";
 
 /**
  * Route introspection without starting the server. The route table source is the assembled app:
@@ -186,9 +187,8 @@ export async function collectRoutes(root: string): Promise<RouteEntry[]> {
     if (entry.path.endsWith("/auth/*")) entry.permission = "public";
   }
 
-  const featureGlob = new Bun.Glob("*/route.ts");
-  const featureNames = [...featureGlob.scanSync({ cwd: resolve(serverDir, "features") })]
-    .map((file) => file.split("/")[0])
+  const featureNames = (await fileIndex(root).files("apps/server/features/*/route.ts"))
+    .map((file) => file.split("/")[3])
     .filter((name): name is string => Boolean(name))
     .sort();
 

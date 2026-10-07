@@ -3,18 +3,13 @@ import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { AGENT_SKILL_SOURCES } from "../gates/agent-skills.ts";
 import { CODEGRAPH_VERSION, codegraphCommand, codegraphMcpCommand } from "../gates/codegraph.ts";
+import { run } from "../lib/repo.ts";
 
 const root = resolve(import.meta.dir, "../..");
 const SKILLS_CLI_VERSION = "1.7.0";
 const codegraphDatabase = resolve(root, ".codegraph/codegraph.db");
 
 type JsonObject = Record<string, unknown>;
-
-async function run(argv: string[], label: string): Promise<void> {
-  const child = Bun.spawn(argv, { cwd: root, stdout: "inherit", stderr: "inherit" });
-  const code = await child.exited;
-  if (code !== 0) throw new Error(`${label} failed with exit ${code}`);
-}
 
 /** Agent wiring is best-effort: a developer without a given agent must still get a usable index. */
 async function tryRun(argv: string[], label: string): Promise<void> {
@@ -205,9 +200,13 @@ export async function wireContext7Mcp(): Promise<"wired" | "unchanged" | "skippe
 async function alignGlobalCli(): Promise<void> {
   let version: string | undefined;
   try {
-    const probe = Bun.spawnSync(["codegraph", "--version"], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    const probe = await run(["codegraph", "--version"], "CodeGraph version probe", {
+      stdout: "pipe",
+      stderr: "pipe",
+      check: false,
+    });
     if (probe.exitCode !== 0) return;
-    version = probe.stdout.toString().trim().split(/\s+/).pop();
+    version = probe.stdout.trim().split(/\s+/).pop();
   } catch {
     return;
   }

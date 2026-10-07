@@ -92,7 +92,7 @@ export const commands = [
   defineCommand("check:fast", async () => {
     // The inner loop: file-level gates only. The full `check` (tsc + React audit) stays for CI.
     const { runFastChecks } = await import("../gates/parallel-gates.ts");
-    process.stdout.write("Running fast checks (no typecheck or React audit)…\n");
+    process.stdout.write("Running fast checks (gates only; no Biome, typecheck or React audit)…\n");
     const results = await runFastChecks(repoRoot, {
       onResult: (r) => process.stdout.write(`  ${r.ok ? "ok  " : "FAIL"} ${r.name} (${r.ms}ms)\n`),
     });
@@ -150,6 +150,10 @@ export const commands = [
   defineCommand("check:platform", async () => {
     await guard("platform", () => runGate("platform"));
     process.stdout.write("Platform OK: Bun only, no stray Node built-ins.\n");
+  }),
+  defineCommand("check:bun-first", async () => {
+    await guard("bun-first", () => runGate("bun-first"));
+    process.stdout.write("Bun-first OK: async Bun APIs, no banned sync Node built-ins.\n");
   }),
   defineCommand("check:copy", async () => {
     await guard("copy", () => runGate("copy"));

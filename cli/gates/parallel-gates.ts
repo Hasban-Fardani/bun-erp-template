@@ -1,4 +1,5 @@
 import { collectGateFindings, GATE_CATALOG, type GateName } from "../lib/gates.ts";
+import { run } from "../lib/repo.ts";
 
 export type GateResult = { name: string; ok: boolean; output: string; ms: number };
 export type CheckJob = {
@@ -40,13 +41,13 @@ async function runSpawnedJob(
   started: number,
 ): Promise<GateResult> {
   try {
-    const proc = Bun.spawn([...argv], { cwd: root, stdout: "pipe", stderr: "pipe" });
-    const [out, err, code] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ]);
-    return { name, ok: code === 0, output: `${out}${err}`.trim(), ms: Math.round(performance.now() - started) };
+    const result = await run([...argv], name, { cwd: root, stdout: "pipe", stderr: "pipe", check: false });
+    return {
+      name,
+      ok: result.exitCode === 0,
+      output: `${result.stdout}${result.stderr}`.trim(),
+      ms: Math.round(performance.now() - started),
+    };
   } catch (error) {
     return { name, ok: false, output: String(error), ms: Math.round(performance.now() - started) };
   }
@@ -117,13 +118,15 @@ export function runProjectChecks(root: string, options?: CheckRunOptions): Promi
 }
 
 /**
- * The inner loop: file-level gates only. The full `check` adds the whole-monorepo `tsc` and the
- * React audit, which dominate its runtime; those stay in CI, this stays under a second. `impeccable`
- * also stays out: its detector engine is networked on first run. `worker` stays out too: it builds
- * the Worker bundle (~0.3 s) and belongs to the full check.
+ * The inner loop: file-level gates only, no subprocess-heavy jobs. The full `check` adds Biome,
+ * the whole-monorepo `tsc` and the React audit, which dominate its runtime; Biome stays there and
+ * in the pre-push hook (`check:biome`), so `check:fast` is a pure gate pass with no cold `bunx`.
+ * `impeccable` stays out: its detector engine is networked on first run. `worker` stays out too: it
+ * builds the Worker bundle (~0.3 s) and belongs to the full check.
  */
 const FAST_GATE_NAMES: ReadonlySet<GateName> = new Set([
   "architecture",
+  "bun-first",
   "copy",
   "design",
   "language",
@@ -141,10 +144,7 @@ const FAST_GATE_NAMES: ReadonlySet<GateName> = new Set([
 export function runFastChecks(root: string, options?: CheckRunOptions): Promise<GateResult[]> {
   return runChecksParallel(
     root,
-    [
-      { name: "biome", argv: ["bunx", "--bun", "biome", "check", "."] },
-      ...GATES.filter(({ name }) => FAST_GATE_NAMES.has(name)),
-    ],
+    GATES.filter(({ name }) => FAST_GATE_NAMES.has(name)),
     options,
   );
 }

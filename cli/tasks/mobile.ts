@@ -1,3 +1,5 @@
+import { run } from "../lib/repo.ts";
+
 const [command, platform, ...args] = process.argv.slice(2);
 const ROOT = `${import.meta.dir}/../..`;
 const MOBILE_DIR = `${ROOT}/apps/mobile`;
@@ -22,8 +24,7 @@ if (command !== "build" && platform !== "android" && platform !== "ios") {
 }
 
 async function spawn(argv: string[], cwd: string): Promise<void> {
-  const child = Bun.spawn(argv, { cwd, stdout: "inherit", stderr: "inherit" });
-  process.exit(await child.exited);
+  await run(argv, `mobile ${command}`, { cwd });
 }
 
 type PackageMode = "debug" | "production";
@@ -74,8 +75,7 @@ const capCli = Bun.resolveSync("@capacitor/cli/bin/capacitor", MOBILE_DIR);
  * the platform's own debug build so the output is an unsigned, installable debug artifact.
  */
 async function packageDebug(target: "android" | "ios"): Promise<void> {
-  const sync = Bun.spawn([capCli, "sync", target], { cwd: MOBILE_DIR, stdout: "inherit", stderr: "inherit" });
-  if ((await sync.exited) !== 0) process.exit(1);
+  await run([capCli, "sync", target], `capacitor sync ${target}`, { cwd: MOBILE_DIR });
   const argv =
     target === "android"
       ? ["bash", "apps/mobile/android/gradlew", "-p", "apps/mobile/android", "assembleDebug"]

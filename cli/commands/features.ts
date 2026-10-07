@@ -8,6 +8,7 @@ import {
   readFeatureManifest,
 } from "../lib/feature-catalog.ts";
 import { planFeatureWiring } from "../lib/feature-wiring.ts";
+import { fileIndex } from "../lib/file-index.ts";
 import { refreshGuidelines } from "../lib/guidelines.ts";
 import { planInfraWiring } from "../lib/infra-wiring.ts";
 import { parseCommandOptions } from "../lib/options.ts";
@@ -113,7 +114,9 @@ export const commands = [
     const migrationPaths: string[] = [];
     // Server and infra features create tables; a web feature never ships a migration.
     if (manifest.kind !== "web" && manifest.migrations && manifest.migrations.length > 0) {
-      const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
+      const existing = (await fileIndex(repoRoot).files("apps/server/database/migrations/*.ts")).map(
+        (file) => file.split("/").at(-1) ?? "",
+      );
       for (const source of manifest.migrations) {
         // Catalog names carry their own number (0002_departments); the installer renumbers
         // the file to the app's next free slot.
