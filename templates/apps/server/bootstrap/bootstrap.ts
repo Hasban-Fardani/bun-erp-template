@@ -3,6 +3,7 @@ import { loadEnv } from "../config/index.ts";
 import { createDatabase } from "../database/index.ts";
 import { migrate } from "../database/migrate.ts";
 import { createAuth } from "../features/identity/auth.ts";
+import { configurePermissionCache } from "../features/rbac/cache.ts";
 import { createLogger } from "../infra/observability/logger.ts";
 import { createStorage } from "../infra/storage.ts";
 import type { AppContext } from "./context.ts";
@@ -20,6 +21,7 @@ export async function createContext(options: BootstrapOptions = {}): Promise<App
   const env = options.env ?? loadEnv();
   const logger = createLogger(env);
   const { db, close } = createDatabase(env);
+  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED });
 
   if (options.migrateOnStart === true) {
     const ran = await migrate(db, options.migrationsDir ?? MIGRATIONS_DIR);

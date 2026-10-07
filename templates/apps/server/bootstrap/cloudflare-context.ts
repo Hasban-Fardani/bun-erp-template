@@ -1,6 +1,7 @@
 import { loadEnv } from "../config/index.ts";
 import { createPostgresDatabase } from "../database/postgres.ts";
 import { createAuth } from "../features/identity/auth.ts";
+import { configurePermissionCache } from "../features/rbac/cache.ts";
 import { createWorkerLogger } from "../infra/observability/worker-logger.ts";
 import { createStorage } from "../infra/storage.ts";
 import type { AppContext } from "./context.ts";
@@ -27,6 +28,7 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   source.LOG_PATH = "stdout";
 
   const env = loadEnv(source);
+  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED });
   // Hyperdrive owns pooling; clients and their sockets remain scoped to this invocation.
   const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false);
   const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);

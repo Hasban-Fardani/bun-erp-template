@@ -5,7 +5,8 @@ import { listSeederFiles } from "../../../../cli/lib/scaffold.ts";
 import { toSeederName } from "../../../../cli/lib/scaffolding.ts";
 import { defineCommand } from "../../../../cli/registry.ts";
 import type { Database } from "../../database/index.ts";
-import { migrate, rowsOf } from "../../database/migrate.ts";
+import { migrate } from "../../database/migrate.ts";
+import { rowsOf } from "../../database/rows.ts";
 import { seed } from "../../database/seed.ts";
 import { createCliContext } from "../lib/context.ts";
 

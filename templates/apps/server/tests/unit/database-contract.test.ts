@@ -1,6 +1,6 @@
 import { beforeEach, expect, test } from "bun:test";
 import { sql } from "drizzle-orm";
-import { rowsOf } from "../../database/migrate.ts";
+import { rowsOf } from "../../database/rows.ts";
 import { splitSqlStatements } from "../../database/sql-migration.ts";
 import { uuidv7 } from "../../database/uuidv7.ts";
 import { createSeededApp, type SeededApp } from "../support/fixtures.ts";

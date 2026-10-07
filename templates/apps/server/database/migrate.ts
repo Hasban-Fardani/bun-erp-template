@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Database } from "./index.ts";
+import { rowsOf } from "./rows.ts";
 
 const MIGRATIONS_TABLE = `
   create table if not exists _migrations (
@@ -46,13 +47,4 @@ export async function migrate(db: Database, dir: string): Promise<string[]> {
  */
 function migrationId(file: string): string {
   return file.replace(/\.(ts|sql)$/, "");
-}
-
-export { splitSqlStatements } from "./sql-migration.ts";
-
-/** Normalize Drizzle query results at the one boundary used by migrations and fixtures. */
-export function rowsOf<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  const rows = (result as { rows?: unknown }).rows;
-  return Array.isArray(rows) ? (rows as T[]) : [];
 }

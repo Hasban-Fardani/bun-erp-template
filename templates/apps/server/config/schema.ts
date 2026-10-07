@@ -62,6 +62,12 @@ const rawSchema = z
     AUTH_SIGNUP_ENABLED: boolOr("false"),
     /** Better Auth rate limiting; the auth endpoints keep their stricter built-in rules. */
     AUTH_RATE_LIMIT_ENABLED: boolOr("true"),
+    /**
+     * Per-process permission cache. On for single-process dev; set false for Cloudflare Workers
+     * and multi-replica Bun, where an invalidation only reaches the process that wrote it.
+     * See docs/security.md.
+     */
+    PERMISSION_CACHE_ENABLED: boolOr("true"),
     // Google OAuth dormant (ADR-0009): the provider activates only when BOTH are set.
     GOOGLE_CLIENT_ID: z.string().default(""),
     GOOGLE_CLIENT_SECRET: z.string().default(""),
@@ -169,6 +175,7 @@ export function findStrayKeys(env: Record<string, string | undefined>): string[]
     "DATABASE_",
     "BETTER_AUTH_",
     "AUTH_",
+    "PERMISSION_",
     "GOOGLE_",
     "STORAGE_",
     "S3_",

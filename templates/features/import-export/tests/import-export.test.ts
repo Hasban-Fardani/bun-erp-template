@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
-import { rowsOf } from "../../../database/migrate.ts";
+import { rowsOf } from "../../../database/rows.ts";
 import { registerImportExportBatchHandlers } from "../../../features/import-export/jobs.ts";
 import {
   type ImportExportResource,

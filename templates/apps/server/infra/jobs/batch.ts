@@ -1,7 +1,7 @@
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
-import { rowsOf } from "../../database/migrate.ts";
+import { rowsOf } from "../../database/rows.ts";
 import type { Logger } from "../observability/logger.ts";
 import { enqueueJob, requeueDeadJob } from "./queue.ts";
 import type { JobBatchStatus, JobPayload } from "./schema.ts";

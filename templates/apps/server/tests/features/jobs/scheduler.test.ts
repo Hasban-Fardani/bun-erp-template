@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
 import type { Database } from "../../../database/index.ts";
-import { rowsOf } from "../../../database/migrate.ts";
+import { rowsOf } from "../../../database/rows.ts";
 import { defineSchedule, runDueSchedules, type ScheduleDefinition } from "../../../infra/jobs/scheduler.ts";
 import type { Logger } from "../../../infra/observability/logger.ts";
 import { createTestContext } from "../../support/fixtures.ts";

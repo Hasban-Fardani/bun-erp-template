@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
-import { rowsOf } from "../../database/migrate.ts";
+import { rowsOf } from "../../database/rows.ts";
 import { ApiError, ErrorCode } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
 import {

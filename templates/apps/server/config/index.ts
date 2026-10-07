@@ -63,10 +63,14 @@ function pickKnownKeys(source: Record<string, string | undefined>): Record<strin
 /**
  * The only reader of Bun.env in the whole app (PRD §6).
  * Throws ConfigError at bootstrap when config is invalid — not on the first request.
+ * `runtimeEnv` keeps the Bun reference behind a `typeof Bun` guard: the Worker always passes
+ * explicit bindings, and a stray `loadEnv()` there fails as a ConfigError instead of a ReferenceError.
  */
-export function loadEnv(
-  source: Record<string, string | undefined> = Bun.env as Record<string, string | undefined>,
-): Env {
+function runtimeEnv(): Record<string, string | undefined> {
+  return typeof Bun === "undefined" ? {} : (Bun.env as Record<string, string | undefined>);
+}
+
+export function loadEnv(source: Record<string, string | undefined> = runtimeEnv()): Env {
   const result = EnvSchema.safeParse(pickKnownKeys(source));
   if (!result.success) {
     throw new ConfigError(result.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`));
@@ -75,13 +79,11 @@ export function loadEnv(
 }
 
 /** Used by `env:list` and the bootstrap error message: a foreign key is a typo or a dead variable. */
-export function strayKeyWarnings(
-  source: Record<string, string | undefined> = Bun.env as Record<string, string | undefined>,
-): string[] {
+export function strayKeyWarnings(source: Record<string, string | undefined> = runtimeEnv()): string[] {
   return findStrayKeys(source).map((key) => `${key}: not recognised by the config schema (typo or unused variable?)`);
 }
 
 /** Optional test target stays inside the sole environment reader. */
 export function testDatabaseUrl(): string | undefined {
-  return Bun.env.TEST_DATABASE_URL;
+  return runtimeEnv().TEST_DATABASE_URL;
 }

@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { createContext } from "../../../bootstrap/bootstrap.ts";
 import type { AppContext } from "../../../bootstrap/context.ts";
-import { migrate, rowsOf } from "../../../database/migrate.ts";
+import { migrate } from "../../../database/migrate.ts";
+import { rowsOf } from "../../../database/rows.ts";
 import { createTestContext, disposeTestContext, testEnv } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

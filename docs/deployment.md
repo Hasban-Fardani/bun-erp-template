@@ -47,11 +47,28 @@ checks, tests, migrations and seed before deploy. Configure the Hyperdrive ID, a
 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL and BETTER_AUTH_SECRET in the project.
 Local emulation uses .dev.vars.example with a disposable PostgreSQL database.
 
+`bun erp check:worker` (part of `bun erp check`) bundles this entry for a browser/workerd-like target
+and fails when a Bun global without a `typeof Bun` guard, a new Node built-in, a migration/seed
+module or an over-budget script reaches it. The Vite Cloudflare build of this template measured
+1,244,243 bytes raw / 321,552 bytes gzip (314 KiB) for the Worker script; the gate's own `Bun.build`
+bundle is ~1.04 MB raw / ~288 KB gzip. Workers Free caps a script at 3 MiB gzip, so the gate fails
+above a 1 MiB gzip template budget — a third of the platform limit.
+
+The permission cache (`PERMISSION_CACHE_ENABLED`, default true) is a per-process `Map` with a
+10-second TTL; PostgreSQL is always the source of truth. On Workers every isolate has its own copy,
+so a role change handled by one isolate is invisible to the others until the TTL expires. The
+deploy config sets `PERMISSION_CACHE_ENABLED=false`; do the same for multi-replica Bun. With the
+cache off, every authorized request runs the RBAC join once (more Hyperdrive statements, no stale
+grants). See [security](security.md).
+
 The Worker has a five-minute Cron Trigger and processes at most one job per tick. This keeps idle
 queue polling and per-tick work small for the Free plan; a newly queued job can wait up to five
-minutes before its first attempt. This is appropriate for modest scheduled work, not a high-throughput
-event stream. Keep handlers idempotent and split CPU-heavy tasks into smaller jobs. Monitor dead jobs
-through the operational commands. See operations.md and ADR-0015.
+minutes before its first attempt. The tick math is `24 * 60 / 5 = 288` ticks per day, so with
+`CLOUDFLARE_JOB_BATCH_SIZE = 1` the Worker drains at most 288 jobs per day: a burst of 1,000 queued
+jobs takes about 3.5 days to clear, and one burst of notification mail backs up for hours. This is
+appropriate for modest scheduled work, not a high-throughput event stream. Keep handlers idempotent
+and split CPU-heavy tasks into smaller jobs. Monitor dead jobs through the operational commands. See
+operations.md and ADR-0015.
 
 Before deployment, the workflow checks the live Hyperdrive config through the Cloudflare API. Give
 `CLOUDFLARE_API_TOKEN` Hyperdrive Read access for that lookup. Hyperdrive query caching must be
@@ -92,12 +109,16 @@ Hyperdrive within their Free quotas, and check the database provider's own free-
 The Cron trigger still polls PostgreSQL when the queue is empty, about 288 times per day with the
 default five-minute schedule. API/auth traffic and job handlers consume additional Worker CPU and
 Hyperdrive statements. Better Auth's default password hashing uses scrypt; Cloudflare notes that
-authentication workloads can use 10–20 ms CPU, above the Free per-invocation limit. Do not weaken
-password hashing to fit a quota. Before relying on password sign-in at scale, deploy to the target
-Free account and inspect CPU metrics; if it consistently exceeds 10 ms, use a paid Worker plan or
-move authentication/API compute to a host with an appropriate CPU budget. A template build and local
-dry run can verify the bundle and bindings, but only a deployment using the target account, real
-database, and secrets can verify runtime CPU and external services end to end.
+authentication workloads can use 10–20 ms CPU, above the Free per-invocation limit. The template's
+own sign-in path was measured locally at ~110 ms CPU per hash or verify (median of 15 runs;
+`better-auth/crypto` `hashPassword`/`verifyPassword` with scrypt N=16384, r=16, p=1, dkLen=64;
+Bun 1.4.2 on Apple silicon; wall time via `performance.now()`, CPU via `process.cpuUsage()`), roughly
+ten times the Free budget. Do not weaken password hashing to fit a quota. Before relying on password
+sign-in at scale, deploy to the target Free account and inspect CPU metrics; if it consistently
+exceeds 10 ms, use a paid Worker plan or move authentication/API compute to a host with an
+appropriate CPU budget. A template build and local dry run can verify the bundle and bindings, but
+only a deployment using the target account, real database, and secrets can verify runtime CPU and
+external services end to end.
 
 ## PostgreSQL versions
 
