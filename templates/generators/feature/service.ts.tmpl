@@ -1,0 +1,71 @@
+import { {{drizzleImports}} } from "drizzle-orm";
+import type { Database } from "../../database/index.ts";
+{{databaseImports}}
+import { ApiError } from "../../http/helpers/errors.ts";
+import { toOffset } from "../../http/helpers/list-query.ts";
+import { orderByColumn } from "../../http/helpers/sort.ts";
+import { auditChange, snapshot } from "../audit/index.ts";
+import { {{camel}} } from "./schema.ts";
+import type { Create{{pascal}}Input, List{{pascal}}Input, Update{{pascal}}Input } from "./validation.ts";
+
+export type {{pascal}} = typeof {{camel}}.$inferSelect;
+
+type Actor = { userId: string | null; traceId: string; label?: string };
+
+/**
+ * Transaction boundary lives here; every write records an audit snapshot.{{softDeleteDoc}}
+ */
+export async function list{{pascal}}(
+  db: Database,
+  input: List{{pascal}}Input,
+): Promise<{ items: {{pascal}}[]; total: number }> {
+{{listWhere}}  const [items, count] = await Promise.all([
+    db
+      .select()
+      .from({{camel}}){{listWhereClause}}
+      .orderBy(...orderByColumn({{camel}}, input.sort, input.dir))
+      .limit(input.perPage)
+      .offset(toOffset(input).offset),
+    db.select({ total: sql<number>`count(*)::int` }).from({{camel}}){{listWhereClause}},
+  ]);
+  return { items, total: count[0]?.total ?? 0 };
+}
+
+{{findFunction}}
+
+{{requireFunction}}
+
+export async function create{{pascal}}(
+  db: Database,
+  input: Create{{pascal}}Input,
+  actor: Actor,
+): Promise<{{pascal}}> {
+  return db.transaction(async (tx) => {
+    const rows = await tx.insert({{camel}}).values({{createValues}}).returning();
+    const after = rows[0] as {{pascal}};
+    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.created", after.id, undefined, after);
+    return after;
+  });
+}
+
+{{updateFunction}}
+
+{{deleteFunction}}{{lifecycleFunctions}}
+
+/** One audit shape for every {{resource}} state change; the event name is the only variable. */
+async function record{{pascal}}Event(
+  db: Database,
+  actor: Actor,
+  event: string,
+  id: string,
+  before: {{pascal}} | undefined,
+  after: {{pascal}} | undefined,
+): Promise<void> {
+  await auditChange(db, {
+    actor,
+    event,
+    subject: { type: "{{resource}}", id },
+    ...(before ? { before: snapshot("{{resource}}", before) } : {}),
+    ...(after ? { after: snapshot("{{resource}}", after) } : {}),
+  });
+}

@@ -28,7 +28,10 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["check:fast", "Run the fast gates only (no Biome, typecheck or React audit); use for the inner loop"],
       ["check:prod", "Check production deployment readiness"],
       ["check:gate <name>", "Run one focused gate; use --list to see names"],
-      ["test", "Run backend, web, and package test suites (mobile when installed)"],
+      [
+        "test",
+        "Run backend, web, and package test suites (mobile when installed); --filter <feature> runs one feature",
+      ],
     ],
   },
   {

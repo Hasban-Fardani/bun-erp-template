@@ -1,0 +1,79 @@
+{
+  "feature_id": "{{name}}",
+  "surface_class": "operational_surface",
+  "status": "INHERITED",
+  "ui_code_requested": true,
+  "mock_paths": ["docs/ui-states.md"],
+  "options": [
+    {
+      "option_id": "shared-resource-table",
+      "role": "primary",
+      "reference_refs": ["shadcnspace table-01", "datatables"],
+      "patterns": ["operational:dense-table", "operational:server-pagination"],
+      "tradeoff": "Inherited from the catalog's reference list screen: one shared ResourceTable owns search, sort, pagination and the empty state, so this list cannot drift from the others.",
+      "mock_path": "docs/ui-states.md",
+      "authored_device": "status-first-code-column-next-to-name",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/ui-states.md",
+          "measured_facts": {
+            "header_height": "44.5px",
+            "row_height": "57px",
+            "cell_padding": "p-3 ps-6",
+            "hover": "bg-muted/50"
+          },
+          "mechanism": "dense-table-with-visible-row-separators",
+          "application": "Header and body share one padding scale; rows carry a full-opacity border."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/ui-states.md",
+          "measured_facts": {
+            "info_format": "1-25 / 137",
+            "page_sizes": "10, 25, 50, 100"
+          },
+          "mechanism": "footer-with-page-size-selector-and-range-label",
+          "application": "One footer owned by ResourceTable, so a new list cannot omit it."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/ui-states.md",
+          "copied": "44px header, full-opacity separators, hover on the row",
+          "deviated": "Mobile reflows to stacked cards instead of horizontal scroll",
+          "reason": "The reference is unusable at 390px; a card list keeps every column reachable without a scrollbar."
+        },
+        {
+          "url": "https://datatables.net/manual/styling/classes",
+          "observed_artifact": "docs/ui-states.md",
+          "copied": "range label, page-size selector, first/prev/next/last",
+          "deviated": "No per-column filter row; the toolbar holds a single search box",
+          "reason": "Operators here run narrow org data; per-column filters add chrome without a use case."
+        }
+      ]
+    }
+  ],
+  "style": {
+    "contrast_min_ratio": 4.8,
+    "unique_font_sizes": 7,
+    "unique_weights": 2,
+    "accent_hues": 1,
+    "nested_card_depth": 0,
+    "icon_libraries": 1,
+    "radius_styles": 3,
+    "browser_surfaces_themed": true,
+    "reduced_motion_respected": true,
+    "section_scaffolds_repeated": 0,
+    "hero_cliche_stack": false,
+    "kicker_above_heading": false,
+    "gradient_multistop": false,
+    "emoji_as_icon": false,
+    "motion_unmapped": false,
+    "invented_identity_assets": [],
+    "fabricated_portrait": false,
+    "copy_forbidden_hits": []
+  },
+  "notes": "Generated as an INHERITED direction: the screen reuses the reviewed resource-table pattern. Replace this spec with a feature-specific direction (status PROPOSED or APPROVED with references you actually opened) once the domain columns and hierarchy are decided."
+}

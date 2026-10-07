@@ -1,0 +1,6 @@
+
+    const restored = await api.app.request(`/api/v1/{{name}}/${body.data.id}/restore`, {
+      method: "POST",
+      headers: { cookie: api.cookie },
+    });
+    expect(restored.status).toBe(200);

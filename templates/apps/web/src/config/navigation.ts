@@ -26,7 +26,10 @@ type NavGroup = {
  */
 export const navGroups: NavGroup[] = [
   {
-    items: [{ titleKey: "navigation.notifications", url: "/notifications", icon: Bell, alwaysVisible: true }],
+    items: [
+      // @erp:nav
+      { titleKey: "navigation.notifications", url: "/notifications", icon: Bell, alwaysVisible: true },
+    ],
   },
 ];
 

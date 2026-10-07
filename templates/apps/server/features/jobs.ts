@@ -1,5 +1,6 @@
 import type { AppContext } from "../bootstrap/context.ts";
 import { BATCH_JOB_NAME, BatchHandlerRegistry, processJobBatch } from "../infra/jobs/batch.ts";
+// @erp:mail
 import { JobRegistry } from "../infra/jobs/registry.ts";
 import type { ScheduleDefinition } from "../infra/jobs/scheduler.ts";
 

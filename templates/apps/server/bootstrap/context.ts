@@ -1,3 +1,4 @@
+// @erp:mail
 import type { Env } from "../config/index.ts";
 import type { Database } from "../database/index.ts";
 import type { Auth } from "../features/identity/auth.ts";

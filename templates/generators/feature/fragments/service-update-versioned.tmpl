@@ -1,0 +1,27 @@
+export async function update{{pascal}}(
+  db: Database,
+  id: string,
+  input: Update{{pascal}}Input,
+  actor: Actor,
+): Promise<{{pascal}}> {
+  return db.transaction(async (tx) => {
+    const { expectedVersion, ...patch } = input;
+    const before = await require{{pascal}}(tx as unknown as Database, id);
+
+    // One statement: the data change and the version bump happen together, guarded by the version.
+    const rows = await tx
+      .update({{camel}})
+      .set({ ...patch, updatedAt: new Date(), version: bumpVersion({{camel}}) })
+      .where(versionGuard({{camel}}, id, expectedVersion))
+      .returning();
+    const after = rows[0];
+    if (!after) {
+      const current = {{findCurrent}};
+      if (!current) throw ApiError.notFound("{{pascal}} not found");
+      throw ApiError.versionConflict(current.version);
+    }
+
+    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.updated", after.id, before, after);
+    return after;
+  });
+}

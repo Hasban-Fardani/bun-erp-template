@@ -1,0 +1,6 @@
+import type { Database } from "../index.ts";
+
+/** Add one forward-only, transactional schema change before applying this migration. */
+export async function up(_database: Database): Promise<void> {
+  throw new Error("Migration is not implemented; add the schema change before running db:migrate");
+}

@@ -4,6 +4,7 @@ export const statements = {
   user: ["create", "read", "update", "delete", "impersonate"],
   // `assign` = granting a role to a user; managing roles & their permissions is guarded by create/update/delete.
   role: ["create", "read", "update", "delete", "assign"],
+  // @erp:permissions
   audit: ["read"],
 } as const;
 

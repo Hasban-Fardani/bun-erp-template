@@ -1,0 +1,7 @@
+
+    // The same version cannot be used twice: optimistic locking answers 409.
+    const stale = await api.app.request(
+      `/api/v1/{{name}}/${body.data.id}`,
+      json({ expectedVersion: body.data.version }, "PATCH"),
+    );
+    expect(stale.status).toBe(409);

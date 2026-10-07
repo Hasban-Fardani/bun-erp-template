@@ -1,0 +1,6 @@
+import type { Database } from "../index.ts";
+
+/** {{pascal}} seed data. Keep it deterministic and idempotent: db:seed may run this more than once. */
+export async function seed(_database: Database): Promise<void> {
+  throw new Error("Seeder is not implemented; insert the baseline rows before running db:seed");
+}

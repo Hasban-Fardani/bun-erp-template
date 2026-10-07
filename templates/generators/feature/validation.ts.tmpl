@@ -1,0 +1,23 @@
+import * as z from "zod";
+import { listQueryParts } from "../../http/helpers/list-query.ts";
+
+/**
+ * Input contract for {{pascal}}. Replace the empty object schemas with the feature's fields:
+ * the compiled exports feed the runtime and the parity test from the same definition.
+ */
+export const create{{pascal}}Schema = z.strictObject({});
+
+export const update{{pascal}}Schema = z.strictObject({{{expectedVersion}}
+});
+
+export const list{{pascal}}Schema = z.strictObject({
+  ...listQueryParts({ sortable: ["createdAt"], defaultSort: "createdAt" }),{{includeDeleted}}
+});
+
+export const Create{{pascal}}Input = z.compile(create{{pascal}}Schema);
+export const Update{{pascal}}Input = z.compile(update{{pascal}}Schema);
+export const List{{pascal}}Input = z.compile(list{{pascal}}Schema);
+
+export type Create{{pascal}}Input = z.output<typeof Create{{pascal}}Input>;
+export type Update{{pascal}}Input = z.output<typeof Update{{pascal}}Input>;
+export type List{{pascal}}Input = z.output<typeof List{{pascal}}Input>;

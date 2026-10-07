@@ -19,6 +19,7 @@ export const sessions = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     token: text("token").notNull().unique(),
     ipAddress: text("ip_address"),
+    // @erp:organizations
     userAgent: text("user_agent"),
     userId: uuid("user_id")
       .notNull()

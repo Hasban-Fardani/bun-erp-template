@@ -1,0 +1,5 @@
+import { defineFeature } from "../../http/helpers/feature.ts";
+import { {{camel}}Routes } from "./route.ts";
+
+/** Declares the {{name}} feature once; routes/api.ts mounts it from the FEATURES array. */
+export const {{camel}}Feature = defineFeature({ name: "{{name}}", routes: {{camel}}Routes });

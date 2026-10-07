@@ -6,6 +6,7 @@
  */
 export { invalidateUser } from "./cache.ts";
 export { permissions, rolePermissions, roles, userRoles } from "./schema.ts";
+export type { Role } from "./service.ts";
 export {
   assignRole,
   countUsersWithRoleKey,
@@ -14,6 +15,8 @@ export {
   permissionsForRoles,
   permissionsForUser,
   revokeRole,
+  rolesForUser,
   userHoldsRoleKey,
 } from "./service.ts";
-export type { PermissionKey } from "./statements.ts";
+export type { Action, PermissionKey, Resource, Statement, SystemRoleKey } from "./statements.ts";
+export { allPermissions, statements, systemRoles } from "./statements.ts";

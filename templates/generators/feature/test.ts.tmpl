@@ -1,0 +1,58 @@
+import { afterAll, beforeEach, describe, expect, test } from "bun:test";
+import { createHttpFixture, type HttpFixture } from "../../support/fixtures.ts";
+
+let api: HttpFixture;
+
+const json = (body: unknown, method = "POST"): RequestInit => ({
+  method,
+  headers: { "content-type": "application/json", cookie: api.cookie },
+  body: JSON.stringify(body),
+});
+
+// slop-ok: the HTTP fixture lifecycle is deliberately identical across feature tests
+beforeEach(async () => {
+  api = await createHttpFixture();
+  await api.signInAsOwner();
+}, 30_000);
+
+afterAll(async () => {
+  await api?.close();
+});
+
+describe("{{name}}", () => {
+  test("anonymous caller is rejected before any business logic runs", async () => {
+    const res = await api.app.request("/api/v1/{{name}}", { method: "GET" });
+    expect(res.status).toBe(401);
+  });
+
+  test("{{roundTripName}}", async () => {
+    const created = await api.app.request("/api/v1/{{name}}", json({}));
+    expect(created.status).toBe(200);
+    const body = (await created.json()) as { data: {{dataShape}} };
+
+    const listed = await api.app.request("/api/v1/{{name}}?perPage=10", { headers: { cookie: api.cookie } });
+    expect(((await listed.json()) as { data: { total: number } }).data.total).toBe(1);
+
+    const patched = await api.app.request(
+      `/api/v1/{{name}}/${body.data.id}`,
+      json({{patchBody}}, "PATCH"),
+    );
+    expect(patched.status).toBe(200);
+{{staleCheck}}
+    const removed = await api.app.request(`/api/v1/{{name}}/${body.data.id}`, {
+      method: "DELETE",
+      headers: { cookie: api.cookie },
+    });
+    expect(removed.status).toBe(200);
+
+    const hidden = await api.app.request(`/api/v1/{{name}}?perPage=10`, { headers: { cookie: api.cookie } });
+    expect(((await hidden.json()) as { data: { total: number } }).data.total).toBe(0);
+{{restoreCheck}}  });
+
+  test("missing id is 404, not 403", async () => {
+    const res = await api.app.request("/api/v1/{{name}}/0199aaaa-0000-7000-8000-000000000000", {
+      headers: { cookie: api.cookie },
+    });
+    expect(res.status).toBe(404);
+  });
+});

@@ -21,6 +21,7 @@ const FEATURES = [
   rbacFeature,
   auditFeature,
   notificationFeature,
+  // @erp:routes
 ] as const satisfies readonly FeatureDefinition[];
 
 /** `routes/api.ts` only registers routes — it holds no business logic (PRD §6). */

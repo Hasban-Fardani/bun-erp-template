@@ -1,0 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { {{pascal}}Screen } from "../../features/{{name}}/screens/{{name}}.tsx";
+
+export const Route = createFileRoute("/_authenticated/{{name}}")({ component: {{pascal}}Screen });

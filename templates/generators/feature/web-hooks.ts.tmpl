@@ -1,0 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { {{camel}}ListQuery } from "../api/queries.ts";
+
+export function use{{pascal}}List(query: string) {
+  return useQuery({{camel}}ListQuery(query));
+}

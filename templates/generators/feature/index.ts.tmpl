@@ -1,0 +1,7 @@
+/** Public surface for the {{name}} feature; other features import it only through this file. */
+export { {{camel}}Feature } from "./feature.ts";
+export {
+{{serviceExports}}
+} from "./service.ts";
+export type { {{pascal}} } from "./service.ts";
+export type { Create{{pascal}}Input, List{{pascal}}Input, Update{{pascal}}Input } from "./validation.ts";

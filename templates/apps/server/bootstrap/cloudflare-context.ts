@@ -1,5 +1,6 @@
 import { loadEnv } from "../config/index.ts";
 import { createPostgresDatabase } from "../database/postgres.ts";
+// @erp:mail
 import { createAuth } from "../features/identity/auth.ts";
 import { configurePermissionCache } from "../features/rbac/cache.ts";
 import { createWorkerLogger } from "../infra/observability/worker-logger.ts";

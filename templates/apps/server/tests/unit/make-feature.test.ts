@@ -1,67 +1,7 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { planMakeFeature, writeMakeFeature } from "../../../../cli/lib/make-feature.ts";
-import { ensureDirectory, withTempRoot } from "./support/temp-root.ts";
-
-/**
- * Minimal but anchor-complete copies of the six core files `make:feature` wires. A missing anchor
- * here means the generator must refuse before it writes anything.
- */
-const CORE_FILES: Record<string, string> = {
-  "apps/server/features/rbac/statements.ts": ["export const statements = {", '  audit: ["read"],', "} as const;"].join(
-    "\n",
-  ),
-  "apps/server/features/audit/redact.ts": [
-    "export const AUDIT_FIELDS = {",
-    '  role: ["id", "key"],',
-    "} as const satisfies Record<string, readonly string[]>;",
-  ].join("\n"),
-  "apps/server/routes/api.ts": [
-    'import { auditFeature } from "../features/audit/feature.ts";',
-    "",
-    "const FEATURES = [",
-    "  auditFeature,",
-    "] as const satisfies readonly FeatureDefinition[];",
-    "",
-    'export const API_PREFIX = "/api/v1";',
-    "",
-  ].join("\n"),
-  "apps/web/src/config/navigation.ts": [
-    'import { Bell, type LucideIcon, Users } from "lucide-react";',
-    "",
-    "export const navGroups = [",
-    "  {",
-    "    items: [",
-    '      { titleKey: "navigation.users", url: "/users", icon: Users, permission: "user.read" },',
-    "    ],",
-    "  },",
-    "];",
-    "",
-  ].join("\n"),
-  "packages/i18n/src/utils/messages/en-US.ts": [
-    "export const enUS = {",
-    '  "common.loading": "Loading…",',
-    "} as const;",
-    "",
-  ].join("\n"),
-  "packages/i18n/src/utils/messages/id-ID.ts": [
-    "export const idID = {",
-    '  "common.loading": "Memuat…",',
-    "} satisfies Record<keyof typeof enUS, string>;",
-    "",
-  ].join("\n"),
-};
-
-function withCoreFiles(overrides: Record<string, string>, run: (root: string) => Promise<void>): Promise<void> {
-  return withTempRoot(
-    { ...CORE_FILES, ...overrides },
-    async (root) => {
-      await ensureDirectory(join(root, "apps/server/database/migrations"));
-      await run(root);
-    },
-    "make-feature-",
-  );
-}
+import { withCoreFiles } from "./support/make-feature-fixture.ts";
 
 test("make:feature refuses before writing when a wiring anchor is missing", async () => {
   await withCoreFiles({ "apps/server/features/rbac/statements.ts": "export const statements = {};" }, async (root) => {

@@ -3,4 +3,5 @@
  * `feature-boundary` rule in `check:architecture` rejects deep imports — so extracting audit as
  * a service means moving the folder and repointing this entry.
  */
+export type { AuditEvent, AuditLog } from "./service.ts";
 export { auditChange, recordAudit, snapshot } from "./service.ts";

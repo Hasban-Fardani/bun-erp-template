@@ -1,0 +1,21 @@
+export async function update{{pascal}}(
+  db: Database,
+  id: string,
+  input: Update{{pascal}}Input,
+  actor: Actor,
+): Promise<{{pascal}}> {
+  return db.transaction(async (tx) => {
+    const before = await require{{pascal}}(tx as unknown as Database, id);
+
+    const rows = await tx
+      .update({{camel}})
+      .set({ ...input, updatedAt: new Date() })
+      .where(eq({{camel}}.id, id))
+      .returning();
+    const after = rows[0];
+    if (!after) throw ApiError.notFound("{{pascal}} not found");
+
+    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.updated", after.id, before, after);
+    return after;
+  });
+}
