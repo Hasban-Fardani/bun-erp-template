@@ -18,6 +18,24 @@
       "id": "00000000000000000000000000000000"
     }
   ],
+  // Queue wake-up for Workers (docs/deployment.md, "Jobs on Workers"). The database stays the
+  // outbox: these signals only reduce latency, and a lost message delays a job to the next sweep.
+  // To enable on a Queues-enabled account:
+  //   1. bun run --cwd apps/web wrangler queues create bun-erp-template-jobs
+  //   2. set "JOBS_WAKEUP_DRIVER": "cloudflare-queue" in vars below
+  //   3. uncomment this block, then run bun erp cloudflare:build
+  // Accounts without Queues keep working on the cron sweeper alone (driver "none").
+  // "queues": {
+  //   "producers": [{ "binding": "JOBS_QUEUE", "queue": "bun-erp-template-jobs" }],
+  //   "consumers": [
+  //     {
+  //       "queue": "bun-erp-template-jobs",
+  //       "max_batch_size": 10,
+  //       "max_batch_timeout": 5,
+  //       "max_retries": 5
+  //     }
+  //   ]
+  // },
   "vars": {
     "APP_NAME": "Bun ERP Template",
     "APP_ENV": "production",
@@ -46,6 +64,7 @@
     "MAIL_DRIVER": "log",
     "MAIL_FROM_ADDRESS": "no-reply@example.test",
     "MAIL_FROM_NAME": "Bun ERP Template",
+    "JOBS_WAKEUP_DRIVER": "none",
     "SMTP_HOST": "",
     "SMTP_PORT": "587",
     "SMTP_SECURE": "false",

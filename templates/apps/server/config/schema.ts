@@ -97,6 +97,10 @@ const rawSchema = z
     SMTP_USERNAME: z.string().trim().default(""),
     SMTP_PASSWORD: z.string().default(""),
 
+    // Jobs: `none` polls the database (Bun worker and Cloudflare cron sweeper); `cloudflare-queue`
+    // sends a wake-up through the JOBS_QUEUE binding after each committed enqueue.
+    JOBS_WAKEUP_DRIVER: z.enum(["none", "cloudflare-queue"]).default("none"),
+
     // Feature flags
     FEATURE_ADVANCED_REPORTS: boolOr("false"),
   })
@@ -181,6 +185,7 @@ export function findStrayKeys(env: Record<string, string | undefined>): string[]
     "S3_",
     "MAIL_",
     "SMTP_",
+    "JOBS_",
     "FEATURE_",
   ];
   return Object.keys(env)
