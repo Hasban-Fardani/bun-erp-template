@@ -11,7 +11,8 @@ const config: CapacitorConfig = {
   appId,
   appName,
   webDir: "www",
-  loggingBehavior: "debug",
+  // Native console logging is opt-in: packaged builds must not ship the webview debug bridge.
+  loggingBehavior: process.env.MOBILE_LOGGING === "debug" ? "debug" : "none",
   server: { iosScheme: "capacitor", androidScheme: "https" },
   plugins: {
     CapacitorSQLite: {

@@ -6,14 +6,17 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { uiConfig } from "./config/ui.ts";
+import { MutationErrorToaster, reportMutationError } from "./lib/mutation-feedback.ts";
 import { createQueryClient } from "./lib/query-client.ts";
 import { applyInitialTheme, ThemeProvider } from "./lib/theme.tsx";
 import { routeTree } from "./routeTree.gen.ts";
 import "./styles/globals.css";
 
 const queryClient = createQueryClient(() => {
-  if (router.state.location.pathname !== "/login") void router.navigate({ to: "/login" });
-});
+  const location = router.state.location;
+  if (location.pathname === "/login") return;
+  void router.navigate({ to: "/login", search: { redirect: location.href } });
+}, reportMutationError);
 
 function LocalizedPageLoading() {
   const { t } = useI18n();
@@ -35,7 +38,7 @@ declare module "@tanstack/react-router" {
 }
 
 const rootElement = document.getElementById("root");
-if (!rootElement) throw new Error("element #root tidak ditemukan");
+if (!rootElement) throw new Error("Missing #root element");
 
 // The palette is a runtime preference now; apply it before the first paint so a dark deployment
 // does not flash light. The provider reconciles the same value once React mounts.
@@ -47,6 +50,7 @@ createRoot(rootElement).render(
       <ToastProvider>
         <I18nProvider>
           <ThemeProvider>
+            <MutationErrorToaster />
             <RouterProvider router={router} />
           </ThemeProvider>
         </I18nProvider>

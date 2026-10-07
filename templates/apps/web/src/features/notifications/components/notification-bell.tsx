@@ -1,7 +1,9 @@
 import { useI18n } from "@bun-erp/i18n/react";
 import { Button } from "@bun-erp/ui/atoms/button.tsx";
+import { Alert, AlertDescription } from "@bun-erp/ui/molecules/alert.tsx";
 import { NotificationBell, NotificationsHeader } from "@bun-erp/ui/organisms/notification-bell.tsx";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
@@ -13,14 +15,16 @@ import { NotificationFeed } from "./notification-feed.tsx";
 /** The header bell: unread count, a panel of the latest notifications, and mark-read actions. */
 export function NotificationsBell() {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
   const unread = useUnreadCount();
-  const list = useNotifications();
+  // The list loads on first open; later opens reuse the cached page.
+  const list = useNotifications("", open);
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
   const unreadCount = unread.data?.count ?? 0;
 
   return (
-    <NotificationBell unreadCount={unreadCount} label={t("notifications.title")}>
+    <NotificationBell unreadCount={unreadCount} label={t("notifications.title")} open={open} onOpenChange={setOpen}>
       <NotificationsHeader
         title={t("notifications.title")}
         action={
@@ -31,6 +35,14 @@ export function NotificationsBell() {
           ) : null
         }
       />
+      {unread.isError ? (
+        <Alert variant="destructive" className="m-3 flex items-center justify-between gap-2 py-2.5">
+          <AlertDescription className="text-[12.5px]">{t("notifications.unreadError")}</AlertDescription>
+          <Button variant="ghost" onClick={() => void unread.refetch()}>
+            {t("table.retry")}
+          </Button>
+        </Alert>
+      ) : null}
       {list.isPending ? (
         <p role="status" className="px-4 py-8 text-center text-[12.5px] text-ink-muted">
           {t("common.loading")}

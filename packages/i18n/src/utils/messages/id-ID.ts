@@ -7,6 +7,7 @@ export const idID = {
   "common.loading": "Memuat…",
   "common.email": "Email",
   "common.password": "Sandi",
+  "common.actionFailed": "Aksi gagal. Coba lagi.",
   "route.error.title": "Halaman ini tidak dapat dimuat",
   "route.error.detail": "Coba muat ulang halaman ini.",
   "route.error.retry": "Coba lagi",
@@ -85,6 +86,7 @@ export const idID = {
   "offline.save": "Simpan lokal",
   "offline.saving": "Menyimpan…",
   "offline.unavailable": "Penyimpanan lokal tidak tersedia. Coba lagi.",
+  "offline.saveFailed": "Catatan tidak dapat disimpan di perangkat ini.",
   "offline.savedHeading": "Tersimpan di perangkat",
   "offline.loadingSaved": "Memuat catatan tersimpan",
   "offline.loading": "Memuat catatan lokal…",
@@ -96,5 +98,6 @@ export const idID = {
   "notifications.empty": "Belum ada notifikasi.",
   "notifications.markAllRead": "Tandai semua dibaca",
   "notifications.unread": "Belum dibaca",
+  "notifications.unreadError": "Jumlah notifikasi belum dibaca tidak dapat dimuat.",
   "notifications.viewAll": "Lihat semua notifikasi",
 } satisfies Record<keyof typeof enUS, string>;
