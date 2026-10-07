@@ -185,6 +185,12 @@ export const GATE_CATALOG = [
     summary: "The Worker bundle stays free of Bun globals, new Node built-ins, DDL paths and over-budget size.",
   },
   {
+    name: "worker-boot",
+    command: "check:worker-boot",
+    file: "cli/gates/worker-boot.ts",
+    summary: "Boots the real Worker on workerd and asserts health and readiness over Hyperdrive (opt-in).",
+  },
+  {
     name: "bun-first",
     command: "check:bun-first",
     file: "cli/gates/bun-first.ts",
@@ -280,6 +286,7 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
     return (await checkReadiness(root)).map((f) => `${f.rule}: ${f.detail}`);
   },
   worker: async (root) => (await import("../gates/worker-gate.ts")).checkWorker(root),
+  "worker-boot": async (root) => (await import("../gates/worker-boot.ts")).checkWorkerBoot(root),
   "bun-first": async (root) => (await import("../gates/bun-first.ts")).checkBunFirst(root),
 };
 

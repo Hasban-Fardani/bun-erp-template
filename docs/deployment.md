@@ -47,6 +47,21 @@ checks, tests, migrations and seed before deploy. Configure the Hyperdrive ID, a
 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL and BETTER_AUTH_SECRET in the project.
 Local emulation uses .dev.vars.example with a disposable PostgreSQL database.
 
+### Booted Worker proof (2026-10-07)
+
+`bun erp cloudflare:dev` was run against a local PostgreSQL through Hyperdrive and the real Worker
+answered on workerd (ephemeral port, found with `lsof -nP -iTCP -sTCP:LISTEN | grep workerd`):
+
+```
+GET /api/v1/health -> 200 {"status":"ok"}
+GET /api/v1/ready  -> 200 {"status":"ready","checks":{"database":{"ok":true,"ms":44}}}
+```
+
+`bun erp check:worker-boot` verifies the prerequisites for that run (`WORKER_BOOT=1`): `wrangler`
+resolves, `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` is set (env or
+`apps/web/.dev.vars`) and its database answers. The boot itself stays a manual, documented step
+because it starts Vite + workerd; run it whenever a change touches the Worker entry or its bindings.
+
 ### Target matrix — Bun/VPS and Cloudflare Workers (F3.3 Phase 7)
 
 | Concern | Bun / VPS | Cloudflare Workers |

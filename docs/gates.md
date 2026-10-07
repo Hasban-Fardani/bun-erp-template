@@ -65,6 +65,7 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 | ui-guide | `check:ui-guide` | `cli/gates/ui-guide.ts` | Every `packages/ui/src` module is listed in `packages/ui/llms.txt`; no guide entry names a missing file | `packages/ui/src` is missing |
 | versioning | `check:versioning` | `cli/gates/versioning.ts` | Root and workspace package versions match | Workspaces without a `package.json` |
 | worker | `check:worker` | `cli/gates/worker-gate.ts` | Worker bundle free of Bun globals, new Node built-ins, DDL paths and over-budget size | The bundle step when `apps/server` is not installed; the static scan always runs |
+| worker-boot | `check:worker-boot` | `cli/gates/worker-boot.ts` | Cloudflare boot prerequisites: `wrangler` resolves, the Hyperdrive local connection is configured and its database answers | Always unless `WORKER_BOOT=1` is set |
 
 ## Run one gate
 

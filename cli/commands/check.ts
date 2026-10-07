@@ -190,6 +190,12 @@ export const commands = [
     process.stdout.write("Motion OK: reduced-motion escape and shared keyframes.\n");
   }),
 
+  // Opt-in: boots Vite + workerd against the configured Hyperdrive connection (WORKER_BOOT=1).
+  defineCommand("check:worker-boot", async () => {
+    await guard("worker boot", () => runGate("worker-boot"));
+    process.stdout.write("Worker boot OK.\n");
+  }),
+
   // Worker safety reports the measured bundle size even on success, so it does not use runGate.
   defineCommand("check:worker", async (args) => {
     await guard("worker safety", async () => {
