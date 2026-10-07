@@ -47,6 +47,32 @@ checks, tests, migrations and seed before deploy. Configure the Hyperdrive ID, a
 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL and BETTER_AUTH_SECRET in the project.
 Local emulation uses .dev.vars.example with a disposable PostgreSQL database.
 
+### Measured Worker budget (F3.3 Phase 0, 2026-10-07, commit 1a2d76e)
+
+| Measurement | Value | How |
+|---|---|---|
+| Wrangler dry-run upload | **3,025.90 KiB raw / 530.64 KiB gzip** | `bunx --bun wrangler deploy --dry-run --outdir /tmp/wrangler-dry` after `bun erp cloudflare:build` |
+| Gate bundle (`Bun.build`, browser/workerd target) | ~1.04 MB raw / ~288 KB gzip | `bun erp check:worker` |
+| Vite Cloudflare Worker build | 1,244,243 B raw / 321,552 B gzip | `bun erp cloudflare:build` |
+| Worker startup time | not reported by this Wrangler version | the dry run prints size and bindings only; measure in the dashboard |
+| Free script cap | 64 MiB uncompressed (the old 3 MiB compressed cap is gone) | platform facts, F3.3 |
+| scrypt sign-in cost | ~110 ms CPU per hash/verify locally | `better-auth/crypto`, N=16384 r=16 p=1 dkLen=64, Bun 1.4.2 on Apple silicon — about ten times the 10 ms Free budget |
+| Jobs throughput, cron only | 288 ticks/day × batch 1 = 288 jobs/day | `wrangler.jsonc` cron `*/5`; a 1,000-job burst is ~3.5 days |
+
+The dry-run bundle is larger than the gate bundle because Wrangler bundles with `nodejs_compat` and a
+different resolver; both are far inside the cap, so size is not the constraint — CPU and startup are.
+
+**Bun/DDL hits in the real dry-run bundle (12):** every one is guarded, verified by reading the
+emitted source around each hit:
+
+| Hit | Count | Where | Why it is safe |
+|---|---|---|---|
+| `Bun.env` | 2 | better-auth env helper; the app's `runtimeEnv()` | both behind `typeof Bun === "undefined"` checks |
+| `Bun.file` | 4 | local storage driver | the driver factory throws "local storage needs the Bun runtime" on Workers |
+| `Bun.write` | 1 | local storage driver `put` | same factory guard |
+| `Bun.S3Client` | 4 | s3 storage driver | same factory guard |
+| `migrate(` | 1 | Kysely's own `Migrator.migrate()` | a dependency API, not this app's DDL; `database/migrate.ts` is not in the graph |
+
 `bun erp check:worker` (part of `bun erp check`) bundles this entry for a browser/workerd-like target
 and fails when a Bun global without a `typeof Bun` guard, a new Node built-in, a migration/seed
 module or an over-budget script reaches it. The Vite Cloudflare build of this template measured
