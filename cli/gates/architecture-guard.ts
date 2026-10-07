@@ -1,10 +1,64 @@
-import { dirname, relative, resolve } from "node:path";
-import { fileIndex } from "../lib/file-index.ts";
+import { dirname, join, normalize, relative, resolve } from "node:path";
+import { type FileIndex, fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 const LEVELS = ["atoms", "molecules", "organisms", "templates"];
 // Shared data tables use TanStack's headless core; router, query and application form state stay app-owned.
 const SHARED_TANSTACK = new Set(["@tanstack/react-table"]);
+
+/**
+ * Server features are the extraction boundary: another feature may import `features/<b>` only
+ * through `features/<b>/index.ts`, so splitting one into a service means moving the folder and
+ * repointing one entry instead of rewriting every deep import. The catalog feature modules under
+ * `templates/features/<name>/server/**` are checked at their installed path, because their
+ * relative imports are written for `apps/server/features/<name>/`.
+ */
+async function featureBoundaryFindings(root: string, index: FileIndex): Promise<string[]> {
+  const findings: string[] = [];
+  const entries: { file: string; virtualPath: string }[] = [];
+  if (await directoryExists(`${root}/apps/server/features`)) {
+    for (const file of await index.files("apps/server/features/**/*.ts")) entries.push({ file, virtualPath: file });
+  } else {
+    for (const file of await index.files("templates/apps/server/features/**/*.ts")) {
+      entries.push({ file, virtualPath: file.replace("templates/apps/", "apps/") });
+    }
+  }
+  for (const file of await index.files("templates/features/*/server/**/*.ts")) {
+    const name = /^templates\/features\/([^/]+)\/server\//.exec(file)?.[1];
+    if (!name) continue;
+    entries.push({
+      file,
+      virtualPath: `apps/server/features/${name}/${file.slice(`templates/features/${name}/server/`.length)}`,
+    });
+  }
+
+  for (const { file, virtualPath } of entries) {
+    const code = await index.text(file);
+    const imports = new Bun.Transpiler({ loader: "ts" }).scanImports(code).map(({ path }) => path);
+    // Bun removes type-only imports, but a type-only deep import still crosses the boundary.
+    for (const match of code.matchAll(/(?:import|export)\s+type\s+[^;]+?\s+from\s+["']([^"']+)["']/g)) {
+      if (match[1]) imports.push(match[1]);
+    }
+    const origin = featureNameOf(virtualPath);
+    for (const specifier of imports) {
+      if (!specifier.startsWith(".")) continue;
+      const resolved = normalize(join(dirname(virtualPath), specifier))
+        .split("\\")
+        .join("/");
+      const target = featureNameOf(resolved);
+      if (!target || target === origin) continue;
+      const entry = `apps/server/features/${target}`;
+      // `../rbac` and `../rbac/index.ts` both resolve to the public surface.
+      if (resolved === entry || resolved === `${entry}/index.ts`) continue;
+      findings.push(`${file}: FEATURE_BOUNDARY — ${specifier} bypasses features/${target}/index.ts`);
+    }
+  }
+  return findings;
+}
+
+function featureNameOf(path: string): string | undefined {
+  return /(?:^|\/)features\/([^/]+)/.exec(path)?.[1];
+}
 
 /** Shared presentation stays usable without either application's runtime. */
 export async function checkArchitecture(root: string): Promise<string[]> {
@@ -114,5 +168,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
       findings.push(`${file}: UTILS_PLATFORM_GLOBAL — use Web Platform APIs available in all targets`);
     }
   }
+
+  findings.push(...(await featureBoundaryFindings(root, index)));
   return findings;
 }

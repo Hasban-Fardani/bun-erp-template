@@ -8,10 +8,19 @@ import type { Database } from "../../database/index.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
 import { orderByColumn } from "../../http/helpers/sort.ts";
-import { auditChange, snapshot } from "../audit/service.ts";
-import { invalidateUser } from "../rbac/cache.ts";
-import { permissions as rbacPermissions, roles as rbacRoles, rolePermissions, userRoles } from "../rbac/schema.ts";
-import { assignRole, countUsersWithRoleKey, findRoleByKey, revokeRole, userHoldsRoleKey } from "../rbac/service.ts";
+import { auditChange, snapshot } from "../audit/index.ts";
+import {
+  assignRole,
+  countUsersWithRoleKey,
+  findRoleByKey,
+  invalidateUser,
+  permissions as rbacPermissions,
+  roles as rbacRoles,
+  revokeRole,
+  rolePermissions,
+  userHoldsRoleKey,
+  userRoles,
+} from "../rbac/index.ts";
 import { accounts, sessions, users } from "./schema.ts";
 import type { CreateUserInput, ListUsersInput, UpdateUserInput } from "./validation.ts";
 

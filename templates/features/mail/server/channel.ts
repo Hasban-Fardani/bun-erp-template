@@ -1,7 +1,7 @@
 import { escapeHtml } from "@bun-erp/mail/server";
 import { inArray } from "drizzle-orm";
-import { users } from "../identity/schema.ts";
-import type { NotificationChannelFactory, NotifyInput } from "../notifications/types.ts";
+import { users } from "../identity/index.ts";
+import type { NotificationChannelFactory, NotifyInput } from "../notifications/index.ts";
 import { createMailEnqueue } from "./wiring.ts";
 
 /**

@@ -11,7 +11,7 @@ import {
   type JobBatchStatus,
   resumeJobBatch,
 } from "../../infra/jobs/batch.ts";
-import { recordAudit, snapshot } from "../audit/service.ts";
+import { recordAudit, snapshot } from "../audit/index.ts";
 import type {
   ExportCell,
   ImportExportColumn,

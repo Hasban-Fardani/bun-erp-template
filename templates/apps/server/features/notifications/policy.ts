@@ -1,6 +1,6 @@
 import type { AppContext } from "../../bootstrap/context.ts";
 import { factory } from "../../http/factory.ts";
-import { requireActor } from "../identity/policy.ts";
+import { requireActor } from "../identity/index.ts";
 
 /**
  * Self-scoped module: every route reads or writes the signed-in actor's own rows, so the policy is

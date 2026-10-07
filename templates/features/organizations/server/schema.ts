@@ -1,6 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import { index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { users } from "../identity/schema.ts";
+import { users } from "../identity/index.ts";
 
 /**
  * Better Auth organization-plugin tables. Property names follow the plugin contract verbatim: the
