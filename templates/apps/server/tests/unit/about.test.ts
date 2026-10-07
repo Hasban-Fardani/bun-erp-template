@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { collectAbout, formatAbout } from "../../../../cli/lib/about.ts";
+import { GATE_CATALOG } from "../../../../cli/lib/gates.ts";
 import { repoRoot } from "../../../../cli/lib/repo.ts";
 
 test("about reports runtime versions, the installed catalog and every count", async () => {
@@ -11,7 +12,7 @@ test("about reports runtime versions, the installed catalog and every count", as
   expect(about.packages).toEqual(expect.arrayContaining(["i18n", "storage", "ui", "utils"]));
   expect(about.migrations).toBeGreaterThanOrEqual(7);
   expect(about.routes).toBeGreaterThanOrEqual(20);
-  expect(about.gates).toBe(28);
+  expect(about.gates).toBe(GATE_CATALOG.length + 2);
   expect(typeof about.database.configured).toBe("boolean");
   expect(typeof about.database.reachable).toBe("boolean");
   expect(about.codegraph.indexed).toBe(true);

@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { GATE_CATALOG } from "../../../../cli/lib/gates.ts";
 import { repoRoot } from "../../../../cli/lib/repo.ts";
 
 type JsonRpcResponse = {
@@ -111,7 +112,7 @@ test("the MCP server completes a real handshake and answers every tool", async (
     gates?: number;
     routes?: number;
   };
-  expect(appInfo.gates).toBe(28);
+  expect(appInfo.gates).toBe(GATE_CATALOG.length + 2);
   expect(appInfo.routes).toBeGreaterThanOrEqual(20);
 
   const schema = byId.get(callId("db-schema"))?.result?.content?.[0]?.text ?? "";
