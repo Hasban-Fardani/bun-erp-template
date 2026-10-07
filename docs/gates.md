@@ -20,7 +20,7 @@ prints that catalog as a table.
    process. `check:fast` runs the file-level subset named in `FAST_GATE_NAMES`.
 4. `cli/commands/check.ts` registers the `check:*` commands and `check:gate`; `check:gate <name>`
    looks the command up in the catalog and forwards any extra arguments.
-5. `bun erp check` runs Biome, `tsc` and all 25 gates (up to eight at a time); `bun erp check:fast`
+5. `bun erp check` runs Biome, `tsc` and all 26 gates (up to eight at a time); `bun erp check:fast`
    skips the typecheck, the React audit and the slower gates for the inner loop. Neither runs tests
    or builds — use `bun erp test` and the app build for those.
 
@@ -54,6 +54,7 @@ prints that catalog as a table.
 | task | `check:task` | `cli/gates/tasks.ts` | Task front matter, dependencies and evidence for `ready`/`done` | `docs/tasks/` is missing |
 | tdd | `check:tdd` | `cli/gates/tdd.ts` | Every server feature has a test under `tests/features/<name>/` | No server features exist |
 | ui | `check:ui` | `cli/gates/ui-completeness.ts` | List states, visible focus, a working theme switch | Missing screen directories; the theme check needs `apps/web/src/config/ui.ts` |
+| ui-guide | `check:ui-guide` | `cli/gates/ui-guide.ts` | Every `packages/ui/src` module is listed in `packages/ui/llms.txt`; no guide entry names a missing file | `packages/ui/src` is missing |
 | versioning | `check:versioning` | `cli/gates/versioning.ts` | Root and workspace package versions match | Workspaces without a `package.json` |
 
 ## Run one gate

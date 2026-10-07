@@ -54,6 +54,7 @@ const NODE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
   // Temp-directory fixtures for the gate runner: mkdtemp/tmpdir/join have no direct Bun replacement.
   "apps/server/tests/unit/check-runner.test.ts": ["fs/promises", "os", "path"],
   "apps/server/tests/unit/gate-dispatch.test.ts": ["fs/promises", "os", "path"],
+  "apps/server/tests/unit/ui-guide.test.ts": ["fs/promises", "os", "path"],
 };
 
 const SCAN_GLOBS = [

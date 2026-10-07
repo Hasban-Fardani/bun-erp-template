@@ -134,6 +134,7 @@ const FAST_GATE_NAMES: ReadonlySet<GateName> = new Set([
   "surface",
   "tdd",
   "ui",
+  "ui-guide",
 ]);
 
 export function runFastChecks(root: string, options?: CheckRunOptions): Promise<GateResult[]> {

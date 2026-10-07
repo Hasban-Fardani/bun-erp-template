@@ -61,6 +61,10 @@ export const commands = [
   defineCommand("check:docs", async () => {
     await guard("docs", () => runGate("docs"));
   }),
+  defineCommand("check:ui-guide", async () => {
+    await guard("ui guide", () => runGate("ui-guide"));
+    process.stdout.write("UI guide OK: every component is listed and no entry is stale.\n");
+  }),
   defineCommand("check:rpc", async () => {
     await guard("rpc", () => runGate("rpc"));
   }),
