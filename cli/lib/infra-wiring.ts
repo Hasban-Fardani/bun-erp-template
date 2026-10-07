@@ -260,7 +260,11 @@ function wireSessionField(source: string): ApplyResult {
         ].join("\n"),
       ),
   ]);
-  return wired(next, source, "the identity/schema.ts anchors (pg-core import, userAgent column or session index) are missing");
+  return wired(
+    next,
+    source,
+    "the identity/schema.ts anchors (pg-core import, userAgent column or session index) are missing",
+  );
 }
 
 /** Exports the plugin tables (and their relations) through the database schema barrel. */
