@@ -1,6 +1,6 @@
 import { validateCloudflarePreflight } from "../gates/cloudflare-preflight.ts";
 
-const config = (Bun.JSONC.parse(await Bun.file("wrangler.jsonc").text())) as {
+const config = Bun.JSONC.parse(await Bun.file("wrangler.jsonc").text()) as {
   hyperdrive?: { id?: string }[];
   vars?: Record<string, string>;
   limits?: { cpu_ms?: number };
