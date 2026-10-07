@@ -47,6 +47,28 @@ checks, tests, migrations and seed before deploy. Configure the Hyperdrive ID, a
 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL and BETTER_AUTH_SECRET in the project.
 Local emulation uses .dev.vars.example with a disposable PostgreSQL database.
 
+### Target matrix — Bun/VPS and Cloudflare Workers (F3.3 Phase 7)
+
+| Concern | Bun / VPS | Cloudflare Workers |
+|---|---|---|
+| Entry | `bun apps/server/bootstrap/server.ts` (one listener serves web + `/api/*`) | `apps/server/bootstrap/cloudflare-entry.ts` (fetch + scheduled + queue handlers) |
+| Database | postgres.js directly; `DATABASE_SSL_MODE` must be `require`/`verify-full` in production | Hyperdrive binding; `DATABASE_SSL_MODE=disable` is allowed because Hyperdrive terminates TLS |
+| Migrations / seed | `bun erp db:migrate`, `db:seed`, `db:reset --force` (local/test only) | never in the Worker graph — `check:worker` fails if a DDL path is reachable; the deploy workflow migrates before deploy |
+| Jobs | durable `background_jobs` + the polling worker (`jobs:work`), scheduler ticks every 5 s | same table; cron `*/5` sweeps and the optional `JOBS_QUEUE` wake-up signals new work after commit |
+| Scheduler | tick inside `jobs:work` | tick inside the `scheduled` handler |
+| Rate limiting | Better Auth `storage: "database"` (shared across processes) | same table through Hyperdrive (per-isolate memory would be bypassable) |
+| Permission cache | `PERMISSION_CACHE_ENABLED=true` is safe (per-process, 10 s TTL, database is the source of truth) | set `false` in `wrangler.jsonc`; every isolate would otherwise hold its own copy |
+| Mail | `log`, `memory`, or `smtp` | `log`/`memory`/HTTP driver; **`smtp` is refused** (no raw sockets) |
+| Storage | `local` (dev/test only), `s3`, `memory` | `r2` binding, `s3`, `memory`; `local` is refused in production |
+| Web assets | `APP_WEB_MODE=integrated` (Bun serves `apps/web/dist`) | Workers Static Assets; **non-integrated is refused** |
+| API docs | `/api/docs` + `/api/openapi.json` follow `API_DOCS_ENABLED` (off by default in production) | same; Scalar stays in the bundle within budget |
+| Secrets | `BETTER_AUTH_SECRET` required outside development (≥32 chars in production) | same, via `wrangler secret put` |
+| Local speed | Bun-first: `check:fast` < 1.5 s, `--help` < 120 ms; `bun-first` gate bans sync Node IO and Bun-only APIs leaking into the Worker graph | the Worker graph is validated by `check:worker`; bundle and startup budget in the table above |
+
+Both targets share one codebase, one schema and one queue table; the differences above are the whole
+list. A configuration that would be unsafe on either target is refused by `templates/apps/server/config/schema.ts`
+at boot, with a test per guard.
+
 ### Measured Worker budget (F3.3 Phase 0, 2026-10-07, commit 1a2d76e)
 
 | Measurement | Value | How |
