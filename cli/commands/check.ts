@@ -182,6 +182,20 @@ export const commands = [
     process.stdout.write("Motion OK: reduced-motion escape and shared keyframes.\n");
   }),
 
+  // Worker safety reports the measured bundle size even on success, so it does not use runGate.
+  defineCommand("check:worker", async (args) => {
+    await guard("worker safety", async () => {
+      const { runWorkerGate } = await import("../gates/worker-gate.ts");
+      const result = await runWorkerGate(repoRoot, {
+        staticOnly: args.includes("--static-only"),
+        bundle: args.includes("--bundle"),
+      });
+      for (const line of result.report) process.stdout.write(`${line}\n`);
+      if (result.findings.length > 0) throw new GateFailure(result.findings);
+      process.stdout.write("Worker safety OK.\n");
+    });
+  }),
+
   defineCommand("skills:validate", async () => {
     await guard("skills", () => runGate("skills"));
     process.stdout.write("Skills OK.\n");

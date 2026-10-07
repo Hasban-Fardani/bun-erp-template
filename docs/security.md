@@ -15,6 +15,19 @@ entity allowlists plus secret filtering. Neither control replaces the other.
 Email/password auth uses Better Auth. Google is dormant unless both credentials are set.
 Password reset email is not implemented. Production env guards run during bootstrap.
 
+Authorization data is read from PostgreSQL; the optional permission cache
+(`PERMISSION_CACHE_ENABLED`, default true) is a per-process `Map` with a 10-second TTL, invalidated
+explicitly when a role write goes through. It is an optimisation only: on Cloudflare Workers every
+isolate has its own copy, and on multi-replica Bun an invalidation reaches the process that handled
+the write immediately and the others at the TTL. Set `PERMISSION_CACHE_ENABLED=false` for Workers
+and multi-replica Bun when a stale grant matters more than the saved RBAC join; see
+[deployment](deployment.md).
+
+Better Auth rate limiting uses its database store (`rate_limit`, migration 0011), so a limit
+consumed by one Worker isolate or Bun replica is visible to every other one; the sign-in endpoint
+keeps Better Auth's stricter built-in rules. Treat the limit as abuse friction, not as a
+distributed quota: the counter is per bucket key and the store prunes expired rows opportunistically.
+
 Audit UPDATE/DELETE is rejected by migration 0006. The production DB role must not be a
 superuser or hold TRUNCATE/DDL privileges. Keep backups and restrict database administration.
 

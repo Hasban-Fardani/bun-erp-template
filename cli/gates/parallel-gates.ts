@@ -119,7 +119,8 @@ export function runProjectChecks(root: string, options?: CheckRunOptions): Promi
 /**
  * The inner loop: file-level gates only. The full `check` adds the whole-monorepo `tsc` and the
  * React audit, which dominate its runtime; those stay in CI, this stays under a second. `impeccable`
- * also stays out: its detector engine is networked on first run.
+ * also stays out: its detector engine is networked on first run. `worker` stays out too: it builds
+ * the Worker bundle (~0.3 s) and belongs to the full check.
  */
 const FAST_GATE_NAMES: ReadonlySet<GateName> = new Set([
   "architecture",

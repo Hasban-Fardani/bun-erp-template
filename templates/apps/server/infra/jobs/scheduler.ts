@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
-import { rowsOf } from "../../database/migrate.ts";
+import { rowsOf } from "../../database/rows.ts";
 import type { Logger } from "../observability/logger.ts";
 import { enqueueJob } from "./queue.ts";
 import type { JobHandler } from "./registry.ts";

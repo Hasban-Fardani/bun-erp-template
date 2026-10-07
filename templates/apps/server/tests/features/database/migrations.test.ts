@@ -2,7 +2,8 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import type { AppContext } from "../../../bootstrap/context.ts";
-import { migrate, rowsOf } from "../../../database/migrate.ts";
+import { migrate } from "../../../database/migrate.ts";
+import { rowsOf } from "../../../database/rows.ts";
 import { createTestContext, disposeTestContext } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

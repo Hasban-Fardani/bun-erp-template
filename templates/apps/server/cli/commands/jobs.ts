@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { resolveRequired } from "../../../../cli/lib/prompt.ts";
 import { defineCommand } from "../../../../cli/registry.ts";
-import { rowsOf } from "../../database/migrate.ts";
+import { rowsOf } from "../../database/rows.ts";
 import { createJobRegistry, createSchedules } from "../../features/jobs.ts";
 import { requeueDeadJob, runJobBatch } from "../../infra/jobs/queue.ts";
 import { runDueSchedules, syncSchedules } from "../../infra/jobs/scheduler.ts";

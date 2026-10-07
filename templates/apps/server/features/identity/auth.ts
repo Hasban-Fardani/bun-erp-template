@@ -2,9 +2,20 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
+import { rateLimits } from "../../database/rate-limit.ts";
 import { uuidv7 } from "../../database/uuidv7.ts";
 import { recordAudit, snapshot } from "../audit/service.ts";
 import { accounts, sessions, users, verifications } from "./schema.ts";
+
+/**
+ * Core Better Auth tables. `cli/lib/infra-wiring.ts` anchors the organizations installer on the
+ * literal `schema:` line below, so that line stays intact; the adapter call merges the rate-limit
+ * store into this map instead of editing the anchor.
+ */
+const coreAuthAdapter = {
+  provider: "pg",
+  schema: { user: users, session: sessions, account: accounts, verification: verifications },
+} as const;
 
 /** Better Auth instance; split out so CLI/tests can use it without a server. */
 export function createAuth(env: Env, db: Database) {
@@ -20,8 +31,8 @@ export function createAuth(env: Env, db: Database) {
       .map((o) => o.trim())
       .filter((o) => o !== ""),
     database: drizzleAdapter(db, {
-      provider: "pg",
-      schema: { user: users, session: sessions, account: accounts, verification: verifications },
+      ...coreAuthAdapter,
+      schema: { ...coreAuthAdapter.schema, rateLimit: rateLimits },
     }),
     // A user created by Better Auth (self sign-up or a plugin) leaves an audit trail too;
     // the admin create path records its own event, so this hook never double-writes.
@@ -46,6 +57,9 @@ export function createAuth(env: Env, db: Database) {
       enabled: env.AUTH_RATE_LIMIT_ENABLED,
       window: 60,
       max: 100,
+      // Shared store (migration 0011): a limit consumed by one isolate or replica is visible to
+      // every other one. The in-memory default is per process and bypassable across replicas.
+      storage: "database",
     },
     advanced: {
       database: { generateId: () => uuidv7() },

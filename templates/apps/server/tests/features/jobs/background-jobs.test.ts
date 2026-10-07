@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
-import { rowsOf } from "../../../database/migrate.ts";
+import { rowsOf } from "../../../database/rows.ts";
 import { claimNextJob, enqueueJob, requeueDeadJob, runNextJob } from "../../../infra/jobs/queue.ts";
 import { JobRegistry } from "../../../infra/jobs/registry.ts";
 import { startJobWorker } from "../../../infra/jobs/worker.ts";

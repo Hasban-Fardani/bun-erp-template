@@ -172,6 +172,12 @@ export const GATE_CATALOG = [
     file: "cli/gates/readiness.ts",
     summary: "Production prerequisites: scripts, secret placeholders, migration numbering and contract docs.",
   },
+  {
+    name: "worker",
+    command: "check:worker",
+    file: "cli/gates/worker-gate.ts",
+    summary: "The Worker bundle stays free of Bun globals, new Node built-ins, DDL paths and over-budget size.",
+  },
 ] as const satisfies readonly GateCatalogEntry[];
 
 export type GateName = (typeof GATE_CATALOG)[number]["name"];
@@ -260,6 +266,7 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
     const { checkReadiness } = await import("../gates/readiness.ts");
     return (await checkReadiness(root)).map((f) => `${f.rule}: ${f.detail}`);
   },
+  worker: async (root) => (await import("../gates/worker-gate.ts")).checkWorker(root),
 };
 
 /** Run a catalog gate against `root` and return its findings without throwing or exiting. */

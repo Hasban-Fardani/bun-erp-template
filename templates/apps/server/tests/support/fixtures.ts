@@ -5,7 +5,7 @@ import { createContext } from "../../bootstrap/bootstrap.ts";
 import type { AppContext } from "../../bootstrap/context.ts";
 import type { Env } from "../../config/index.ts";
 import { loadEnv, testDatabaseUrl } from "../../config/index.ts";
-import { rowsOf } from "../../database/migrate.ts";
+import { rowsOf } from "../../database/rows.ts";
 import { seed } from "../../database/seed.ts";
 import { createUser } from "../../features/identity/service.ts";
 import { resetPermissionCache } from "../../features/rbac/cache.ts";

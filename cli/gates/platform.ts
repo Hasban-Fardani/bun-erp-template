@@ -42,6 +42,7 @@ const PATH_ALLOWED = new Set([
   "cli/gates/skills.ts",
   "cli/gates/slop.ts",
   "cli/gates/tasks.ts",
+  "cli/gates/worker-gate.ts",
 ]);
 
 /**
@@ -54,6 +55,7 @@ const NODE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
   // Temp-directory fixtures for the gate runner: mkdtemp/tmpdir/join have no direct Bun replacement.
   "apps/server/tests/unit/check-runner.test.ts": ["fs/promises", "os", "path"],
   "apps/server/tests/unit/gate-dispatch.test.ts": ["fs/promises", "os", "path"],
+  "apps/server/tests/unit/worker-gate.test.ts": ["fs/promises", "os", "path"],
 };
 
 const SCAN_GLOBS = [

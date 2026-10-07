@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { Database } from "./index.ts";
-import { rowsOf } from "./migrate.ts";
+import { rowsOf } from "./rows.ts";
 
 /** One row per sequence key; `next` is the value the next caller receives. */
 export const sequences = pgTable("sequences", {
