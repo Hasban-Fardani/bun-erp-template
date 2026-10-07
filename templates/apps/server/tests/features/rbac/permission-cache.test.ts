@@ -1,5 +1,9 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { cacheStats, resetPermissionCache } from "../../../features/rbac/cache.ts";
+import { eq } from "drizzle-orm";
+import type { Database } from "../../../database/index.ts";
+import { cacheStats, readCachedPermissions, resetPermissionCache } from "../../../features/rbac/cache.ts";
+import { roles } from "../../../features/rbac/schema.ts";
+import { assignRole, permissionsForUser, revokeRole, setRolePermissions } from "../../../features/rbac/service.ts";
 import { createHttpFixture, createTestClient, dataOf, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;
@@ -100,5 +104,79 @@ describe("permission cache", () => {
       api.client.api.v1.users.$get({ query: { perPage: "50" } }),
     );
     expect(again.items.map((u) => u.permissions.length)).toEqual(list.items.map((u) => u.permissions.length));
+  });
+});
+
+async function roleIdByKey(key: string): Promise<string> {
+  const rows = await api.ctx.db.select({ id: roles.id }).from(roles).where(eq(roles.key, key)).limit(1);
+  if (!rows[0]) throw new Error(`role missing: ${key}`);
+  return rows[0].id;
+}
+
+/** Creates a user and primes the permission cache; returns the user id. */
+async function cachedUser(email: string): Promise<string> {
+  const user = await createUser(email);
+  await permissionsForUser(api.ctx.db, user.id);
+  expect(readCachedPermissions(user.id)).toBeDefined();
+  return user.id;
+}
+
+/** Runs a role write inside a transaction that always rolls back. */
+async function rollbackRoleWrite(write: (tx: Database) => Promise<unknown>): Promise<void> {
+  await expect(
+    api.ctx.db.transaction(async (tx) => {
+      await write(tx as unknown as Database);
+      throw new Error("rollback");
+    }),
+  ).rejects.toThrow("rollback");
+}
+
+describe("permission cache invalidation ordering", () => {
+  test("a rolled-back role grant leaves the cache untouched (invalidate after commit)", async () => {
+    const userId = await cachedUser("rollback-grant@example.test");
+
+    await rollbackRoleWrite(async (tx) => assignRole(tx, { userId, roleId: await roleIdByKey("owner") }));
+
+    // Invalidation before the commit would have cleared this entry even though the write vanished.
+    expect(readCachedPermissions(userId)).toBeDefined();
+  });
+
+  test("a rolled-back role revoke leaves the cache untouched (invalidate after commit)", async () => {
+    const userId = await cachedUser("rollback-revoke@example.test");
+
+    await rollbackRoleWrite(async (tx) => revokeRole(tx, userId, await roleIdByKey("staff")));
+
+    expect(readCachedPermissions(userId)).toBeDefined();
+  });
+
+  test("role permission edits invalidate only after the transaction resolves", async () => {
+    const userId = await cachedUser("order-set@example.test");
+
+    const staff = await roleIdByKey("staff");
+    let clearedInsideTransaction: boolean | undefined;
+    const realTransaction = api.ctx.db.transaction.bind(api.ctx.db);
+    const spy = new Proxy(api.ctx.db, {
+      get(target, property, receiver) {
+        if (property === "transaction") {
+          return async (fn: (tx: unknown) => Promise<unknown>) =>
+            realTransaction(async (tx) => {
+              const result = await fn(tx);
+              clearedInsideTransaction = readCachedPermissions(userId) === undefined;
+              return result;
+            });
+        }
+        const value = Reflect.get(target, property, receiver);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+
+    await setRolePermissions(spy as unknown as Database, staff, ["user.read", "audit.read"], {
+      userId: null,
+      traceId: "test",
+      label: "test",
+    });
+
+    expect(clearedInsideTransaction).toBe(false);
+    expect(readCachedPermissions(userId)).toBeUndefined();
   });
 });

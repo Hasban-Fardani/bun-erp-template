@@ -4,7 +4,7 @@ import { resolveRequired } from "../../../../cli/lib/prompt.ts";
 import { defineCommand } from "../../../../cli/registry.ts";
 import { roles as roleTable } from "../../features/rbac/schema.ts";
 import {
-  createRole,
+  createRoleWithPermissions,
   deleteRole,
   permissionsForRole,
   setRolePermissions,
@@ -76,14 +76,12 @@ export const commands = [
     }
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
-      const role = await createRole(ctx.db, input.data, cliActor());
-      let permissionCount = 0;
-      if (parsed.values.has("permissions")) {
-        const keys = parseKeyList(parsed.values.get("permissions") ?? "");
-        await setRolePermissions(ctx.db, role.id, keys, cliActor());
-        permissionCount = keys.length;
-      }
-      process.stdout.write(`Created role "${role.key}" (${role.name}) with ${permissionCount} permission(s).\n`);
+      const permissionKeys = parsed.values.has("permissions")
+        ? parseKeyList(parsed.values.get("permissions") ?? "")
+        : [];
+      // Role row + grants in one transaction: a bad key must not leave a half-created role.
+      const role = await createRoleWithPermissions(ctx.db, input.data, permissionKeys, cliActor());
+      process.stdout.write(`Created role "${role.key}" (${role.name}) with ${permissionKeys.length} permission(s).\n`);
     } finally {
       await ctx.close();
     }

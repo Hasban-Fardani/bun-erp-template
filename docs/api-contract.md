@@ -11,8 +11,10 @@ machine-readable extras such as `{ currentVersion }` on a stale optimistic-locki
 For enveloped requests the request ID matches `X-Request-Id`.
 
 Exceptions: Better Auth `/api/v1/auth/*` owns its responses; health/readiness return direct
-status objects; OpenAPI/docs are public documentation endpoints. Do not assume every response
-is wrapped. Web business requests use RPC `call()`; auth uses `lib/auth.ts`.
+status objects; OpenAPI/docs are public documentation endpoints only when `API_DOCS_ENABLED`
+is on (unset: on outside production, off in production; a disabled gate leaves the routes
+unregistered, so they answer 404). Do not assume every response is wrapped. Web business
+requests use RPC `call()`; auth uses `lib/auth.ts`.
 
 | Status | Meaning |
 |---|---|

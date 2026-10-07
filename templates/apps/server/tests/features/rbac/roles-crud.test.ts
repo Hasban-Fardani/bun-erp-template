@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { createHttpFixture, type HttpFixture } from "../../support/fixtures.ts";
+import { assignRoleToFirstUser, createHttpFixture, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;
 
@@ -95,13 +95,7 @@ describe("roles CRUD", () => {
     expect(bogus.status).toBe(422);
 
     // A custom role in use: deleting it revokes people's access, so it must be refused.
-    const users = await api.client.api.v1.users.$get({ query: { perPage: "5" } });
-    const target = ((await users.json()) as { data: { items: { id: string }[] } }).data.items[0];
-    const assigned = await api.client.api.v1.users[":id"].roles.$post({
-      param: { id: target?.id as string },
-      json: { roleKey: "auditor" },
-    });
-    expect(assigned.status).toBe(200);
+    await assignRoleToFirstUser(api, "auditor");
 
     const refused = await tryDeleteRole(role.id);
     expect(refused.status).toBe(409);

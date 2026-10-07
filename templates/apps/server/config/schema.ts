@@ -34,6 +34,11 @@ const rawSchema = z
     APP_TIMEZONE: timezone,
     APP_DEPLOY_TARGET: z.enum(["bun", "cloudflare"]).default("bun"),
     APP_WEB_MODE: z.enum(["integrated", "separate"]).default("integrated"),
+    /**
+     * Public `/api/docs` + `/api/openapi.json`. Unset defaults to enabled outside production
+     * and disabled in production; `true`/`false` overrides that explicitly.
+     */
+    API_DOCS_ENABLED: z.enum(["true", "false"]).optional(),
 
     // Log
     LOG_DRIVER: z.enum(["console", "daily"]),
@@ -159,6 +164,7 @@ export type RawEnv = z.output<typeof EnvSchema>;
 export function findStrayKeys(env: Record<string, string | undefined>): string[] {
   const prefixes = [
     "APP_",
+    "API_",
     "LOG_",
     "DATABASE_",
     "BETTER_AUTH_",

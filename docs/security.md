@@ -14,6 +14,8 @@ entity allowlists plus secret filtering. Neither control replaces the other.
 
 Email/password auth uses Better Auth. Google is dormant unless both credentials are set.
 Password reset email is not implemented. Production env guards run during bootstrap.
+The OpenAPI document and Scalar reference (`/api/docs`) expose the full route surface, so they
+are off in production unless `API_DOCS_ENABLED=true` opts in deliberately.
 
 Audit UPDATE/DELETE is rejected by migration 0006. The production DB role must not be a
 superuser or hold TRUNCATE/DDL privileges. Keep backups and restrict database administration.

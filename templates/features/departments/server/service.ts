@@ -75,7 +75,7 @@ export async function createDepartment(
 
     // Check first so the error message is clear; the unique index stays the last line of defence.
     if (existing.length > 0) {
-      throw ApiError.conflict("Department code already exists");
+      throw ApiError.conflict("Department code already exists", "code");
     }
 
     const rows = await tx.insert(departments).values({ name: input.name, code: input.code }).returning();

@@ -58,9 +58,18 @@ export class ApiError extends Error {
     return new ApiError(ErrorCode.forbidden, 403, message);
   }
 
-  /** 409 for a state conflict (unique code already taken), not 422 which means malformed input. */
-  static conflict(message: string, path = "code"): ApiError {
-    return new ApiError(ErrorCode.conflict, 409, message, [{ path, message: "already in use" }]);
+  /**
+   * 409 for a state conflict (unique code already taken), not 422 which means malformed input.
+   * `path` is set only when a specific field collided; "cannot delete yourself" and "role in use"
+   * are state conflicts with no field to point at, so `fields` is omitted.
+   */
+  static conflict(message: string, path?: string): ApiError {
+    return new ApiError(
+      ErrorCode.conflict,
+      409,
+      message,
+      path === undefined ? undefined : [{ path, message: "already in use" }],
+    );
   }
 
   /** 409 for a database-enforced uniqueness conflict (a concurrent create), not malformed input. */

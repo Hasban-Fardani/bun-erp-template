@@ -1,5 +1,5 @@
 import { hashPassword } from "better-auth/crypto";
-import { eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 /** Re-export: the CLI (cli/) uses the same hash primitives, not a duplicate. */
 export { hashPassword };
@@ -11,11 +11,47 @@ import { orderByColumn } from "../../http/helpers/sort.ts";
 import { auditChange, snapshot } from "../audit/service.ts";
 import { invalidateUser } from "../rbac/cache.ts";
 import { permissions as rbacPermissions, roles as rbacRoles, rolePermissions, userRoles } from "../rbac/schema.ts";
-import { assignRole, findRoleByKey, revokeRole } from "../rbac/service.ts";
-import { accounts, users } from "./schema.ts";
+import { assignRole, countUsersWithRoleKey, findRoleByKey, revokeRole, userHoldsRoleKey } from "../rbac/service.ts";
+import { accounts, sessions, users } from "./schema.ts";
 import type { CreateUserInput, ListUsersInput, UpdateUserInput } from "./validation.ts";
 
 export type User = typeof users.$inferSelect;
+
+const OWNER_ROLE = "owner";
+
+/**
+ * Only an owner may grant or revoke `owner`. The CLI runs with `userId: null` and stays the
+ * bootstrap escape hatch; an HTTP actor must actually hold the owner role.
+ */
+async function assertCanManageOwner(db: Database, actor: { userId: string | null }): Promise<void> {
+  if (actor.userId === null) return;
+  if (!(await userHoldsRoleKey(db, actor.userId, OWNER_ROLE))) {
+    throw ApiError.forbidden("Only an owner can grant or revoke the owner role");
+  }
+}
+
+/** The last owner cannot be removed or demoted: losing the final way in is unrecoverable. */
+async function assertNotLastOwner(db: Database, userId: string): Promise<void> {
+  if (!(await userHoldsRoleKey(db, userId, OWNER_ROLE))) return;
+  if ((await countUsersWithRoleKey(db, OWNER_ROLE)) <= 1) {
+    throw ApiError.conflict("The last owner cannot be removed or demoted");
+  }
+}
+
+/**
+ * Runs a user write in one transaction and invalidates that user's cached permissions only
+ * after commit: a rolled-back write must not clear the cache, and a committed one must not
+ * leave it stale.
+ */
+async function withPermissionInvalidation<T>(
+  db: Database,
+  userId: string,
+  write: (tx: Database) => Promise<T>,
+): Promise<T> {
+  const result = await db.transaction((tx) => write(tx as unknown as Database));
+  invalidateUser(userId);
+  return result;
+}
 
 /** Safe shape to send to clients: no account/credential columns here. */
 export type PublicUser = {
@@ -176,7 +212,7 @@ export async function createUser(
 ): Promise<PublicUser> {
   return db.transaction(async (tx) => {
     const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, input.email)).limit(1);
-    if (existing.length > 0) throw ApiError.conflict("Email already exists");
+    if (existing.length > 0) throw ApiError.conflict("Email already exists", "email");
 
     const rows = await tx
       .insert(users)
@@ -198,6 +234,7 @@ export async function createUser(
     if (input.roleKey) {
       const role = await findRoleByKey(tx as unknown as Database, input.roleKey);
       if (!role) throw ApiError.notFound(`Role not found: ${input.roleKey}`);
+      if (role.key === OWNER_ROLE) await assertCanManageOwner(tx as unknown as Database, actor);
       await assignRole(tx as unknown as Database, { userId: user.id, roleId: role.id });
     }
 
@@ -221,13 +258,14 @@ export async function deleteUser(
   id: string,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ id: string }> {
-  return db.transaction(async (tx) => {
-    const before = await findUserOrThrow(tx as unknown as Database, id);
+  return withPermissionInvalidation(db, id, async (database) => {
+    const before = await findUserOrThrow(database, id);
     if (before.id === actor.userId) throw ApiError.conflict("Cannot delete yourself");
+    await assertNotLastOwner(database, id);
 
-    await tx.delete(users).where(eq(users.id, id));
+    await database.delete(users).where(eq(users.id, id));
 
-    await auditChange(tx as unknown as Database, {
+    await auditChange(database, {
       actor,
       event: "user.deleted",
       subject: { type: "user", id: id },
@@ -244,6 +282,41 @@ async function findUserOrThrow(db: Database, userId: string) {
   return rows[0];
 }
 
+/**
+ * Resets a user's password: only the credential account is touched (an OAuth account keeps its
+ * tokens), every session dies with the old password, and the audit trail records the reset.
+ */
+export async function resetUserPassword(
+  db: Database,
+  userId: string,
+  password: string,
+  actor: { userId: string | null; traceId: string; label?: string },
+): Promise<{ id: string }> {
+  const hash = await hashPassword(password);
+  return db.transaction(async (tx) => {
+    const user = await findUserOrThrow(tx as unknown as Database, userId);
+
+    const updated = await tx
+      .update(accounts)
+      .set({ password: hash, updatedAt: new Date() })
+      .where(and(eq(accounts.userId, userId), eq(accounts.providerId, "credential")))
+      .returning({ id: accounts.id });
+    if (updated.length === 0) {
+      await tx.insert(accounts).values({ accountId: user.id, providerId: "credential", userId, password: hash });
+    }
+
+    // A stolen cookie must not survive the reset.
+    await tx.delete(sessions).where(eq(sessions.userId, userId));
+
+    await auditChange(tx as unknown as Database, {
+      actor,
+      event: "user.password_reset",
+      subject: { type: "user", id: userId },
+    });
+    return { id: userId };
+  });
+}
+
 /** Assigns a role by `key`, never by a raw client-supplied id. */
 export async function assignUserRole(
   db: Database,
@@ -251,22 +324,23 @@ export async function assignUserRole(
   input: { roleKey: string },
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
-  return db.transaction(async (tx) => {
-    const user = await findUserOrThrow(tx as unknown as Database, userId);
+  return withPermissionInvalidation(db, userId, async (database) => {
+    const user = await findUserOrThrow(database, userId);
 
-    const role = await findRoleByKey(tx as unknown as Database, input.roleKey);
+    const role = await findRoleByKey(database, input.roleKey);
     if (!role) throw ApiError.notFound(`Role not found: ${input.roleKey}`);
+    if (role.key === OWNER_ROLE) await assertCanManageOwner(database, actor);
 
-    await assignRole(tx as unknown as Database, { userId, roleId: role.id });
+    await assignRole(database, { userId, roleId: role.id });
 
-    await auditChange(tx as unknown as Database, {
+    await auditChange(database, {
       actor,
       event: "user.role_assigned",
       subject: { type: "user", id: userId },
       after: snapshot("userRole", { userId, roleId: role.id }),
     });
 
-    return toPublicUser(tx as unknown as Database, user);
+    return toPublicUser(database, user);
   });
 }
 
@@ -276,23 +350,27 @@ export async function revokeUserRole(
   roleKey: string,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
-  return db.transaction(async (tx) => {
-    const user = await findUserOrThrow(tx as unknown as Database, userId);
+  return withPermissionInvalidation(db, userId, async (database) => {
+    const user = await findUserOrThrow(database, userId);
 
-    const role = await findRoleByKey(tx as unknown as Database, roleKey);
+    const role = await findRoleByKey(database, roleKey);
     if (!role) throw ApiError.notFound(`Role not found: ${roleKey}`);
+    if (role.key === OWNER_ROLE) {
+      await assertCanManageOwner(database, actor);
+      await assertNotLastOwner(database, userId);
+    }
 
-    const removed = await revokeRole(tx as unknown as Database, userId, role.id);
+    const removed = await revokeRole(database, userId, role.id);
     if (!removed) throw ApiError.notFound("User does not hold this role");
 
-    await auditChange(tx as unknown as Database, {
+    await auditChange(database, {
       actor,
       event: "user.role_revoked",
       subject: { type: "user", id: userId },
       before: snapshot("userRole", { userId, roleId: role.id }),
     });
 
-    return toPublicUser(tx as unknown as Database, user);
+    return toPublicUser(database, user);
   });
 }
 
@@ -303,8 +381,7 @@ export async function replaceUserRoles(
   keys: readonly string[],
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<PublicUser> {
-  const result = await db.transaction(async (tx) => {
-    const database = tx as unknown as Database;
+  return withPermissionInvalidation(db, userId, async (database) => {
     const user = await findUserOrThrow(database, userId);
     const wanted = [];
     for (const key of new Set(keys)) {
@@ -313,7 +390,12 @@ export async function replaceUserRoles(
       wanted.push(role);
     }
     const before = await toPublicUser(database, user);
-    await tx.delete(userRoles).where(eq(userRoles.userId, userId));
+    const wantedKeys = new Set(wanted.map((role) => role.key));
+    if (wantedKeys.has(OWNER_ROLE)) await assertCanManageOwner(database, actor);
+    if (!wantedKeys.has(OWNER_ROLE) && before.roles.some((role) => role.key === OWNER_ROLE)) {
+      await assertNotLastOwner(database, userId);
+    }
+    await database.delete(userRoles).where(eq(userRoles.userId, userId));
     for (const role of wanted) await assignRole(database, { userId, roleId: role.id });
     const after = await toPublicUser(database, user);
     await auditChange(database, {
@@ -325,6 +407,4 @@ export async function replaceUserRoles(
     });
     return after;
   });
-  invalidateUser(userId);
-  return result;
 }

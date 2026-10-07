@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { createContext } from "../../bootstrap/bootstrap.ts";
 import { loadEnv } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
@@ -25,7 +25,8 @@ export async function requireRoleByKey(db: Database, key: string) {
 }
 
 export async function requireUserByEmail(db: Database, email: string) {
-  const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  // Email is case-insensitive (RFC 5321); the column stores lowercase, but CLI input is free text.
+  const rows = await db.select().from(users).where(sql`lower(${users.email}) = lower(${email})`).limit(1);
   const user = rows[0];
   if (!user) throw new Error(`No user with email ${email}. Run bun erp user:list.`);
   return user;
