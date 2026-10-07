@@ -1,7 +1,8 @@
 import { afterAll, expect, test } from "bun:test";
-import { installCatalogApp } from "../../../../cli/lib/app-catalog.ts";
+import { installCatalogApp } from "@cli/lib/app-catalog.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
 
-const dataRoot = `${import.meta.dir}/../../../../.data`;
+const dataRoot = `${repoRoot}/.data`;
 const created: string[] = [];
 
 async function fixtureRoot(): Promise<string> {

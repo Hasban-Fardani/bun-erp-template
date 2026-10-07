@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
-import type { Database } from "../../../database/index.ts";
-import { rowsOf } from "../../../database/rows.ts";
-import { claimNextJob, enqueueJob, runJobBatch, runJobById } from "../../../infra/jobs/queue.ts";
-import { JobRegistry } from "../../../infra/jobs/registry.ts";
-import { JobWakeUp, type JobWakeUpDriver, type JobWakeUpSignal } from "../../../infra/jobs/wake-up.ts";
-import type { Logger } from "../../../infra/observability/logger.ts";
+import type { Database } from "@/database/index.ts";
+import { rowsOf } from "@/database/rows.ts";
+import { claimNextJob, enqueueJob, runJobBatch, runJobById } from "@/infra/jobs/queue.ts";
+import { JobRegistry } from "@/infra/jobs/registry.ts";
+import { JobWakeUp, type JobWakeUpDriver, type JobWakeUpSignal } from "@/infra/jobs/wake-up.ts";
+import type { Logger } from "@/infra/observability/logger.ts";
 import { createTestContext } from "../../support/fixtures.ts";
 
 // slop-ok: the no-op logger fixture is deliberately identical across the job test files

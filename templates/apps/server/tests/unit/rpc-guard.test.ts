@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkRpc } from "../../../../cli/gates/rpc-guard.ts";
+import { checkRpc } from "@cli/gates/rpc-guard.ts";
 import { withTempRoot } from "./support/temp-root.ts";
 
 test("export * from a server module is a runtime import, however it is spaced", async () => {

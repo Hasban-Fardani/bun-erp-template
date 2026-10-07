@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { notifications } from "../../../features/notifications/schema.ts";
-import { notify } from "../../../features/notifications/service.ts";
+import { notifications } from "@/features/notifications/schema.ts";
+import { notify } from "@/features/notifications/service.ts";
 import { createFixtureUser, createHttpFixture, dataOf } from "../../support/fixtures.ts";
 
 type NotificationRow = { id: string; title: string; readAt: string | null };

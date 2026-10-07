@@ -1,8 +1,8 @@
 import { beforeEach, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { rateLimits } from "../../../database/rate-limit.ts";
-import { createAuth } from "../../../features/identity/auth.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { rateLimits } from "@/database/rate-limit.ts";
+import { createAuth } from "@/features/identity/auth.ts";
 import { createSeededContext, testEnv } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

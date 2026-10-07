@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 import { createMailer, createMemoryMailDriver } from "@bun-erp/mail/server";
 import { sql } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { rowsOf } from "../../../database/rows.ts";
-import { createJobRegistry } from "../../../features/jobs.ts";
-import { createAppMailer, createMailEnqueue } from "../../../features/mail/wiring.ts";
-import { notify } from "../../../features/notifications/service.ts";
-import { enqueueJob, runNextJob } from "../../../infra/jobs/queue.ts";
-import type { Logger } from "../../../infra/observability/logger.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { rowsOf } from "@/database/rows.ts";
+import { createJobRegistry } from "@/features/jobs.ts";
+import { createAppMailer, createMailEnqueue } from "@/features/mail/wiring.ts";
+import { notify } from "@/features/notifications/service.ts";
+import { enqueueJob, runNextJob } from "@/infra/jobs/queue.ts";
+import type { Logger } from "@/infra/observability/logger.ts";
 import { createHttpFixture, createTestContext, dataOf, testEnv, truncateAll } from "../../support/fixtures.ts";
 
 const logger: Logger = {

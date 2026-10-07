@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import type { Env } from "../../../config/index.ts";
-import { createStorage } from "../../../infra/storage.ts";
+import type { Env } from "@/config/index.ts";
+import { createStorage } from "@/infra/storage.ts";
 import { testEnv } from "../../support/fixtures.ts";
 
 test("createStorage maps the environment onto the configured driver", async () => {

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { findCodeSlop } from "../../../../cli/gates/slop.ts";
+import { findCodeSlop } from "@cli/gates/slop.ts";
 import { withTempRoot } from "./support/temp-root.ts";
 
 test("cli and cli/gates are scanned once, not twice", async () => {

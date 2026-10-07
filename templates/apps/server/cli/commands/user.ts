@@ -1,8 +1,8 @@
+import { formatIssues, parseKeyList } from "@cli/lib/format.ts";
+import { parseCommandOptions } from "@cli/lib/options.ts";
+import { resolveRequired } from "@cli/lib/prompt.ts";
+import { defineCommand } from "@cli/registry.ts";
 import { eq } from "drizzle-orm";
-import { formatIssues, parseKeyList } from "../../../../cli/lib/format.ts";
-import { parseCommandOptions } from "../../../../cli/lib/options.ts";
-import { resolveRequired } from "../../../../cli/lib/prompt.ts";
-import { defineCommand } from "../../../../cli/registry.ts";
 import { loadEnv } from "../../config/index.ts";
 import { recordAudit, snapshot } from "../../features/audit/service.ts";
 import { users } from "../../features/identity/schema.ts";

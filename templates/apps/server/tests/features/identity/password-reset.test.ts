@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { verifyPassword } from "better-auth/crypto";
 import { eq } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { commands } from "../../../cli/commands/user.ts";
-import { generatePassword } from "../../../cli/lib/password.ts";
-import { accounts, sessions } from "../../../features/identity/schema.ts";
-import { createUser, resetUserPassword } from "../../../features/identity/service.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { commands } from "@/cli/commands/user.ts";
+import { generatePassword } from "@/cli/lib/password.ts";
+import { accounts, sessions } from "@/features/identity/schema.ts";
+import { createUser, resetUserPassword } from "@/features/identity/service.ts";
 import { createSeededContext } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

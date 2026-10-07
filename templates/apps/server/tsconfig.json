@@ -4,7 +4,10 @@
     "lib": ["ESNext"],
     "types": ["bun"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@web/*": ["./../web/src/*"],
+      "@mobile/*": ["./../mobile/src/*"],
+      "@cli/*": ["./../../cli/*"]
     }
   },
   "include": ["./**/*.ts"]

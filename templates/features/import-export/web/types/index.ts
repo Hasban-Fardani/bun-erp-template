@@ -1,5 +1,5 @@
+import type { rpc } from "@web/lib/rpc.ts";
 import type { InferResponseType } from "hono/client";
-import type { rpc } from "../../../lib/rpc.ts";
 
 /** One registered resource as the wizard and export action see it. */
 export type ImportExportResource = InferResponseType<

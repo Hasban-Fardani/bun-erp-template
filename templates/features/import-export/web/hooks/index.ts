@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { call, rpc } from "../../../lib/rpc.ts";
+import { call, rpc } from "@web/lib/rpc.ts";
 import {
   importExportKeys,
   importExportResourcesQuery,

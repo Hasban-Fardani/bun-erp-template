@@ -1,9 +1,9 @@
 import { beforeEach, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { auditLogs } from "../../../features/audit/schema.ts";
-import { createAuth } from "../../../features/identity/auth.ts";
-import { users } from "../../../features/identity/schema.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { auditLogs } from "@/features/audit/schema.ts";
+import { createAuth } from "@/features/identity/auth.ts";
+import { users } from "@/features/identity/schema.ts";
 import { createSeededContext, testEnv } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

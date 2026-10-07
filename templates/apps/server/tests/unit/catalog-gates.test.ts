@@ -1,11 +1,10 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
+import { repoRoot } from "@cli/lib/repo.ts";
 import { withTempRoot } from "./support/temp-root.ts";
 
-const repoRoot = join(import.meta.dir, "../../../..");
-
 test("copy gate scans the web catalog copy", async () => {
-  const { checkUserCopy } = await import("../../../../cli/gates/copy-guard.ts");
+  const { checkUserCopy } = await import("@cli/gates/copy-guard.ts");
   await withTempRoot(
     {
       "templates/apps/web/src/example.tsx":
@@ -19,7 +18,7 @@ test("copy gate scans the web catalog copy", async () => {
 });
 
 test("motion gate scans the package catalog copy", async () => {
-  const { checkMotion } = await import("../../../../cli/gates/motion-gate.ts");
+  const { checkMotion } = await import("@cli/gates/motion-gate.ts");
   await withTempRoot(
     {
       "templates/packages/charts/src/loop.tsx": 'export const Loop = () => <div className="animate-spin" />;',
@@ -32,7 +31,7 @@ test("motion gate scans the package catalog copy", async () => {
 });
 
 test("ui-completeness scans the catalog page copy", async () => {
-  const { checkUiCompleteness } = await import("../../../../cli/gates/ui-completeness.ts");
+  const { checkUiCompleteness } = await import("@cli/gates/ui-completeness.ts");
   await withTempRoot(
     {
       "templates/apps/web/src/pages/dashboard.tsx":
@@ -51,7 +50,7 @@ test("ui-completeness scans the catalog page copy", async () => {
 });
 
 test("contrast gate scans the catalog component copy", async () => {
-  const { checkContrast } = await import("../../../../cli/gates/contrast-gate.ts");
+  const { checkContrast } = await import("@cli/gates/contrast-gate.ts");
   const stylesheet = await Bun.file(join(repoRoot, "packages/ui/src/styles.css")).text();
   await withTempRoot(
     {
@@ -67,7 +66,7 @@ test("contrast gate scans the catalog component copy", async () => {
 });
 
 test("design gate requires a spec for every catalog screen", async () => {
-  const { checkDesign } = await import("../../../../cli/gates/design-gate.ts");
+  const { checkDesign } = await import("@cli/gates/design-gate.ts");
   await withTempRoot(
     {
       "templates/apps/web/src/pages/_authenticated/index.tsx": "export const Route = {};",
@@ -82,7 +81,7 @@ test("design gate requires a spec for every catalog screen", async () => {
 });
 
 test("design gate reports a malformed spec instead of throwing a raw stack", async () => {
-  const { checkDesign } = await import("../../../../cli/gates/design-gate.ts");
+  const { checkDesign } = await import("@cli/gates/design-gate.ts");
   await withTempRoot(
     {
       "apps/web/src/pages/login.tsx": "export const Route = {};",
@@ -96,7 +95,7 @@ test("design gate reports a malformed spec instead of throwing a raw stack", asy
 });
 
 test("design gate reports a screen-name collision instead of silently merging screens", async () => {
-  const { checkDesign } = await import("../../../../cli/gates/design-gate.ts");
+  const { checkDesign } = await import("@cli/gates/design-gate.ts");
   await withTempRoot(
     {
       "apps/web/src/pages/foo.tsx": "export const Route = {};",
@@ -112,7 +111,7 @@ test("design gate reports a screen-name collision instead of silently merging sc
 });
 
 test("nested index pages no longer collapse into one overview screen", async () => {
-  const { checkDesign } = await import("../../../../cli/gates/design-gate.ts");
+  const { checkDesign } = await import("@cli/gates/design-gate.ts");
   await withTempRoot(
     {
       "apps/web/src/pages/reports/index.tsx": "export const Route = {};",
@@ -126,7 +125,7 @@ test("nested index pages no longer collapse into one overview screen", async () 
 });
 
 test("contrast gate reports a missing stylesheet instead of throwing", async () => {
-  const { checkContrast } = await import("../../../../cli/gates/contrast-gate.ts");
+  const { checkContrast } = await import("@cli/gates/contrast-gate.ts");
   await withTempRoot({}, async (root) => {
     const findings = await checkContrast(root);
     expect(findings.some((finding) => finding.includes("styles.css"))).toBe(true);

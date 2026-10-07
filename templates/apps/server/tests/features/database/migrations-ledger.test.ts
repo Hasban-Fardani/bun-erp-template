@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { sql } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { migrate } from "../../../database/migrate.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { migrate } from "@/database/migrate.ts";
 import { createTestContext, disposeTestContext } from "../../support/fixtures.ts";
 import { scopedDir, tableExists } from "./support.ts";
 

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { collectAbout, formatAbout } from "../../../../cli/lib/about.ts";
-import { GATE_CATALOG } from "../../../../cli/lib/gates.ts";
-import { repoRoot } from "../../../../cli/lib/repo.ts";
+import { collectAbout, formatAbout } from "@cli/lib/about.ts";
+import { GATE_CATALOG } from "@cli/lib/gates.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
 
 test("about reports runtime versions, the installed catalog and every count", async () => {
   const about = await collectAbout(repoRoot);

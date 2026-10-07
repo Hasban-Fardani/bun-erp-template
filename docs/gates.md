@@ -38,7 +38,7 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 | Gate | Command | File | What it checks | When it skips |
 |---|---|---|---|---|
 | agents | `check:agents` | `cli/gates/agent-readiness.ts` | Required agent skills, the pinned CodeGraph CLI and a complete local index | Installed app entries only; a missing app is not required |
-| architecture | `check:architecture` | `cli/gates/architecture-guard.ts` | UI atomic-layer imports, app isolation and page-wrapper rules | Missing app, screen or package source directories |
+| architecture | `check:architecture` | `cli/gates/architecture-guard.ts` | UI atomic-layer imports, app isolation, page-wrapper rules and deep relative imports (`NO_DEEP_RELATIVE`) | Missing app, screen or package source directories |
 | bun-first | `check:bun-first` | `cli/gates/bun-first.ts` | Bun-first APIs: no banned sync Node built-ins or packages Bun replaces | Vendored governance validators, the Worker graph, and browser code under `templates/apps/web` |
 | ci | `check:ci` | `cli/gates/ci-guard.ts` | Required CI jobs, the init step and `docs/ci.md` | Never |
 | copy | `check:copy` | `cli/gates/copy-guard.ts` | Rendered copy for infrastructure vocabulary and deployment names | Missing web or mobile source |

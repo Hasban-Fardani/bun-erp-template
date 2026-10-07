@@ -51,7 +51,10 @@ export default defineConfig(({ mode }) => {
       ...(cloudflareMode ? [cloudflare({ configPath: "../../wrangler.jsonc" })] : []),
     ],
     resolve: {
-      alias: { "@": path.resolve(import.meta.dirname ?? ".", "src") },
+      alias: {
+        "@": path.resolve(import.meta.dirname ?? ".", "src"),
+        "@web": path.resolve(import.meta.dirname ?? ".", "src"),
+      },
     },
     build: { minify: true, sourcemap: false, target: "es2022" },
     preview: { port: 4173, ...(cloudflareMode ? {} : { proxy }) },

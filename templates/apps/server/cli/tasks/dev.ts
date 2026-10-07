@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { repoRoot } from "@cli/lib/repo.ts";
 import { createDevelopmentEnvironment, type DevelopmentEnvironment } from "../lib/development-environment.ts";
 
 /** The slice of `Bun.spawn` the orchestrator uses; tests inject their own to avoid Vite. */
@@ -320,7 +321,7 @@ function printEndpoints(hasWeb: boolean, development: DevelopmentEnvironment): v
 }
 
 if (import.meta.main) {
-  const root = resolve(import.meta.dir, "../../../..");
+  const root = repoRoot;
   const development = await createDevelopmentEnvironment();
   await Bun.$`mkdir -p ${resolve(root, ".data")}`.quiet();
   process.exitCode = await runDev({ root, development });

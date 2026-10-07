@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { rowsOf } from "../../../database/rows.ts";
-import { claimNextJob, enqueueJob, requeueDeadJob, runNextJob } from "../../../infra/jobs/queue.ts";
-import { JobRegistry } from "../../../infra/jobs/registry.ts";
-import { startJobWorker } from "../../../infra/jobs/worker.ts";
-import type { Logger } from "../../../infra/observability/logger.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { rowsOf } from "@/database/rows.ts";
+import { claimNextJob, enqueueJob, requeueDeadJob, runNextJob } from "@/infra/jobs/queue.ts";
+import { JobRegistry } from "@/infra/jobs/registry.ts";
+import { startJobWorker } from "@/infra/jobs/worker.ts";
+import type { Logger } from "@/infra/observability/logger.ts";
 import { createTestContext } from "../../support/fixtures.ts";
 
 const logger: Logger = {

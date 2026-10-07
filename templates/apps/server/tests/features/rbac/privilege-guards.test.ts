@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { roles } from "../../../features/rbac/schema.ts";
+import { roles } from "@/features/rbac/schema.ts";
 import { createHttpFixture, createTestClient, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;

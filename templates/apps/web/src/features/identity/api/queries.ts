@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { ApiError } from "../../../lib/api.ts";
-import { call, rpc } from "../../../lib/rpc.ts";
+import { ApiError } from "@web/lib/api.ts";
+import { call, rpc } from "@web/lib/rpc.ts";
 import type { SessionView } from "../types/index.ts";
 import { identityKeys } from "./keys.ts";
 

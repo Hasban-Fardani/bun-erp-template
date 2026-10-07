@@ -15,7 +15,7 @@ import {
   toKebabName,
   toSeederName,
   toSnakeName,
-} from "../../../../cli/lib/scaffolding.ts";
+} from "@cli/lib/scaffolding.ts";
 
 test("generator names normalize to safe lowercase paths", () => {
   expect(toKebabName("Sales Orders", "Feature")).toBe("sales-orders");

@@ -1,9 +1,9 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import type { Database } from "../../../database/index.ts";
-import { cacheStats, readCachedPermissions, resetPermissionCache } from "../../../features/rbac/cache.ts";
-import { roles } from "../../../features/rbac/schema.ts";
-import { assignRole, permissionsForUser, revokeRole, setRolePermissions } from "../../../features/rbac/service.ts";
+import type { Database } from "@/database/index.ts";
+import { cacheStats, readCachedPermissions, resetPermissionCache } from "@/features/rbac/cache.ts";
+import { roles } from "@/features/rbac/schema.ts";
+import { assignRole, permissionsForUser, revokeRole, setRolePermissions } from "@/features/rbac/service.ts";
 import { createHttpFixture, createTestClient, dataOf, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;

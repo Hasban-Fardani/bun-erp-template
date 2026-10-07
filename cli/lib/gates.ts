@@ -32,7 +32,8 @@ export const GATE_CATALOG = [
     name: "architecture",
     command: "check:architecture",
     file: "cli/gates/architecture-guard.ts",
-    summary: "App and shared-UI imports respect the documented atomic and cross-app boundaries.",
+    summary:
+      "App and shared-UI imports respect the atomic and cross-app boundaries and use the path aliases, not deep relative paths.",
   },
   {
     name: "language",

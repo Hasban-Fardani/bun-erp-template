@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { checkArchitecture } from "../../../../cli/gates/architecture-guard.ts";
-import { clearFileIndexes } from "../../../../cli/lib/file-index.ts";
+import { checkArchitecture } from "@cli/gates/architecture-guard.ts";
+import { clearFileIndexes } from "@cli/lib/file-index.ts";
 import { withTempRoot } from "./support/temp-root.ts";
 
 test("atomic and application boundaries reject forbidden imports and permit shared UI", async () => {
@@ -74,6 +74,32 @@ test("catalog features are checked at their installed path", async () => {
       expect(findings).toContain(
         "templates/features/departments/server/service.ts: FEATURE_BOUNDARY — ../audit/service.ts bypasses features/audit/index.ts",
       );
+    },
+  );
+});
+
+test("deep relative imports are rejected in favour of the path aliases", async () => {
+  await withTempRoot(
+    {
+      "apps/web/src/features/orders/api/queries.ts": 'import { rpc } from "../../../lib/rpc.ts";',
+      "apps/server/tests/features/orders/orders.test.ts":
+        'import type { AppContext } from "../../../bootstrap/context.ts";',
+      "templates/apps/server/tests/unit/orders.test.ts": 'import { repoRoot } from "../../../../cli/lib/repo.ts";',
+      "apps/web/src/features/orders/api/aliased.ts": 'import { rpc } from "@web/lib/rpc.ts";',
+      "apps/server/features/orders/service.ts": 'import { rowsOf } from "@/database/rows.ts";',
+    },
+    async (root) => {
+      const findings = await checkArchitecture(root);
+      expect(findings).toContain(
+        'apps/web/src/features/orders/api/queries.ts: NO_DEEP_RELATIVE — ../../../lib/rpc.ts uses three or more "../" segments; use a path alias',
+      );
+      expect(findings).toContain(
+        'apps/server/tests/features/orders/orders.test.ts: NO_DEEP_RELATIVE — ../../../bootstrap/context.ts uses three or more "../" segments; use a path alias',
+      );
+      expect(findings).toContain(
+        'templates/apps/server/tests/unit/orders.test.ts: NO_DEEP_RELATIVE — ../../../../cli/lib/repo.ts uses three or more "../" segments; use a path alias',
+      );
+      expect(findings.some((finding) => finding.includes("aliased.ts"))).toBe(false);
     },
   );
 });

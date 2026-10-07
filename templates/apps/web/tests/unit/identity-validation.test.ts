@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { isValidEmailAddress } from "@bun-erp/utils/email";
-import { CreateUserInput } from "../../../server/features/identity/validation.ts";
+import { CreateUserInput } from "@/features/identity/validation.ts";
 
 test("the user form and API agree on malformed email addresses", () => {
   const email = "a@example..com";

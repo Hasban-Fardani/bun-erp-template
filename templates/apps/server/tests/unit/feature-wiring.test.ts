@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { planFeatureWiring } from "../../../../cli/lib/feature-wiring.ts";
+import { planFeatureWiring } from "@cli/lib/feature-wiring.ts";
 import { withTempRoot } from "./support/temp-root.ts";
 
 test("server wiring registers the permission resource and the audit entity independently", async () => {

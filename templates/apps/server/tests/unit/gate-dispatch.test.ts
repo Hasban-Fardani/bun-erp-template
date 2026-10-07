@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { collectGateFindings, GATE_CATALOG, GATE_IMPLEMENTATIONS, runGate } from "../../../../cli/lib/gates.ts";
-import { GateFailure } from "../../../../cli/lib/repo.ts";
+import { collectGateFindings, GATE_CATALOG, GATE_IMPLEMENTATIONS, runGate } from "@cli/lib/gates.ts";
+import { GateFailure } from "@cli/lib/repo.ts";
 
 test("every catalog gate has a registered implementation", () => {
   for (const { name } of GATE_CATALOG) {

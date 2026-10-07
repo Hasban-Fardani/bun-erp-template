@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkBunFirst } from "../../../../cli/gates/bun-first.ts";
+import { checkBunFirst } from "@cli/gates/bun-first.ts";
 import { withTempRoot } from "./support/temp-root.ts";
 
 /** Assembled at runtime so this test file itself stays free of the imports it plants in fixtures. */

@@ -38,6 +38,7 @@ const PATH_ALLOWED = new Set([
   "cli/gates/shadcn-guard.ts",
   "cli/gates/ui-completeness.ts",
   "apps/web/vite.config.ts",
+  "apps/mobile/vite.config.ts",
   "cli/gates/scope.ts",
   "cli/gates/skills.ts",
   "cli/gates/slop.ts",

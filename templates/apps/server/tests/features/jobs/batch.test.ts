@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
-import { rowsOf } from "../../../database/rows.ts";
+import { rowsOf } from "@/database/rows.ts";
 import {
   BATCH_JOB_NAME,
   BatchHandlerRegistry,
@@ -10,10 +10,10 @@ import {
   getJobBatch,
   processJobBatch,
   resumeJobBatch,
-} from "../../../infra/jobs/batch.ts";
-import { claimNextJob, runNextJob } from "../../../infra/jobs/queue.ts";
-import { JobRegistry } from "../../../infra/jobs/registry.ts";
-import type { Logger } from "../../../infra/observability/logger.ts";
+} from "@/infra/jobs/batch.ts";
+import { claimNextJob, runNextJob } from "@/infra/jobs/queue.ts";
+import { JobRegistry } from "@/infra/jobs/registry.ts";
+import type { Logger } from "@/infra/observability/logger.ts";
 import { createTestContext } from "../../support/fixtures.ts";
 
 // slop-ok: the no-op logger fixture is deliberately identical across the job test files

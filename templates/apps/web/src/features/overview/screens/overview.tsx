@@ -4,8 +4,8 @@ import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
 import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
 import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
 import { Link } from "@tanstack/react-router";
+import { visibleNavGroups } from "@web/config/navigation.ts";
 import { Compass } from "lucide-react";
-import { visibleNavGroups } from "../../../config/navigation.ts";
 import { useSession } from "../../identity/hooks/index.ts";
 
 /**

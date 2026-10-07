@@ -11,9 +11,9 @@ import {
   DialogTitle,
 } from "@bun-erp/ui/organisms/dialog.tsx";
 import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
+import { call, rpc } from "@web/lib/rpc.ts";
 import { Download } from "lucide-react";
 import { useState } from "react";
-import { call, rpc } from "../../../lib/rpc.ts";
 import type { ExportData, ImportExportFormat, ImportExportResource } from "../types/index.ts";
 
 /**
