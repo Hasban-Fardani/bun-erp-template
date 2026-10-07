@@ -1,4 +1,8 @@
-/** Runtime imports from the API would bundle its database and authentication implementation. */
+/**
+ * Runtime imports from the API would bundle its database and authentication implementation.
+ * Detection covers `import`/`export` (including `export * from` and no-space forms), dynamic
+ * `import(...)` and side-effect `import "..."`; only `type` specifiers are exempt.
+ */
 export async function checkRpc(root: string): Promise<string[]> {
   const findings: string[] = [];
   for (const app of ["web", "mobile"]) {
@@ -10,14 +14,14 @@ export async function checkRpc(root: string): Promise<string[]> {
       if (!["lib/rpc.ts", "lib/auth.ts"].includes(path) && /["'`]\/api\/v1\//.test(source)) {
         findings.push(`apps/${app}/src/${path}: handwritten API path`);
       }
-      for (const match of source.matchAll(/(?:import|export)\s+(?!type\b)([\s\S]*?)\s+from\s+["']([^"']+)["']/g)) {
+      for (const match of source.matchAll(/(?:import|export)\b(?!\s+type\b)\s*([\s\S]*?)\s*from\s*["']([^"']+)["']/g)) {
         if (/@bun-erp\/server|apps\/server/.test(match[2] ?? "") && !isTypeOnlySpecifiers(match[1] ?? "")) {
           findings.push(`apps/${app}/src/${path}: server import must use import type`);
         }
       }
       if (
         /import\s*\(\s*["'][^"']*(?:@bun-erp\/server|apps\/server)/.test(source) ||
-        /import\s+["'][^"']*(?:@bun-erp\/server|apps\/server)/.test(source)
+        /import\s*["'][^"']*(?:@bun-erp\/server|apps\/server)/.test(source)
       ) {
         findings.push(`apps/${app}/src/${path}: dynamic or side-effect server import`);
       }
@@ -34,7 +38,8 @@ export async function checkRpc(root: string): Promise<string[]> {
   }
   for (const app of ["web", "mobile"]) {
     if (!(await Bun.file(`${root}/apps/${app}/package.json`).exists())) continue;
-    if (!hasServer) continue; // Q30: web without a backend ships no RPC client.
+    // A web app without a backend ships no RPC client, so there is no typed client to verify.
+    if (!hasServer) continue;
     const client = await Bun.file(`${root}/apps/${app}/src/lib/rpc.ts`)
       .text()
       .catch(() => "");

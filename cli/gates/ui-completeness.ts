@@ -13,9 +13,20 @@ export type UiFinding = { file: string; rule: string; detail: string };
 
 /**
  * Only page-level screens are checked for list states: a page is where the user arrives, so a
- * missing branch is visible to them. The shared table component owns the states themselves.
+ * missing branch is visible to them. The shared table component owns the states themselves. The
+ * catalog copies are included because the template's own screens are what most users copy.
  */
-const SCREEN_DIRS = ["apps/web/src/pages", "apps/mobile/src/screens", "packages/ui/src"];
+const SCREEN_DIRS = [
+  "apps/web/src/pages",
+  "apps/mobile/src/screens",
+  "packages/ui/src",
+  "templates/apps/web/src/pages",
+  "templates/apps/mobile/src/screens",
+  "templates/features",
+];
+
+/** Catalog package sources are components, not screens: only the focus rule applies to them. */
+const CATALOG_PACKAGE_GLOBS = ["templates/packages/*/src/**/*.tsx"];
 
 export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
   const findings: UiFinding[] = [];
@@ -30,6 +41,12 @@ export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
       const code = await Bun.file(join(root, file)).text();
       findings.push(...focusIndicator(file, code));
       if (!dir.startsWith("packages/")) findings.push(...listStates(file, code));
+    }
+  }
+
+  for (const pattern of CATALOG_PACKAGE_GLOBS) {
+    for (const file of new Bun.Glob(pattern).scanSync({ cwd: root })) {
+      findings.push(...focusIndicator(file, await Bun.file(join(root, file)).text()));
     }
   }
 
@@ -50,18 +67,22 @@ export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
  * Markers are the stable ones the implementation actually uses (`data-testid="table-refreshing"`,
  * `clearSearch`, `onRetry`) rather than incidental wording, so the check guides instead of dictating.
  */
-const TABLE_COMPONENT = "packages/data-table/src/ui/resource-table.tsx";
+const TABLE_COMPONENTS = [
+  "packages/data-table/src/ui/resource-table.tsx",
+  "templates/packages/data-table/src/ui/resource-table.tsx",
+];
 
 async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
   const out: UiFinding[] = [];
 
-  if (await Bun.file(join(root, TABLE_COMPONENT)).exists()) {
-    const code = await Bun.file(join(root, TABLE_COMPONENT)).text();
+  for (const component of TABLE_COMPONENTS) {
+    if (!(await Bun.file(join(root, component)).exists())) continue;
+    const code = await Bun.file(join(root, component)).text();
     // A component that never renders rows owes the user nothing; keep this honest.
     if (/<DataTable|<table/.test(code)) {
       if (!/data-testid="table-refreshing"|labels\.refreshing/.test(code)) {
         out.push({
-          file: TABLE_COMPONENT,
+          file: component,
           rule: "TABLE_FEEDBACK_MISSING",
           detail:
             'no visible refetch indicator — add a `role="status"`/`data-testid="table-refreshing"` element that stays on screen while existing rows are preserved',
@@ -69,7 +90,7 @@ async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
       }
       if (!/clearSearch|table-search-clear/.test(code)) {
         out.push({
-          file: TABLE_COMPONENT,
+          file: component,
           rule: "TABLE_FEEDBACK_MISSING",
           detail:
             "no clear-search control — a filtered list must be resettable without deleting the query character by character",
@@ -77,7 +98,7 @@ async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
       }
       if (!/onRetry/.test(code)) {
         out.push({
-          file: TABLE_COMPONENT,
+          file: component,
           rule: "TABLE_FEEDBACK_MISSING",
           detail:
             "error branch accepts no retry action — a failed list must offer a way to recover in place, not only after a reload",
@@ -87,8 +108,12 @@ async function resourceTableFeedback(root: string): Promise<UiFinding[]> {
   }
 
   // Feature screens are where `ResourceTable` is mounted; the route wrappers in `pages` never own it.
-  const glob = new Bun.Glob("apps/web/src/features/**/*.tsx");
-  for (const file of glob.scanSync({ cwd: root })) {
+  const featureGlobs = [
+    "apps/web/src/features/**/*.tsx",
+    "templates/apps/web/src/features/**/*.tsx",
+    "templates/features/*/web/**/*.tsx",
+  ];
+  for (const file of new Set(featureGlobs.flatMap((pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: root })]))) {
     const code = await Bun.file(join(root, file)).text();
     if (!/<ResourceTable/.test(code)) continue;
     const missing = [
@@ -162,24 +187,32 @@ function listStates(file: string, code: string): UiFinding[] {
  * is worse than having no toggle: it promises a choice that does nothing.
  */
 async function themeSwitch(root: string): Promise<UiFinding[]> {
-  const configPath = join(root, "apps/web/src/config/ui.ts");
-  // The web app ships empty: with no config there is no theme claim to verify.
-  if (!(await Bun.file(configPath).exists())) return [];
-  const config = await Bun.file(configPath).text();
-  const declared = /"dark"/.test(config);
-  if (!declared) return [];
+  const out: UiFinding[] = [];
+  // The catalog config ships the same claim as the installed app, so both are checked.
+  for (const configPath of ["apps/web/src/config/ui.ts", "templates/apps/web/src/config/ui.ts"]) {
+    if (!(await Bun.file(join(root, configPath)).exists())) continue;
+    const config = await Bun.file(join(root, configPath)).text();
+    if (!/"dark"/.test(config)) continue;
 
-  const css = await Bun.file(join(root, "packages/ui/src/styles.css")).text();
-  // A second mode needs its own token block, selected by an attribute or media query.
-  const hasSecondPalette = /\.dark\b|\[data-theme=|@media\s*\(prefers-color-scheme:\s*dark\)/.test(css);
-  if (hasSecondPalette) return [];
+    const stylesheetPath = join(root, "packages/ui/src/styles.css");
+    if (!(await Bun.file(stylesheetPath).exists())) {
+      out.push({
+        file: configPath,
+        rule: "THEME_STYLESHEET_MISSING",
+        detail: "`dark` is offered by config but the shared stylesheet is missing, so switching it changes nothing",
+      });
+      continue;
+    }
+    const css = await Bun.file(stylesheetPath).text();
+    // A second mode needs its own token block, selected by an attribute or media query.
+    if (/\.dark\b|\[data-theme=|@media\s*\(prefers-color-scheme:\s*dark\)/.test(css)) continue;
 
-  return [
-    {
-      file: "apps/web/src/config/ui.ts",
+    out.push({
+      file: configPath,
       rule: "THEME_NOT_IMPLEMENTED",
       detail:
         "`dark` is offered by config but the shared stylesheet defines no second palette, so switching it changes nothing (R-34)",
-    },
-  ];
+    });
+  }
+  return out;
 }

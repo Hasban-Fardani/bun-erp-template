@@ -28,6 +28,12 @@ prints that catalog as a table.
 
 `bun erp check:gate --list` is authoritative; this table explains the same entries.
 
+Since `apps/` ships empty, the UI gates (`design`, `copy`, `motion`, `ui`, and the contrast half of
+`design`) also scan the catalog copies under `templates/apps/web`, `templates/apps/mobile`,
+`templates/features/*/web` and `templates/packages/*/src`; a directory that does not exist is
+skipped. `check:design` reads `cli/gates/design-exemptions.json` for documented known gaps (one
+screen and reason per entry); a missing or malformed exemptions file is itself a finding.
+
 | Gate | Command | File | What it checks | When it skips |
 |---|---|---|---|---|
 | agents | `check:agents` | `cli/gates/agent-readiness.ts` | Required agent skills, the pinned CodeGraph CLI and a complete local index | Installed app entries only; a missing app is not required |

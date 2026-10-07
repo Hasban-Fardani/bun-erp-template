@@ -1,0 +1,8 @@
+{
+  "screens": [
+    {
+      "screen": "notifications",
+      "reason": "The core inbox screen renders the shared notification feed and its direction spec is still missing (audit P1). Delete this entry once design/notifications.json ships."
+    }
+  ]
+}

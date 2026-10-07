@@ -807,7 +807,7 @@ ${restoreCheck}  });
 `;
 }
 
-export type WiringResult = { source: string; status: "added" | "present" | "skipped" };
+export type WiringResult = { source: string; status: "added" | "present" | "skipped"; reason?: string };
 
 /** Registers the generated entity's snapshot allowlist so audit writes cannot silently drop fields. */
 export function addAuditEntity(
@@ -818,9 +818,12 @@ export function addAuditEntity(
   const escaped = resource.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   if (new RegExp(`^\\s{2}"?${escaped}"?:\\s`, "m").test(source)) return { source, status: "present" };
   const anchor = "} as const satisfies Record<string, readonly string[]>;";
-  if (!source.includes(anchor)) return { source, status: "skipped" };
+  if (!source.includes(anchor)) {
+    return { source, status: "skipped", reason: "the AUDIT_FIELDS closing anchor is missing" };
+  }
   const line = `  "${resource}": [${fields.map((field) => JSON.stringify(field)).join(", ")}],`;
-  return { source: source.replace(anchor, `${line}\n${anchor}`), status: "added" };
+  // A replacer function keeps `$&`/`$1` in the generated line literal, not a capture reference.
+  return { source: source.replace(anchor, () => `${line}\n${anchor}`), status: "added" };
 }
 
 /** Registers `<resource>: ["create", "read", "update", "delete"]` in the permission statements. */
@@ -828,9 +831,11 @@ export function addStatementResource(source: string, resource: string): WiringRe
   const escaped = resource.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   if (new RegExp(`^\\s{2}"?${escaped}"?:\\s`, "m").test(source)) return { source, status: "present" };
   const anchor = `  audit: ["read"],`;
-  if (!source.includes(anchor)) return { source, status: "skipped" };
+  if (!source.includes(anchor)) {
+    return { source, status: "skipped", reason: "the audit statement anchor is missing" };
+  }
   const line = `  "${resource}": ["create", "read", "update", "delete"],`;
-  return { source: source.replace(anchor, `${line}\n${anchor}`), status: "added" };
+  return { source: source.replace(anchor, () => `${line}\n${anchor}`), status: "added" };
 }
 
 /** Registers the generated feature in routes/api.ts: one import plus one `FEATURES` entry. */
@@ -846,7 +851,9 @@ export function addRouteMount(source: string, input: { name: string; camel: stri
     const featureImports = lines
       .map((line, index) => ({ index, path: /^import .+ from "([^"]+)";$/.exec(line)?.[1] }))
       .filter((entry): entry is { index: number; path: string } => Boolean(entry.path?.startsWith("../features/")));
-    if (featureImports.length === 0) return { source, status: "skipped" };
+    if (featureImports.length === 0) {
+      return { source, status: "skipped", reason: "the feature-import anchor is missing" };
+    }
     let insertAfter = (featureImports[0]?.index ?? 0) - 1;
     const target = `../features/${name}/feature.ts`;
     for (const entry of featureImports) if (entry.path < target) insertAfter = entry.index;
@@ -857,7 +864,7 @@ export function addRouteMount(source: string, input: { name: string; camel: stri
   if (!next.includes(featureEntry)) {
     const lines = next.split("\n");
     const closing = lines.indexOf("] as const satisfies readonly FeatureDefinition[];");
-    if (closing === -1) return { source, status: "skipped" };
+    if (closing === -1) return { source, status: "skipped", reason: "the FEATURES closing anchor is missing" };
     lines.splice(closing, 0, featureEntry);
     next = lines.join("\n");
   }
@@ -1021,11 +1028,13 @@ export function addNavItem(source: string, feature: { name: string }, nav: NavOv
   const itemsAnchor = "    items: [";
   // The lucide import already carries icons; find it wherever it is instead of assuming an anchor.
   const lucide = /^import \{([^}]+)\} from "lucide-react";$/m.exec(source);
-  if (!lucide || !source.includes(itemsAnchor)) return { source, status: "skipped" };
+  if (!lucide || !source.includes(itemsAnchor)) {
+    return { source, status: "skipped", reason: "the lucide import or nav items anchor is missing" };
+  }
 
   let next = source;
   if (!new RegExp(`\\b${icon}\\b`).test(next)) {
-    next = next.replace(lucide[0], `import { ${icon},${lucide[1]}} from "lucide-react";`);
+    next = next.replace(lucide[0], () => `import { ${icon},${lucide[1]}} from "lucide-react";`);
   }
   const at = next.indexOf(itemsAnchor) + itemsAnchor.length;
   const line = `\n      { titleKey: "${titleKey}", url: "${url}", icon: ${icon}, permission: "${permission}" },`;
@@ -1081,7 +1090,7 @@ export function addI18nKeys(
   if (missing.length === 0) return { source, status: "present" };
   const anchor = I18N_ANCHORS[locale];
   const at = source.lastIndexOf(anchor);
-  if (at === -1) return { source, status: "skipped" };
+  if (at === -1) return { source, status: "skipped", reason: `the ${locale} catalog closing anchor is missing` };
   const lines = missing.map(([key, value]) => `  ${JSON.stringify(key)}: ${JSON.stringify(value)},`).join("\n");
   return { source: `${source.slice(0, at)}${lines}\n${source.slice(at)}`, status: "added" };
 }

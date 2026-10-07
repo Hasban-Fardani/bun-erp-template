@@ -54,6 +54,11 @@ const NODE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
   // Temp-directory fixtures for the gate runner: mkdtemp/tmpdir/join have no direct Bun replacement.
   "apps/server/tests/unit/check-runner.test.ts": ["fs/promises", "os", "path"],
   "apps/server/tests/unit/gate-dispatch.test.ts": ["fs/promises", "os", "path"],
+  // The shared fixture helper owns the Node calls; the tests using it only join fixture paths.
+  "apps/server/tests/unit/support/temp-root.ts": ["fs/promises", "os", "path"],
+  "apps/server/tests/unit/catalog-gates.test.ts": ["path"],
+  "apps/server/tests/unit/ci-owner.test.ts": ["path"],
+  "apps/server/tests/unit/make-feature.test.ts": ["path"],
 };
 
 const SCAN_GLOBS = [

@@ -1,5 +1,3 @@
-import { directoryExists } from "./exists.ts";
-
 const requiredPairs = [
   ["color-background", "color-foreground"],
   ["color-surface", "color-foreground"],
@@ -78,7 +76,10 @@ function checkPalette(label: string, palette: Map<string, string>): string[] {
   });
 }
 
-export function checkActiveNavigationContrast(source: string): string[] {
+export function checkActiveNavigationContrast(
+  source: string,
+  file = "apps/web/src/templates/authenticated-layout.tsx",
+): string[] {
   const background = /targetUrl\s*===\s*activeUrl\s*\?\s*["']([^"']+)["']\s*:\s*["']([^"']+)["']/.exec(source);
   const foreground =
     /highlighted\s*\?\s*active\s*\?\s*["']([^"']+)["']\s*:\s*["']([^"']+)["']\s*:\s*active\s*\?\s*["']([^"']+)["']/s.exec(
@@ -93,9 +94,7 @@ export function checkActiveNavigationContrast(source: string): string[] {
     !/\btext-accent-soft-foreground\b/.test(foreground[2] ?? "") ||
     !/\btext-accent\b/.test(foreground[3] ?? "")
   ) {
-    return [
-      "apps/web/src/templates/authenticated-layout.tsx: moving navigation highlight needs readable foregrounds for active and hovered items",
-    ];
+    return [`${file}: moving navigation highlight needs readable foregrounds for active and hovered items`];
   }
   return [];
 }
@@ -571,24 +570,42 @@ export function checkComponentClassContrast(source: string, file: string, styles
 }
 
 export async function checkContrast(root: string): Promise<string[]> {
-  const stylesheet = await Bun.file(`${root}/packages/ui/src/styles.css`).text();
+  const stylesheetPath = `${root}/packages/ui/src/styles.css`;
+  if (!(await Bun.file(stylesheetPath).exists())) {
+    return ["packages/ui/src/styles.css: missing; theme-token contrast cannot be verified"];
+  }
+  const stylesheet = await Bun.file(stylesheetPath).text();
   const lightBlock = cssBlock(stylesheet, /@theme\s*\{([\s\S]*?)\n\}/);
   const darkBlock = cssBlock(stylesheet, /\[data-theme=["']dark["']\]\s*\{([\s\S]*?)\n\}/);
   if (!lightBlock || !darkBlock) return ["packages/ui/src/styles.css: light and dark theme token blocks are required"];
 
   const lightPalette = declarations(lightBlock);
   const darkPalette = new Map([...lightPalette, ...declarations(darkBlock)]);
-  const navigationPath = `${root}/apps/web/src/templates/authenticated-layout.tsx`;
-  // The web app ships empty: skip the navigation rule when there is no layout to check.
-  const navigation = (await Bun.file(navigationPath).exists()) ? await Bun.file(navigationPath).text() : "";
-  const componentFiles: string[] = [];
-  for (const directory of ["apps/web/src", "apps/mobile/src", "packages/ui/src"]) {
-    // apps/mobile/src only exists after `bun erp apps:create <name> mobile`.
-    if (!(await directoryExists(`${root}/${directory}`))) continue;
-    componentFiles.push(
-      ...[...new Bun.Glob("**/*.tsx").scanSync({ cwd: `${root}/${directory}` })].map((file) => `${directory}/${file}`),
-    );
+  // The web app ships empty: skip the navigation rule when there is no layout to check. The
+  // catalog copy is the template's own UI, so it is checked the same way once installed.
+  const navigation: string[] = [];
+  for (const layoutPath of [
+    "apps/web/src/templates/authenticated-layout.tsx",
+    "templates/apps/web/src/templates/authenticated-layout.tsx",
+  ]) {
+    if (!(await Bun.file(`${root}/${layoutPath}`).exists())) continue;
+    navigation.push(...checkActiveNavigationContrast(await Bun.file(`${root}/${layoutPath}`).text(), layoutPath));
   }
+
+  // Installed apps, the shared UI package and every catalog copy: a template's catalog UI is the
+  // surface most users copy, so leaving it unchecked let contrast regressions ship silently.
+  const componentGlobs = [
+    "apps/web/src/**/*.tsx",
+    "apps/mobile/src/**/*.tsx",
+    "packages/ui/src/**/*.tsx",
+    "templates/apps/web/src/**/*.tsx",
+    "templates/apps/mobile/src/**/*.tsx",
+    "templates/features/*/web/**/*.tsx",
+    "templates/packages/*/src/**/*.tsx",
+  ];
+  const componentFiles = [
+    ...new Set(componentGlobs.flatMap((pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: root })])),
+  ];
   const componentFindings = await Promise.all(
     componentFiles.map(async (file) =>
       checkComponentClassContrast(await Bun.file(`${root}/${file}`).text(), file, stylesheet),
@@ -597,7 +614,7 @@ export async function checkContrast(root: string): Promise<string[]> {
   return [
     ...checkPalette("light theme", lightPalette),
     ...checkPalette("dark theme", darkPalette),
-    ...(navigation ? checkActiveNavigationContrast(navigation) : []),
+    ...navigation,
     ...componentFindings.flat(),
   ];
 }
