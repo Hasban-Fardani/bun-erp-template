@@ -1,54 +1,203 @@
 # @bun-erp/ui
 
-Shared atomic React UI for the web and mobile apps. Import a component from its layer subpath. There
-is no eager package barrel; each subpath points to one source module and can be tree-shaken. Only
-`@bun-erp/ui/styles.css` has package side effects. Components do not read routes, permissions, RPC
-clients, or feature state. Shared, reduced-motion-aware list animation is exposed from
-`@bun-erp/ui/lib/use-auto-animate.ts`.
+Shared atomic React UI for the web and mobile apps — and the house pattern library agents copy
+before inventing a component. Import from the layer subpath; there is no eager package barrel, so
+each import stays tree-shakeable and only `@bun-erp/ui/styles.css` has side effects. Components do
+not read routes, permissions, RPC clients, or feature state.
 
-## Layers
+## How to use this guide
 
-- `atoms`: aspect ratio, badge, button, card, checkbox, input, input OTP slots, keyboard key, label,
-  marker, native select, progress, separator, skeleton, slider, spinner, switch, textarea, toggle,
-  typography, and small display primitives.
-- `molecules`: accordion, alert, attachment, avatar, breadcrumb, bubble, button group, calendar,
-  collapsible, command, empty, field, hover card, input group, item, message, pagination, popover,
-  radio group, scroll area, select, Table primitive, tabs, toggle group, tooltip, and form helpers.
-- `organisms`: alert dialog, carousel, context menu, dialog, direction provider, drawer, dropdown
-  menu, date picker, menubar, message scroller, navigation menu, questionnaire, resizable panels,
-  sheet, sidebar, toast, and application compositions.
-- `templates`: login, signup, and sidebar layout blocks plus the shared page shell.
+1. Find the module in the index below; each row names the layer, the purpose, its main exports and
+   the sibling it replaces.
+2. Read the module's source and copy the pattern instead of adding a parallel variant.
+3. Pick between parallel variants with [Parallel variants](#parallel-variants).
+4. Never delete an unimported module: the library is deliberately broader than current usage.
+5. Keep the index complete. `bun erp check:ui-guide` fails when a module under `packages/ui/src` is
+   missing here or an entry points at a file that no longer exists. A removed module is mentioned by
+   its package export (for example `@bun-erp/data-table/server-table`), never as a `layer/module.tsx`
+   path.
+
+## Component index
+
+### atoms
+
+| Module | Purpose (main exports) | Use instead of |
+|---|---|---|
+| `atoms/aspect-ratio.tsx` | Fixed-ratio media or skeleton box (`AspectRatio`) | padding-top ratio hacks |
+| `atoms/avatar.tsx` | Image with fallback, badge and stacked group (`Avatar`, `AvatarImage`, `AvatarFallback`, `AvatarBadge`, `AvatarGroup`, `AvatarGroupCount`) | a raw image with initials |
+| `atoms/badge-primitives.tsx` | Upstream Badge with variants and `asChild` (`Badge`, `badgeVariants`) | `badge.tsx` when the house chip is enough |
+| `atoms/badge.tsx` | House status chip, `tone` neutral or accent (`Badge`) | `badge-primitives` for upstream variants; `delta-badge` for numeric change |
+| `atoms/button-primitives.tsx` | Upstream Button with sizes, variants and `asChild` (`Button`, `buttonVariants`) | `button.tsx` for app actions; `icon-button` for icon-only |
+| `atoms/button.tsx` | House app button, `primary`/`ghost`/`danger` plus optional Lucide `icon` (`Button`) | `button-primitives` for upstream variants or `asChild` |
+| `atoms/card-primitives.tsx` | Upstream Card with Header/Title/Description/Action/Content/Footer | `card.tsx` for a plain container |
+| `atoms/card.tsx` | House bordered surface container (`Card`) | `card-primitives` when the card needs sections |
+| `atoms/checkbox.tsx` | Accessible Radix checkbox (`Checkbox`) | a native checkbox, banned in app source by the shadcn gate |
+| `atoms/corner-frame.tsx` | Registration-mark frame for technical dashboard panels (`CornerFrame`) | plain borders when the panel is not a dashboard artifact |
+| `atoms/dashboard-format.ts` | Metric formatting helpers (`formatNumber`, `formatDelta`, `computeDelta`, `NumberFormat`) | ad-hoc `Intl.NumberFormat` calls |
+| `atoms/delta-badge.tsx` | Up/down/flat change chip with trend icon (`DeltaBadge`, `getDeltaDirection`, `DeltaDirection`) | colouring raw numbers green or red |
+| `atoms/icon-button.tsx` | Icon-only button with a required accessible `label` (`IconButton`) | `button.tsx` with no text |
+| `atoms/input-primitives.tsx` | Upstream Input (`Input`) | `input.tsx` for house app forms |
+| `atoms/input.tsx` | House text input (`Input`) | `input-primitives` inside upstream compositions |
+| `atoms/kbd.tsx` | Keyboard shortcut keys (`Kbd`, `KbdGroup`) | plain text such as Ctrl+K |
+| `atoms/label.tsx` | Radix form label (`Label`) | unlabelled controls |
+| `atoms/marker.tsx` | Inline labelled marker with icon and separator/border variants (`Marker`, `MarkerIcon`, `MarkerContent`) | a bespoke metadata line |
+| `atoms/native-select.tsx` | Native select, reference pattern only (`NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`) | `molecules/select.tsx`; the shadcn gate bans native selects in app source |
+| `atoms/progress.tsx` | Continuous completion bar (`Progress`) | `segmented-meter` for zoned thresholds; `radial-gauge` for a dial |
+| `atoms/separator.tsx` | Divider (`Separator`) | an `<hr>` with ad-hoc classes |
+| `atoms/skeleton.tsx` | Pulsing placeholder block (`Skeleton`) | `table-states` for table loading; `spinner` for inline waits |
+| `atoms/slider.tsx` | Radix range slider (`Slider`) | a native range input |
+| `atoms/spinner.tsx` | Inline loading spinner (`Spinner`) | `table-states` `PageLoading` for a whole page |
+| `atoms/switch.tsx` | Binary setting toggle (`Switch`) | `toggle`/`toggle-group` for view or filter state |
+| `atoms/textarea-primitives.tsx` | Upstream Textarea (`Textarea`) | `textarea.tsx` for house app forms |
+| `atoms/textarea.tsx` | House multiline input (`Textarea`) | `textarea-primitives` inside upstream compositions |
+| `atoms/toggle.tsx` | Pressable toggle button (`Toggle`, `toggleVariants`) | `toggle-group` for a set; `switch` for settings |
+| `atoms/typography.tsx` | Content typography presets (`H1`–`H4`, `P`, `Lead`, `Large`, `Small`, `Muted`, `Blockquote`, `List`, `InlineCode`) | hand-styled headings in long-form content |
+
+### molecules
+
+| Module | Purpose (main exports) | Use instead of |
+|---|---|---|
+| `molecules/accordion.tsx` | Grouped disclosure sections (`Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`) | `collapsible` for a single section |
+| `molecules/activity-feed.tsx` | Tinted activity icons, unread dot and tone map (`ActivityIcon`, `UnreadDot`, `activityToneClasses`) | hand-rolled icon circles; `timeline` for a dated rail |
+| `molecules/alert.tsx` | Persistent inline alert (`Alert`, `AlertTitle`, `AlertDescription`) | `toast` for transient feedback; inline alerts need a reviewed `surface` allowlist entry |
+| `molecules/attachment.tsx` | File attachment chips with actions and states (`Attachment`, `AttachmentGroup`, `AttachmentMedia`, `AttachmentContent`, `AttachmentActions`, `AttachmentTrigger`) | `item` for non-file rows |
+| `molecules/breadcrumb.tsx` | Page hierarchy trail (`Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator`, `BreadcrumbEllipsis`) | hand-built link chains |
+| `molecules/bubble.tsx` | Chat bubble with group and reactions (`Bubble`, `BubbleGroup`, `BubbleContent`, `BubbleReactions`) | `message` for structured rows; `message-scroller` to host a transcript |
+| `molecules/button-group.tsx` | Visually joined action buttons (`ButtonGroup`, `ButtonGroupSeparator`, `ButtonGroupText`) | `toggle-group` when the items hold state |
+| `molecules/calendar.tsx` | Day grid via react-day-picker (`Calendar`, `CalendarDayButton`) | a hand-built date grid; `date-picker` composes it |
+| `molecules/collapsible.tsx` | Single disclosure region (`Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`) | `accordion` for many sections |
+| `molecules/command.tsx` | cmdk command palette and search list (`Command`, `CommandInput`, `CommandList`, `CommandItem`, `CommandGroup`, `CommandEmpty`, `CommandSeparator`, `CommandShortcut`) | `combobox` when a value is chosen from a popover |
+| `molecules/confirm-delete.tsx` | Inline two-step delete confirm with labels (`ConfirmDelete`, `ConfirmDeleteLabels`, `DEFAULT_CONFIRM_DELETE_LABELS`) | `alert-dialog` for a full modal confirm |
+| `molecules/distribution-bar.tsx` | Stacked part-to-whole bar with legend (`DistributionBar`, `DistributionSegment`) | `breakdown` for the animated composition; `bar-list` for ranked bars |
+| `molecules/empty-state.tsx` | The one empty surface: icon, title, description, action (`EmptyState`) | ad-hoc "no data" sentences; `empty` is the upstream composition |
+| `molecules/empty.tsx` | Upstream Empty composition (`Empty`, `EmptyHeader`, `EmptyMedia`, `EmptyTitle`, `EmptyDescription`, `EmptyContent`) | `empty-state` in app screens |
+| `molecules/field-primitives.tsx` | Upstream Field system (`Field`, `FieldSet`, `FieldGroup`, `FieldLabel`, `FieldError`, `FieldDescription`, …) | `field.tsx` for a simple house field |
+| `molecules/field.tsx` | House form field wrapper: label, hint, control (`Field`) | `field-primitives` for multi-control upstream layouts |
+| `molecules/form-errors.tsx` | Accessible TanStack Form error summary and field error (`FormErrors`, `FormFieldError`) | a hand-rolled error paragraph |
+| `molecules/hover-card.tsx` | Rich hover overlay (`HoverCard`, `HoverCardTrigger`, `HoverCardContent`) | `tooltip` for short labels |
+| `molecules/input-group.tsx` | Input with addons, text and buttons (`InputGroup`, `InputGroupInput`, `InputGroupTextarea`, `InputGroupAddon`, `InputGroupButton`, `InputGroupText`) | `field` for label and hint layout |
+| `molecules/input-otp.tsx` | One-time-code slots (`InputOTP`, `InputOTPGroup`, `InputOTPSlot`, `InputOTPSeparator`) | four plain inputs |
+| `molecules/item.tsx` | Generic list-row composition (`Item`, `ItemGroup`, `ItemMedia`, `ItemContent`, `ItemTitle`, `ItemDescription`, `ItemActions`, `ItemHeader`, `ItemFooter`, `ItemSeparator`) | `field` for form rows; `attachment` for files |
+| `molecules/message.tsx` | Structured message rows with avatar, header and footer (`Message`, `MessageGroup`, `MessageAvatar`, `MessageContent`, `MessageHeader`, `MessageFooter`) | `bubble` for the chat look; `message-scroller` for the list host |
+| `molecules/metric-value.tsx` | Formatted KPI value with compact threshold and tooltip (`MetricValue`, `DEFAULT_COMPACT_FROM`) | raw numbers; pair with `delta-badge` |
+| `molecules/pagination.tsx` | Page navigation (`Pagination`, `PaginationContent`, `PaginationItem`, `PaginationLink`, `PaginationPrevious`, `PaginationNext`, `PaginationEllipsis`) | the data-table package footer when it is installed |
+| `molecules/popover-primitives.tsx` | Upstream Popover (`Popover`, `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`, `PopoverHeader`, `PopoverTitle`, `PopoverDescription`) | `popover.tsx` inside an open Sheet or Dialog |
+| `molecules/popover.tsx` | Adapted popover that keeps focus inside an open overlay (`Popover`, `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`) | `popover-primitives` outside overlays |
+| `molecules/radio-group.tsx` | Few exclusive options (`RadioGroup`, `RadioGroupItem`) | `select` when the option list is long |
+| `molecules/scroll-area.tsx` | Styled custom scrollbars (`ScrollArea`, `ScrollBar`) | `message-scroller` for transcripts |
+| `molecules/segmented-meter.tsx` | Zoned threshold meter (`SegmentedMeter`, `MeterZone`) | `progress` for plain completion; `radial-gauge` for a dial |
+| `molecules/select-primitives.tsx` | Upstream Select with the complete API (`Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`, `SelectScrollUpButton`, `SelectScrollDownButton`) | `select.tsx` in house app forms |
+| `molecules/select.tsx` | Adapted Select plus `SimpleSelect` for string options (`Select`, `SimpleSelect`, `SelectTrigger`, `SelectContent`, `SelectItem`, …) | `select-primitives` for the complete upstream set; `combobox` for search |
+| `molecules/table-states.tsx` | Loading, empty and failed list surfaces (`TableSkeleton`, `TableEmpty`, `PageLoading`, `TableEmptyLabels`) | ad-hoc sentences in a table card; composes `empty-state` |
+| `molecules/table.tsx` | shadcn Table primitives (`Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableCaption`, `TableFooter`) | `@bun-erp/data-table` for sorting, paging and selection |
+| `molecules/tabs.tsx` | Panel-switching tabs (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`) | `toggle-group` for filters that do not swap panels |
+| `molecules/tick-bar.tsx` | Discrete tick scale (`TickBar`) | `progress` for a continuous bar |
+| `molecules/toggle-group.tsx` | Single or multi choice filter group (`ToggleGroup`, `ToggleGroupItem`) | `button-group` for actions |
+| `molecules/tooltip-primitives.tsx` | Radix tooltip (`Tooltip`, `TooltipTrigger`, `TooltipContent`, `TooltipProvider`) | `tooltip.tsx` for the collapsed rail label |
+| `molecules/tooltip.tsx` | CSS-only label for the collapsed sidebar rail (`Tooltip`) | `tooltip-primitives` for general tooltips |
+| `molecules/use-in-view.ts` | One-shot in-view trigger for reveal motion (`useInView`) | data fetching or scroll listeners |
+
+### organisms
+
+| Module | Purpose (main exports) | Use instead of |
+|---|---|---|
+| `organisms/activity-rings.tsx` | Multi-ring goal progress (`ActivityRings`, `ActivityRing`) | `radial-gauge` for a single dial |
+| `organisms/alert-dialog.tsx` | Blocking confirmation dialog (`AlertDialog`, `AlertDialogTrigger`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`, …) | `confirm-delete` for an inline row confirm; `modal` for a short custom message |
+| `organisms/bar-list.tsx` | Ranked horizontal bars (`BarList`, `BarListItem`) | `distribution-bar` for shares; `breakdown` for an animated legend |
+| `organisms/breakdown.tsx` | Animated part-to-whole bar, key and legend (`BreakdownBar`, `BreakdownKey`, `BreakdownLegend`, `useReveal`, `formatShare`, `getTotal`) | `distribution-bar` for the static compact version |
+| `organisms/carousel.tsx` | Embla slides (`Carousel`, `CarouselContent`, `CarouselItem`, `CarouselPrevious`, `CarouselNext`) | `tabs` for panels; `scroll-area` for free scrolling |
+| `organisms/combobox.tsx` | Searchable option picker (`Combobox`, `ComboboxOption`) | `select` for short lists |
+| `organisms/comparison.tsx` | A/B comparison marks: diverging bars, dumbbells, intervals (`DivergingBar`, `Dumbbell`, `IntervalBar`, `compareProportions`, `getDelta`) | `bar-list` for a single ranked series |
+| `organisms/context-menu.tsx` | Right-click actions (`ContextMenu`, `ContextMenuTrigger`, `ContextMenuContent`, `ContextMenuItem`, `ContextMenuCheckboxItem`, `ContextMenuRadioItem`, `ContextMenuSub`, …) | `dropdown-menu` for a visible trigger |
+| `organisms/date-picker.tsx` | Date and range fields (`DatePicker`, `DateRangePicker`, `UncontrolledDatePicker`) | a bare `calendar`; the picker owns the popover |
+| `organisms/dialog.tsx` | Upstream Dialog for forms and details (`Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `CommandDialog`) | `modal` for a short custom message; `alert-dialog` for destructive confirm |
+| `organisms/direction.tsx` | RTL direction provider (`DirectionProvider`, `useDirection`) | per-component `dir` props |
+| `organisms/dot-plot.tsx` | Distribution of points across categories (`DotPlot`) | `tick-bar` for a discrete scale |
+| `organisms/drawer.tsx` | Touch bottom or side drawer via vaul (`Drawer`, `DrawerTrigger`, `DrawerContent`, `DrawerHeader`, `DrawerTitle`, …) | `sheet` for the desktop side panel |
+| `organisms/dropdown-menu-primitives.tsx` | Upstream DropdownMenu: checkbox, radio and submenus (`DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuCheckboxItem`, `DropdownMenuSub`, …) | `dropdown-menu.tsx` for the simple house menu |
+| `organisms/dropdown-menu.tsx` | Minimal house action menu (`Root`, `Trigger`, `Content`, `Item`, `Separator`) | `dropdown-menu-primitives` for the complete upstream API |
+| `organisms/funnel-chart.tsx` | Step-conversion funnel (`FunnelChart`, `FunnelStep`) | `bar-list` for plain ranks |
+| `organisms/menubar.tsx` | Desktop application menu bar (`Menubar`, `MenubarMenu`, `MenubarTrigger`, `MenubarContent`, `MenubarItem`, …) | `navigation-menu` for site navigation |
+| `organisms/message-scroller.tsx` | Transcript scroll host with jump-to-latest (`MessageScroller`, `MessageScrollerProvider`, `MessageScrollerViewport`, `MessageScrollerContent`, `MessageScrollerItem`, `MessageScrollerButton`, `useMessageScroller`) | `scroll-area` for a generic pane |
+| `organisms/modal.tsx` | Small centred modal for a short question (`Modal`) | `dialog` for forms; `alert-dialog` for destructive confirm |
+| `organisms/navigation-menu.tsx` | Header and marketing navigation (`NavigationMenu`, `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`) | `sidebar-block` for in-app navigation |
+| `organisms/notification-bell.tsx` | Bell, unread badge, list and items (`NotificationBell`, `NotificationsHeader`, `NotificationList`, `NotificationItem`, `AppNotification`) | `activity-feed` pieces when you are not building a bell; the app owns data and state |
+| `organisms/questionnaire.tsx` | Multi-step controlled-answer wizard (`Questionnaire`, `QuestionnaireStep`, `QuestionnaireAnswers`, `QuestionnaireActions`, `QuestionnaireItem`, `QuestionnaireError`) | `field` for flat forms |
+| `organisms/radial-gauge.tsx` | Single-value dial (`RadialGauge`) | `activity-rings` for multiple rings; `progress` for a linear bar |
+| `organisms/resizable.tsx` | Resizable split panes (`ResizablePanelGroup`, `ResizablePanel`, `ResizableHandle`) | `sidebar` for app navigation |
+| `organisms/sheet-primitives.tsx` | Upstream Sheet with the complete API (`Sheet`, `SheetTrigger`, `SheetContent`, `SheetHeader`, `SheetTitle`, `SheetDescription`, `SheetFooter`, `SheetClose`) | `sheet.tsx` for the simple app drawer |
+| `organisms/sheet.tsx` | House side drawer (`Sheet`, `side` left or right) | `drawer` for touch bottom sheets; `sheet-primitives` for the full API |
+| `organisms/sidebar.tsx` | Upstream Sidebar set (`Sidebar`, `SidebarProvider`, `SidebarContent`, `SidebarGroup`, `SidebarMenu`, `SidebarMenuButton`, `SidebarTrigger`, `useSidebar`, …) | `sidebar-block` for the ready link composition |
+| `organisms/timeline.tsx` | Dated vertical history with statuses (`Timeline`, `TimelineItem`, `TimelineStatus`) | `activity-feed` for icon rows without dates |
+| `organisms/toast-primitives.tsx` | Imperative module-store toast (`toast`, `Toaster`, `ToastMessage`) | `toast.tsx` for app feedback that needs provider state |
+| `organisms/toast.tsx` | App toast provider and hook (`ToastProvider`, `useToast`) | `alert` for persistent messages; inline alerts need a reviewed `surface` allowlist entry |
+
+### templates
+
+| Module | Purpose (main exports) | Use instead of |
+|---|---|---|
+| `templates/login-block.tsx` | Login form block; submitted fields return through callbacks (`LoginBlock`) | hand-building the auth screen |
+| `templates/page-shell.tsx` | Standard screen header and body (`PageShell`) | ad-hoc heading plus toolbar markup |
+| `templates/sidebar-block.tsx` | Ready sidebar link block (`SidebarBlock`, `SidebarBlockLink`) | composing `sidebar` from scratch |
+| `templates/signup-block.tsx` | Signup form block; submitted fields return through callbacks (`SignupBlock`) | hand-building the auth screen |
+
+### lib and types
+
+| Module | Purpose (main exports) | Use instead of |
+|---|---|---|
+| `lib/cn.ts` | Class merge helper (`cn`) | string concatenation or `clsx` alone |
+| `lib/use-auto-animate.ts` | Reduced-motion-aware list insert/remove motion (`useSoftAutoAnimate`) | ad-hoc CSS transitions on lists |
+| `lib/use-mobile.ts` | `max-width: 767px` media-query hook (`useIsMobile`) | duplicated `matchMedia` effects |
+| `types/list.ts` | Shared collection shapes (`ListMeta`, `Paged`, `EmptyStateConfig`) | redeclaring pagination fields per feature |
+
+## Parallel variants
+
+| Pair | Pick the first when | Pick the `*-primitives` sibling when |
+|---|---|---|
+| `atoms/badge.tsx` / `atoms/badge-primitives.tsx` | app status chip; `tone` neutral or accent is enough | you need upstream variants or `asChild` |
+| `atoms/card.tsx` / `atoms/card-primitives.tsx` | a plain bordered container | the card needs header, title, description, action, content and footer |
+| `atoms/button.tsx` / `atoms/button-primitives.tsx` | app action with the house `primary`/`ghost`/`danger` | upstream variants, sizes or `asChild` |
+| `atoms/input.tsx` / `atoms/input-primitives.tsx` | house app form | an upstream composition such as `input-group` or `field-primitives` |
+| `atoms/textarea.tsx` / `atoms/textarea-primitives.tsx` | house app form | an upstream composition |
+| `molecules/select.tsx` / `molecules/select-primitives.tsx` | app form; `SimpleSelect` covers string options | you need the complete upstream API |
+| `molecules/popover.tsx` / `molecules/popover-primitives.tsx` | inside an open Sheet or Dialog | a general overlay outside other overlays |
+| `molecules/tooltip.tsx` / `molecules/tooltip-primitives.tsx` | collapsed sidebar rail label | a general tooltip |
+| `molecules/field.tsx` / `molecules/field-primitives.tsx` | label, hint and one control | upstream FieldSet, FieldGroup or FieldError layouts |
+| `molecules/empty-state.tsx` / `molecules/empty.tsx` | an app screen (default) | the upstream Empty composition |
+| `organisms/dropdown-menu.tsx` / `organisms/dropdown-menu-primitives.tsx` | a simple action menu | checkbox, radio items or submenus |
+| `organisms/sheet.tsx` / `organisms/sheet-primitives.tsx` | the app side drawer | the complete upstream API |
+| `organisms/toast.tsx` / `organisms/toast-primitives.tsx` | app feedback through `ToastProvider` and `useToast`, which the surface gate expects | an imperative `toast()` call with no provider |
 
 ## Import examples
 
 ```tsx
 import { Button } from "@bun-erp/ui/atoms/button.tsx";
+import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
+import { TableEmpty } from "@bun-erp/ui/molecules/table-states.tsx";
+import { MetricValue } from "@bun-erp/ui/molecules/metric-value.tsx";
 import { useSoftAutoAnimate } from "@bun-erp/ui/lib/use-auto-animate.ts";
-import { Table, TableBody, TableCell, TableRow } from "@bun-erp/ui/molecules/table";
-import { DatePicker } from "@bun-erp/ui/organisms/date-picker";
-import { SidebarBlock } from "@bun-erp/ui/templates/sidebar-block";
 ```
 
-Use `useSoftAutoAnimate` on the parent of a short collection whose children are inserted, removed
-or reordered. It uses the shared 200 ms panel-easing preset and honors `prefers-reduced-motion`. The
-hook also accepts an AutoAnimate keyframe plugin for a component with a deliberate custom motion
-need. Give mapped React children stable, unique keys. Do not animate every page or a table's rows by
-default; add motion only where it helps users track a state change.
+Explicit `.tsx` imports are supported. Existing app-facing modules keep their current API paths;
+where one overlaps an upstream API, import the complete shadcn component from the sibling
+`*-primitives` module. Do not add a package root export that eagerly loads every component.
+
+## Motion
 
 Motion is defined once in `@bun-erp/ui/styles.css` as `--motion-duration-fast|base|panel` and
 `--motion-ease-enter|exit`. Overlays, menus, popovers, selects, tooltips, dialogs and disclosure
-sections animate on open and on close through those tokens, so closing never snaps harder than
-opening. A global `@media (prefers-reduced-motion: reduce)` block disables every one of them along
-with the list hook's AutoAnimate preset, so components do not each re-check the preference.
+sections animate on open and close through those tokens, so closing never snaps harder than opening.
+A global `@media (prefers-reduced-motion: reduce)` block disables every one of them along with the
+list hook's AutoAnimate preset, so components do not each re-check the preference.
 
-Explicit `.tsx` imports are supported too. Existing app-facing modules keep their current API paths;
-where those overlap an upstream API, import the complete shadcn component from the sibling
-`*-primitives` module. Do not add a package root export that eagerly loads every component.
+Use `useSoftAutoAnimate` on the parent of a short collection whose children are inserted, removed or
+reordered; give mapped children stable unique keys. Do not animate every page or a table's rows by
+default; add motion only where it helps users track a state change.
 
-## Official shadcn catalog
+## Vendored catalog and provenance
 
-The 57 vendored registry components are pinned to commit
-`295a1f114a138f23b5dfee0e0c6812394dfeb90c` from the official New York v4 registry. Their source URLs,
+The 57 vendored shadcn registry components are pinned to commit
+`295a1f114a138f23b5dfee0e0c6812394dfeb90c` from the official New York v4 registry. Source URLs,
 registry item references, MIT license and package import adaptations are recorded in
 `component-sources.json`; the upstream MIT notice is in `LICENSE.upstream`.
 
@@ -59,25 +208,23 @@ Input OTP, Item, Kbd, Label, Marker, Menubar, Message, Message Scroller, Native 
 Menu, Pagination, Popover, Progress, Radio Group, Resizable, Scroll Area, Select, Separator, Sheet,
 Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toggle, Toggle Group and Tooltip.
 
-Combobox continues to use the repository’s Radix and cmdk composition because the current official
-registry source uses Base UI. Date Picker, Questionnaire, Toast and Typography are implemented from
-the official documentation patterns because those docs do not publish registry JSON items. Data
-Table patterns have separate package ownership; chart patterns live in the opt-in charts package
-(`bun erp packages:install charts`). Neither is duplicated here.
+Combobox keeps the repository's Radix and cmdk composition because the official registry source uses
+Base UI. Date Picker, Questionnaire, Toast and Typography follow the official documentation patterns
+because those docs publish no registry JSON item. The dashboardcn and dashboardblocks patterns
+(timeline, bar list, funnel, dot plot, radial gauge, activity rings, comparison, breakdown, tick bar,
+distribution bar, segmented meter, metric value, delta badge, corner frame) are recorded in
+`dashboard-sources.json`.
 
-## Blocks and custom patterns
+## Package boundaries
 
 `LoginBlock` and `SignupBlock` return submitted fields through callbacks; the app owns identity,
 validation policy and submission. `SidebarBlock` composes the shadcn Sidebar and leaves links,
-permissions and routing to the app. Date Picker composes Calendar and Popover. Questionnaire is a
-multi-step controlled-answer composition. Custom source references and rationale are recorded in
-`component-sources.json`.
+permissions and routing to the app. `DatePicker` composes Calendar and Popover. `Questionnaire` is a
+multi-step controlled-answer composition.
 
-## Migration notes
-
-The legacy `organisms/data-table.tsx` and `organisms/resource-table.tsx` modules now live in the
-dedicated table package as `/server-table` and `/resource-table`. The sparkline and `MetricList`
-moved to the opt-in, runtime-isolated charts package (`bun erp packages:install charts`) as
-`/sparkline` and `/metric-list`. `@bun-erp/ui` no longer depends on TanStack Table, a chart renderer,
-or either optional package. `molecules/table` is the shadcn Table primitive and stays in this
-package.
+The former `data-table` and `resource-table` organisms now live in the dedicated data-table package
+as `/server-table` and `/resource-table`. Sparkline and `MetricList` moved to the opt-in,
+runtime-isolated charts package (`bun erp packages:install charts`). `@bun-erp/ui` no longer depends
+on TanStack Table, a chart renderer, or either optional package; `molecules/table.tsx` is the shadcn
+Table primitive and stays here. The inline dashboard patterns above are plain CSS/SVG and need no
+chart renderer.

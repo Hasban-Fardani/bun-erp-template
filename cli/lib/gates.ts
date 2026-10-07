@@ -59,6 +59,12 @@ export const GATE_CATALOG = [
     summary: "Local Markdown links resolve and every package guide names its package.",
   },
   {
+    name: "ui-guide",
+    command: "check:ui-guide",
+    file: "cli/gates/ui-guide.ts",
+    summary: "Every packages/ui module appears in its guide, and no guide entry points at a missing file.",
+  },
+  {
     name: "rpc",
     command: "check:rpc",
     file: "cli/gates/rpc-guard.ts",
@@ -210,6 +216,7 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
     );
   },
   docs: async (root) => (await import("../gates/docs-guard.ts")).checkDocs(root),
+  "ui-guide": async (root) => (await import("../gates/ui-guide.ts")).checkUiGuide(root),
   rpc: async (root) => (await import("../gates/rpc-guard.ts")).checkRpc(root),
   ci: async (root) => (await import("../gates/ci-guard.ts")).checkCi(root),
   scope: async (root) => (await checkScope(root)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`),
