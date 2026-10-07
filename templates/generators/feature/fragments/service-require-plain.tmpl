@@ -1,0 +1,6 @@
+/** Loads the row or 404s before any write. */
+async function require{{pascal}}(db: Database, id: string): Promise<{{pascal}}> {
+  const before = await find{{pascal}}(db, id);
+  if (!before) throw ApiError.notFound("{{pascal}} not found");
+  return before;
+}

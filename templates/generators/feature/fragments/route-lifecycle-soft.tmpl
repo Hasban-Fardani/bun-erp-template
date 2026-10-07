@@ -1,0 +1,31 @@
+
+    .post(
+      "/:id/restore",
+      authorize(ctx, ACTION_PERMISSION.delete),
+      doc({
+        tag: "{{name}}",
+        permission: ACTION_PERMISSION.delete,
+        summary: "Restore {{name}}",
+        data: {{camel}}Ref,
+      }),
+      validate("param", idParam),
+      async (c) => {
+        const actor = c.get("actor");
+        return ok(c, await restore{{pascal}}(ctx.db, c.req.param("id"), actor));
+      },
+    )
+    .delete(
+      "/:id/force",
+      authorize(ctx, ACTION_PERMISSION.delete),
+      doc({
+        tag: "{{name}}",
+        permission: ACTION_PERMISSION.delete,
+        summary: "Force delete {{name}}",
+        data: {{camel}}Ref,
+      }),
+      validate("param", idParam),
+      async (c) => {
+        const actor = c.get("actor");
+        return ok(c, await forceDelete{{pascal}}(ctx.db, c.req.param("id"), actor));
+      },
+    )

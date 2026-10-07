@@ -61,6 +61,7 @@ export const AUDIT_FIELDS = {
   user: ["id", "name", "email", "emailVerified", "createdAt"],
   role: ["id", "key", "name", "isSystem"],
   userRole: ["userId", "roleId"],
+  // @erp:audit
 } as const satisfies Record<string, readonly string[]>;
 
 export type AuditEntity = keyof typeof AUDIT_FIELDS;

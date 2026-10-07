@@ -17,7 +17,17 @@ import type { WiringEdit } from "./wiring.ts";
  */
 
 type ApplyResult = { source: string; status: "added" | "present" | "skipped"; reason?: string };
-type Editor = { path: string; markers: readonly string[]; apply: (source: string) => ApplyResult };
+type Editor = {
+  path: string;
+  /** Explicit `// @erp:` marker the catalog file carries at the insertion point. */
+  anchor: string;
+  /** Every generated line the completed edit leaves behind. */
+  markers: readonly string[];
+  apply: (source: string) => ApplyResult;
+};
+
+const MAIL_MARKER = "// @erp:mail";
+const ORGANIZATIONS_MARKER = "// @erp:organizations";
 
 const MAIL_PACKAGE = "@bun-erp/mail/server";
 
@@ -281,6 +291,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   context: [
     {
       path: "apps/server/bootstrap/context.ts",
+      anchor: MAIL_MARKER,
       markers: [`import type { Mailer } from "${MAIL_PACKAGE}";`, "  mail: Mailer;"],
       apply: wireContext,
     },
@@ -288,6 +299,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   bootstrap: [
     {
       path: "apps/server/bootstrap/bootstrap.ts",
+      anchor: MAIL_MARKER,
       markers: [
         'import { createAppMailer } from "../features/mail/wiring.ts";',
         "  const mail = createAppMailer(env, logger, db);",
@@ -299,6 +311,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   cloudflare: [
     {
       path: "apps/server/bootstrap/cloudflare-context.ts",
+      anchor: MAIL_MARKER,
       markers: [
         'import { createAppMailer } from "../features/mail/wiring.ts";',
         "  const mail = createAppMailer(env, logger, db);",
@@ -310,6 +323,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   jobs: [
     {
       path: "apps/server/features/jobs.ts",
+      anchor: MAIL_MARKER,
       markers: [
         'import { registerMailJobs } from "./mail/wiring.ts";',
         'ctx: Pick<AppContext, "env" | "db" | "logger" | "mail">',
@@ -321,6 +335,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   notifications: [
     {
       path: "apps/server/features/notifications/types.ts",
+      anchor: MAIL_MARKER,
       markers: [
         'export const NOTIFICATION_CHANNELS = ["database", "mail"] as const;',
         'Pick<AppContext, "db" | "mail" | "logger" | "env">',
@@ -329,6 +344,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
     },
     {
       path: "apps/server/features/notifications/channels/registry.ts",
+      anchor: MAIL_MARKER,
       markers: ['import { mailChannel } from "../../mail/channel.ts";', '.register("mail", mailChannel);'],
       apply: wireNotificationRegistry,
     },
@@ -336,6 +352,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   "auth-plugin": [
     {
       path: "apps/server/features/identity/auth.ts",
+      anchor: ORGANIZATIONS_MARKER,
       markers: [
         'import { createOrganizationPlugin } from "../organizations/plugin.ts";',
         "plugins: [createOrganizationPlugin()],",
@@ -346,6 +363,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   "auth-schema": [
     {
       path: "apps/server/features/identity/auth.ts",
+      anchor: ORGANIZATIONS_MARKER,
       markers: [
         'import { invitations, members, organizations } from "../organizations/schema.ts";',
         "organization: organizations,",
@@ -358,6 +376,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   "session-field": [
     {
       path: "apps/server/features/identity/schema.ts",
+      anchor: ORGANIZATIONS_MARKER,
       markers: [
         'import { organizations } from "../organizations/schema.ts";',
         'activeOrganizationId: uuid("active_organization_id")',
@@ -369,6 +388,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
   "schema-export": [
     {
       path: "apps/server/database/schema.ts",
+      anchor: ORGANIZATIONS_MARKER,
       markers: [
         'export { invitationRelations, invitations, memberRelations, members, organizationRelations, organizations } from "../features/organizations/schema.ts";',
       ],
@@ -379,8 +399,11 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
 
 /**
  * Applies the manifest's wiring operations; nothing is written here. Operations are composed per
- * file so two operations on one file (auth-plugin + auth-schema) do not overwrite each other; a
- * missing anchor marks that path `skipped` and the installer aborts before writing anything.
+ * file so two operations on one file (auth-plugin + auth-schema) do not overwrite each other.
+ *
+ * Each editor declares an explicit `// @erp:` anchor plus the generated lines it leaves behind:
+ * all lines without the anchor, some lines only, or the anchor with some lines all report as
+ * `partial`, and the installer aborts before writing anything. A missing anchor reports `skipped`.
  */
 export async function planInfraWiring(root: string, manifest: InfraFeatureManifest): Promise<WiringEdit[]> {
   const order: string[] = [];
@@ -393,13 +416,24 @@ export async function planInfraWiring(root: string, manifest: InfraFeatureManife
         order.push(editor.path);
         state.set(editor.path, entry);
       }
-      if (entry.status === "skipped") continue;
+      if (entry.status === "skipped" || entry.status === "partial") continue;
 
+      const anchorPresent = entry.source.includes(editor.anchor);
       const present = editor.markers.filter((marker) => entry.source.includes(marker)).length;
-      if (present === editor.markers.length) continue;
+      if (present === editor.markers.length) {
+        if (anchorPresent) continue;
+        entry.status = "partial";
+        entry.reason = `the file is wired without its ${editor.anchor} marker; restore the marker or revert the wiring`;
+        continue;
+      }
       if (present > 0) {
-        entry.status = "skipped";
+        entry.status = "partial";
         entry.reason = `the file is half-wired: ${present} of ${editor.markers.length} expected edits are present; complete or revert them`;
+        continue;
+      }
+      if (!anchorPresent) {
+        entry.status = "skipped";
+        entry.reason = `the ${editor.anchor} marker is missing`;
         continue;
       }
 

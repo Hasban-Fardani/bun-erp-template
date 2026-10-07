@@ -1,0 +1,4 @@
+export async function find{{pascal}}(db: Database, id: string): Promise<{{pascal}} | undefined> {
+  const rows = await db.select().from({{camel}}).where(eq({{camel}}.id, id)).limit(1);
+  return rows[0];
+}

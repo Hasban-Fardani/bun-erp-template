@@ -1,0 +1,32 @@
+
+
+export async function restore{{pascal}}(
+  db: Database,
+  id: string,
+  actor: Actor,
+): Promise<{{pascal}}> {
+  return db.transaction(async (tx) => {
+    const before = await require{{pascal}}(tx as unknown as Database, id, { includeDeleted: true });
+
+    const after = await restoreRow(tx as unknown as Database, {{camel}}, id);
+    if (!after) throw ApiError.notFound("{{pascal}} not found");
+
+    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.restored", id, before, after);
+    return after;
+  });
+}
+
+export async function forceDelete{{pascal}}(
+  db: Database,
+  id: string,
+  actor: Actor,
+): Promise<{ id: string }> {
+  return db.transaction(async (tx) => {
+    const before = await require{{pascal}}(tx as unknown as Database, id, { includeDeleted: true });
+
+    await forceDeleteRow(tx as unknown as Database, {{camel}}, id);
+
+    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.force_deleted", id, before, undefined);
+    return { id };
+  });
+}

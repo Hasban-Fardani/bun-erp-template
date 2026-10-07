@@ -1,5 +1,6 @@
 import { DriverRegistry } from "@bun-erp/utils";
 import type { NotificationChannel, NotificationChannelContext } from "../types.ts";
+// @erp:mail
 import { databaseChannel } from "./database.ts";
 
 /**

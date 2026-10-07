@@ -79,12 +79,23 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
     "apps/server/features/sales-orders/service.ts",
     "apps/server/features/sales-orders/route.ts",
     "apps/server/features/sales-orders/feature.ts",
+    "apps/server/features/sales-orders/index.ts",
     "apps/server/tests/features/sales-orders/sales-orders.test.ts",
   ]);
 
   const policy = contents.get("apps/server/features/sales-orders/policy.ts") ?? "";
   expect(policy).toContain('list: "sales-orders.read"');
   expect(policy).toContain("PermissionKey");
+  // Cross-feature imports go through the public surface, never a sibling's internal file.
+  expect(policy).toContain('from "../rbac/index.ts"');
+  expect(policy).not.toContain("../rbac/statements.ts");
+
+  const index = contents.get("apps/server/features/sales-orders/index.ts") ?? "";
+  expect(index).toContain('export { salesOrdersFeature } from "./feature.ts";');
+  expect(index).toContain("  createSalesOrders,");
+  expect(index).toContain("  deleteSalesOrders,");
+  expect(index).toContain('export type { SalesOrders } from "./service.ts";');
+  expect(index).not.toContain("restoreSalesOrders");
 
   const route = contents.get("apps/server/features/sales-orders/route.ts") ?? "";
   expect(route).toContain("export function salesOrdersRoutes(ctx: AppContext)");
@@ -100,6 +111,8 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
   const service = contents.get("apps/server/features/sales-orders/service.ts") ?? "";
   expect(service).toContain("export async function listSalesOrders(");
   expect(service).toContain('"sales-orders.created"');
+  expect(service).toContain('from "../audit/index.ts"');
+  expect(service).not.toContain("../audit/service.ts");
   expect(service).toContain("async function requireSalesOrders(");
   expect(service).toContain("bumpVersion(salesOrders)");
   expect(service).toContain("versionGuard(salesOrders, id, expectedVersion)");
@@ -144,6 +157,10 @@ test("make:feature opts into soft delete and out of optimistic locking per flag"
   expect(softService).toContain("export async function restoreSalesOrders(");
   expect(softService).toContain("export async function forceDeleteSalesOrders(");
 
+  const softIndex = softContents.get("apps/server/features/sales-orders/index.ts") ?? "";
+  expect(softIndex).toContain("  restoreSalesOrders,");
+  expect(softIndex).toContain("  forceDeleteSalesOrders,");
+
   const softValidation = softContents.get("apps/server/features/sales-orders/validation.ts") ?? "";
   expect(softValidation).toContain("includeDeleted: z.stringbool()");
 
@@ -184,7 +201,7 @@ test("make:feature can allocate a numbering sequence on create", () => {
 });
 
 test("make:feature wires permissions and routes without touching duplicates", () => {
-  const statements = `export const statements = {\n  user: ["create"],\n  audit: ["read"],\n} as const;`;
+  const statements = `export const statements = {\n  user: ["create"],\n  // @erp:permissions\n  audit: ["read"],\n} as const;`;
   const wired = addStatementResource(statements, "sales-orders");
   expect(wired.status).toBe("added");
   expect(wired.source).toContain('"sales-orders": ["create", "read", "update", "delete"]');
@@ -194,10 +211,17 @@ test("make:feature wires permissions and routes without touching duplicates", ()
     status: "present",
   });
   expect(addStatementResource("export const statements = {};", "sales-orders").status).toBe("skipped");
+  // A statement without its marker is half-wired, not present: the installer must not guess.
+  expect(
+    addStatementResource('export const statements = {\n  "sales-orders": ["read"],\n} as const;', "sales-orders"),
+  ).toMatchObject({
+    status: "partial",
+  });
 
   const auditFields = [
     "export const AUDIT_FIELDS = {",
     '  role: ["id", "key", "name", "isSystem"],',
+    "  // @erp:audit",
     "} as const satisfies Record<string, readonly string[]>;",
   ].join("\n");
   const audited = addAuditEntity(auditFields, "sales-orders");
@@ -205,6 +229,9 @@ test("make:feature wires permissions and routes without touching duplicates", ()
   expect(audited.source).toContain('"sales-orders": ["id", "createdAt", "updatedAt"]');
   expect(addAuditEntity(audited.source, "sales-orders").status).toBe("present");
   expect(addAuditEntity("export const AUDIT_FIELDS = {};", "sales-orders").status).toBe("skipped");
+  expect(
+    addAuditEntity('export const AUDIT_FIELDS = {\n  "sales-orders": ["id"],\n} as const;', "sales-orders").status,
+  ).toBe("partial");
 
   const routes = [
     'import { auditFeature } from "../features/audit/feature.ts";',
@@ -212,6 +239,7 @@ test("make:feature wires permissions and routes without touching duplicates", ()
     "",
     "const FEATURES = [",
     "  rbacFeature,",
+    "  // @erp:routes",
     "] as const satisfies readonly FeatureDefinition[];",
     "",
     "export function registerRoutes() {",
@@ -221,12 +249,18 @@ test("make:feature wires permissions and routes without touching duplicates", ()
   const mounted = addRouteMount(routes, { name: "sales-orders", camel: "salesOrders" });
   expect(mounted.status).toBe("added");
   expect(mounted.source).toContain('import { salesOrdersFeature } from "../features/sales-orders/feature.ts";');
-  expect(mounted.source).toContain("  salesOrdersFeature,\n] as const satisfies readonly FeatureDefinition[];");
+  expect(mounted.source).toContain("  // @erp:routes\n  salesOrdersFeature,");
   expect(addRouteMount(mounted.source, { name: "sales-orders", camel: "salesOrders" })).toEqual({
     source: mounted.source,
     status: "present",
   });
   expect(addRouteMount("export const x = 1;", { name: "sales-orders", camel: "salesOrders" }).status).toBe("skipped");
+  // The import landed but the FEATURES entry did not: partial, never present.
+  const importOnly = mounted.source.replace("  salesOrdersFeature,\n", "");
+  expect(addRouteMount(importOnly, { name: "sales-orders", camel: "salesOrders" }).status).toBe("partial");
+  // Both generated lines without the marker: partial, so a lost marker cannot read as wired.
+  const markerless = mounted.source.replace("  // @erp:routes\n", "");
+  expect(addRouteMount(markerless, { name: "sales-orders", camel: "salesOrders" }).status).toBe("partial");
 });
 
 test("make:feature emits the web feature files that mirror the app patterns", () => {
@@ -239,7 +273,16 @@ test("make:feature emits the web feature files that mirror the app patterns", ()
     "apps/web/src/features/sales-orders/hooks/index.ts",
     "apps/web/src/features/sales-orders/screens/sales-orders.tsx",
     "apps/web/src/pages/_authenticated/sales-orders.tsx",
+    "apps/web/design/sales-orders.json",
   ]);
+
+  // The design gate blocks a screen without a spec; the generated one declares an inherited direction.
+  const design = JSON.parse(contents.get("apps/web/design/sales-orders.json") ?? "{}") as {
+    feature_id?: string;
+    status?: string;
+  };
+  expect(design.feature_id).toBe("sales-orders");
+  expect(design.status).toBe("INHERITED");
 
   const screen = contents.get("apps/web/src/features/sales-orders/screens/sales-orders.tsx") ?? "";
   expect(screen).toContain("export function SalesOrdersScreen()");
@@ -263,7 +306,10 @@ test("web wiring adds the sidebar entry and both locale catalogs once", () => {
     "",
     "export const navGroups = [",
     "  {",
-    '    items: [{ titleKey: "navigation.users", url: "/users", icon: Users, permission: "user.read" }],',
+    "    items: [",
+    "      // @erp:nav",
+    '      { titleKey: "navigation.users", url: "/users", icon: Users, permission: "user.read" },',
+    "    ],",
     "  },",
     "];",
   ].join("\n");
@@ -274,13 +320,23 @@ test("web wiring adds the sidebar entry and both locale catalogs once", () => {
   expect(wiredNav.source).toContain('permission: "sales-orders.read"');
   expect(addNavItem(wiredNav.source, { name: "sales-orders" }).status).toBe("present");
   expect(addNavItem("export const x = 1;", { name: "sales-orders" }).status).toBe("skipped");
+  // A nav row without the marker is half-wired, not present.
+  expect(addNavItem(nav.replace("      // @erp:nav\n", ""), { name: "sales-orders" }).status).toBe("skipped");
+  expect(
+    addNavItem(
+      'import { Bell } from "lucide-react";\nexport const navGroups = [\n  {\n    items: [\n      { titleKey: "navigation.sales-orders" },\n    ],\n  },\n];',
+      { name: "sales-orders" },
+    ).status,
+  ).toBe("partial");
 
   // Regression: the real navigation import starts with another icon (Bell), not `type LucideIcon`.
   const bellNav = [
     'import { Bell, type LucideIcon, Users } from "lucide-react";',
     "export const navGroups = [",
     "  {",
-    "    items: [],",
+    "    items: [",
+    "      // @erp:nav",
+    "    ],",
     "  },",
     "];",
   ].join("\n");

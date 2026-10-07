@@ -1,0 +1,12 @@
+import { sql } from "drizzle-orm";
+import { {{pgImports}} } from "drizzle-orm/pg-core";{{databaseImports}}
+
+/**
+ * {{camel}} table. Add the feature's domain columns from the product spec, then align the
+ * generated migration before running db:migrate.
+ */
+export const {{camel}} = pgTable("{{table}}", {
+  id: uuid("id").primaryKey().default(sql`uuidv7()`),{{numberColumn}}{{deletedAtColumn}}{{versionColumn}}
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

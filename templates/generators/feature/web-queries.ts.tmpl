@@ -1,0 +1,16 @@
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import * as z from "zod";
+import { listParams } from "../../../lib/list-params.ts";
+import { call, rpc } from "../../../lib/rpc.ts";
+
+export const {{camel}}Keys = {
+  list: (query: string) => ["{{name}}", query] as const,
+};
+
+export const {{camel}}ListQuery = (query: string) =>
+  queryOptions({
+    queryKey: {{camel}}Keys.list(query),
+    queryFn: () =>
+      call(rpc{{access}}.$get({ query: listParams(query, z.enum(["createdAt"]).default("createdAt")) })),
+    placeholderData: keepPreviousData,
+  });

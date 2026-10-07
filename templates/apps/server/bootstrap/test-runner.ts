@@ -14,11 +14,16 @@ const url = new URL(target);
 url.pathname = `/${name}`;
 let code = 1;
 try {
-  const child = Bun.spawn(["bun", "test", "--parallel=1", "--timeout=15000", "apps/server"], {
-    env: { ...process.env, TEST_DATABASE_URL: url.toString() },
-    stdout: "inherit",
-    stderr: "inherit",
-  });
+  // `bun erp test --filter <feature>` passes the feature's test path; no path means the whole suite.
+  const roots = process.argv.slice(2);
+  const child = Bun.spawn(
+    ["bun", "test", "--parallel=1", "--timeout=15000", ...(roots.length > 0 ? roots : ["apps/server"])],
+    {
+      env: { ...process.env, TEST_DATABASE_URL: url.toString() },
+      stdout: "inherit",
+      stderr: "inherit",
+    },
+  );
   code = await child.exited;
 } finally {
   await admin.unsafe(`drop database "${name}" with (force)`);

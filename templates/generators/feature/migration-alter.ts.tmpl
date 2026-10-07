@@ -1,0 +1,12 @@
+import type { Database } from "../index.ts";
+import { runSqlMigration } from "../sql-migration.ts";
+
+/** Alters the {{table}} table. Adjust the column type, nullability, and default before applying. */
+const statements = `
+alter table {{table}}
+  add column {{column}} text not null default '';
+`;
+
+export async function up(db: Database): Promise<void> {
+  await runSqlMigration(db, statements);
+}

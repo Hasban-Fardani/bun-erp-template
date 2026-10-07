@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { requireApps } from "../lib/apps.ts";
-import { planMakeFeature, writeMakeFeature } from "../lib/make-feature.ts";
+import { ensureFeatureWebDependencies, planMakeFeature, writeMakeFeature } from "../lib/make-feature.ts";
 import { parseCommandOptions } from "../lib/options.ts";
 import { resolveRequired } from "../lib/prompt.ts";
 import { MIGRATIONS_DIR, repoRoot, SEEDERS_DIR } from "../lib/repo.ts";
@@ -54,10 +54,14 @@ export const commands = [
       softDelete,
       version,
     });
+    // The generated screen lists rows through the opt-in data-table package and the shared table
+    // helpers; install them before the first feature write so a failed install writes nothing.
+    const webDependencies = await ensureFeatureWebDependencies(repoRoot);
+    if (webDependencies.changed) await Bun.$`bun install`.quiet();
     const touched = await writeMakeFeature(repoRoot, plan);
 
     // Wiring edits happen after the scaffold is written, so format every touched file together or lint fails.
-    await formatScaffold(touched);
+    await formatScaffold([...touched, ...webDependencies.written]);
 
     // The typed route tree must list the new page or createFileRoute fails the types gate.
     await regenerateWebRouteTree();
@@ -68,6 +72,9 @@ export const commands = [
     process.stdout.write(`Created migration: ${plan.migration.path}\n`);
     process.stdout.write(`Created web feature: apps/web/src/features/${plan.scaffold.name}\n`);
     for (const file of plan.web.files) process.stdout.write(`  ${file.path}\n`);
+    if (webDependencies.changed || webDependencies.written.length > 0) {
+      process.stdout.write("Installed the data-table package and shared table helpers for the screen.\n");
+    }
     if (statusOf(WIRING_PATHS.statements) === "added") {
       process.stdout.write(`Registered permissions: ${plan.scaffold.resource}.create, read, update, delete\n`);
     } else {
@@ -94,7 +101,9 @@ export const commands = [
       process.stdout.write(`i18n keys already present: ${plan.scaffold.name}.*\n`);
     }
     process.stdout.write("Regenerated apps/web/src/routeTree.gen.ts\n");
-    process.stdout.write("Next: add the domain fields, then run bun erp db:migrate && bun erp db:seed.\n");
+    process.stdout.write("Next: add the domain fields, then run:\n");
+    process.stdout.write("  bun erp db:migrate\n");
+    process.stdout.write(`  bun erp test --filter ${plan.scaffold.name}\n`);
   }),
   defineCommand("make:migration", async (args) => {
     await requireApps(["server"]);

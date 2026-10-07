@@ -8,9 +8,12 @@ description: Use when adding or changing a server feature under apps/server/feat
 Read docs/architecture.md and docs/api-contract.md.
 Install the reference module with `bun erp features:install departments` (catalog:
 templates/features) or scaffold a new one with `bun erp make:feature <name>`; preserve the same
-boundaries. `make:feature` emits optimistic locking by default (`--no-version` opts out) and soft
-delete only with `--soft-delete`: soft delete is for master data that history references, never for
-append-only or high-volume tables (logs, events, jobs, notifications, sessions, join tables).
+boundaries. `make:feature` plans every file and wiring edit before it writes: a missing `// @erp:`
+marker in a core file aborts the command with zero files written, so restore the marker instead of
+wiring by hand. Generated output lives in `templates/generators/feature/*.tmpl` — edit the template,
+never a generated copy. `make:feature` emits optimistic locking by default (`--no-version` opts out)
+and soft delete only with `--soft-delete`: soft delete is for master data that history references,
+never for append-only or high-volume tables (logs, events, jobs, notifications, sessions, join tables).
 
 1. Define raw Zod input schemas in validation.ts and compile once at feature scope.
 2. Define Drizzle tables in schema.ts and add a forward-only numbered TypeScript migration.
@@ -24,7 +27,8 @@ append-only or high-volume tables (logs, events, jobs, notifications, sessions, 
 7. Register feature-owned jobs through jobs.ts and apps/server/features/jobs.ts. Enqueue in the same
    transaction as the corresponding feature write.
 8. Add route, service and migration tests. Keep feature tests under apps/server/tests/features/<feature>.
-9. Run bun erp check and bun erp test; report the actual results.
+9. Run `bun erp db:migrate`, then `bun erp test --filter <feature>`, then bun erp check; report the
+   actual results.
 
 The actor comes from the session, never from input. The default server is tenant-free; organizations
 are the opt-in `organizations` feature. Use rowsOf() for driver-neutral raw query results.

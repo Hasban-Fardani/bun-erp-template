@@ -1,0 +1,65 @@
+import { useI18n } from "@bun-erp/i18n/react";
+import { Card } from "@bun-erp/ui/atoms/card.tsx";
+import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
+import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
+import type { Column } from "@bun-erp/data-table/server-table";
+import { ResourceTable } from "@bun-erp/data-table/resource-table";
+import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
+import { useResourceTableLabels } from "../../../lib/resource-table-labels.ts";
+import { useTableState } from "../../../lib/use-table-state.ts";
+import { useSession } from "../../identity/hooks/index.ts";
+import { use{{pascal}}List } from "../hooks/index.ts";
+import type { {{pascal}} } from "../types/index.ts";
+
+// slop-ok: generated list screens deliberately share the standard resource-table shape
+export function {{pascal}}Screen() {
+  const { t, formatRelativeTime } = useI18n();
+  const labels = useResourceTableLabels();
+  const session = useSession();
+  const table = useTableState({ defaultSort: "createdAt", defaultDir: "desc" });
+  const rows = use{{pascal}}List(table.queryString);
+
+  if (session.isPending) return <PageLoading label={t("common.loading")} />;
+  if (!session.data?.authenticated) return null;
+
+  const columns: Column<{{pascal}}>[] = [
+    {
+      key: "id",
+      header: t("{{name}}.column.id"),
+      cell: (row) => <span className="font-mono text-[12.5px]">{row.id.slice(0, 8)}</span>,
+    },
+    {
+      key: "createdAt",
+      header: t("{{name}}.column.created"),
+      sortable: true,
+      align: "right",
+      cell: (row) => <time className="text-[12px] text-ink-muted">{formatRelativeTime(row.createdAt)}</time>,
+    },
+  ];
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+      <PageShell title={t("{{name}}.title")}>
+        <Card>
+          {session.data.permissions.includes("{{name}}.read") ? (
+            <ResourceTable
+              caption={t("{{name}}.caption")}
+              columns={columns}
+              rowKey={(row) => row.id}
+              result={rows.data}
+              state={table}
+              pending={rows.isFetching}
+              error={rows.isError ? (rows.error as Error).message : undefined}
+              onRetry={() => void rows.refetch()}
+              searchPlaceholder={t("{{name}}.search")}
+              empty={{ filtered: false, message: t("{{name}}.empty"), noMatchMessage: t("{{name}}.noMatch") }}
+              labels={labels}
+            />
+          ) : (
+            <EmptyState message={t("{{name}}.permissionDenied")} />
+          )}
+        </Card>
+      </PageShell>
+    </div>
+  );
+}

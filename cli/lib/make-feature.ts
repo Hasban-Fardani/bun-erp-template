@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { planFeatureWiring } from "./feature-wiring.ts";
 import { fileIndex } from "./file-index.ts";
+import { copyCatalogPackage, ensureWorkspaceDependency } from "./package-catalog.ts";
 import { writeScaffold } from "./scaffold.ts";
 import {
   type FeatureScaffold,
@@ -83,4 +84,39 @@ export async function writeMakeFeature(root: string, plan: MakeFeaturePlan): Pro
     touched.push(edit.path);
   }
   return touched;
+}
+
+const WEB_MANIFEST = "apps/web/package.json";
+const SHARED_WEB_HELPERS = ["use-table-state.ts", "resource-table-labels.ts"] as const;
+
+export type FeatureWebDependencies = {
+  /** True when a catalog package or workspace dependency was added; the caller runs `bun install`. */
+  changed: boolean;
+  /** Repo-relative paths of copied shared helpers, so the caller can format them. */
+  written: string[];
+};
+
+/**
+ * The generated web screen lists rows through the opt-in data-table package and the shared table
+ * helpers. Install the catalog package, declare the app dependency, and copy the helpers before any
+ * feature file is written, mirroring `features:install`; a second feature finds them already there.
+ */
+export async function ensureFeatureWebDependencies(root: string): Promise<FeatureWebDependencies> {
+  const written: string[] = [];
+  let changed = false;
+  if (!(await Bun.file(resolve(root, "packages/data-table/package.json")).exists())) {
+    await copyCatalogPackage(root, "data-table");
+    changed = true;
+  }
+  if (await ensureWorkspaceDependency(root, WEB_MANIFEST, "@bun-erp/data-table")) changed = true;
+  for (const helper of SHARED_WEB_HELPERS) {
+    const destination = `apps/web/src/lib/${helper}`;
+    if (await Bun.file(resolve(root, destination)).exists()) continue;
+    await writeScaffold(
+      resolve(root, destination),
+      await Bun.file(resolve(root, "templates/features/_shared/web", helper)).text(),
+    );
+    written.push(destination);
+  }
+  return { changed, written };
 }

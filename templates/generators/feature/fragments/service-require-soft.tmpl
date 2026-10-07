@@ -1,0 +1,10 @@
+/** Loads the row (optionally including deleted) or 404s before any write. */
+async function require{{pascal}}(
+  db: Database,
+  id: string,
+  options: { includeDeleted?: boolean } = {},
+): Promise<{{pascal}}> {
+  const before = await find{{pascal}}(db, id, options);
+  if (!before) throw ApiError.notFound("{{pascal}} not found");
+  return before;
+}

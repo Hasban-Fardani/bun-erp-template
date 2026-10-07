@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import { isAppInstalled } from "../lib/apps.ts";
+import { parseCommandOptions } from "../lib/options.ts";
 import { repoRoot, run } from "../lib/repo.ts";
+import { toKebabName } from "../lib/scaffolding.ts";
 import { defineCommand } from "../registry.ts";
 
 /**
@@ -20,7 +22,21 @@ const SHARED_PACKAGE_TESTS: ReadonlyArray<{ dir: string; label: string }> = [
 ];
 
 export const commands = [
-  defineCommand("test", async () => {
+  defineCommand("test", async (args) => {
+    const parsed = parseCommandOptions(args, { values: ["filter"] });
+    const rawFilter = parsed.values.get("filter");
+    const filter = rawFilter === undefined ? undefined : toKebabName(rawFilter, "Feature");
+    // A filtered run targets one generated feature's server test; the other suites cannot match it.
+    if (filter) {
+      if (!(await isAppInstalled("server"))) {
+        throw new Error("The server app is not installed; run `bun erp init` first.");
+      }
+      const path = `apps/server/tests/features/${filter}`;
+      process.stdout.write(`Running server feature tests only: ${path}\n`);
+      await run(["bun", "apps/server/bootstrap/test-runner.ts", path], `bun test ${filter}`);
+      return;
+    }
+
     // `apps/` ships empty: a missing app is a clean skip with the init pointer, never a failed run.
     const appSuites: ReadonlyArray<{ app: string; argv: readonly string[]; label: string }> = [
       { app: "server", argv: ["bun", "apps/server/bootstrap/test-runner.ts"], label: "bun test server" },

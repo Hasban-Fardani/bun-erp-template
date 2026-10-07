@@ -1,0 +1,15 @@
+import type { Database } from "../index.ts";
+import { runSqlMigration } from "../sql-migration.ts";
+
+/** Creates the {{table}} table. Add the feature's domain columns and indexes before applying. */
+const statements = `
+create table if not exists {{table}} (
+  id uuid primary key default uuidv7(),{{numberColumn}}{{deletedAtColumn}}{{versionColumn}}
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+`;
+
+export async function up(db: Database): Promise<void> {
+  await runSqlMigration(db, statements);
+}

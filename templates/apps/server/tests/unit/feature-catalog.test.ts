@@ -98,7 +98,9 @@ test("wiring helpers honor the manifest instead of regenerating defaults", () =>
     'import { Bell, type LucideIcon, Users } from "lucide-react";',
     "export const navGroups = [",
     "  {",
-    "    items: [],",
+    "    items: [",
+    "      // @erp:nav",
+    "    ],",
     "  },",
     "];",
   ].join("\n");
@@ -121,6 +123,7 @@ test("wiring helpers honor the manifest instead of regenerating defaults", () =>
   const audit = [
     "export const AUDIT_FIELDS = {",
     '  user: ["id"],',
+    "  // @erp:audit",
     "} as const satisfies Record<string, readonly string[]>;",
   ].join("\n");
   const wiredAudit = addAuditEntity(audit, "department", ["id", "name", "code", "isActive"]);

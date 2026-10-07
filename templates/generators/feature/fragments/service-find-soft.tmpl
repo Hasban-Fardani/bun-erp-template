@@ -1,0 +1,11 @@
+export async function find{{pascal}}(
+  db: Database,
+  id: string,
+  options: { includeDeleted?: boolean } = {},
+): Promise<{{pascal}} | undefined> {
+  const where = options.includeDeleted
+    ? eq({{camel}}.id, id)
+    : and(eq({{camel}}.id, id), notDeleted({{camel}}));
+  const rows = await db.select().from({{camel}}).where(where).limit(1);
+  return rows[0];
+}

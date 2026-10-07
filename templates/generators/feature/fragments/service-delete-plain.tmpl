@@ -1,0 +1,16 @@
+export async function delete{{pascal}}(
+  db: Database,
+  id: string,
+  actor: Actor,
+): Promise<{{pascal}}> {
+  return db.transaction(async (tx) => {
+    const before = await require{{pascal}}(tx as unknown as Database, id);
+
+    const rows = await tx.delete({{camel}}).where(eq({{camel}}.id, id)).returning();
+    const after = rows[0];
+    if (!after) throw ApiError.notFound("{{pascal}} not found");
+
+    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.deleted", id, before, after);
+    return after;
+  });
+}

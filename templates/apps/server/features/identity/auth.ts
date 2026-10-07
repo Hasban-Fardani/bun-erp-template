@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+// @erp:organizations
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
@@ -8,9 +9,9 @@ import { recordAudit, snapshot } from "../audit/service.ts";
 import { accounts, sessions, users, verifications } from "./schema.ts";
 
 /**
- * Core Better Auth tables. `cli/lib/infra-wiring.ts` anchors the organizations installer on the
- * literal `schema:` line below, so that line stays intact; the adapter call merges the rate-limit
- * store into this map instead of editing the anchor.
+ * Core Better Auth tables. The organizations installer is anchored on the `// @erp:organizations`
+ * marker above and on the literal `schema:` line below, so that line stays intact; the adapter
+ * call merges the rate-limit store into this map instead of editing the anchor.
  */
 const coreAuthAdapter = {
   provider: "pg",

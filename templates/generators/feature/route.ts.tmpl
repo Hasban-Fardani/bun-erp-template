@@ -1,0 +1,113 @@
+import type { AppContext } from "../../bootstrap/context.ts";
+import { factory } from "../../http/factory.ts";
+import { doc } from "../../http/helpers/api-docs.ts";
+import { authorize } from "../../http/helpers/authorize.ts";
+import { ApiError, ok } from "../../http/helpers/errors.ts";
+import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-query.ts";
+import { idParam } from "../../http/helpers/params.ts";
+import { validate } from "../../http/helpers/validate.ts";
+import { ACTION_PERMISSION } from "./policy.ts";
+import {
+{{serviceImports}}
+} from "./service.ts";
+import { Create{{pascal}}Input, List{{pascal}}Input, Update{{pascal}}Input } from "./validation.ts";
+
+const {{camel}}Ref = {
+  type: "object",
+  properties: {
+    id: { type: "string" },{{refExtras}}
+  },
+} as const;
+
+const listData = {
+  type: "object",
+  properties: { items: { type: "array", items: {{camel}}Ref }, ...listMetaSchemaProperties },
+};
+
+/** Thin route: validation → policy → service → envelope. */
+export function {{camel}}Routes(ctx: AppContext) {
+  return factory.createApp()
+    .get(
+      "/",
+      authorize(ctx, ACTION_PERMISSION.list),
+      doc({
+        tag: "{{name}}",
+        permission: ACTION_PERMISSION.list,
+        summary: "List {{name}}",
+        query: List{{pascal}}Input,
+        data: listData,
+      }),
+      validate("query", List{{pascal}}Input),
+      async (c) => {
+        const input = c.req.valid("query");
+        const { items, total } = await list{{pascal}}(ctx.db, input);
+        return ok(c, { items, ...listMeta(input, total) });
+      },
+    )
+    .get(
+      "/:id",
+      authorize(ctx, ACTION_PERMISSION.read),
+      doc({
+        tag: "{{name}}",
+        permission: ACTION_PERMISSION.read,
+        summary: "Get one {{name}}",
+        data: {{camel}}Ref,
+      }),
+      validate("param", idParam),
+      async (c) => {
+        const row = await find{{pascal}}(ctx.db, c.req.param("id"));
+        if (!row) throw ApiError.notFound("{{pascal}} not found");
+        return ok(c, row);
+      },
+    )
+    .post(
+      "/",
+      authorize(ctx, ACTION_PERMISSION.create),
+      doc({
+        tag: "{{name}}",
+        permission: ACTION_PERMISSION.create,
+        summary: "Create {{name}}",
+        body: Create{{pascal}}Input,
+        data: {{camel}}Ref,
+      }),
+      validate("json", Create{{pascal}}Input),
+      async (c) => {
+        const actor = c.get("actor");
+        const input = c.req.valid("json");
+        return ok(c, await create{{pascal}}(ctx.db, input, actor));
+      },
+    )
+    .patch(
+      "/:id",
+      authorize(ctx, ACTION_PERMISSION.update),
+      doc({
+        tag: "{{name}}",
+        permission: ACTION_PERMISSION.update,
+        summary: "Update {{name}}",
+        body: Update{{pascal}}Input,
+        data: {{camel}}Ref,
+      }),
+      validate("param", idParam),
+      validate("json", Update{{pascal}}Input),
+      async (c) => {
+        const actor = c.get("actor");
+        const input = c.req.valid("json");
+        return ok(c, await update{{pascal}}(ctx.db, c.req.param("id"), input, actor));
+      },
+    )
+    .delete(
+      "/:id",
+      authorize(ctx, ACTION_PERMISSION.delete),
+      doc({
+        tag: "{{name}}",
+        permission: ACTION_PERMISSION.delete,
+        summary: "Delete {{name}}",
+        data: {{camel}}Ref,
+      }),
+      validate("param", idParam),
+      async (c) => {
+        const actor = c.get("actor");
+        return ok(c, await delete{{pascal}}(ctx.db, c.req.param("id"), actor));
+      },
+    ){{lifecycleRoutes}};
+}

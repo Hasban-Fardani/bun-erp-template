@@ -4,7 +4,8 @@ bun erp check launches Biome, TypeScript and read-only gates concurrently. All r
 including failures; checks do not build or rewrite files.
 
 bun erp test runs the server, web and shared package suites in sequence, plus the mobile suite when
-the catalog app is installed. Server tests use `hono/testing` `testClient(app)` without a listening
+the catalog app is installed. `bun erp test --filter <feature>` runs only that feature's server tests
+under `apps/server/tests/features/<feature>`. Server tests use `hono/testing` `testClient(app)` without a listening
 port and run in one worker with a 15-second test timeout: their shared database fixture is truncated
 between tests, and migration tests close and rebuild that same context. Running server files
 concurrently can close a database during an active request or seed duplicate rows. The longer
