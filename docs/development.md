@@ -88,9 +88,12 @@ plain `bun install` to restore the dev tooling.
 
 `bun dev` starts Vite with HMR and the Hono API. Open `http://localhost:5173`; Vite proxies `/api/*`
 to the internal API listener on port 3000. The API process also runs the queue worker against the
-same PostgreSQL connection, using the same polling loop as `bun erp jobs:work`. Stop the full stack with
-Ctrl+C; an unexpected child-process exit stops its peers. Production Cloudflare serves the built
-assets and API on one origin and drains queue work from its scheduled Worker handler.
+same PostgreSQL connection, using the same polling loop as `bun erp jobs:work`. Vite starts only
+after the API answers `GET /api/v1/ready` (30 s budget, override with `DEV_READY_TIMEOUT_MS`); a
+boot crash exits 1 without starting the web app, and three consecutive failed readiness probes after
+start stop both processes. Stop the full stack with Ctrl+C; an unexpected child-process exit stops
+its peers. Production Cloudflare serves the built assets and API on one origin and drains queue work
+from its scheduled Worker handler.
 
 The API and CLI use the same validated settings from `.env`; the dev launcher no longer fills in
 missing values from `.env.example`. That file is a template to copy once, not a second runtime
@@ -101,6 +104,29 @@ and point `DATABASE_URL` at a development PostgreSQL database before starting it
 is already in use, the dev command reports which process failed; set `DEV_API_PORT` or
 `DEV_WEB_PORT` to use different local ports. The matching URLs and proxy target are configured
 together.
+
+## Troubleshooting
+
+### API fails at boot with 42P10 / missing table
+
+`bun dev` waits for `GET /api/v1/ready` before it starts Vite. If the API cannot boot — Postgres
+answering `42P10` (`there is no unique or exclusion constraint matching the ON CONFLICT
+specification`), `42P01` (missing table), or `42703` (missing column) — the launcher prints the
+`boot.failed` event and exits 1 without starting the web app.
+
+Those SQLSTATEs mean the live schema is older than `apps/server/database/migrations`, usually
+because the database was created by an earlier catalog. Compare the ledger with the catalog:
+
+    bun erp db:status
+
+`mismatch` rows name the ledger entry next to the catalog file that now owns that number; a
+different stem under the same number means the database cannot be migrated forward. On local or
+test data, rebuild the schema from the catalog:
+
+    bun erp db:reset --force
+
+`db:reset` is refused when `APP_ENV=production`. It drops and recreates the `public` schema, applies
+every migration, and runs the seed. Start `bun erp dev` again afterwards.
 
 PostgreSQL is the only server database driver. The copied `.env.example` connects to local PostgreSQL;
 start the Compose database with `docker compose up -d postgres` if you do not already have one.

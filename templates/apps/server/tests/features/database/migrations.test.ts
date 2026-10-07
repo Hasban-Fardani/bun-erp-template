@@ -5,6 +5,7 @@ import { createContext } from "../../../bootstrap/bootstrap.ts";
 import type { AppContext } from "../../../bootstrap/context.ts";
 import { migrate, rowsOf } from "../../../database/migrate.ts";
 import { createTestContext, disposeTestContext, testEnv } from "../../support/fixtures.ts";
+import { appliedNames, migrationModule, scopedDir, tableExists } from "./support.ts";
 
 let ctx: AppContext;
 
@@ -21,38 +22,6 @@ afterAll(async () => {
   // Drops the shared schema so the next file starts from a known state.
   await disposeTestContext();
 });
-
-/**
- * Fresh directory per test: a migration run must be reproducible, not order-dependent.
- * `mktemp -d` stands in for `mkdtemp` — Bun exposes no temp-directory API of its own.
- */
-function migrationModule(source: string): string {
-  return `import { runSqlMigration } from "../../apps/server/database/sql-migration.ts";\nexport async function up(db: { execute: (query: unknown) => Promise<unknown> }) { await runSqlMigration(db, ${JSON.stringify(source)}); }\n`;
-}
-
-async function scopedDir(files: Record<string, string>): Promise<string> {
-  const root = join(import.meta.dir, "..", "..", "..", "..", "..", ".data");
-  await Bun.$`mkdir -p ${root}`.quiet();
-  const dir = (await Bun.$`mktemp -d ${`${root}/erp-migrations-XXXXXX`}`.text()).trim();
-  for (const [name, body] of Object.entries(files)) {
-    await Bun.write(join(dir, name.replace(/\.ts$/, ".ts")), migrationModule(body));
-  }
-  return dir;
-}
-
-async function appliedNames(context: AppContext): Promise<string[]> {
-  const result = await context.db.execute<{ name: string }>(sql`select name from _migrations`);
-  return rowsOf<{ name: string }>(result)
-    .map((row) => row.name)
-    .sort();
-}
-
-async function tableExists(context: AppContext, name: string): Promise<boolean> {
-  const result = await context.db.execute<{ exists: boolean }>(
-    sql`select exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = ${name}) as exists`,
-  );
-  return rowsOf<{ exists: boolean }>(result)[0]?.exists ?? false;
-}
 
 describe("migration runner", () => {
   test("applies pending files once, then reports nothing on a second run", async () => {
@@ -89,16 +58,6 @@ describe("migration runner", () => {
     await Bun.write(join(dir, "0003_late.ts"), migrationModule("alter table probe_widgets add column note text;"));
     expect(await migrate(ctx.db, dir)).toEqual(["0003_late.ts"]);
     expect(await appliedNames(ctx)).toEqual(["0001_probe.ts", "0002_more.ts", "0003_late.ts"]);
-  });
-
-  test("two files sharing a number both apply; the ledger compares full names", async () => {
-    const dir = await scopedDir({ "0002_alpha.ts": "create table probe_widgets (id uuid primary key);" });
-    expect(await migrate(ctx.db, dir)).toEqual(["0002_alpha.ts"]);
-
-    // A duplicated number must not silently skip the second file on the next run; the stem is the identity.
-    await Bun.write(join(dir, "0002_beta.ts"), migrationModule("alter table probe_widgets add column label text;"));
-    expect(await migrate(ctx.db, dir)).toEqual(["0002_beta.ts"]);
-    expect(await appliedNames(ctx)).toEqual(["0002_alpha.ts", "0002_beta.ts"]);
   });
 
   test("concurrent runners serialize on the advisory lock instead of replaying a step", async () => {

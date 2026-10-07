@@ -5,6 +5,8 @@ export type DevelopmentEnvironment = {
   apiPort: number;
   webPort: number;
   webUrl: string;
+  /** How long `bun dev` waits for `/api/v1/ready` before it stops the API and exits 1. */
+  readyTimeoutMs: number;
   server: Record<string, string>;
   web: Record<string, string>;
 };
@@ -15,6 +17,7 @@ export function createDevelopmentEnvironment(
 ): DevelopmentEnvironment {
   const apiPort = portFromEnvironment(source, "DEV_API_PORT", 3000);
   const webPort = portFromEnvironment(source, "DEV_WEB_PORT", 5173);
+  const readyTimeoutMs = positiveIntFromEnvironment(source, "DEV_READY_TIMEOUT_MS", 30_000);
   const webUrl = `http://localhost:${webPort}`;
   const systemEnvironment = pickSystemEnvironment(source);
   const configured = loadEnv(source);
@@ -43,6 +46,7 @@ export function createDevelopmentEnvironment(
     apiPort,
     webPort,
     webUrl,
+    readyTimeoutMs,
     server: serverEnvironment,
     web: {
       ...systemEnvironment,
@@ -79,6 +83,18 @@ function portFromEnvironment(source: Record<string, string | undefined>, name: s
     throw new Error(`${name} must be an integer from 1 to 65535`);
   }
   return port;
+}
+
+function positiveIntFromEnvironment(
+  source: Record<string, string | undefined>,
+  name: string,
+  fallback: number,
+): number {
+  const candidate = source[name];
+  if (candidate === undefined) return fallback;
+  const value = Number(candidate);
+  if (!Number.isInteger(value) || value < 1) throw new Error(`${name} must be a positive integer`);
+  return value;
 }
 
 function pickSystemEnvironment(source: Record<string, string | undefined>): Record<string, string> {
