@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { AppContext } from "../../../bootstrap/context.ts";
-import { rowsOf } from "../../../database/migrate.ts";
+import { rowsOf } from "../../../database/rows.ts";
 
 /**
  * Shared fixtures for the migration-runner suites: a throwaway directory per case and the two
