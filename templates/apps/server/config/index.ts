@@ -7,6 +7,8 @@ export type Env = RawEnv & {
   isTest: boolean;
   isDevelopment: boolean;
   trustedOrigins: string[];
+  /** Public API docs: explicit `API_DOCS_ENABLED` wins, else off in production. */
+  apiDocsEnabled: boolean;
   /** Safe values to display/log: never carry a secret. */
   safeSummary: Record<string, string>;
 };
@@ -39,6 +41,8 @@ function shape(parsed: RawEnv): Env {
     trustedOrigins: parsed.AUTH_TRUSTED_ORIGINS.split(",")
       .map((o) => o.trim())
       .filter(Boolean),
+    apiDocsEnabled:
+      parsed.API_DOCS_ENABLED === undefined ? parsed.APP_ENV !== "production" : parsed.API_DOCS_ENABLED === "true",
     safeSummary: Object.freeze(Object.fromEntries(envKeys.map((k) => [k, describe(values, k)]))),
   }) as Env;
 }

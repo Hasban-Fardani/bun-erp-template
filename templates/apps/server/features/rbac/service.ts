@@ -1,10 +1,10 @@
-import { and, eq, ilike, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
 import { orderByColumn } from "../../http/helpers/sort.ts";
 import { auditChange, snapshot } from "../audit/service.ts";
-import { invalidateAll, invalidateUser, readCachedPermissions, writeCachedPermissions } from "./cache.ts";
+import { invalidateAll, readCachedPermissions, writeCachedPermissions } from "./cache.ts";
 import { permissions, rolePermissions, roles, userRoles } from "./schema.ts";
 import { allPermissions, type PermissionKey, type SystemRoleKey, systemRoles } from "./statements.ts";
 import type { ListRolesInput } from "./validation.ts";
@@ -92,17 +92,57 @@ export async function permissionsForUser(db: Database, userId: string): Promise<
   return resolved;
 }
 
-/** Roles a user holds — the UI uses this to render the current assignment. */
-export async function rolesForUser(db: Database, userId: string) {
-  return db
+/**
+ * Roles for MANY users in one query; `rolesForUser` is the single-user wrapper. The CLI list
+ * used to run one lookup per row, which is an N+1 the moment a real directory exists.
+ */
+export async function rolesForUsers(db: Database, userIds: readonly string[]) {
+  const byUser = new Map<string, { roleId: string; key: string; name: string }[]>();
+  if (userIds.length === 0) return byUser;
+
+  const rows = await db
     .select({
+      userId: userRoles.userId,
       roleId: roles.id,
       key: roles.key,
       name: roles.name,
     })
     .from(userRoles)
     .innerJoin(roles, eq(roles.id, userRoles.roleId))
-    .where(eq(userRoles.userId, userId));
+    .where(inArray(userRoles.userId, [...userIds]));
+
+  for (const row of rows) {
+    const list = byUser.get(row.userId) ?? [];
+    list.push({ roleId: row.roleId, key: row.key, name: row.name });
+    byUser.set(row.userId, list);
+  }
+  return byUser;
+}
+
+/** Roles a user holds — the UI uses this to render the current assignment. */
+export async function rolesForUser(db: Database, userId: string) {
+  return (await rolesForUsers(db, [userId])).get(userId) ?? [];
+}
+
+/** Does the user hold this role key? The privilege-escalation guards branch on it. */
+export async function userHoldsRoleKey(db: Database, userId: string, roleKey: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: userRoles.id })
+    .from(userRoles)
+    .innerJoin(roles, eq(roles.id, userRoles.roleId))
+    .where(and(eq(userRoles.userId, userId), eq(roles.key, roleKey)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+/** How many users hold this role key? One owner may be demoted; the last one may not. */
+export async function countUsersWithRoleKey(db: Database, roleKey: string): Promise<number> {
+  const rows = await db
+    .select({ total: sql<number>`count(distinct ${userRoles.userId})::int` })
+    .from(userRoles)
+    .innerJoin(roles, eq(roles.id, userRoles.roleId))
+    .where(eq(roles.key, roleKey));
+  return rows[0]?.total ?? 0;
 }
 
 /**
@@ -127,14 +167,53 @@ export async function listRoles(db: Database, input: ListRolesInput): Promise<{ 
   return { items, total: count[0]?.total ?? 0 };
 }
 
-/** Permission catalogue a role holds, used by the UI to render checkboxes. */
-export async function permissionsForRole(db: Database, roleId: string): Promise<string[]> {
+/** Permission sets for MANY roles in one query; `permissionsForRole` is the single-role wrapper. */
+export async function permissionsForRoles(db: Database, roleIds: readonly string[]): Promise<Map<string, string[]>> {
+  const byRole = new Map<string, string[]>();
+  if (roleIds.length === 0) return byRole;
+
   const rows = await db
-    .select({ key: permissions.key })
+    .select({ roleId: rolePermissions.roleId, key: permissions.key })
     .from(rolePermissions)
     .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-    .where(eq(rolePermissions.roleId, roleId));
-  return rows.map((r) => r.key).sort();
+    .where(inArray(rolePermissions.roleId, [...roleIds]));
+
+  for (const row of rows) {
+    const list = byRole.get(row.roleId) ?? [];
+    list.push(row.key);
+    byRole.set(row.roleId, list);
+  }
+  for (const list of byRole.values()) list.sort();
+  return byRole;
+}
+
+/** Permission catalogue a role holds, used by the UI to render checkboxes. */
+export async function permissionsForRole(db: Database, roleId: string): Promise<string[]> {
+  return (await permissionsForRoles(db, [roleId])).get(roleId) ?? [];
+}
+
+/** Inserts the role row and its audit event inside the caller's transaction. */
+async function insertRole(
+  tx: Database,
+  input: { key: string; name: string; description?: string },
+  actor: { userId: string | null; traceId: string; label?: string },
+): Promise<Role> {
+  const clash = await tx.select({ id: roles.id }).from(roles).where(eq(roles.key, input.key)).limit(1);
+  if (clash.length > 0) throw ApiError.conflict("Role key already exists", "key");
+
+  const rows = await tx
+    .insert(roles)
+    .values({ key: input.key, name: input.name, description: input.description ?? "" })
+    .returning();
+  const role = rows[0] as Role;
+
+  await auditChange(tx, {
+    actor,
+    event: "role.created",
+    subject: { type: "role", id: role.id },
+    after: snapshot("role", role as unknown as Record<string, unknown>),
+  });
+  return role;
 }
 
 /**
@@ -146,24 +225,28 @@ export async function createRole(
   input: { key: string; name: string; description?: string },
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<Role> {
-  return db.transaction(async (tx) => {
-    const clash = await tx.select({ id: roles.id }).from(roles).where(eq(roles.key, input.key)).limit(1);
-    if (clash.length > 0) throw ApiError.conflict("Role key already exists");
+  return db.transaction((tx) => insertRole(tx as unknown as Database, input, actor));
+}
 
-    const rows = await tx
-      .insert(roles)
-      .values({ key: input.key, name: input.name, description: input.description ?? "" })
-      .returning();
-    const role = rows[0] as Role;
-
-    await auditChange(tx as unknown as Database, {
-      actor,
-      event: "role.created",
-      subject: { type: "role", id: role.id },
-      after: snapshot("role", role as unknown as Record<string, unknown>),
-    });
-    return role;
+/**
+ * Creates a role and its initial permission set in ONE transaction: an unknown permission key
+ * must not leave a half-created role behind (`role:create --permissions`).
+ */
+export async function createRoleWithPermissions(
+  db: Database,
+  input: { key: string; name: string; description?: string },
+  permissionKeys: readonly string[],
+  actor: { userId: string | null; traceId: string; label?: string },
+): Promise<Role> {
+  const role = await db.transaction(async (tx) => {
+    const database = tx as unknown as Database;
+    const created = await insertRole(database, input, actor);
+    if (permissionKeys.length > 0) await setRolePermissionsInTx(database, created.id, permissionKeys, actor);
+    return created;
   });
+  // Permission edits affect an unknown set of users, so the whole cache goes — after commit.
+  invalidateAll();
+  return role;
 }
 
 export async function updateRole(
@@ -224,8 +307,49 @@ export async function deleteRole(
 }
 
 /**
+ * The transactional body of `setRolePermissions`; also used by `createRoleWithPermissions`
+ * so a new role's first permission set lands in the same transaction as the role row.
+ */
+async function setRolePermissionsInTx(
+  db: Database,
+  id: string,
+  keys: readonly string[],
+  actor: { userId: string | null; traceId: string; label?: string },
+): Promise<{ permissions: string[] }> {
+  const role = await requireRoleInTx(db, id);
+  // Emptying a system role removes the safety net the next boot would have to restore.
+  if (role.isSystem && keys.length === 0) {
+    throw ApiError.conflict("A system role's permission set cannot be emptied");
+  }
+
+  const known = await db.select({ id: permissions.id, key: permissions.key }).from(permissions);
+  const idByKey = new Map(known.map((r) => [r.key, r.id]));
+  const unknown = keys.filter((k) => !idByKey.has(k));
+  if (unknown.length > 0)
+    throw ApiError.validation(
+      unknown.map((k) => ({ code: "custom", path: ["permissions", k], message: `permission tidak dikenal: ${k}` })),
+    );
+
+  const before = await permissionsForRole(db, id);
+  const wanted = [...new Set(keys)].map((k) => ({ roleId: id, permissionId: idByKey.get(k) as string }));
+
+  await db.delete(rolePermissions).where(eq(rolePermissions.roleId, id));
+  if (wanted.length > 0) await db.insert(rolePermissions).values(wanted);
+
+  await auditChange(db, {
+    actor,
+    event: "role.permissions_set",
+    subject: { type: "role", id: id },
+    before: { entity: "role", id, permissions: before },
+    after: { entity: "role", id, permissions: [...keys].sort() },
+  });
+  return { permissions: [...keys].sort() };
+}
+
+/**
  * Overwrites all of a role's permissions with the submitted list (not add/remove one by one):
  * the permission screen is a full checkbox grid, so the last request is the truth.
+ * The cache is dropped only after the transaction commits.
  */
 export async function setRolePermissions(
   db: Database,
@@ -233,34 +357,10 @@ export async function setRolePermissions(
   keys: readonly string[],
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ permissions: string[] }> {
-  return db.transaction(async (tx) => {
-    await requireRoleInTx(tx, id);
-
-    const known = await tx.select({ id: permissions.id, key: permissions.key }).from(permissions);
-    const idByKey = new Map(known.map((r) => [r.key, r.id]));
-    const unknown = keys.filter((k) => !idByKey.has(k));
-    if (unknown.length > 0)
-      throw ApiError.validation(
-        unknown.map((k) => ({ code: "custom", path: ["permissions", k], message: `permission tidak dikenal: ${k}` })),
-      );
-
-    const before = await permissionsForRole(tx as unknown as Database, id);
-    const wanted = [...new Set(keys)].map((k) => ({ roleId: id, permissionId: idByKey.get(k) as string }));
-
-    await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, id));
-    if (wanted.length > 0) await tx.insert(rolePermissions).values(wanted);
-
-    await auditChange(tx as unknown as Database, {
-      actor,
-      event: "role.permissions_set",
-      subject: { type: "role", id: id },
-      before: { entity: "role", id, permissions: before },
-      after: { entity: "role", id, permissions: [...keys].sort() },
-    });
-    // Permission edits affect an unknown set of users, so the whole cache goes.
-    invalidateAll();
-    return { permissions: [...keys].sort() };
-  });
+  const result = await db.transaction((tx) => setRolePermissionsInTx(tx as unknown as Database, id, keys, actor));
+  // Permission edits affect an unknown set of users, so the whole cache goes.
+  invalidateAll();
+  return result;
 }
 
 export async function findRoleByKey(db: Database, key: string): Promise<Role | undefined> {
@@ -271,6 +371,10 @@ export async function findRoleByKey(db: Database, key: string): Promise<Role | u
 /**
  * Grants a role to a user. Idempotent: assigning the same role twice is not an error,
  * because the unique index treats the pair as one assignment.
+ *
+ * The permission cache is invalidated by the caller AFTER its transaction commits
+ * (`assignUserRole`, `replaceUserRoles`, `user:grant`): invalidating here would drop cached
+ * access for a write that can still roll back, and re-cache stale data in the window before commit.
  */
 export async function assignRole(db: Database, input: { userId: string; roleId: string }): Promise<void> {
   const existing = await db
@@ -281,14 +385,13 @@ export async function assignRole(db: Database, input: { userId: string; roleId: 
   if (existing.length > 0) return;
 
   await db.insert(userRoles).values({ userId: input.userId, roleId: input.roleId });
-  invalidateUser(input.userId);
 }
 
+/** Revokes a role from a user; the caller invalidates the cache after commit, as above. */
 export async function revokeRole(db: Database, userId: string, roleId: string): Promise<boolean> {
   const rows = await db
     .delete(userRoles)
     .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)))
     .returning({ id: userRoles.id });
-  if (rows.length > 0) invalidateUser(userId);
   return rows.length > 0;
 }

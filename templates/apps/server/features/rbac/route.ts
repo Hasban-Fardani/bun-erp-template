@@ -7,7 +7,7 @@ import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-quer
 import { idParam } from "../../http/helpers/params.ts";
 import { validate } from "../../http/helpers/validate.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
-import { createRole, deleteRole, listRoles, permissionsForRole, setRolePermissions, updateRole } from "./service.ts";
+import { createRole, deleteRole, listRoles, permissionsForRoles, setRolePermissions, updateRole } from "./service.ts";
 import { allPermissions, statements, systemRoles } from "./statements.ts";
 import { CreateRoleInput, ListRolesInput, SetRolePermissionsInput, UpdateRoleInput } from "./validation.ts";
 
@@ -45,9 +45,15 @@ export function rbacRoutes(ctx: AppContext) {
         async (c) => {
           const input = c.req.valid("query");
           const { items, total } = await listRoles(ctx.db, input);
-          const withPermissions = await Promise.all(
-            items.map(async (role) => ({ ...role, permissions: await permissionsForRole(ctx.db, role.id) })),
+          // One batched permission lookup for the whole page instead of one query per role.
+          const permissionsByRole = await permissionsForRoles(
+            ctx.db,
+            items.map((role) => role.id),
           );
+          const withPermissions = items.map((role) => ({
+            ...role,
+            permissions: permissionsByRole.get(role.id) ?? [],
+          }));
           return ok(c, { items: withPermissions, ...listMeta(input, total) });
         },
       )

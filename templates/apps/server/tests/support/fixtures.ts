@@ -218,3 +218,17 @@ export async function createFixtureUser(db: AppContext["db"], email: string): Pr
   );
   return { id: user.id };
 }
+
+/**
+ * Assigns a role to the first user in the directory. Shared by the "role in use" tests so the
+ * setup lives once; it throws instead of returning a status because the caller only needs success.
+ */
+export async function assignRoleToFirstUser(api: HttpFixture, roleKey: string): Promise<void> {
+  const users = await api.client.api.v1.users.$get({ query: { perPage: "5" } });
+  const target = ((await users.json()) as { data: { items: { id: string }[] } }).data.items[0];
+  const assigned = await api.client.api.v1.users[":id"].roles.$post({
+    param: { id: target?.id as string },
+    json: { roleKey },
+  });
+  if (assigned.status !== 200) throw new Error(`role assignment failed with ${assigned.status}`);
+}

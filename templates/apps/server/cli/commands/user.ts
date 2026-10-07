@@ -4,21 +4,28 @@ import { parseCommandOptions } from "../../../../cli/lib/options.ts";
 import { resolveRequired } from "../../../../cli/lib/prompt.ts";
 import { defineCommand } from "../../../../cli/registry.ts";
 import { loadEnv } from "../../config/index.ts";
-import type { Database } from "../../database/index.ts";
 import { recordAudit, snapshot } from "../../features/audit/service.ts";
-import { accounts, users } from "../../features/identity/schema.ts";
+import { users } from "../../features/identity/schema.ts";
 import {
   createUser,
   deleteUser,
-  hashPassword,
   replaceUserRoles,
+  resetUserPassword,
   revokeUserRole,
   updateUser,
 } from "../../features/identity/service.ts";
 import { createUserSchema, updateUserSchema } from "../../features/identity/validation.ts";
+import { invalidateUser } from "../../features/rbac/cache.ts";
 import { roles as roleTable } from "../../features/rbac/schema.ts";
-import { assignRole, findRoleByKey, permissionsForUser, rolesForUser } from "../../features/rbac/service.ts";
+import {
+  assignRole,
+  findRoleByKey,
+  permissionsForUser,
+  rolesForUser,
+  rolesForUsers,
+} from "../../features/rbac/service.ts";
 import { cliActor, createCliContext, requireUserByEmail } from "../lib/context.ts";
+import { generatePassword } from "../lib/password.ts";
 
 export const commands = [
   // Chicken-and-egg escape hatch: the first owner cannot be created over HTTP that requires a role.
@@ -102,8 +109,13 @@ export const commands = [
       .select({ id: users.id, name: users.name, email: users.email })
       .from(users)
       .orderBy(users.email);
+    // One batched lookup for every row; a per-user query is an N+1 on a real directory.
+    const rolesByUser = await rolesForUsers(
+      ctx.db,
+      rows.map((user) => user.id),
+    );
     for (const u of rows) {
-      const roles = (await rolesForUser(ctx.db, u.id)).map((r) => r.key).join(", ");
+      const roles = (rolesByUser.get(u.id) ?? []).map((r) => r.key).join(", ");
       process.stdout.write(`${u.email.padEnd(40)} ${u.name.padEnd(20)} ${roles || "—"}\n`);
     }
     process.stdout.write(`total: ${rows.length}\n`);
@@ -220,6 +232,9 @@ export const commands = [
       process.exit(1);
     }
     await assignRole(ctx.db, { userId: user.id, roleId: role.id });
+    // assignRole cannot invalidate after an outer commit it does not own, so the direct CLI
+    // caller clears this process's cache itself. The server process expires by TTL (rbac/cache.ts).
+    invalidateUser(user.id);
     await recordAudit(ctx.db, {
       actorId: null,
       actorLabel: "cli",
@@ -245,6 +260,8 @@ export const commands = [
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
       const user = await requireUserByEmail(ctx.db, email);
+      // revokeUserRole invalidates after its own commit; this only clears this process's cache.
+      // The server process keeps its own copy, bounded by the 30s TTL documented in rbac/cache.ts.
       await revokeUserRole(ctx.db, user.id, roleKey, cliActor());
       process.stdout.write(`Revoked "${roleKey}" from ${email}.\n`);
     } finally {
@@ -260,39 +277,15 @@ export const commands = [
       process.stderr.write("Usage: bun erp user:passwd <email> [sandi-baru]\n");
       process.exit(1);
     }
-    const password = newPassword ?? Array.from({ length: 3 }, () => Math.random().toString(36).slice(2, 6)).join("-");
-    // slop-ok: user lookups repeat the same not-found guard per command on purpose.
+    // Math.random() must never produce a credential; the generator uses the platform CSPRNG.
+    const password = newPassword ?? generatePassword();
     const ctx = await createCliContext({ migrateOnStart: false });
-    const userRows = await ctx.db.select().from(users).where(eq(users.email, email)).limit(1);
-    const user = userRows[0];
-    if (!user) {
-      process.stderr.write(`No user with email ${email}.\n`);
+    try {
+      const user = await requireUserByEmail(ctx.db, email);
+      await resetUserPassword(ctx.db, user.id, password, cliActor());
+      process.stdout.write(`Password updated: ${email}\nNew password: ${password}\n`);
+    } finally {
       await ctx.close();
-      process.exit(1);
     }
-
-    const hash = await hashPassword(password);
-    await ctx.db.transaction(async (tx) => {
-      const updated = await tx
-        .update(accounts)
-        .set({ password: hash, updatedAt: new Date() })
-        .where(eq(accounts.userId, user.id))
-        .returning({ id: accounts.id });
-      if (updated.length === 0) {
-        await tx
-          .insert(accounts)
-          .values({ accountId: user.id, providerId: "credential", userId: user.id, password: hash });
-      }
-      await recordAudit(tx as unknown as Database, {
-        actorId: null,
-        actorLabel: "cli",
-        event: "user.password_reset",
-        subjectType: "user",
-        subjectId: user.id,
-        traceId: `cli-${Date.now()}`,
-      });
-    });
-    process.stdout.write(`Password updated: ${email}\nNew password: ${password}\n`);
-    await ctx.close();
   }),
 ];
