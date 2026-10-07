@@ -126,6 +126,14 @@ const rawSchema = z
         message: "SMTP needs raw sockets; use log or an HTTP mail driver on Cloudflare Workers",
       });
     }
+    // Every target needs a real signing secret; only local development may run without one.
+    if (env.APP_ENV !== "development" && env.BETTER_AUTH_SECRET === "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["BETTER_AUTH_SECRET"],
+        message: "must not be empty outside development (run: bun erp key:generate)",
+      });
+    }
     if (env.APP_ENV !== "production") return;
 
     // APP_ENV=production rejects unsafe configuration.
@@ -144,6 +152,21 @@ const rawSchema = z
     }
     if (!env.APP_URL.startsWith("https://") && !env.APP_URL.startsWith("http://localhost")) {
       ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "public URL must use https in production" });
+    }
+    // Hyperdrive terminates TLS on Cloudflare; on Bun the database connection carries it.
+    if (env.DATABASE_SSL_MODE === "disable" && env.APP_DEPLOY_TARGET !== "cloudflare") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["DATABASE_SSL_MODE"],
+        message: "disable is refused in production on Bun; use require or verify-full",
+      });
+    }
+    if (!env.BETTER_AUTH_URL.startsWith("https://")) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["BETTER_AUTH_URL"],
+        message: "must use https in production",
+      });
     }
     // Hybrid (ADR-0011): auth may live on another domain as long as that origin is explicitly trusted.
     const trustedOrigins = env.AUTH_TRUSTED_ORIGINS.split(",")
