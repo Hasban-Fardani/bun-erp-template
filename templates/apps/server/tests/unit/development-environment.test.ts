@@ -54,6 +54,7 @@ describe("local development environment", () => {
       createEnvironment({
         APP_ENV: "production",
         APP_URL: "https://example.test",
+        DATABASE_SSL_MODE: "require",
         BETTER_AUTH_URL: "https://example.test",
         BETTER_AUTH_SECRET: "a-valid-production-secret-with-more-than-32-characters",
         STORAGE_DRIVER: "s3",

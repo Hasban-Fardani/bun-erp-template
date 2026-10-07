@@ -144,6 +144,7 @@ describe("compiled schema parity", () => {
       TRUST_PROXY: "true",
       DATABASE_DRIVER: "postgres",
       DATABASE_URL: "postgres://user:pass@db.internal:5432/erp",
+      DATABASE_SSL_MODE: "require",
       BETTER_AUTH_URL: "https://api.erp.example.test",
       AUTH_TRUSTED_ORIGINS: "https://erp.example.test,https://api.erp.example.test",
       STORAGE_DRIVER: "s3",
