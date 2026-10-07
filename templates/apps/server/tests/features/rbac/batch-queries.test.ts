@@ -1,16 +1,22 @@
 import { beforeEach, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import type { AppContext } from "../../../bootstrap/context.ts";
+import type { Database } from "../../../database/index.ts";
+import * as schema from "../../../database/schema.ts";
 import { createUser } from "../../../features/identity/service.ts";
 import { roles } from "../../../features/rbac/schema.ts";
 import {
   assignRole,
+  createRole,
   permissionsForRole,
   permissionsForRoles,
   rolesForUser,
   rolesForUsers,
 } from "../../../features/rbac/service.ts";
-import { createSeededContext } from "../../support/fixtures.ts";
+import { createApp } from "../../../http/app.ts";
+import { createSeededContext, loginOwner, testEnv } from "../../support/fixtures.ts";
 
 let ctx: AppContext;
 
@@ -59,4 +65,35 @@ test("rolesForUsers batches role assignments per user", async () => {
   expect((await rolesForUser(ctx.db, first.id)).map((role) => role.key)).toEqual(["staff"]);
 
   expect((await rolesForUsers(ctx.db, [])).size).toBe(0);
+});
+
+/**
+ * The route used to call `permissionsForRole` once per row (the P1 N+1). On Workers Free that
+ * costs a Hyperdrive round-trip and CPU per extra role, so the count is asserted against the real
+ * SQL postgres.js sends: one `role_id in (...)` for the whole page, whatever the row count.
+ */
+test("the roles list route loads permissions with one batched query", async () => {
+  for (let index = 0; index < 5; index += 1) {
+    await createRole(ctx.db, { key: `probe-${index}`, name: `Probe ${index}` }, actor);
+  }
+
+  const statements: string[] = [];
+  const client = postgres(testEnv.DATABASE_URL, {
+    max: 2,
+    onnotice: () => {},
+    debug: (_connection, query) => {
+      statements.push(query);
+    },
+  });
+  try {
+    const app = createApp({ ...ctx, db: drizzle(client, { schema }) as unknown as Database });
+    const cookie = await loginOwner(app, ctx.db);
+
+    statements.length = 0;
+    const response = await app.request("/api/v1/roles", { headers: { cookie } });
+    expect(response.status).toBe(200);
+    expect(statements.filter((query) => query.includes('"role_permissions"."role_id" in'))).toHaveLength(1);
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 });

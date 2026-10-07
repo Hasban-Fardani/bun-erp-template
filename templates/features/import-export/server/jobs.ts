@@ -1,6 +1,6 @@
 import type { AppContext } from "../../bootstrap/context.ts";
 import type { BatchHandlerRegistry, JobBatchProgress } from "../../infra/jobs/batch.ts";
-import { notify } from "../notifications/service.ts";
+import { notify } from "../notifications/index.ts";
 import { type ImportRowValues, importExportResources } from "./registry.ts";
 import { IMPORT_BATCH_NAME } from "./service.ts";
 

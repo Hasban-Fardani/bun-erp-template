@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { users } from "../identity/schema.ts";
+import { users } from "../identity/index.ts";
 
 /**
  * Spatie-style RBAC: permission = static statements from code, role = dynamic in the DB.

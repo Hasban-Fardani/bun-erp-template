@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { checkArchitecture } from "../../../../cli/gates/architecture-guard.ts";
 import { clearFileIndexes } from "../../../../cli/lib/file-index.ts";
+import { withTempRoot } from "./support/temp-root.ts";
 
 test("atomic and application boundaries reject forbidden imports and permit shared UI", async () => {
   const root = `${process.env.TMPDIR ?? "/tmp"}/erp-architecture-${Bun.randomUUIDv7()}`;
@@ -44,4 +45,35 @@ test("atomic and application boundaries reject forbidden imports and permit shar
   } finally {
     await Bun.$`rm -r ${root}`.quiet();
   }
+});
+
+test("server feature boundaries require the target feature's index.ts", async () => {
+  await withTempRoot(
+    {
+      "apps/server/features/rbac/index.ts": "export const permissionsForUser = () => [];",
+      "apps/server/features/identity/policy.ts": 'import { permissionsForUser } from "../rbac/service.ts";',
+      "apps/server/features/audit/policy.ts": 'import type { PermissionKey } from "../rbac/index.ts";',
+    },
+    async (root) => {
+      const findings = await checkArchitecture(root);
+      expect(findings).toContain(
+        "apps/server/features/identity/policy.ts: FEATURE_BOUNDARY — ../rbac/service.ts bypasses features/rbac/index.ts",
+      );
+      expect(findings.some((finding) => finding.includes("audit/policy.ts"))).toBe(false);
+    },
+  );
+});
+
+test("catalog features are checked at their installed path", async () => {
+  await withTempRoot(
+    {
+      "templates/features/departments/server/service.ts": 'import { auditChange } from "../audit/service.ts";',
+    },
+    async (root) => {
+      const findings = await checkArchitecture(root);
+      expect(findings).toContain(
+        "templates/features/departments/server/service.ts: FEATURE_BOUNDARY — ../audit/service.ts bypasses features/audit/index.ts",
+      );
+    },
+  );
 });

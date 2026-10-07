@@ -5,7 +5,7 @@ import { forceDeleteRow, notDeleted, restoreRow, softDeleteRow } from "../../dat
 import { ApiError } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
 import { orderByColumn } from "../../http/helpers/sort.ts";
-import { auditChange, snapshot } from "../audit/service.ts";
+import { auditChange, snapshot } from "../audit/index.ts";
 import { departments } from "./schema.ts";
 import type { CreateDepartmentInput, ListDepartmentsInput, UpdateDepartmentInput } from "./validation.ts";
 

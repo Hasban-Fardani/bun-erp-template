@@ -129,6 +129,40 @@ factories, hooks/ for React hooks, components/ for feature UI, screens/ for rout
 providers/ for feature context, stores/ for local state/persistence, and types/ for public feature
 contracts. The web and mobile app never import each other's source.
 
+## Splitting a feature into a service
+
+The semi-monolith is extraction-ready by construction: a server feature already owns its routes,
+its jobs and its tables, so turning it into a separate service is a move, not a rewrite.
+
+- **Routes mount separately.** Each feature declares `feature.ts` with `defineFeature` and is
+  mounted through `app.route()` in `routes/api.ts`. That sub-app is already a self-contained Hono
+  contract; the new service mounts the same router under its own base URL.
+- **Side effects go through the queue.** Writes call `enqueueJob` inside the same transaction, and
+  handlers are at-least-once and idempotent. The extracted service keeps its own `background_jobs`
+  table and worker; callers move from an in-process enqueue to the feature's API.
+- **Tables belong to one feature.** `schema.ts` and the migrations that create those tables move
+  with the folder, and the new service runs them through its own migration ledger. Cross-feature
+  access already goes through `features/<b>/index.ts`; the `FEATURE_BOUNDARY` rule in
+  `check:architecture` rejects deep imports, so nothing reaches into another feature's tables.
+  Keep that rule green — it is the extraction seam.
+- **Auth stays shared.** Sessions are Better Auth's, validated against the same secret and
+  database contract; the split service verifies the same session cookie or token instead of
+  inventing its own identity state.
+
+To extract a feature:
+
+1. Move `apps/server/features/<name>`, its migrations and its tests into the new service.
+2. Keep `index.ts` as the only public entry; replace the remaining in-process imports of the
+   feature with calls to its HTTP API.
+3. Point the client at the new origin with `VITE_API_BASE_URL` (`apps/web/src/lib/rpc.ts`); the
+   typed Hono client binds to the extracted service's `AppType` with no new client code.
+4. Keep the durable queue as the side-effect path, idempotency key included, so retries stay safe
+   across the split.
+
+This section is the readiness statement: no new code is required for the seam to exist. Per-process
+caches (see [security](security.md)) are optimisations with a TTL, never the source of truth, so an
+extracted service or a replica is correct without another process's memory.
+
 ## Shared atomic design
 
 | Layer | Responsibility | May depend on |

@@ -1,4 +1,4 @@
-import type { PermissionKey } from "../rbac/statements.ts";
+import type { PermissionKey } from "../rbac/index.ts";
 
 /** Maps module actions to permissions. Routes read from here — permissions are never hardcoded. */
 export const ACTION_PERMISSION = {

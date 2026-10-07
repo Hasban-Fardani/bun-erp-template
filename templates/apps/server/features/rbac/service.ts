@@ -3,7 +3,7 @@ import type { Database } from "../../database/index.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
 import { toOffset } from "../../http/helpers/list-query.ts";
 import { orderByColumn } from "../../http/helpers/sort.ts";
-import { auditChange, snapshot } from "../audit/service.ts";
+import { auditChange, snapshot } from "../audit/index.ts";
 import { invalidateAll, readCachedPermissions, writeCachedPermissions } from "./cache.ts";
 import { permissions, rolePermissions, roles, userRoles } from "./schema.ts";
 import { allPermissions, type PermissionKey, type SystemRoleKey, systemRoles } from "./statements.ts";

@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { users } from "../identity/schema.ts";
+import { users } from "../identity/index.ts";
 
 /**
  * One row per recipient. The default database channel writes here; installed channels (mail)

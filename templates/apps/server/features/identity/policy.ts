@@ -1,8 +1,8 @@
 import type { Context } from "hono";
 import type { AppContext } from "../../bootstrap/context.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
-import { permissionsForUser } from "../rbac/service.ts";
-import type { PermissionKey } from "../rbac/statements.ts";
+import type { PermissionKey } from "../rbac/index.ts";
+import { permissionsForUser } from "../rbac/index.ts";
 
 /**
  * Per-request identity. Built from the Better Auth session, not from client-sent

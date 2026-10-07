@@ -4,7 +4,7 @@ import type { Env } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
 import { rateLimits } from "../../database/rate-limit.ts";
 import { uuidv7 } from "../../database/uuidv7.ts";
-import { recordAudit, snapshot } from "../audit/service.ts";
+import { recordAudit, snapshot } from "../audit/index.ts";
 import { accounts, sessions, users, verifications } from "./schema.ts";
 
 /**
