@@ -44,14 +44,26 @@ export function apiRoutes(ctx: AppContext) {
         data: {
           type: "object",
           properties: {
-            status: { type: "string" },
+            status: { type: "string", enum: ["ready", "unavailable"] },
             checks: { type: "object", properties: { database: { type: "object" } } },
           },
         },
       }),
       async (c) => {
         const started = performance.now();
-        await ctx.db.execute(sql`select 1`);
+        try {
+          await ctx.db.execute(sql`select 1`);
+        } catch {
+          // A readiness probe acts on the status code, so an unavailable dependency is 503, not 500.
+          ctx.logger.error({ event: "ready.database_failed" });
+          return c.json(
+            {
+              status: "unavailable",
+              checks: { database: { ok: false, ms: Math.round(performance.now() - started) } },
+            },
+            503,
+          );
+        }
         return c.json({
           status: "ready",
           checks: { database: { ok: true, ms: Math.round(performance.now() - started) } },

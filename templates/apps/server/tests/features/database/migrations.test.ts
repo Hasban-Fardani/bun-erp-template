@@ -1,9 +1,10 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
+import { createContext } from "../../../bootstrap/bootstrap.ts";
 import type { AppContext } from "../../../bootstrap/context.ts";
 import { migrate, rowsOf } from "../../../database/migrate.ts";
-import { createTestContext, disposeTestContext } from "../../support/fixtures.ts";
+import { createTestContext, disposeTestContext, testEnv } from "../../support/fixtures.ts";
 
 let ctx: AppContext;
 
@@ -46,6 +47,13 @@ async function appliedNames(context: AppContext): Promise<string[]> {
     .sort();
 }
 
+async function tableExists(context: AppContext, name: string): Promise<boolean> {
+  const result = await context.db.execute<{ exists: boolean }>(
+    sql`select exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = ${name}) as exists`,
+  );
+  return rowsOf<{ exists: boolean }>(result)[0]?.exists ?? false;
+}
+
 describe("migration runner", () => {
   test("applies pending files once, then reports nothing on a second run", async () => {
     const dir = await scopedDir({
@@ -81,6 +89,52 @@ describe("migration runner", () => {
     await Bun.write(join(dir, "0003_late.ts"), migrationModule("alter table probe_widgets add column note text;"));
     expect(await migrate(ctx.db, dir)).toEqual(["0003_late.ts"]);
     expect(await appliedNames(ctx)).toEqual(["0001_probe.ts", "0002_more.ts", "0003_late.ts"]);
+  });
+
+  test("two files sharing a number both apply; the ledger compares full names", async () => {
+    const dir = await scopedDir({ "0002_alpha.ts": "create table probe_widgets (id uuid primary key);" });
+    expect(await migrate(ctx.db, dir)).toEqual(["0002_alpha.ts"]);
+
+    // A duplicated number must not silently skip the second file on the next run; the stem is the identity.
+    await Bun.write(join(dir, "0002_beta.ts"), migrationModule("alter table probe_widgets add column label text;"));
+    expect(await migrate(ctx.db, dir)).toEqual(["0002_beta.ts"]);
+    expect(await appliedNames(ctx)).toEqual(["0002_alpha.ts", "0002_beta.ts"]);
+  });
+
+  test("concurrent runners serialize on the advisory lock instead of replaying a step", async () => {
+    const dir = await scopedDir({
+      "0001_slow.ts": "select pg_sleep(0.6); create table probe_widgets (id uuid primary key);",
+    });
+
+    const first = migrate(ctx.db, dir);
+    await Bun.sleep(150);
+    const second = migrate(ctx.db, dir);
+    const [firstRan, secondRan] = await Promise.all([first, second]);
+
+    // The loser waits on the lock, re-reads the ledger and skips the step the winner committed.
+    expect([...firstRan, ...secondRan]).toEqual(["0001_slow.ts"]);
+    expect(await appliedNames(ctx)).toEqual(["0001_slow.ts"]);
+    expect(await tableExists(ctx, "probe_widgets")).toBe(true);
+  });
+
+  test("context creation only migrates when the caller asks for it", async () => {
+    const dir = join(import.meta.dir, "..", "..", "..", "database", "migrations");
+    await disposeTestContext();
+
+    const passive = await createContext({ env: testEnv, migrationsDir: dir });
+    try {
+      // Reading commands and tests must not run DDL implicitly.
+      expect(await tableExists(passive, "_migrations")).toBe(false);
+    } finally {
+      await passive.close();
+    }
+
+    const active = await createContext({ env: testEnv, migrationsDir: dir, migrateOnStart: true });
+    try {
+      expect(await tableExists(active, "_migrations")).toBe(true);
+    } finally {
+      await active.close();
+    }
   });
 
   test("a failing statement rolls the whole file back — no half-migrated schema", async () => {

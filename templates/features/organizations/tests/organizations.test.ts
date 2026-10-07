@@ -1,8 +1,11 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { eq } from "drizzle-orm";
+import { createUuid } from "@bun-erp/utils";
+import { eq, sql } from "drizzle-orm";
 import type { AppContext } from "../../../bootstrap/context.ts";
+import { rowsOf } from "../../../database/migrate.ts";
+import { createAuth } from "../../../features/identity/auth.ts";
 import { members, organizations } from "../../../features/organizations/schema.ts";
-import { createTestContext, truncateAll } from "../../support/fixtures.ts";
+import { createTestContext, testEnv, truncateAll } from "../../support/fixtures.ts";
 
 let ctx: AppContext;
 
@@ -17,10 +20,13 @@ afterAll(async () => {
 
 /**
  * Signs up through the real Better Auth server API and returns the session cookie as headers for
- * the following `ctx.auth.api` calls. Sign-up is not the subject here: the plugin is.
+ * the following `ctx.auth.api` calls. Public sign-up is off by default, so this test builds an auth
+ * instance with it enabled — sign-up is not the subject here: the plugin is. The session rows are
+ * shared, so the context's own auth instance accepts the cookie.
  */
 async function signUp(email: string): Promise<Headers> {
-  const { headers } = await ctx.auth.api.signUpEmail({
+  const auth = createAuth({ ...testEnv, AUTH_SIGNUP_ENABLED: true }, ctx.db);
+  const { headers } = await auth.api.signUpEmail({
     body: { email, password: "sandi-yang-panjang", name: email.split("@")[0] ?? "User" },
     returnHeaders: true,
   });
@@ -71,5 +77,34 @@ describe("organizations", () => {
     await ctx.auth.api.setActiveOrganization({ body: { organizationId: first.id }, headers });
     const after = await ctx.auth.api.getSession({ headers });
     expect(after?.session.activeOrganizationId).toBe(first.id);
+  });
+
+  test("the same user cannot be a member of one organization twice", async () => {
+    const headers = await signUp("ganda@example.test");
+    const organization = await ctx.auth.api.createOrganization({ body: { name: "Ganda", slug: "ganda" }, headers });
+    const session = await ctx.auth.api.getSession({ headers });
+    const userId = session?.user.id as string;
+
+    await expect(
+      Promise.resolve(ctx.db.insert(members).values({ organizationId: organization.id, userId })),
+    ).rejects.toThrow();
+  });
+
+  test("the session's active organization is indexed and foreign-keyed", async () => {
+    const headers = await signUp("aktif@example.test");
+    const session = await ctx.auth.api.getSession({ headers });
+    const userId = session?.user.id as string;
+
+    const indexes = rowsOf<{ indexname: string }>(
+      await ctx.db.execute(sql`select indexname from pg_indexes where tablename = 'session'`),
+    ).map((row) => row.indexname);
+    expect(indexes).toContain("session_active_organization_idx");
+
+    // A dangling active organization would leave the session pointing at nothing after a delete.
+    await expect(
+      Promise.resolve(
+        ctx.db.execute(sql`update "session" set active_organization_id = ${createUuid()} where user_id = ${userId}`),
+      ),
+    ).rejects.toThrow();
   });
 });

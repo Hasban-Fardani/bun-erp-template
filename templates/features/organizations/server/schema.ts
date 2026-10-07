@@ -37,7 +37,11 @@ export const members = pgTable(
     role: text("role").notNull().default("member"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("member_organization_idx").on(table.organizationId), index("member_user_idx").on(table.userId)],
+  (table) => [
+    uniqueIndex("member_organization_user_idx").on(table.organizationId, table.userId),
+    index("member_organization_idx").on(table.organizationId),
+    index("member_user_idx").on(table.userId),
+  ],
 );
 
 export const invitations = pgTable(

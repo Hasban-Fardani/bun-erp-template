@@ -35,7 +35,7 @@ async function main(): Promise<void> {
 
   let ctx: Awaited<ReturnType<typeof createContext>>;
   try {
-    ctx = await createContext({ env });
+    ctx = await createContext({ env, migrateOnStart: true });
   } catch (err) {
     // Invalid config must surface at bootstrap, not on the first request.
     if (err instanceof ConfigError) {

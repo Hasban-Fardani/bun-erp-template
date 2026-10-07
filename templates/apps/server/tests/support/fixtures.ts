@@ -71,7 +71,7 @@ export const testEnv: Env = loadEnv({
 let shared: Promise<AppContext> | undefined;
 
 export async function createTestContext(): Promise<AppContext> {
-  shared ??= createContext({ env: testEnv, migrationsDir: MIGRATIONS_DIR });
+  shared ??= createContext({ env: testEnv, migrationsDir: MIGRATIONS_DIR, migrateOnStart: true });
   return shared;
 }
 

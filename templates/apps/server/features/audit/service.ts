@@ -1,6 +1,6 @@
-import { and, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
-import { toOffset } from "../../http/helpers/list-query.ts";
+import { countRows, escapeLikePattern, toOffset } from "../../http/helpers/list-query.ts";
 import { orderByColumn } from "../../http/helpers/sort.ts";
 import { redactEntity } from "./redact.ts";
 import { auditLogs } from "./schema.ts";
@@ -40,13 +40,10 @@ export async function listAuditLogs(
   db: Database,
   input: ListAuditInput,
 ): Promise<{ items: AuditLog[]; total: number }> {
+  const search = input.search ? `%${escapeLikePattern(input.search)}%` : undefined;
   const where = and(
-    input.search
-      ? or(
-          ilike(auditLogs.event, `%${input.search}%`),
-          ilike(auditLogs.actorLabel, `%${input.search}%`),
-          ilike(auditLogs.subjectType, `%${input.search}%`),
-        )
+    search
+      ? or(ilike(auditLogs.event, search), ilike(auditLogs.actorLabel, search), ilike(auditLogs.subjectType, search))
       : undefined,
     input.event ? eq(auditLogs.event, input.event) : undefined,
     input.subjectType ? eq(auditLogs.subjectType, input.subjectType) : undefined,
@@ -63,7 +60,7 @@ export async function listAuditLogs(
       .orderBy(...orderByColumn(auditLogs, input.sort, input.dir))
       .limit(input.perPage)
       .offset(toOffset(input).offset),
-    db.select({ total: sql<number>`count(*)::int` }).from(auditLogs).where(where),
+    countRows(db, auditLogs, where),
   ]);
 
   return { items, total: count[0]?.total ?? 0 };

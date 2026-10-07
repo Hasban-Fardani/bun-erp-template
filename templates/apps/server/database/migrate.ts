@@ -8,6 +8,9 @@ const MIGRATIONS_TABLE = `
   )
 `;
 
+/** One app-wide advisory lock key: every replica serializes migration steps on it. */
+const MIGRATION_LOCK_KEY = 2026100701;
+
 /** TypeScript migrations execute in filename order and commit one complete step at a time. */
 export async function migrate(db: Database, dir: string): Promise<string[]> {
   await db.execute(sql.raw(MIGRATIONS_TABLE));
@@ -21,18 +24,28 @@ export async function migrate(db: Database, dir: string): Promise<string[]> {
     if (applied.has(migrationId(file))) continue;
     const migration = (await import(`${dir}/${file}`)) as { up?: (database: Database) => Promise<void> };
     if (typeof migration.up !== "function") throw new Error(`Migration ${file} must export up(database)`);
-    await db.transaction(async (tx) => {
+    const appliedNow = await db.transaction(async (tx) => {
+      // Two replicas can boot together; the transaction-scoped lock serializes them and the ledger
+      // is re-read inside it so the loser skips a step the winner just committed instead of replaying it.
+      await tx.execute(sql`select pg_advisory_xact_lock(${MIGRATION_LOCK_KEY})`);
+      const ledger = rowsOf<{ name: string }>(await tx.execute<{ name: string }>(sql`select name from _migrations`));
+      if (ledger.some(({ name }) => migrationId(name) === migrationId(file))) return false;
       await migration.up?.(tx as unknown as Database);
       await tx.execute(sql`insert into _migrations (name) values (${file})`);
+      return true;
     });
-    ran.push(file);
+    if (appliedNow) ran.push(file);
   }
   return ran;
 }
 
-/** SQL and TypeScript ledger entries share their numbered identity during this format change. */
+/**
+ * The full filename stem is the step identity: `0002_alpha` and `0002_beta` are distinct files even
+ * though they share a number, while a legacy `0001_probe.sql` still suppresses its `0001_probe.ts`
+ * replacement.
+ */
 function migrationId(file: string): string {
-  return file.match(/^(\d{4})_/)?.[1] ?? file;
+  return file.replace(/\.(ts|sql)$/, "");
 }
 
 export { splitSqlStatements } from "./sql-migration.ts";

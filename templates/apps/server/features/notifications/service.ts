@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
-import { toOffset } from "../../http/helpers/list-query.ts";
+import { countRows, toOffset } from "../../http/helpers/list-query.ts";
 import { createNotificationRegistry } from "./channels/registry.ts";
 import { notifications } from "./schema.ts";
 import type { NotificationChannelContext, NotifyInput } from "./types.ts";
@@ -10,13 +10,15 @@ export type Notification = typeof notifications.$inferSelect;
 
 /**
  * Fan-out entry point. The database channel is the default in-app inbox; `via` opts into more.
- * Call it after the owning write commits when a missing notification is acceptable, or inside the
- * transaction when it must be atomic with that write.
+ * Call it after the owning write commits when a missing notification is acceptable, or pass the
+ * feature transaction as `tx` when the notification (and any queued mail job) must be atomic with
+ * that write — channels then write through `tx` instead of the root database.
  */
-export async function notify(ctx: NotificationChannelContext, input: NotifyInput): Promise<void> {
+export async function notify(ctx: NotificationChannelContext, input: NotifyInput, tx?: Database): Promise<void> {
   const registry = createNotificationRegistry();
+  const channelContext = tx ? { ...ctx, db: tx } : ctx;
   for (const name of input.via ?? ["database"]) {
-    await registry.create(name, ctx).send(input);
+    await registry.create(name, channelContext).send(input);
   }
 }
 
@@ -40,16 +42,13 @@ export async function listNotifications(
       .orderBy(desc(notifications.createdAt))
       .limit(input.perPage)
       .offset(toOffset(input).offset),
-    db.select({ total: sql<number>`count(*)::int` }).from(notifications).where(where),
+    countRows(db, notifications, where),
   ]);
   return { items, total: count[0]?.total ?? 0 };
 }
 
 export async function countUnread(db: Database, userId: string): Promise<number> {
-  const rows = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(notifications)
-    .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+  const rows = await countRows(db, notifications, and(eq(notifications.userId, userId), isNull(notifications.readAt)));
   return rows[0]?.total ?? 0;
 }
 
