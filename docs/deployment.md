@@ -87,14 +87,37 @@ deploy config sets `PERMISSION_CACHE_ENABLED=false`; do the same for multi-repli
 cache off, every authorized request runs the RBAC join once (more Hyperdrive statements, no stale
 grants). See [security](security.md).
 
-The Worker has a five-minute Cron Trigger and processes at most one job per tick. This keeps idle
-queue polling and per-tick work small for the Free plan; a newly queued job can wait up to five
-minutes before its first attempt. The tick math is `24 * 60 / 5 = 288` ticks per day, so with
-`CLOUDFLARE_JOB_BATCH_SIZE = 1` the Worker drains at most 288 jobs per day: a burst of 1,000 queued
-jobs takes about 3.5 days to clear, and one burst of notification mail backs up for hours. This is
-appropriate for modest scheduled work, not a high-throughput event stream. Keep handlers idempotent
-and split CPU-heavy tasks into smaller jobs. Monitor dead jobs through the operational commands. See
-operations.md and ADR-0015.
+### Jobs on Workers
+
+The Worker runs the same durable PostgreSQL queue as the Bun host. Feature writes enqueue inside
+their database transaction; that row is the outbox and the only source of truth. Two consumers
+drain it:
+
+- **Cron sweeper (always on).** The five-minute Cron Trigger runs due schedules and then claims
+  jobs while it stays under a 10-second wall-clock budget, at most 10 per invocation. There are
+  `24 * 60 / 5 = 288` sweeps per day. With the previous one-job-per-tick default, cron-only mode
+  drained at most 288 jobs per day, so a burst of 1,000 queued jobs took about 3.5 days to clear.
+  The time budget raises that ceiling, but each sweep still has to fit the Free plan's 10 ms CPU,
+  so treat cron-only mode as the recovery path for lost wake-ups, not a throughput path.
+- **Queue wake-up (opt-in).** After a transaction commits, the Worker sends one `{ jobId }` message
+  to the `JOBS_QUEUE` producer. The consumer calls `runJobById`, which re-claims the row with the
+  same `skip locked` lease update as the polling worker and is a no-op when the job is already
+  claimed or finished. Queue mode is near-real-time, and duplicate or out-of-order signals are
+  harmless.
+
+The queue never replaces the database. A message that is lost, delayed, or redelivered only delays
+a job; it can never lose one, because the row is committed before the signal is sent and the cron
+sweeper keeps polling. To enable queue mode on a Queues-enabled account:
+
+1. Create the queue: `bun run --cwd apps/web wrangler queues create bun-erp-template-jobs`.
+2. Set `JOBS_WAKEUP_DRIVER=cloudflare-queue` (wrangler.jsonc `vars`), uncomment the `queues`
+   producer/consumer block in wrangler.jsonc, then run `bun erp cloudflare:build` and deploy.
+3. The default `JOBS_WAKEUP_DRIVER=none` keeps an account without Queues working on the cron
+   sweeper alone; a `cloudflare-queue` selection without the binding logs
+   `jobs.wake_up.binding_missing` and falls back to `none`.
+
+Keep handlers idempotent and split CPU-heavy tasks into smaller jobs. Monitor dead jobs through the
+operational commands. See operations.md and ADR-0015.
 
 Before deployment, the workflow checks the live Hyperdrive config through the Cloudflare API. Give
 `CLOUDFLARE_API_TOKEN` Hyperdrive Read access for that lookup. Hyperdrive query caching must be

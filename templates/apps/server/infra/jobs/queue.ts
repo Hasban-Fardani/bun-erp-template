@@ -1,10 +1,11 @@
 import { createUuid, retryDelayMs } from "@bun-erp/utils";
-import { sql } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
 import { rowsOf } from "../../database/rows.ts";
 import type { Logger } from "../observability/logger.ts";
 import type { JobRegistry } from "./registry.ts";
 import type { JobPayload } from "./schema.ts";
+import type { JobWakeUpSignal } from "./wake-up.ts";
 
 export type EnqueueJobInput = {
   name: string;
@@ -26,6 +27,22 @@ export type ClaimedJob = {
 };
 
 const DEFAULT_LEASE_MS = 5 * 60_000;
+
+/**
+ * Transaction-scoped wake-up signals, keyed by the transaction handle. `JobWakeUp.wrap` opens a
+ * transaction and registers its list here; `enqueueJob` appends the job id; the list is flushed
+ * by the wrapper after commit. Nothing is sent from inside the transaction.
+ */
+const wakeUpSignals = new WeakMap<object, JobWakeUpSignal[]>();
+
+/** Used by `JobWakeUp` to collect signals for one wrapped transaction; not a feature-facing API. */
+export function trackWakeUpSignals(tx: object, signals: JobWakeUpSignal[]): void {
+  wakeUpSignals.set(tx, signals);
+}
+
+function collectWakeUpSignal(db: Database, jobId: string): void {
+  wakeUpSignals.get(db)?.push({ jobId });
+}
 
 // Drizzle maps typed columns to driver values, but parameters inside raw `sql` templates bypass that
 // mapping while Drizzle still replaces postgres.js's timestamp serializer with an identity function.
@@ -56,7 +73,10 @@ export async function enqueueJob(db: Database, input: EnqueueJobInput): Promise<
       returning id
     `),
   );
-  if (inserted[0]) return inserted[0].id;
+  if (inserted[0]) {
+    collectWakeUpSignal(db, inserted[0].id);
+    return inserted[0].id;
+  }
   if (!idempotencyKey) throw new Error("Job insert did not return an identifier");
 
   const existing = rowsOf<{ id: string }>(
@@ -67,6 +87,7 @@ export async function enqueueJob(db: Database, input: EnqueueJobInput): Promise<
   );
   const existingId = existing[0]?.id;
   if (!existingId) throw new Error("Idempotent job could not be read after conflict");
+  collectWakeUpSignal(db, existingId);
   return existingId;
 }
 
@@ -77,35 +98,55 @@ export async function claimNextJob(
   leaseMs = DEFAULT_LEASE_MS,
 ): Promise<ClaimedJob | null> {
   if (!/^[a-z][a-z0-9_.-]{0,79}$/.test(queue)) throw new Error("Queue name must be a stable lowercase identifier");
-  if (!Number.isFinite(leaseMs) || leaseMs < 3_000) throw new RangeError("leaseMs must be at least 3000 milliseconds");
-  const leaseToken = createUuid();
-  const leaseSeconds = Math.max(1, Math.ceil(leaseMs / 1_000));
+  const { leaseToken, leaseSeconds } = leaseOf(leaseMs);
   const result = rowsOf<ClaimedJob>(
-    await db.execute(sql`
-      with expired as (
-        update background_jobs
-        set status = 'dead', lease_token = null, lease_expires_at = null,
-            last_error_code = 'JOB_LEASE_EXPIRED', updated_at = now()
-        where queue_name = ${queue} and status = 'running' and lease_expires_at <= now()
-          and attempt_count >= max_attempts
-        returning id
-      ), candidate as (
-        select id from background_jobs
-        where queue_name = ${queue} and attempt_count < max_attempts
-          and ((status = 'pending' and run_at <= now()) or (status = 'running' and lease_expires_at <= now()))
-        order by run_at asc, created_at asc
-        limit 1 for update skip locked
-      )
-      update background_jobs as job
-      set status = 'running', attempt_count = job.attempt_count + 1, lease_token = ${leaseToken},
-          lease_expires_at = now() + (${leaseSeconds} * interval '1 second'), updated_at = now()
-      from candidate
-      where job.id = candidate.id
-      returning job.id, job.job_name as name, job.queue_name as queue, job.payload,
-        job.attempt_count as "attemptCount", job.max_attempts as "maxAttempts", job.lease_token as "leaseToken"
-    `),
+    await db.execute(claimStatement(sql`queue_name = ${queue}`, leaseToken, leaseSeconds)),
   );
   return result[0] ?? null;
+}
+
+/** Claims one specific job by id; a finished job, or one already held by a live lease, returns null. */
+export async function claimJobById(db: Database, id: string, leaseMs = DEFAULT_LEASE_MS): Promise<ClaimedJob | null> {
+  if (!id) return null;
+  const { leaseToken, leaseSeconds } = leaseOf(leaseMs);
+  const result = rowsOf<ClaimedJob>(await db.execute(claimStatement(sql`id = ${id}`, leaseToken, leaseSeconds)));
+  return result[0] ?? null;
+}
+
+function leaseOf(leaseMs: number): { leaseToken: string; leaseSeconds: number } {
+  if (!Number.isFinite(leaseMs) || leaseMs < 3_000) throw new RangeError("leaseMs must be at least 3000 milliseconds");
+  return { leaseToken: createUuid(), leaseSeconds: Math.max(1, Math.ceil(leaseMs / 1_000)) };
+}
+
+/**
+ * The claim statement shared by the polling worker (`scope` = queue) and the queue wake-up
+ * (`scope` = id): dead-letter an exhausted expired lease, then take the next eligible row with
+ * `skip locked`, so concurrent claims never run the same job twice.
+ */
+function claimStatement(scope: SQL, leaseToken: string, leaseSeconds: number): SQL {
+  return sql`
+    with expired as (
+      update background_jobs
+      set status = 'dead', lease_token = null, lease_expires_at = null,
+          last_error_code = 'JOB_LEASE_EXPIRED', updated_at = now()
+      where ${scope} and status = 'running' and lease_expires_at <= now()
+        and attempt_count >= max_attempts
+      returning id
+    ), candidate as (
+      select id from background_jobs
+      where ${scope} and attempt_count < max_attempts
+        and ((status = 'pending' and run_at <= now()) or (status = 'running' and lease_expires_at <= now()))
+      order by run_at asc, created_at asc
+      limit 1 for update skip locked
+    )
+    update background_jobs as job
+    set status = 'running', attempt_count = job.attempt_count + 1, lease_token = ${leaseToken},
+        lease_expires_at = now() + (${leaseSeconds} * interval '1 second'), updated_at = now()
+    from candidate
+    where job.id = candidate.id
+    returning job.id, job.job_name as name, job.queue_name as queue, job.payload,
+      job.attempt_count as "attemptCount", job.max_attempts as "maxAttempts", job.lease_token as "leaseToken"
+  `;
 }
 
 export async function runNextJob(
@@ -116,6 +157,35 @@ export async function runNextJob(
 ): Promise<boolean> {
   const job = await claimNextJob(db, options.queue, options.leaseMs);
   if (!job) return false;
+  await executeClaimedJob(db, registry, logger, job, options);
+  return true;
+}
+
+/**
+ * Runs one specific job: the Cloudflare Queue wake-up path. The claim is the same atomic
+ * `skip locked` update as the polling path, so duplicate signals, an already-running job, and a
+ * finished job are all no-ops. A job whose `runAt` is still in the future waits for the sweeper.
+ */
+export async function runJobById(
+  db: Database,
+  registry: JobRegistry,
+  logger: Logger,
+  id: string,
+  options: { leaseMs?: number; retryBaseMs?: number; retryMaxMs?: number } = {},
+): Promise<boolean> {
+  const job = await claimJobById(db, id, options.leaseMs);
+  if (!job) return false;
+  await executeClaimedJob(db, registry, logger, job, options);
+  return true;
+}
+
+async function executeClaimedJob(
+  db: Database,
+  registry: JobRegistry,
+  logger: Logger,
+  job: ClaimedJob,
+  options: { leaseMs?: number; retryBaseMs?: number; retryMaxMs?: number },
+): Promise<void> {
   const handler = registry.get(job.name);
   if (!handler) {
     // A rolling deploy may not have registered the handler yet: release the claim and retry with
@@ -129,7 +199,7 @@ export async function runNextJob(
     } else {
       logger.warn({ event: "job.handler_missing", jobId: job.id, jobName: job.name, attempt: job.attemptCount });
     }
-    return true;
+    return;
   }
 
   const leaseMs = options.leaseMs ?? DEFAULT_LEASE_MS;
@@ -159,7 +229,7 @@ export async function runNextJob(
     await handler(job.payload, { db, jobId: job.id, attempt: job.attemptCount });
     if (leaseLost) {
       logger.warn({ event: "job.lease_lost", jobId: job.id, jobName: job.name });
-      return true;
+      return;
     }
     if (await finish(db, job, "completed")) {
       logger.info({ event: "job.completed", jobId: job.id, jobName: job.name });
@@ -169,7 +239,7 @@ export async function runNextJob(
   } catch (error) {
     if (leaseLost) {
       logger.warn({ event: "job.lease_lost", jobId: job.id, jobName: job.name });
-      return true;
+      return;
     }
     const errorCode = safeErrorCode(error);
     const { updated, terminal } = await retryOrDeadLetter(db, job, errorCode, options);
@@ -187,7 +257,6 @@ export async function runNextJob(
   } finally {
     clearInterval(heartbeat);
   }
-  return true;
 }
 
 /** Reschedules with bounded backoff, or dead-letters at max attempts; `updated` is false when the lease was lost. */
@@ -211,11 +280,22 @@ export async function runJobBatch(
   db: Database,
   registry: JobRegistry,
   logger: Logger,
-  options: { queue?: string; leaseMs?: number; retryBaseMs?: number; retryMaxMs?: number; limit?: number } = {},
+  options: {
+    queue?: string;
+    leaseMs?: number;
+    retryBaseMs?: number;
+    retryMaxMs?: number;
+    limit?: number;
+    /** Stops claiming once this much wall-clock time has passed; the job in flight always finishes. */
+    timeBudgetMs?: number;
+  } = {},
 ): Promise<number> {
   const limit = options.limit ?? 20;
+  const deadline = options.timeBudgetMs === undefined ? Number.POSITIVE_INFINITY : Date.now() + options.timeBudgetMs;
   let processed = 0;
-  while (processed < limit && (await runNextJob(db, registry, logger, options))) processed += 1;
+  while (processed < limit && Date.now() < deadline && (await runNextJob(db, registry, logger, options))) {
+    processed += 1;
+  }
   return processed;
 }
 
