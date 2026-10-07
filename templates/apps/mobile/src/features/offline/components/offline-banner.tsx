@@ -1,20 +1,11 @@
 import { useI18n } from "@bun-erp/i18n/react";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+import { readOnlineStatus, subscribeOnlineStatus } from "../stores/online-status.ts";
 
 /** Network state is advisory; cached local data remains the source of truth while offline. */
 export function OfflineBanner() {
   const { t } = useI18n();
-  const [online, setOnline] = useState(() => navigator.onLine);
-
-  useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
-    window.addEventListener("online", update);
-    window.addEventListener("offline", update);
-    return () => {
-      window.removeEventListener("online", update);
-      window.removeEventListener("offline", update);
-    };
-  }, []);
+  const online = useSyncExternalStore(subscribeOnlineStatus, readOnlineStatus, () => true);
 
   if (online) return null;
   return (

@@ -13,23 +13,22 @@ import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { Menu, PanelLeftClose, PanelLeftOpen, Users as UsersIcon } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { type NavItem, navLocationForPath, visibleNavGroups } from "../config/navigation.ts";
-import { STORAGE_KEYS } from "../config/storage-keys.ts";
 import { uiConfig } from "../config/ui.ts";
 import { useSession, useSignOut } from "../features/identity/hooks/index.ts";
+import type { SessionView } from "../features/identity/types/index.ts";
 import { NotificationsBell } from "../features/notifications/components/notification-bell.tsx";
 import { cn } from "../lib/cn.ts";
+import { persistSidebarCollapsed, readSidebarCollapsed } from "../lib/sidebar.ts";
 import { CommandPalette } from "./command-palette.tsx";
 import { ThemeSwitcher } from "./theme-switcher.tsx";
 
-type SessionData = Awaited<ReturnType<typeof useSession>>["data"];
-
 /** Collapse preference survives reloads; read lazily so SSR never touches localStorage. */
 function useCollapsed() {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(STORAGE_KEYS.sidebarCollapsed) === "1");
+  const [collapsed, setCollapsed] = useState(readSidebarCollapsed);
   return [
     collapsed,
     (next: boolean) => {
-      localStorage.setItem(STORAGE_KEYS.sidebarCollapsed, next ? "1" : "0");
+      persistSidebarCollapsed(next);
       setCollapsed(next);
     },
   ] as const;
@@ -121,7 +120,8 @@ function NavigationGroup({
                 onPointerEnter={() => setHoveredUrl(item.url)}
                 onFocus={() => setFocusedUrl(item.url)}
                 onBlur={(event) => {
-                  if (!listRef.current?.contains(event.relatedTarget as Node | null)) setFocusedUrl(null);
+                  const next = event.relatedTarget;
+                  if (!(next instanceof Node) || !listRef.current?.contains(next)) setFocusedUrl(null);
                 }}
                 aria-current={active ? "page" : undefined}
                 data-nav-item={item.url}
@@ -165,7 +165,7 @@ function NavContent({
   onNavigate,
   collapsed = false,
 }: {
-  session: SessionData;
+  session: SessionView;
   onNavigate?: () => void;
   collapsed?: boolean;
 }) {
@@ -195,7 +195,7 @@ function NavContent({
       </div>
 
       <div className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
-        {visibleNavGroups(session?.permissions ?? []).map((group) => (
+        {visibleNavGroups(session.permissions).map((group) => (
           <NavigationGroup
             key={group.titleKey ?? "primary"}
             titleKey={group.titleKey}
@@ -234,7 +234,7 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
   );
 }
 
-function Topbar({ session }: { session: SessionData }) {
+function Topbar({ session }: { session: SessionView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useCollapsed();
   const signOut = useSignOut();
@@ -289,7 +289,7 @@ function Topbar({ session }: { session: SessionData }) {
           <Breadcrumbs pathname={location.pathname} />
 
           <div className="ml-auto flex items-center gap-1.5">
-            <CommandPalette permissions={session?.permissions ?? []} onSignOut={() => signOut.mutate()} />
+            <CommandPalette permissions={session.permissions} onSignOut={() => signOut.mutate()} />
             <NotificationsBell />
             <span className="hidden sm:block">
               <ThemeSwitcher />
@@ -301,14 +301,14 @@ function Topbar({ session }: { session: SessionData }) {
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <span className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-soft-foreground">
-                  {(session?.user?.name ?? "?").slice(0, 1).toUpperCase()}
+                  {(session.user?.name ?? "?").slice(0, 1).toUpperCase()}
                 </span>
-                <span className="hidden text-[13px] font-medium text-ink sm:block">{session?.user?.name}</span>
+                <span className="hidden text-[13px] font-medium text-ink sm:block">{session.user?.name}</span>
               </UserMenu.Trigger>
               <UserMenu.Content>
                 <div className="px-2 py-1.5">
-                  <p className="text-[13px] font-medium">{session?.user?.name}</p>
-                  <p className="truncate text-[12px] text-ink-muted">{session?.user?.email}</p>
+                  <p className="text-[13px] font-medium">{session.user?.name}</p>
+                  <p className="truncate text-[12px] text-ink-muted">{session.user?.email}</p>
                 </div>
                 <UserMenu.Separator />
                 <UserMenu.Item testId="user-menu-sign-out" onSelect={() => signOut.mutate()}>
@@ -318,7 +318,9 @@ function Topbar({ session }: { session: SessionData }) {
             </UserMenu.Root>
           </div>
         </header>
-        <main key={location.pathname} id="main-content" className="enter-soft flex-1">
+        {/* No key: the route tree owns the page transition; remounting the shell on every path change
+            would throw away page state and replay the entrance animation. */}
+        <main id="main-content" className="enter-soft flex-1">
           <Outlet />
         </main>
       </div>

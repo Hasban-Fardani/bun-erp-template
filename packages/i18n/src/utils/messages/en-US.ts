@@ -5,6 +5,7 @@ export const enUS = {
   "common.loading": "Loading…",
   "common.email": "Email",
   "common.password": "Password",
+  "common.actionFailed": "That action failed. Try again.",
   "route.error.title": "This page could not be loaded",
   "route.error.detail": "Try reloading this page.",
   "route.error.retry": "Try again",
@@ -83,6 +84,7 @@ export const enUS = {
   "offline.save": "Save locally",
   "offline.saving": "Saving…",
   "offline.unavailable": "Local storage is unavailable. Try again.",
+  "offline.saveFailed": "The note could not be saved on this device.",
   "offline.savedHeading": "Saved on this device",
   "offline.loadingSaved": "Loading saved notes",
   "offline.loading": "Loading local notes…",
@@ -94,5 +96,6 @@ export const enUS = {
   "notifications.empty": "No notifications yet.",
   "notifications.markAllRead": "Mark all as read",
   "notifications.unread": "Unread",
+  "notifications.unreadError": "Could not load the unread count.",
   "notifications.viewAll": "View all notifications",
 } as const;

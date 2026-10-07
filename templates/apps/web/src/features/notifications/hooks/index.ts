@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { call, rpc } from "../../../lib/rpc.ts";
 import { notificationKeys, notificationsQuery, unreadCountQuery } from "../api/queries.ts";
 
-export function useNotifications(query = "") {
-  return useQuery(notificationsQuery(query));
+/** The list stays disabled until the bell panel opens, so no authenticated page pays for it. */
+export function useNotifications(query = "", enabled = true) {
+  return useQuery({ ...notificationsQuery(query), enabled });
 }
 
 export function useUnreadCount() {

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { authRequest } from "../../../lib/auth.ts";
+import { identityKeys } from "../api/keys.ts";
 import { sessionQuery } from "../api/queries.ts";
 
 export function useSession() {
@@ -11,7 +12,7 @@ export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { email: string; password: string }) => authRequest("sign-in/email", input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["session"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: identityKeys.session }),
   });
 }
 

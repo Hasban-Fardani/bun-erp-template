@@ -33,6 +33,26 @@ test("4xx failures do not retry; an expired session clears private data and redi
   client.clear();
 });
 
+test("a failed mutation reaches the shared error handler exactly once", async () => {
+  const failures: unknown[] = [];
+  const client = createQueryClient(
+    () => {},
+    (error) => failures.push(error),
+  );
+  const mutation = client.getMutationCache().build(client, {
+    mutationKey: ["test-mutation"],
+    mutationFn: async () => {
+      throw new ApiError(500, "INTERNAL", "Boom");
+    },
+  });
+
+  await mutation.execute(undefined).catch(() => {});
+
+  expect(failures).toHaveLength(1);
+  expect(failures[0]).toBeInstanceOf(ApiError);
+  client.clear();
+});
+
 test("RPC validation preserves the server field array", async () => {
   const fields = [{ path: "name", message: "Required" }];
   const response = Response.json(

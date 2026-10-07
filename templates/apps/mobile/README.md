@@ -6,4 +6,6 @@ mobile screens and features, and never imports web source. Offline records use t
 feature and stay on device until a sync contract is defined. Without a server app the RPC client is
 a detached stub (Q30); a later `bun erp init` that includes the server re-fits it.
 Setup, commands and native boundaries live in the repository `docs/mobile.md`.
+Capacitor console logging is off in packaged builds; set `MOBILE_LOGGING=debug` for a native debug
+run to forward webview logs.
 Application identity belongs to the copied project; generated www is not source.

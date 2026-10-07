@@ -1,13 +1,16 @@
 import { queryOptions } from "@tanstack/react-query";
 import { ApiError } from "../../../lib/api.ts";
-import { authRequest } from "../../../lib/auth.ts";
 import { call, rpc } from "../../../lib/rpc.ts";
 import type { SessionView } from "../types/index.ts";
+import { identityKeys } from "./keys.ts";
 
+/**
+ * One request per session read: `/me` returns the identity and permissions together, and answers
+ * 401 when the cookie has no session. The old get-session call added a second round trip per page.
+ */
 export const sessionQuery = queryOptions({
-  queryKey: ["session"],
+  queryKey: identityKeys.session,
   queryFn: async (): Promise<SessionView> => {
-    if (!(await authRequest("get-session"))) return { authenticated: false, user: null, permissions: [] };
     const me = await call(rpc.me.$get()).catch((error: unknown) => {
       if (error instanceof ApiError && error.status === 401) return null;
       throw error;
