@@ -17,6 +17,7 @@ services:
       LOG_RETENTION_DAYS: "14"
       LOG_MAX_SIZE_MB: "100"
       TRUST_PROXY: "false"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Copy .env.docker.example to .env.docker and set BETTER_AUTH_SECRET (bun erp env:key:generate)}
       DATABASE_DRIVER: postgres
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
       DATABASE_POOL_MAX: "10"
