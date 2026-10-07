@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkTechnicalLanguageSource } from "../../../../cli/gates/language-guard.ts";
+import { checkTechnicalLanguageSource } from "@cli/gates/language-guard.ts";
 
 test("rejects Indonesian identifiers and technical theme values", () => {
   const findings = checkTechnicalLanguageSource(

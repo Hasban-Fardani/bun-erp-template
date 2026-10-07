@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createFileIndex } from "../../../../cli/lib/file-index.ts";
+import { createFileIndex } from "@cli/lib/file-index.ts";
 
 test("two gates asking for the same glob under one root scan the filesystem once", async () => {
   let scanCount = 0;

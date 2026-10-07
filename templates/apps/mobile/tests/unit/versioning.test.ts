@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { stampAndroidVersion, stampIosVersion } from "../../../../cli/tasks/mobile-version.ts";
+import { stampAndroidVersion, stampIosVersion } from "@cli/tasks/mobile-version.ts";
 
 test("native projects receive the shared SemVer and monotonic build number", () => {
   const android = stampAndroidVersion(

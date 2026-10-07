@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { repoRoot } from "@cli/lib/repo.ts";
 
 /**
  * Wall-clock budgets for the CLI inner loop. Marked slow: run with `ERP_PERF=1 bun test <file>` on
@@ -10,13 +11,11 @@ import { expect, test } from "bun:test";
 const CHECK_FAST_BUDGET_MS = 350;
 const HELP_BUDGET_MS = 40;
 
-/** `import.meta.dir` is absolute; the trailing segments walk up to the repo root without node:path. */
-const REPO_ROOT = `${import.meta.dir}/../../../..`;
 const RUN_PERF = process.env.ERP_PERF === "1";
 
 async function wallMs(argv: readonly string[]): Promise<number> {
   const started = performance.now();
-  const proc = Bun.spawn([...argv], { cwd: REPO_ROOT, stdout: "ignore", stderr: "ignore" });
+  const proc = Bun.spawn([...argv], { cwd: repoRoot, stdout: "ignore", stderr: "ignore" });
   await proc.exited;
   return performance.now() - started;
 }
@@ -32,8 +31,8 @@ test.skipIf(!RUN_PERF)(
   async () => {
     // The budgets describe a repo where `bun erp init --apps server,web --yes` has been run; a
     // catalog-only checkout has no apps to measure and is skipped.
-    if (!(await Bun.file(`${REPO_ROOT}/apps/server/package.json`).exists())) return;
-    if (!(await Bun.file(`${REPO_ROOT}/apps/web/package.json`).exists())) return;
+    if (!(await Bun.file(`${repoRoot}/apps/server/package.json`).exists())) return;
+    if (!(await Bun.file(`${repoRoot}/apps/web/package.json`).exists())) return;
 
     const help = await bestOf(["bun", "erp", "--help"], 3);
     const fast = await bestOf(["bun", "erp", "check:fast"], 2);

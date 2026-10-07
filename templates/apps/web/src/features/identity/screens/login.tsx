@@ -5,11 +5,11 @@ import { FormErrors, FormFieldError } from "@bun-erp/ui/molecules/form-errors.ts
 import { Modal } from "@bun-erp/ui/organisms/modal.tsx";
 import { useForm } from "@tanstack/react-form";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { shippedFeatures } from "@web/config/navigation.ts";
+import { uiConfig } from "@web/config/ui.ts";
+import { safeRedirectTarget } from "@web/lib/redirect.ts";
 import { Eye, EyeOff, Loader2, Users as UsersIcon } from "lucide-react";
 import { useState } from "react";
-import { shippedFeatures } from "../../../config/navigation.ts";
-import { uiConfig } from "../../../config/ui.ts";
-import { safeRedirectTarget } from "../../../lib/redirect.ts";
 import { useLogin } from "../hooks/index.ts";
 
 const routeApi = getRouteApi("/login");

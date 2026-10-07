@@ -1,7 +1,7 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { listParams } from "@web/lib/list-params.ts";
+import { call, rpc } from "@web/lib/rpc.ts";
 import * as z from "zod";
-import { listParams } from "../../../lib/list-params.ts";
-import { call, rpc } from "../../../lib/rpc.ts";
 
 export const departmentsKeys = {
   list: (query: string) => ["departments", query] as const,

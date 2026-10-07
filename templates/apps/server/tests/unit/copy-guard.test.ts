@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { checkUserCopy } from "../../../../cli/gates/copy-guard.ts";
-import { clearFileIndexes } from "../../../../cli/lib/file-index.ts";
+import { checkUserCopy } from "@cli/gates/copy-guard.ts";
+import { clearFileIndexes } from "@cli/lib/file-index.ts";
 
 test("copy gate ignores TypeScript arrow and generic syntax but rejects rendered permission IDs", async () => {
   const root = `${process.env.TMPDIR ?? "/tmp"}/erp-copy-${Bun.randomUUIDv7()}`;

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { loadEnv } from "../../../config/index.ts";
-import { createApp } from "../../../http/app.ts";
+import { loadEnv } from "@/config/index.ts";
+import { createApp } from "@/http/app.ts";
 import { createSeededApp, type SeededApp } from "../../support/fixtures.ts";
 
 let fixture: SeededApp;

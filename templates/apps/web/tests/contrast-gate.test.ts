@@ -4,7 +4,7 @@ import {
   checkComponentClassContrast,
   checkContrast,
   contrastRatio,
-} from "../../../cli/gates/contrast-gate.ts";
+} from "@cli/gates/contrast-gate.ts";
 
 test("light text on the accent-soft surface fails WCAG AA", () => {
   expect(contrastRatio("#ffffff", "#ecfdf5")).toBeLessThan(4.5);

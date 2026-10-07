@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { GATE_CATALOG } from "../../../../cli/lib/gates.ts";
-import { repoRoot } from "../../../../cli/lib/repo.ts";
+import { GATE_CATALOG } from "@cli/lib/gates.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
 
 type JsonRpcResponse = {
   id?: string | number | null;

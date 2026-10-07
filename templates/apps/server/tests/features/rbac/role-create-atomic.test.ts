@@ -1,9 +1,9 @@
 import { beforeEach, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { commands } from "../../../cli/commands/role.ts";
-import { roles } from "../../../features/rbac/schema.ts";
-import { permissionsForRole } from "../../../features/rbac/service.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { commands } from "@/cli/commands/role.ts";
+import { roles } from "@/features/rbac/schema.ts";
+import { permissionsForRole } from "@/features/rbac/service.ts";
 import { createSeededContext } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

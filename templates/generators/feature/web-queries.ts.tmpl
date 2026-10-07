@@ -1,7 +1,7 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import * as z from "zod";
-import { listParams } from "../../../lib/list-params.ts";
-import { call, rpc } from "../../../lib/rpc.ts";
+import { listParams } from "@web/lib/list-params.ts";
+import { call, rpc } from "@web/lib/rpc.ts";
 
 export const {{camel}}Keys = {
   list: (query: string) => ["{{name}}", query] as const,

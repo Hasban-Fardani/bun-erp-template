@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { repoRoot } from "@cli/lib/repo.ts";
 import type { DevelopmentEnvironment } from "../../cli/lib/development-environment.ts";
 import { runDev } from "../../cli/tasks/dev.ts";
 
@@ -9,7 +10,7 @@ import { runDev } from "../../cli/tasks/dev.ts";
 const CRASHING_API_ENTRY = `process.stderr.write('{"event":"boot.failed","error":"migration ledger mismatch","pgCode":"42P10","hint":"database schema is out of date with the catalog; run \`bun erp db:status\`"}\\n');\nawait new Promise(() => {});\n`;
 
 test("an API that fails at boot stops the stack before Vite is spawned", async () => {
-  const root = `${import.meta.dir}/../../../../.data/dev-orchestration-${crypto.randomUUID()}`;
+  const root = `${repoRoot}/.data/dev-orchestration-${crypto.randomUUID()}`;
   await Bun.$`mkdir -p ${root}/apps/server/bootstrap ${root}/apps/web`.quiet();
   await Bun.write(`${root}/apps/server/bootstrap/crash.ts`, CRASHING_API_ENTRY);
   // apps/web exists on purpose: the orchestrator must not spawn Vite even though it could.

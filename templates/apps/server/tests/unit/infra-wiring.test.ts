@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import type { InfraFeatureManifest } from "../../../../cli/lib/feature-catalog.ts";
-import { planInfraWiring } from "../../../../cli/lib/infra-wiring.ts";
+import type { InfraFeatureManifest } from "@cli/lib/feature-catalog.ts";
+import { planInfraWiring } from "@cli/lib/infra-wiring.ts";
 import { withTempRoot } from "./support/temp-root.ts";
 
 /** One `context` op is enough: its editor has two expected edits (import + field) plus the marker. */

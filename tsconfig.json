@@ -7,6 +7,12 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "types": ["bun"],
+    "paths": {
+      "@/*": ["./apps/server/*"],
+      "@web/*": ["./apps/web/src/*"],
+      "@mobile/*": ["./apps/mobile/src/*"],
+      "@cli/*": ["./cli/*"]
+    },
     "allowImportingTsExtensions": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,

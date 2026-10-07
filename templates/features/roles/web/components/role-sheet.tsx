@@ -7,8 +7,8 @@ import { FormFieldError } from "@bun-erp/ui/molecules/form-errors.tsx";
 import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
 import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
 import { useForm } from "@tanstack/react-form";
+import { ApiError } from "@web/lib/api.ts";
 import { Save, ShieldPlus } from "lucide-react";
-import { ApiError } from "../../../lib/api.ts";
 import { useRoleStatements } from "../hooks/index.ts";
 import type { Role } from "../types/index.ts";
 

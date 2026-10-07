@@ -1,10 +1,10 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
-import { createContext } from "../../../bootstrap/bootstrap.ts";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { migrate } from "../../../database/migrate.ts";
-import { rowsOf } from "../../../database/rows.ts";
+import { createContext } from "@/bootstrap/bootstrap.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { migrate } from "@/database/migrate.ts";
+import { rowsOf } from "@/database/rows.ts";
 import { createTestContext, disposeTestContext, testEnv } from "../../support/fixtures.ts";
 import { appliedNames, migrationModule, scopedDir, tableExists } from "./support.ts";
 

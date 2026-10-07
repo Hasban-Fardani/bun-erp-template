@@ -1,7 +1,7 @@
 import { beforeEach, expect, test } from "bun:test";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { requireUserByEmail } from "../../../cli/lib/context.ts";
-import { createUser } from "../../../features/identity/service.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { requireUserByEmail } from "@/cli/lib/context.ts";
+import { createUser } from "@/features/identity/service.ts";
 import { createSeededContext } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

@@ -1,6 +1,6 @@
 import { createUuid } from "@bun-erp/utils";
+import { createMobileLogger } from "@mobile/lib/logger.ts";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createMobileLogger } from "../../../lib/logger.ts";
 import { getOfflineStore } from "../stores/offline-store.ts";
 
 export type OfflineDraft = { key: string; text: string; updatedAt: string };

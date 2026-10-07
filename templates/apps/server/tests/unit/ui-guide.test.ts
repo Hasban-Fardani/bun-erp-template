@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { checkUiGuide } from "../../../../cli/gates/ui-guide.ts";
+import { checkUiGuide } from "@cli/gates/ui-guide.ts";
 
 async function fixture(files: Record<string, string>): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "ui-guide-"));

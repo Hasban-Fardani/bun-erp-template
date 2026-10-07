@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { planMakeFeature, writeMakeFeature } from "../../../../cli/lib/make-feature.ts";
+import { planMakeFeature, writeMakeFeature } from "@cli/lib/make-feature.ts";
 import { withCoreFiles } from "./support/make-feature-fixture.ts";
 
 test("make:feature refuses before writing when a wiring anchor is missing", async () => {

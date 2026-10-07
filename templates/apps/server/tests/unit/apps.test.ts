@@ -1,12 +1,8 @@
 import { afterAll, expect, test } from "bun:test";
-import {
-  listWorkspaceApps,
-  readWorkspaceApp,
-  registerWorkspace,
-  renderAppScaffold,
-} from "../../../../cli/lib/workspace-apps.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
+import { listWorkspaceApps, readWorkspaceApp, registerWorkspace, renderAppScaffold } from "@cli/lib/workspace-apps.ts";
 
-const dataRoot = `${import.meta.dir}/../../../../.data`;
+const dataRoot = `${repoRoot}/.data`;
 const created: string[] = [];
 
 async function fixtureRoot(): Promise<string> {

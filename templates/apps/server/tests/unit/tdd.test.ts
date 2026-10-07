@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { checkTdd } from "../../../../cli/gates/tdd.ts";
+import { checkTdd } from "@cli/gates/tdd.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
 
 async function writeFixture(withTest: boolean): Promise<string> {
   const root = `/tmp/erp-tdd-${crypto.randomUUID()}`;
@@ -21,5 +22,5 @@ test("a feature with a test passes", async () => {
 });
 
 test("every shipped server feature has a test", async () => {
-  expect(await checkTdd(`${import.meta.dir}/../../../..`)).toEqual([]);
+  expect(await checkTdd(repoRoot)).toEqual([]);
 });

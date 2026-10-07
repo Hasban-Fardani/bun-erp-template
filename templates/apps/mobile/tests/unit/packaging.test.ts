@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
+import { repoRoot } from "@cli/lib/repo.ts";
 
 test("mobile builds reject same-origin, insecure and API-prefix configuration before packaging", async () => {
-  const root = new URL("../../../../", import.meta.url).pathname;
+  const root = repoRoot;
   for (const origin of ["", "http://localhost:3000", "https://api.example.test/api/v1"]) {
     const child = Bun.spawn(["bun", "cli/tasks/mobile.ts", "build"], {
       cwd: root,
@@ -21,7 +22,7 @@ test("mobile builds reject same-origin, insecure and API-prefix configuration be
 });
 
 test("mobile:package rejects an unknown or missing --mode before building natively", async () => {
-  const root = new URL("../../../../", import.meta.url).pathname;
+  const root = repoRoot;
   for (const args of [
     ["package", "android", "--mode", "staging"],
     ["package", "android", "--mode"],

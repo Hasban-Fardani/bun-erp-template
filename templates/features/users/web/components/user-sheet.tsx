@@ -8,9 +8,9 @@ import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
 import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
 import { isValidEmailAddress } from "@bun-erp/utils/email";
 import { useForm } from "@tanstack/react-form";
+import { ApiError } from "@web/lib/api.ts";
 import { Eye, EyeOff, Save, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { ApiError } from "../../../lib/api.ts";
 import { useCreateUser, useRoles } from "../hooks/index.ts";
 import type { PublicUser } from "../types/index.ts";
 

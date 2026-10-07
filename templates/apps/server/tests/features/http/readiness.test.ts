@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { createApp } from "../../../http/app.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { createApp } from "@/http/app.ts";
 import { createSeededApp } from "../../support/fixtures.ts";
 
 test("/ready reports ready when the database answers", async () => {

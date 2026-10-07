@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
-import { repoRoot } from "../../../../cli/lib/repo.ts";
-import { defineCommand } from "../../../../cli/registry.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
+import { defineCommand } from "@cli/registry.ts";
 import { loadEnv, strayKeyWarnings } from "../../config/index.ts";
 
 export const commands = [

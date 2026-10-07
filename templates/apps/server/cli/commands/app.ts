@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
+import { repoRoot } from "@cli/lib/repo.ts";
+import { defineCommand } from "@cli/registry.ts";
 import { sql } from "drizzle-orm";
-import { repoRoot } from "../../../../cli/lib/repo.ts";
-import { defineCommand } from "../../../../cli/registry.ts";
 import { loadEnv } from "../../config/index.ts";
 import { roles } from "../../features/rbac/schema.ts";
 import { createApp } from "../../http/app.ts";

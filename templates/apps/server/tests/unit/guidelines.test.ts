@@ -5,8 +5,8 @@ import {
   GUIDELINES_START,
   refreshGuidelines,
   renderGuidelinesBlock,
-} from "../../../../cli/lib/guidelines.ts";
-import { repoRoot } from "../../../../cli/lib/repo.ts";
+} from "@cli/lib/guidelines.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
 
 test("the generated block lists installed apps, packages and features with guide paths", async () => {
   const block = await renderGuidelinesBlock(repoRoot);

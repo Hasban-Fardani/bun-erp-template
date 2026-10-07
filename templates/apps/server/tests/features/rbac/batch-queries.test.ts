@@ -2,11 +2,11 @@ import { beforeEach, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import type { Database } from "../../../database/index.ts";
-import * as schema from "../../../database/schema.ts";
-import { createUser } from "../../../features/identity/service.ts";
-import { roles } from "../../../features/rbac/schema.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import type { Database } from "@/database/index.ts";
+import * as schema from "@/database/schema.ts";
+import { createUser } from "@/features/identity/service.ts";
+import { roles } from "@/features/rbac/schema.ts";
 import {
   assignRole,
   createRole,
@@ -14,8 +14,8 @@ import {
   permissionsForRoles,
   rolesForUser,
   rolesForUsers,
-} from "../../../features/rbac/service.ts";
-import { createApp } from "../../../http/app.ts";
+} from "@/features/rbac/service.ts";
+import { createApp } from "@/http/app.ts";
 import { createSeededContext, loginOwner, testEnv } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

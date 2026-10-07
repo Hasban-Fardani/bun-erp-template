@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { authRequest } from "../../../lib/auth.ts";
+import { authRequest } from "@web/lib/auth.ts";
 import { identityKeys } from "../api/keys.ts";
 import { sessionQuery } from "../api/queries.ts";
 

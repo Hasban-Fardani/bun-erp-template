@@ -1,10 +1,10 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { eq, sql } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { rowsOf } from "../../../database/rows.ts";
-import { createAuth } from "../../../features/identity/auth.ts";
-import { members, organizations } from "../../../features/organizations/schema.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { rowsOf } from "@/database/rows.ts";
+import { createAuth } from "@/features/identity/auth.ts";
+import { members, organizations } from "@/features/organizations/schema.ts";
 import { createTestContext, testEnv, truncateAll } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

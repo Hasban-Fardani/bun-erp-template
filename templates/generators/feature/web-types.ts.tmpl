@@ -1,5 +1,5 @@
 import type { InferResponseType } from "hono/client";
-import type { rpc } from "../../../lib/rpc.ts";
+import type { rpc } from "@web/lib/rpc.ts";
 
 /** One {{name}} row as the list endpoint returns it. Add the domain fields once the spec defines them. */
 type ListResponse = InferResponseType<(typeof rpc)[{{nameJson}}]["$get"], 200>;

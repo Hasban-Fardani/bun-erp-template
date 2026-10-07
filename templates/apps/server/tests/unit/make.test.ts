@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
-import { planMakeFeature } from "../../../../cli/lib/make-feature.ts";
-import { repoRoot } from "../../../../cli/lib/repo.ts";
-import { renderFeatureScaffold } from "../../../../cli/lib/scaffolding.ts";
-import { renderTemplate } from "../../../../cli/lib/template.ts";
+import { planMakeFeature } from "@cli/lib/make-feature.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
+import { renderFeatureScaffold } from "@cli/lib/scaffolding.ts";
+import { renderTemplate } from "@cli/lib/template.ts";
 import { CORE_FILES, withCoreFiles } from "./support/make-feature-fixture.ts";
 
 /**

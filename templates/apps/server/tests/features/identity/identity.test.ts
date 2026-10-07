@@ -1,14 +1,14 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { seed } from "../../../database/seed.ts";
-import { redactEntity } from "../../../features/audit/redact.ts";
-import { auditLogs } from "../../../features/audit/schema.ts";
-import { accounts } from "../../../features/identity/schema.ts";
-import { createUser } from "../../../features/identity/service.ts";
-import { permissions, roles } from "../../../features/rbac/schema.ts";
-import { assignRole, permissionsForUser, rolesForUser, seedRbac } from "../../../features/rbac/service.ts";
-import { createApp } from "../../../http/app.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { seed } from "@/database/seed.ts";
+import { redactEntity } from "@/features/audit/redact.ts";
+import { auditLogs } from "@/features/audit/schema.ts";
+import { accounts } from "@/features/identity/schema.ts";
+import { createUser } from "@/features/identity/service.ts";
+import { permissions, roles } from "@/features/rbac/schema.ts";
+import { assignRole, permissionsForUser, rolesForUser, seedRbac } from "@/features/rbac/service.ts";
+import { createApp } from "@/http/app.ts";
 import { createTestClient, createTestContext, truncateAll } from "../../support/fixtures.ts";
 
 let ctx: AppContext;

@@ -4,10 +4,10 @@ import {
   migrationBaseName,
   planFeatureInstall,
   readFeatureManifest,
-} from "../../../../cli/lib/feature-catalog.ts";
-import { planInfraWiring } from "../../../../cli/lib/infra-wiring.ts";
-import { repoRoot } from "../../../../cli/lib/repo.ts";
-import { addAuditEntity, addI18nKeys, addNavItem, nextMigrationFile } from "../../../../cli/lib/scaffolding.ts";
+} from "@cli/lib/feature-catalog.ts";
+import { planInfraWiring } from "@cli/lib/infra-wiring.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
+import { addAuditEntity, addI18nKeys, addNavItem, nextMigrationFile } from "@cli/lib/scaffolding.ts";
 
 test("catalog discovery lists the departments feature", async () => {
   expect(await catalogFeatureNames(repoRoot)).toContain("departments");

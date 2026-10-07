@@ -1,16 +1,16 @@
 import { afterAll, beforeEach, expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
-import { rowsOf } from "../../../database/rows.ts";
-import { registerImportExportBatchHandlers } from "../../../features/import-export/jobs.ts";
+import { rowsOf } from "@/database/rows.ts";
+import { registerImportExportBatchHandlers } from "@/features/import-export/jobs.ts";
 import {
   type ImportExportResource,
   importExportResources,
   registerImportExportResource,
-} from "../../../features/import-export/registry.ts";
-import { buildDryRun, selectExportData, startImport } from "../../../features/import-export/service.ts";
-import { BatchHandlerRegistry, processJobBatch } from "../../../infra/jobs/batch.ts";
-import type { Logger } from "../../../infra/observability/logger.ts";
+} from "@/features/import-export/registry.ts";
+import { buildDryRun, selectExportData, startImport } from "@/features/import-export/service.ts";
+import { BatchHandlerRegistry, processJobBatch } from "@/infra/jobs/batch.ts";
+import type { Logger } from "@/infra/observability/logger.ts";
 import { createHttpFixture, dataOf, type HttpFixture } from "../../support/fixtures.ts";
 
 const logger: Logger = {

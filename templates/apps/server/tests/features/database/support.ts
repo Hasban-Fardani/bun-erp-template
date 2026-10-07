@@ -1,6 +1,7 @@
+import { repoRoot } from "@cli/lib/repo.ts";
 import { sql } from "drizzle-orm";
-import type { AppContext } from "../../../bootstrap/context.ts";
-import { rowsOf } from "../../../database/rows.ts";
+import type { AppContext } from "@/bootstrap/context.ts";
+import { rowsOf } from "@/database/rows.ts";
 
 /**
  * Shared fixtures for the migration-runner suites: a throwaway directory per case and the two
@@ -10,9 +11,9 @@ import { rowsOf } from "../../../database/rows.ts";
  * `mktemp -d` stands in for `mkdtemp` — Bun exposes no temp-directory API of its own.
  */
 export async function scopedDir(files: Record<string, string>): Promise<string> {
-  // `new URL` resolves the `..` segments: Bun's dynamic import only finds a file written after
-  // the first load when the directory path it receives is already normalized.
-  const root = new URL("../../../../../.data", import.meta.url).pathname;
+  // `repoRoot` is absolute and already normalized: Bun's dynamic import only finds a file written
+  // after the first load when the directory path it receives is normalized.
+  const root = `${repoRoot}/.data`;
   await Bun.$`mkdir -p ${root}`.quiet();
   const dir = (await Bun.$`mktemp -d ${`${root}/erp-migrations-XXXXXX`}`.text()).trim();
   for (const [name, body] of Object.entries(files)) await Bun.write(`${dir}/${name}`, migrationModule(body));

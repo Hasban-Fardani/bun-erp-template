@@ -1,10 +1,10 @@
 import { resolve } from "node:path";
+import { parseCommandOptions } from "@cli/lib/options.ts";
+import { MIGRATIONS_DIR, SEEDERS_DIR } from "@cli/lib/repo.ts";
+import { listSeederFiles } from "@cli/lib/scaffold.ts";
+import { toSeederName } from "@cli/lib/scaffolding.ts";
+import { defineCommand } from "@cli/registry.ts";
 import { sql } from "drizzle-orm";
-import { parseCommandOptions } from "../../../../cli/lib/options.ts";
-import { MIGRATIONS_DIR, SEEDERS_DIR } from "../../../../cli/lib/repo.ts";
-import { listSeederFiles } from "../../../../cli/lib/scaffold.ts";
-import { toSeederName } from "../../../../cli/lib/scaffolding.ts";
-import { defineCommand } from "../../../../cli/registry.ts";
 import { loadEnv } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
 import { listMigrationFiles, migrate, planMigrations } from "../../database/migrate.ts";

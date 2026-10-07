@@ -17,6 +17,27 @@
 - Node built-ins are restricted by cli/gates/platform.ts; check the gate before adding one.
 - `cli/gates/` holds read-only gates and governance checks; `cli/tasks/` holds helpers the CLI invokes. Both are TypeScript, but a gate never mutates the repo and a task is never imported by a gate. See docs/gates.md.
 
+## Imports
+
+Pick the import form by what it targets, in this order:
+
+| Target | Form | Example |
+|---|---|---|
+| A workspace package | `@bun-erp/<name>` | `import { Button } from "@bun-erp/ui/atoms/button.tsx";` |
+| Server module or server test | `@/*` → `apps/server/*` | `import { rowsOf } from "@/database/rows.ts";` |
+| Web app or catalog feature web file | `@web/*` → `apps/web/src/*` | `import { rpc } from "@web/lib/rpc.ts";` |
+| Mobile app | `@mobile/*` → `apps/mobile/src/*` | `import { createMobileLogger } from "@mobile/lib/logger.ts";` |
+| The root CLI from a server command, task or test | `@cli/*` → `cli/*` | `import { repoRoot } from "@cli/lib/repo.ts";` |
+| A file in the same directory | `./sibling.ts` | `import { useTableState } from "./use-table-state.ts";` |
+
+Never stack two or more `../` segments: a path that walks up two or more directories hides which
+module owns the target and breaks when a file moves. Use the alias for the layer instead. The
+`architecture` gate's `no-deep-relative` rule (`NO_DEEP_RELATIVE`) fails any import specifier with
+three or more `../` segments, so the migration cannot regress. The root `tsconfig.json` and
+`templates/apps/server/tsconfig.json` declare the aliases, so `tsc -p tsconfig.json` and Bun resolve
+them identically; `apps/web/vite.config.ts` and `apps/mobile/vite.config.ts` repeat `@web` and
+`@mobile` for Vite.
+
 bun erp check runs lint, types and read-only gates concurrently. It does not run tests or builds.
 Run bun erp test and the relevant app build when the change requires them.
 

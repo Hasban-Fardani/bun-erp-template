@@ -1,7 +1,7 @@
-import { formatIssues, humanizeKey, parseKeyList } from "../../../../cli/lib/format.ts";
-import { parseCommandOptions } from "../../../../cli/lib/options.ts";
-import { resolveRequired } from "../../../../cli/lib/prompt.ts";
-import { defineCommand } from "../../../../cli/registry.ts";
+import { formatIssues, humanizeKey, parseKeyList } from "@cli/lib/format.ts";
+import { parseCommandOptions } from "@cli/lib/options.ts";
+import { resolveRequired } from "@cli/lib/prompt.ts";
+import { defineCommand } from "@cli/registry.ts";
 import { roles as roleTable } from "../../features/rbac/schema.ts";
 import {
   createRoleWithPermissions,

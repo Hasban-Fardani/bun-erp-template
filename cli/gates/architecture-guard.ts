@@ -1,4 +1,6 @@
 import { dirname, join, normalize, relative, resolve } from "node:path";
+import { LanguageVariant, SyntaxKind } from "typescript/unstable/ast";
+import { createScanner } from "typescript/unstable/ast/scanner";
 import { type FileIndex, fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
@@ -58,6 +60,79 @@ async function featureBoundaryFindings(root: string, index: FileIndex): Promise<
 
 function featureNameOf(path: string): string | undefined {
   return /(?:^|\/)features\/([^/]+)/.exec(path)?.[1];
+}
+
+/** An import specifier that walks up three or more directories, e.g. `../../..` and deeper. */
+const DEEP_RELATIVE_SPECIFIER = /^(?:\.\.\/){3,}/;
+/** The same shape anywhere in a file, used as a cheap prefilter before parsing imports. */
+const DEEP_RELATIVE_ANYWHERE = /\.\.\/\.\.\/\.\.\//;
+const TYPE_ONLY_IMPORT = /(?:import|export)\s+type\s+[^;]+?\s+from\s+["']([^"']+)["']/g;
+
+/** Half-open token spans of every string or template literal, so fixture text is not read as code. */
+function stringLiteralSpans(code: string, isTsx: boolean): Array<[number, number]> {
+  const scanner = createScanner(true, isTsx ? LanguageVariant.JSX : LanguageVariant.Standard, code);
+  const spans: Array<[number, number]> = [];
+  while (true) {
+    const kind = scanner.scan();
+    if (kind === SyntaxKind.EndOfFile) break;
+    if (
+      kind === SyntaxKind.StringLiteral ||
+      kind === SyntaxKind.NoSubstitutionTemplateLiteral ||
+      kind === SyntaxKind.TemplateHead ||
+      kind === SyntaxKind.TemplateMiddle ||
+      kind === SyntaxKind.TemplateTail
+    ) {
+      spans.push([scanner.getTokenStart(), scanner.getTokenEnd()]);
+    }
+  }
+  return spans;
+}
+
+/**
+ * Type-only imports, which `Bun.Transpiler.scanImports` drops. A fixture string such as
+ * `'import type { T } from "../../x.ts"'` also matches the pattern; the token scan shows the
+ * match starts inside a string literal, so it is test data, not an import of this file.
+ */
+function typeOnlySpecifiers(code: string, isTsx: boolean): string[] {
+  const spans = stringLiteralSpans(code, isTsx);
+  const specifiers: string[] = [];
+  for (const match of code.matchAll(TYPE_ONLY_IMPORT)) {
+    const start = match.index ?? 0;
+    if (spans.some(([spanStart, spanEnd]) => start >= spanStart && start < spanEnd)) continue;
+    if (match[1]) specifiers.push(match[1]);
+  }
+  return specifiers;
+}
+
+/**
+ * Backward paths like `../../..` obscure which module owns the target and break when a file moves.
+ * The tsconfig aliases name the owner instead: `@/` (server), `@web/` (web src), `@mobile/`
+ * (mobile src) and `@cli/` (the root CLI). The scan covers the catalogs and the installed apps, so
+ * a deep import fails both before and after `bun erp init`.
+ */
+async function noDeepRelativeFindings(index: FileIndex): Promise<string[]> {
+  const findings: string[] = [];
+  const files = await index.files([
+    "apps/**/*.{ts,tsx}",
+    "templates/**/*.{ts,tsx}",
+    "packages/**/*.{ts,tsx}",
+    "cli/**/*.{ts,tsx}",
+  ]);
+  for (const file of files) {
+    const code = await index.text(file);
+    // The cheap substring check keeps the transpiler off the files that cannot match.
+    if (!DEEP_RELATIVE_ANYWHERE.test(code)) continue;
+    const imports = new Bun.Transpiler({ loader: file.endsWith(".tsx") ? "tsx" : "ts" })
+      .scanImports(code)
+      .map(({ path }) => path);
+    imports.push(...typeOnlySpecifiers(code, file.endsWith(".tsx")));
+    for (const specifier of imports) {
+      if (DEEP_RELATIVE_SPECIFIER.test(specifier)) {
+        findings.push(`${file}: NO_DEEP_RELATIVE — ${specifier} uses three or more "../" segments; use a path alias`);
+      }
+    }
+  }
+  return findings;
 }
 
 /** Shared presentation stays usable without either application's runtime. */
@@ -169,6 +244,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
     }
   }
 
+  findings.push(...(await noDeepRelativeFindings(index)));
   findings.push(...(await featureBoundaryFindings(root, index)));
   return findings;
 }
