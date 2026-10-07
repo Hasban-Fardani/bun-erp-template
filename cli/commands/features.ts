@@ -6,35 +6,18 @@ import {
   migrationBaseName,
   planFeatureInstall,
   readFeatureManifest,
-  type ServerFeatureManifest,
-  type WebFeatureManifest,
 } from "../lib/feature-catalog.ts";
+import { planFeatureWiring } from "../lib/feature-wiring.ts";
 import { refreshGuidelines } from "../lib/guidelines.ts";
-import { planInfraWiring, type WiringEdit } from "../lib/infra-wiring.ts";
+import { planInfraWiring } from "../lib/infra-wiring.ts";
 import { parseCommandOptions } from "../lib/options.ts";
 import { copyCatalogPackage, ensureWorkspaceDependency } from "../lib/package-catalog.ts";
 import { resolveRequired } from "../lib/prompt.ts";
 import { MIGRATIONS_DIR, repoRoot } from "../lib/repo.ts";
 import { formatScaffold, regenerateWebRouteTree, writeScaffold } from "../lib/scaffold.ts";
-import {
-  addAuditEntity,
-  addI18nKeys,
-  addNavItem,
-  addRouteMount,
-  addStatementResource,
-  nextMigrationFile,
-  toPascalName,
-} from "../lib/scaffolding.ts";
+import { nextMigrationFile, toPascalName } from "../lib/scaffolding.ts";
+import { assertWiringAnchors } from "../lib/wiring.ts";
 import { defineCommand } from "../registry.ts";
-
-const WIRING_FILES = {
-  statements: "apps/server/features/rbac/statements.ts",
-  audit: "apps/server/features/audit/redact.ts",
-  routes: "apps/server/routes/api.ts",
-  nav: "apps/web/src/config/navigation.ts",
-  enUS: "packages/i18n/src/utils/messages/en-US.ts",
-  idID: "packages/i18n/src/utils/messages/id-ID.ts",
-} as const;
 
 const WEB_MANIFEST = "apps/web/package.json";
 const SERVER_MANIFEST = "apps/server/package.json";
@@ -81,14 +64,24 @@ export const commands = [
     const wiring =
       manifest.kind === "infra"
         ? await planInfraWiring(repoRoot, manifest)
-        : await planWiring(manifest, { name: manifest.name, camel });
-    for (const entry of wiring) {
-      if (entry.status === "skipped") {
-        throw new Error(
-          `Cannot auto-wire ${entry.path}: its anchor is missing. Restore the core file or wire manually.`,
-        );
-      }
-    }
+        : await planFeatureWiring(
+            repoRoot,
+            { name: manifest.name, camel },
+            {
+              ...(manifest.kind === "server"
+                ? {
+                    server: {
+                      resource: manifest.permissionResource,
+                      auditEntity: manifest.auditEntity,
+                      auditFields: manifest.auditFields,
+                    },
+                  }
+                : {}),
+              nav: manifest.nav,
+              i18nKeys: manifest.i18nKeys,
+            },
+          );
+    assertWiringAnchors(wiring);
 
     // A feature may need an opt-in package. Install the catalog package and declare the workspace
     // dependency before any file is written, so the build that follows resolves every import.
@@ -169,35 +162,3 @@ export const commands = [
     process.stdout.write("Next: run bun erp check before using it.\n");
   }),
 ];
-
-/** Applies every wiring helper to the current core files; nothing is written here. */
-async function planWiring(
-  manifest: ServerFeatureManifest | WebFeatureManifest,
-  feature: { name: string; camel: string },
-): Promise<WiringEdit[]> {
-  const read = (path: string) => Bun.file(resolve(repoRoot, path)).text();
-  const edits: WiringEdit[] = [];
-
-  // A web feature owns presentation only: its permissions, audit and API are already core.
-  if (manifest.kind === "server") {
-    const statements = addStatementResource(await read(WIRING_FILES.statements), manifest.permissionResource);
-    edits.push({ path: WIRING_FILES.statements, ...statements });
-
-    const audit = addAuditEntity(await read(WIRING_FILES.audit), manifest.auditEntity, manifest.auditFields);
-    edits.push({ path: WIRING_FILES.audit, ...audit });
-
-    const routes = addRouteMount(await read(WIRING_FILES.routes), feature);
-    edits.push({ path: WIRING_FILES.routes, ...routes });
-  }
-
-  const nav = addNavItem(await read(WIRING_FILES.nav), feature, manifest.nav);
-  edits.push({ path: WIRING_FILES.nav, ...nav });
-
-  const en = addI18nKeys(await read(WIRING_FILES.enUS), feature, "en-US", manifest.i18nKeys["en-US"]);
-  edits.push({ path: WIRING_FILES.enUS, ...en });
-
-  const id = addI18nKeys(await read(WIRING_FILES.idID), feature, "id-ID", manifest.i18nKeys["id-ID"]);
-  edits.push({ path: WIRING_FILES.idID, ...id });
-
-  return edits;
-}

@@ -1,25 +1,28 @@
 import { resolve } from "node:path";
 import { requireApps } from "../lib/apps.ts";
+import { planMakeFeature, writeMakeFeature } from "../lib/make-feature.ts";
 import { parseCommandOptions } from "../lib/options.ts";
 import { resolveRequired } from "../lib/prompt.ts";
 import { MIGRATIONS_DIR, repoRoot, SEEDERS_DIR } from "../lib/repo.ts";
 import { formatScaffold, regenerateWebRouteTree, writeScaffold } from "../lib/scaffold.ts";
 import {
-  addAuditEntity,
-  addI18nKeys,
-  addNavItem,
-  addRouteMount,
-  addStatementResource,
   nextMigrationFile,
   parseMigrationName,
-  renderFeatureScaffold,
   renderMigrationSource,
   renderSeederSource,
-  renderWebFeatureScaffold,
   toSeederName,
   toSnakeName,
 } from "../lib/scaffolding.ts";
 import { defineCommand } from "../registry.ts";
+
+const WIRING_PATHS = {
+  statements: "apps/server/features/rbac/statements.ts",
+  audit: "apps/server/features/audit/redact.ts",
+  routes: "apps/server/routes/api.ts",
+  nav: "apps/web/src/config/navigation.ts",
+  enUS: "packages/i18n/src/utils/messages/en-US.ts",
+  idID: "packages/i18n/src/utils/messages/id-ID.ts",
+} as const;
 
 export const commands = [
   defineCommand("make:feature", async (args) => {
@@ -43,112 +46,52 @@ export const commands = [
     const sequenceKey = parsed.values.get("sequence");
     const softDelete = parsed.flags.has("soft-delete");
     const version = !parsed.flags.has("no-version");
-    const scaffold = renderFeatureScaffold(rawName, {
+
+    // Plan validates every target path and wiring anchor before the first write: a missing anchor
+    // aborts here instead of leaving a half-wired feature behind.
+    const plan = await planMakeFeature(repoRoot, rawName, {
       ...(sequenceKey ? { sequence: { key: sequenceKey, prefix: parsed.values.get("prefix"), padding } } : {}),
       softDelete,
       version,
     });
-    const web = renderWebFeatureScaffold(scaffold);
-    for (const file of [...scaffold.files, ...web.files]) {
-      const path = resolve(repoRoot, file.path);
-      if (await Bun.file(path).exists()) throw new Error(`Refusing to overwrite existing file: ${file.path}`);
-    }
-
-    const existing = [...new Bun.Glob("*.ts").scanSync({ cwd: MIGRATIONS_DIR })];
-    const migrationFile = nextMigrationFile(existing, `create_${scaffold.table}_table`);
-    for (const file of scaffold.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
-    for (const file of web.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
-    const migrationPath = `apps/server/database/migrations/${migrationFile}`;
-    await writeScaffold(
-      resolve(MIGRATIONS_DIR, migrationFile),
-      renderMigrationSource({
-        mode: "create",
-        table: scaffold.table,
-        numbering: sequenceKey !== undefined,
-        softDelete,
-        version,
-      }),
-    );
-
-    const statementsPath = "apps/server/features/rbac/statements.ts";
-    const statements = addStatementResource(
-      await Bun.file(resolve(repoRoot, statementsPath)).text(),
-      scaffold.resource,
-    );
-    if (statements.status === "added") await Bun.write(resolve(repoRoot, statementsPath), statements.source);
-    const auditPath = "apps/server/features/audit/redact.ts";
-    const audit = addAuditEntity(await Bun.file(resolve(repoRoot, auditPath)).text(), scaffold.resource);
-    if (audit.status === "added") await Bun.write(resolve(repoRoot, auditPath), audit.source);
-    const routesPath = "apps/server/routes/api.ts";
-    const routes = addRouteMount(await Bun.file(resolve(repoRoot, routesPath)).text(), scaffold);
-    if (routes.status === "added") await Bun.write(resolve(repoRoot, routesPath), routes.source);
-
-    const navPath = "apps/web/src/config/navigation.ts";
-    const nav = addNavItem(await Bun.file(resolve(repoRoot, navPath)).text(), scaffold);
-    if (nav.status === "added") await Bun.write(resolve(repoRoot, navPath), nav.source);
-    const enPath = "packages/i18n/src/utils/messages/en-US.ts";
-    const en = addI18nKeys(await Bun.file(resolve(repoRoot, enPath)).text(), scaffold, "en-US");
-    if (en.status === "added") await Bun.write(resolve(repoRoot, enPath), en.source);
-    const idPath = "packages/i18n/src/utils/messages/id-ID.ts";
-    const id = addI18nKeys(await Bun.file(resolve(repoRoot, idPath)).text(), scaffold, "id-ID");
-    if (id.status === "added") await Bun.write(resolve(repoRoot, idPath), id.source);
+    const touched = await writeMakeFeature(repoRoot, plan);
 
     // Wiring edits happen after the scaffold is written, so format every touched file together or lint fails.
-    const touched = [
-      [statementsPath, statements.status],
-      [auditPath, audit.status],
-      [routesPath, routes.status],
-      [navPath, nav.status],
-      [enPath, en.status],
-      [idPath, id.status],
-    ]
-      .filter(([, status]) => status === "added")
-      .map(([path]) => path as string);
-    await formatScaffold([
-      ...scaffold.files.map((file) => file.path),
-      ...web.files.map((file) => file.path),
-      migrationPath,
-      ...touched,
-    ]);
+    await formatScaffold(touched);
 
     // The typed route tree must list the new page or createFileRoute fails the types gate.
     await regenerateWebRouteTree();
 
-    process.stdout.write(`Created feature: apps/server/features/${scaffold.name}\n`);
-    for (const file of scaffold.files) process.stdout.write(`  ${file.path}\n`);
-    process.stdout.write(`Created migration: apps/server/database/migrations/${migrationFile}\n`);
-    process.stdout.write(`Created web feature: apps/web/src/features/${scaffold.name}\n`);
-    for (const file of web.files) process.stdout.write(`  ${file.path}\n`);
-    if (statements.status === "added") {
-      process.stdout.write(`Registered permissions: ${scaffold.resource}.create, read, update, delete\n`);
-    } else if (statements.status === "present") {
-      process.stdout.write(`Permissions already registered: ${scaffold.resource}.*\n`);
+    const statusOf = (path: string) => plan.wiring.find((edit) => edit.path === path)?.status;
+    process.stdout.write(`Created feature: apps/server/features/${plan.scaffold.name}\n`);
+    for (const file of plan.scaffold.files) process.stdout.write(`  ${file.path}\n`);
+    process.stdout.write(`Created migration: ${plan.migration.path}\n`);
+    process.stdout.write(`Created web feature: apps/web/src/features/${plan.scaffold.name}\n`);
+    for (const file of plan.web.files) process.stdout.write(`  ${file.path}\n`);
+    if (statusOf(WIRING_PATHS.statements) === "added") {
+      process.stdout.write(`Registered permissions: ${plan.scaffold.resource}.create, read, update, delete\n`);
     } else {
-      process.stdout.write(
-        `Register the ${scaffold.resource}.* permissions in apps/server/features/rbac/statements.ts\n`,
-      );
+      process.stdout.write(`Permissions already registered: ${plan.scaffold.resource}.*\n`);
     }
-    if (audit.status === "added") {
-      process.stdout.write(`Registered audit entity: ${scaffold.resource}\n`);
-    } else if (audit.status === "skipped") {
-      process.stdout.write(`Register the ${scaffold.resource} audit fields in apps/server/features/audit/redact.ts\n`);
+    if (statusOf(WIRING_PATHS.audit) === "added") {
+      process.stdout.write(`Registered audit entity: ${plan.scaffold.resource}\n`);
     }
-    if (routes.status === "added") {
-      process.stdout.write(`Registered feature: /api/v1/${scaffold.name}\n`);
-    } else if (routes.status === "present") {
-      process.stdout.write(`Feature already registered: /api/v1/${scaffold.name}\n`);
+    if (statusOf(WIRING_PATHS.routes) === "added") {
+      process.stdout.write(`Registered feature: /api/v1/${plan.scaffold.name}\n`);
     } else {
-      process.stdout.write(`Add ${scaffold.camel}Feature to the FEATURES array in apps/server/routes/api.ts\n`);
+      process.stdout.write(`Feature already registered: /api/v1/${plan.scaffold.name}\n`);
     }
-    if (nav.status === "added") {
-      process.stdout.write(`Added navigation: /${scaffold.name}\n`);
-    } else if (nav.status !== "present") {
-      process.stdout.write(`Add a sidebar entry for /${scaffold.name} in apps/web/src/config/navigation.ts\n`);
+    if (statusOf(WIRING_PATHS.nav) === "added") {
+      process.stdout.write(`Added navigation: /${plan.scaffold.name}\n`);
     }
-    if (en.status === "added" && id.status === "added") {
-      process.stdout.write(`Added i18n keys: ${scaffold.name}.* and navigation.${scaffold.name}\n`);
+    const enAdded = statusOf(WIRING_PATHS.enUS) === "added";
+    const idAdded = statusOf(WIRING_PATHS.idID) === "added";
+    if (enAdded && idAdded) {
+      process.stdout.write(`Added i18n keys: ${plan.scaffold.name}.* and navigation.${plan.scaffold.name}\n`);
+    } else if (enAdded || idAdded) {
+      process.stdout.write(`Added the missing ${plan.scaffold.name}.* i18n keys\n`);
     } else {
-      process.stdout.write(`Add the ${scaffold.name}.* i18n keys to packages/i18n/src/utils/messages\n`);
+      process.stdout.write(`i18n keys already present: ${plan.scaffold.name}.*\n`);
     }
     process.stdout.write("Regenerated apps/web/src/routeTree.gen.ts\n");
     process.stdout.write("Next: add the domain fields, then run bun erp db:migrate && bun erp db:seed.\n");

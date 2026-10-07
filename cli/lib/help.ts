@@ -1,7 +1,15 @@
-export const HELP_GROUPS: ReadonlyArray<{
-  title: string;
-  commands: ReadonlyArray<readonly [name: string, description: string]>;
-}> = [
+import { GATE_CATALOG } from "./gates.ts";
+
+export type HelpCommand = readonly [name: string, description: string];
+export type HelpSection = { title: string; commands: readonly HelpCommand[] };
+
+/**
+ * Curated groups: titles, ordering and usage strings a catalog entry cannot infer. The gate
+ * commands are *not* listed here — `helpSections` derives them from `GATE_CATALOG`, and any
+ * registered command that neither group nor catalog mentions lands in "Other", so the printed
+ * help cannot silently drift behind the registry again.
+ */
+export const HELP_GROUPS: readonly HelpSection[] = [
   {
     title: "Project",
     commands: [
@@ -109,6 +117,8 @@ export const HELP_GROUPS: ReadonlyArray<{
       ["jobs:status", "Show queue counts"],
       ["jobs:dead", "List jobs that reached terminal failure"],
       ["jobs:retry", "Requeue a dead job by ID"],
+      ["jobs:tick", "Enqueue every due schedule; safe to run from cron"],
+      ["jobs:schedule [--json]", "Sync registered schedules and show their next runs"],
     ],
   },
   {
@@ -141,3 +151,33 @@ export const HELP_GROUPS: ReadonlyArray<{
     ],
   },
 ];
+
+/**
+ * The sections actually printed. A command is listed once, in the first place that mentions it;
+ * gate commands come from `GATE_CATALOG` so a new gate shows up without touching this file; any
+ * other registered command is listed under "Other" instead of silently disappearing.
+ */
+export function helpSections(available: ReadonlySet<string>): HelpSection[] {
+  const shown = new Set<string>();
+  const sections: HelpSection[] = [];
+  const take = (title: string, commands: readonly HelpCommand[]) => {
+    const visible = commands.filter(([name]) => {
+      const base = name.split(" ")[0] ?? "";
+      if (!available.has(base) || shown.has(base)) return false;
+      shown.add(base);
+      return true;
+    });
+    if (visible.length > 0) sections.push({ title, commands: visible });
+  };
+
+  for (const group of HELP_GROUPS) take(group.title, group.commands);
+  take(
+    "Gates",
+    GATE_CATALOG.map(({ command, summary }) => [command, summary] as const),
+  );
+  take(
+    "Other",
+    [...available].sort().map((name) => [name, "(registered command; add a summary in cli/lib/help.ts)"] as const),
+  );
+  return sections;
+}

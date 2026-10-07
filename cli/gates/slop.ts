@@ -3,11 +3,15 @@ import { directoryExists } from "./exists.ts";
 
 /**
  * Slop gate: stale narrative comments, oversized page components, plus AST findings from the
- * governance validator. `slop-ok: <reason>` exempts the next line.
+ * governance validator. `slop-ok: <reason>` on the same line exempts that line; a bare marker
+ * without a reason is not an exemption (the governance validator reads the same contract).
  */
 
 /** A page that keeps growing mixes data access, layout and forms in one file. */
 const PAGE_MAX_LINES = 220;
+
+/** Matches `governance/slop-validator.ts`: the marker must carry a non-empty reason. */
+const SLOP_OK = /slop-ok:\s*\S+/;
 
 export async function findCodeSlop(root: string): Promise<string[]> {
   const findings: string[] = [];
@@ -16,7 +20,7 @@ export async function findCodeSlop(root: string): Promise<string[]> {
     const lines = (await Bun.file(join(root, rel)).text()).split("\n");
 
     for (const [index, line] of lines.entries()) {
-      if (/slop-ok/.test(line)) continue;
+      if (SLOP_OK.test(line)) continue;
       for (const rule of NARRATIVE_RULES) {
         if (rule.test(line)) {
           findings.push(`${rel}:${index + 1} narrative comment — explain WHY, not WHAT: ${line.trim().slice(0, 70)}`);
@@ -38,13 +42,13 @@ export async function findCodeSlop(root: string): Promise<string[]> {
   return findings;
 }
 
-/** Everything the repo owns: app source, the CLI and its gates, plus catalog packages, apps and features. */
+/** Everything the repo owns: app source, the CLI, plus catalog packages, apps and features. */
 function sourceFiles(root: string): string[] {
-  return ["apps", "packages", "templates/packages", "templates/apps", "templates/features", "cli/gates", "cli"].flatMap(
-    (dir) =>
-      [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter(
-        (p) => !p.includes("node_modules") && !p.endsWith("/routeTree.gen.ts"),
-      ),
+  // Disjoint roots: `cli` already covers `cli/gates`, so listing both scanned those files twice.
+  return ["apps", "packages", "templates/packages", "templates/apps", "templates/features", "cli"].flatMap((dir) =>
+    [...new Bun.Glob(`${dir}/**/*.{ts,tsx}`).scanSync({ cwd: root })].filter(
+      (p) => !p.includes("node_modules") && !p.endsWith("/routeTree.gen.ts"),
+    ),
   );
 }
 

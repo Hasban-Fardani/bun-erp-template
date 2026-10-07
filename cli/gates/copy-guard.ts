@@ -1,5 +1,4 @@
 import { join } from "node:path";
-import { directoryExists } from "./exists.ts";
 
 /**
  * Copy gate for user-visible text.
@@ -73,12 +72,17 @@ export type CopyFinding = { file: string; line: number; rule: string; text: stri
 
 export async function checkUserCopy(root: string): Promise<CopyFinding[]> {
   const findings: CopyFinding[] = [];
-  const files: string[] = [];
-  for (const dir of ["apps/web/src", "apps/mobile/src", "packages/ui/src"]) {
-    // apps/mobile/src only exists after `bun erp apps:create <name> mobile`.
-    if (!(await directoryExists(join(root, dir)))) continue;
-    files.push(...new Bun.Glob(`${dir}/**/*.tsx`).scanSync({ cwd: root }));
-  }
+  // Installed apps, the shared UI package and every catalog copy: catalog UI ships to users too.
+  const patterns = [
+    "apps/web/src/**/*.tsx",
+    "apps/mobile/src/**/*.tsx",
+    "packages/ui/src/**/*.tsx",
+    "templates/apps/web/src/**/*.tsx",
+    "templates/apps/mobile/src/**/*.tsx",
+    "templates/features/*/web/**/*.tsx",
+    "templates/packages/*/src/**/*.tsx",
+  ];
+  const files = [...new Set(patterns.flatMap((pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: root })]))].sort();
 
   for (const file of files) {
     const raw = await Bun.file(join(root, file)).text();

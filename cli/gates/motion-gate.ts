@@ -20,7 +20,18 @@
 
 export type MotionFinding = { file: string; rule: string; detail: string };
 
-const UI_GLOBS = ["packages/ui/src/**/*.{ts,tsx}", "apps/web/src/**/*.{ts,tsx}"];
+/**
+ * Installed apps, the shared UI package and the catalog copies. Catalog UI is copied into real
+ * deployments, so a looping animation without an escape is as much a regression there as in apps/.
+ */
+const UI_GLOBS = [
+  "packages/ui/src/**/*.{ts,tsx}",
+  "apps/web/src/**/*.{ts,tsx}",
+  "templates/apps/web/src/**/*.{ts,tsx}",
+  "templates/apps/mobile/src/**/*.{ts,tsx}",
+  "templates/features/*/web/**/*.{ts,tsx}",
+  "templates/packages/*/src/**/*.{ts,tsx}",
+];
 
 /** Looping utilities: the motion repeats forever, so reduced motion must be able to stop it. */
 const LOOPING_ANIMATIONS = /(?<![\w-])animate-(spin|ping|pulse|bounce)(?![\w-])/g;

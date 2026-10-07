@@ -3,20 +3,18 @@
  * registry. Command modules are imported lazily, so `--help` never touches the server runtime.
  * App-owned commands (db, user, role, jobs, ...) appear once their app is installed.
  */
-import { HELP_GROUPS } from "./lib/help.ts";
+import { helpSections } from "./lib/help.ts";
 import { commandNames, runCommand } from "./registry.ts";
 
 const [command, ...args] = process.argv.slice(2);
 
 async function printHelp(): Promise<void> {
   const available = new Set(await commandNames());
-  const sections = HELP_GROUPS.map(({ title, commands }) => {
-    const entries = commands.filter(([name]) => available.has(name.split(" ")[0] ?? ""));
-    if (entries.length === 0) return "";
-    const width = Math.max(...entries.map(([name]) => name.length));
-    const lines = entries.map(([name, description]) => `  ${name.padEnd(width)}  ${description}`).join("\n");
+  const sections = helpSections(available).map(({ title, commands }) => {
+    const width = Math.max(...commands.map(([name]) => name.length));
+    const lines = commands.map(([name, description]) => `  ${name.padEnd(width)}  ${description}`).join("\n");
     return `${title}\n${lines}`;
-  }).filter(Boolean);
+  });
   process.stdout.write(`bun erp <command> [args]\n\n${sections.join("\n\n")}\n`);
   if (!available.has("db:migrate")) {
     process.stdout.write(
