@@ -7,12 +7,16 @@ import { join } from "node:path";
 export type SkillFinding = { file: string; message: string };
 
 export async function validateSkills(dir: string): Promise<SkillFinding[]> {
-  let names: string[] = [];
+  const names: string[] = [];
   try {
-    names = [...new Bun.Glob("*/SKILL.md").scanSync({ cwd: dir })].map((p) => p.split("/")[0] as string).sort();
+    for await (const path of new Bun.Glob("*/SKILL.md").scan({ cwd: dir })) {
+      const name = path.split("/")[0];
+      if (name) names.push(name);
+    }
   } catch {
     return [];
   }
+  names.sort();
 
   const findings: SkillFinding[] = [];
 

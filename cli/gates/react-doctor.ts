@@ -4,6 +4,7 @@
  * the list pages unmaintainable, so it must fail the build rather than scroll past.
  */
 import { join } from "node:path";
+import { run } from "../lib/repo.ts";
 
 const BLOCKING_WARNING_RULES = new Set(["no-high-complexity-react-function"]);
 
@@ -27,16 +28,13 @@ async function inspectReact(root: string, directory: string): Promise<string[]> 
 
   // Scan authored source only. `dist` also contains the Cloudflare Worker entry,
   // which necessarily includes server environment names and is not browser code.
-  const proc = Bun.spawn([binary, "src", "--no-score", "--json", "--json-compact"], {
+  const result = await run([binary, "src", "--no-score", "--json", "--json-compact"], "react-doctor", {
     cwd: webDir,
     stdout: "pipe",
     stderr: "pipe",
+    check: false,
   });
-  const [out, err, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
+  const { stdout: out, stderr: err, exitCode: code } = result;
 
   if (code !== 0 || !out.trim()) {
     return [`react-doctor failed to run (exit ${code}) — ${err.trim() || out.trim() || "no output"}`];

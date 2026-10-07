@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
 
 /**
  * Copy gate for user-visible text.
@@ -82,10 +82,11 @@ export async function checkUserCopy(root: string): Promise<CopyFinding[]> {
     "templates/features/*/web/**/*.tsx",
     "templates/packages/*/src/**/*.tsx",
   ];
-  const files = [...new Set(patterns.flatMap((pattern) => [...new Bun.Glob(pattern).scanSync({ cwd: root })]))].sort();
+  const index = fileIndex(root);
+  const files = await index.files(patterns);
 
   for (const file of files) {
-    const raw = await Bun.file(join(root, file)).text();
+    const raw = await index.text(file);
     const lines = raw.split("\n");
 
     lines.forEach((line, index) => {

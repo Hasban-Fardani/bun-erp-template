@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
 
 export type MobileFinding = { rule: string; detail: string };
 
@@ -78,10 +79,10 @@ export async function checkMobile(root: string): Promise<MobileFinding[]> {
     });
   }
 
-  const sources = [...new Bun.Glob("apps/mobile/src/**/*.{ts,tsx}").scanSync({ cwd: root })];
+  const sources = await fileIndex(root).files("apps/mobile/src/**/*.{ts,tsx}");
   for (const file of sources) {
     if (file === "apps/mobile/src/lib/logger.ts") continue;
-    const source = await Bun.file(join(root, file)).text();
+    const source = await fileIndex(root).text(file);
     if (/\bconsole\.(debug|info|log|warn|error)\s*\(/.test(source)) {
       findings.push({ rule: "DIRECT_CONSOLE", detail: `${file} must send diagnostics through lib/logger.ts.` });
     }

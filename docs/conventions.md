@@ -20,6 +20,30 @@
 bun erp check runs lint, types and read-only gates concurrently. It does not run tests or builds.
 Run bun erp test and the relevant app build when the change requires them.
 
+## Bun-first
+
+The problem is sync IO and repeated tree scans, not the `node:` prefix. `bun-first`
+(`cli/gates/bun-first.ts`) scans `cli/**`, `templates/apps/server/**` and `packages/**` and fails the
+banned imports below; `templates/apps/web/**` (browser code) and the Worker graph are exempt.
+
+| Import | Verdict | Reason |
+|---|---|---|
+| `node:path` | Keep | Bun has no path API, and Bun's `node:path` is native; swapping it gains nothing. |
+| `node:url` | Keep | No Bun replacement for file-URL/path conversion. |
+| `node:os` (`homedir`, `tmpdir`) | Keep | No Bun equivalent (`Bun.env.HOME` is not portable to Windows). |
+| `node:fs/promises` `mkdir`/`rm`/`mkdtemp`/`stat`/`readdir` | Keep | Bun docs recommend `node:fs` for directory operations; `Bun.file`/`Bun.write` do not cover them. |
+| `node:fs` sync (`readFileSync`, `writeFileSync`, `existsSync`, `readdirSync`, `statSync`) | Ban | Blocks the event loop; use `Bun.file().text()/.exists()`, `Bun.write`, `Bun.Glob().scan()`. |
+| `node:child_process` | Ban | Use `Bun.spawn` through `cli/lib/repo.ts#run`; keep `Bun.$` for one-line shell use. |
+| `node:crypto` `randomUUID`/`createHash` | Ban | `crypto.randomUUID()` and `Bun.CryptoHasher` are built in. |
+| `node:util` `promisify` | Ban | Bun APIs are already async. |
+| `node-fetch`, `dotenv`, `glob`, `fast-glob`, `execa`, `cross-spawn` | Ban | Bun ships `fetch`, `.env` loading, `Bun.Glob` and `Bun.spawn`. |
+
+Gates share one memoized async `Bun.Glob` scan per root per process (`cli/lib/file-index.ts`), so
+parallel gates never re-walk the same tree and never block each other with sync IO. The vendored
+governance validators under `cli/gates/governance/` keep their sync IO on purpose: they stay
+verbatim for upstream re-sync, and `cli/gates/slop.ts` runs them in a Worker thread
+(`governance/slop-worker.ts`) so that IO never touches the gate event loop.
+
 ## App catalog
 
 The template repo ships `apps/` empty. Apps wait in `templates/apps/<server|web|mobile>/` and are

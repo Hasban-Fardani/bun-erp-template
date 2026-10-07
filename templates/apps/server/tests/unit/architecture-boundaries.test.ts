@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { checkArchitecture } from "../../../../cli/gates/architecture-guard.ts";
+import { clearFileIndexes } from "../../../../cli/lib/file-index.ts";
 
 test("atomic and application boundaries reject forbidden imports and permit shared UI", async () => {
   const root = `${process.env.TMPDIR ?? "/tmp"}/erp-architecture-${Bun.randomUUIDv7()}`;
@@ -31,9 +32,11 @@ test("atomic and application boundaries reject forbidden imports and permit shar
       `${root}/apps/mobile/src/main.tsx`,
       'import "@bun-erp/utils"; import { Button } from "@bun-erp/ui/atoms/button.tsx";',
     );
+    clearFileIndexes();
     expect(await checkArchitecture(root)).toEqual([]);
 
     await Bun.write(`${root}/packages/ui/src/organisms/table.tsx`, 'import { useQuery } from "@tanstack/react-query";');
+    clearFileIndexes();
     const forbiddenTanStack = await checkArchitecture(root);
     expect(forbiddenTanStack).toContain(
       "packages/ui/src/organisms/table.tsx: UI_APPLICATION_DEPENDENCY — @tanstack/react-query",

@@ -547,17 +547,38 @@ export function blokGanda(berkas: Array<{ jalur: string; kode: string }>, panjan
  *
  * Wajib dibaca manusia sebelum dihapus: impor dinamis (lewat string, plugin,
  * entry point bundler) tidak terlihat oleh pemeriksa teks.
+ *
+ * Deviasi dari upstream (F3.3 Phase B): dulu setiap ekspor memanggil
+ * `semuaKode.replace(kode, "")` + RegExp baru (O(ekspor x korpus)). Sekarang satu
+ * peta kata dihitung sekali untuk seluruh korpus; `dipakaiLuar` = jumlah kata di
+ * korpus dikurangi jumlah kata di berkas pemiliknya. Hasil sama, tanpa pemindaian
+ * ulang per ekspor.
  */
 export function eksporTakTerpakai(
   berkas: Array<{ jalur: string; kode: string }>,
   akarTambahan: string[] = [],
 ): TemuanSlop[] {
   const temuan: TemuanSlop[] = [];
+  const KATA = /[A-Za-z_$][\w$]*/g;
+
+  // Peta ekspor->pemakai: satu hitungan kata untuk seluruh korpus, plus hitungan
+  // per berkas supaya pemakaian di berkas pemilik bisa dikurangkan.
+  const total = new Map<string, number>();
+  const hitung = (kode: string): Map<string, number> => {
+    const perKata = new Map<string, number>();
+    for (const m of kode.matchAll(KATA)) {
+      const kata = m[0];
+      perKata.set(kata, (perKata.get(kata) ?? 0) + 1);
+      total.set(kata, (total.get(kata) ?? 0) + 1);
+    }
+    return perKata;
+  };
+  const perBerkas = berkas.map((b) => hitung(b.kode));
   // Pemakai bisa berada di luar folder yang diperiksa (tests, scripts). Tanpa
   // teks itu, ekspor yang jelas dipakai uji akan salah dituduh mati.
-  const semuaKode = [...berkas.map((b) => b.kode), ...akarTambahan].join("\n");
+  for (const kode of akarTambahan) hitung(kode);
 
-  for (const { jalur, kode } of berkas) {
+  for (const [index, { jalur, kode }] of berkas.entries()) {
     // Entry point dan berkas rute tidak dianggap ekspor mati.
     if (/(^|\/)(index|main|server|app|sw|worker)\.(ts|tsx|js|mjs)$/.test(jalur)) continue;
     if (/\.(test|spec)\.(ts|tsx)$/.test(jalur)) continue;
@@ -577,16 +598,15 @@ export function eksporTakTerpakai(
       return PENANDA_OK.test(konteks);
     };
 
+    const hitungBerkas = perBerkas[index] ?? new Map<string, number>();
     for (const n of nama) {
       if (adaPenanda(n)) continue;
-      // Hitung pemakaian di luar deklarasi. Deklarasinya sendiri juga memuat
-      // namanya (di beberapa tempat), jadi yang dihitung adalah kemunculan di
-      // LUAR berkas ini. Cara ini tidak salah menuduh ekspor yang dipakai
-      // berkas lain, dan tidak melewatkan ekspor yang tidak dipakai siapa pun.
-      const diLuar = semuaKode.replace(kode, "");
-      const dipakaiLuar = new RegExp(`\\b${n}\\b`).test(diLuar);
+      // Pemakaian dihitung di LUAR berkas pemilik: korpus total dikurangi kata di
+      // berkas ini. Cara ini tidak salah menuduh ekspor yang dipakai berkas lain,
+      // dan tidak melewatkan ekspor yang tidak dipakai siapa pun.
+      const dipakaiLuar = (total.get(n) ?? 0) - (hitungBerkas.get(n) ?? 0) > 0;
       // Dipakai di dalam berkas ini sendiri (mis. oleh fungsi lain): masih hidup.
-      const diDalam = (kode.match(new RegExp(`\\b${n}\\b`, "g")) ?? []).length;
+      const diDalam = hitungBerkas.get(n) ?? 0;
       if (dipakaiLuar || diDalam > 1) continue;
       const baris = kode.split("\n").findIndex((b) => new RegExp(`\\b${n}\\b`).test(b)) + 1;
       temuan.push({

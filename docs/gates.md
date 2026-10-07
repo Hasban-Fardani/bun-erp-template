@@ -20,9 +20,10 @@ prints that catalog as a table.
    process. `check:fast` runs the file-level subset named in `FAST_GATE_NAMES`.
 4. `cli/commands/check.ts` registers the `check:*` commands and `check:gate`; `check:gate <name>`
    looks the command up in the catalog and forwards any extra arguments.
-5. `bun erp check` runs Biome, `tsc` and all 26 gates (up to eight at a time); `bun erp check:fast`
-   skips the typecheck, the React audit and the slower gates for the inner loop. Neither runs tests
-   or builds — use `bun erp test` and the app build for those.
+5. `bun erp check` runs Biome, `tsc` and all 27 gates (up to eight at a time); `bun erp check:fast`
+   skips Biome, the typecheck, the React audit and the slower gates for the inner loop (Biome stays
+   in `check` and the pre-push `check:biome` hook). Neither runs tests or builds — use `bun erp test`
+   and the app build for those.
 
 ## Gate catalog
 
@@ -38,6 +39,7 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 |---|---|---|---|---|
 | agents | `check:agents` | `cli/gates/agent-readiness.ts` | Required agent skills, the pinned CodeGraph CLI and a complete local index | Installed app entries only; a missing app is not required |
 | architecture | `check:architecture` | `cli/gates/architecture-guard.ts` | UI atomic-layer imports, app isolation and page-wrapper rules | Missing app, screen or package source directories |
+| bun-first | `check:bun-first` | `cli/gates/bun-first.ts` | Bun-first APIs: no banned sync Node built-ins or packages Bun replaces | Vendored governance validators, the Worker graph, and browser code under `templates/apps/web` |
 | ci | `check:ci` | `cli/gates/ci-guard.ts` | Required CI jobs, the init step and `docs/ci.md` | Never |
 | copy | `check:copy` | `cli/gates/copy-guard.ts` | Rendered copy for infrastructure vocabulary and deployment names | Missing web or mobile source |
 | design | `check:design` | `cli/gates/design-gate.ts` + `cli/gates/contrast-gate.ts` | A direction spec for every screen, theme-token contrast, component class contrast | Missing web or mobile screen directories |

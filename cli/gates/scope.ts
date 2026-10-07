@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { run } from "../lib/repo.ts";
 
 /**
  * F1.10 — scope gate. Keeps this template repo from drifting into a client repo:
@@ -86,14 +87,13 @@ export async function checkScope(root: string): Promise<ScopeFinding[]> {
 
 /** Git-tracked files only — local build artifacts are none of scope's business. */
 async function gitFiles(root: string): Promise<string[]> {
-  const proc = Bun.spawn(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+  const result = await run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], "git ls-files", {
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
+    check: false,
   });
-  const out = await new Response(proc.stdout).text();
-  await proc.exited;
-  return out
+  return result.stdout
     .split("\u0000")
     .filter(Boolean)
     .map((p) => p.replace(/\\/g, "/"))

@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { fileIndex } from "./file-index.ts";
 
 /**
  * Local-first documentation search. No network and no index to maintain: the corpus is the docs
@@ -21,13 +22,13 @@ const CORPUS_GLOBS = [
 ];
 
 async function corpusFiles(root: string): Promise<string[]> {
-  const seen = new Set<string>();
-  for (const pattern of CORPUS_GLOBS) {
-    for (const file of new Bun.Glob(pattern).scanSync({ cwd: root })) {
-      if (!file.includes("node_modules")) seen.add(file);
-    }
-  }
-  return [...seen].sort();
+  const index = fileIndex(root);
+  const scanned = await Promise.all(CORPUS_GLOBS.map((pattern) => index.files(pattern)));
+  return scanned
+    .flat()
+    .filter((file) => !file.includes("node_modules"))
+    .filter((file, position, all) => all.indexOf(file) === position)
+    .sort();
 }
 
 function countOccurrences(haystack: string, needle: string): number {

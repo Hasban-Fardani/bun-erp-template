@@ -32,12 +32,13 @@ function parseFrontMatter(body: string): Record<string, string> {
 }
 
 export async function loadTasks(dir: string): Promise<Task[]> {
-  let files: string[] = [];
+  const files: string[] = [];
   try {
-    files = [...new Bun.Glob("*.md").scanSync({ cwd: dir })].sort();
+    for await (const file of new Bun.Glob("*.md").scan({ cwd: dir })) files.push(file);
   } catch {
     return [];
   }
+  files.sort();
 
   return Promise.all(
     files.map(async (file) => {

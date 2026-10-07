@@ -1,3 +1,4 @@
+import { fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 /**
@@ -48,9 +49,10 @@ export function inferPackageTarget(file: string, code: string): PackageTarget {
 
 export async function checkPackageTargets(root: string): Promise<string[]> {
   const findings: string[] = [];
+  const index = fileIndex(root);
   const manifests = [
-    ...new Bun.Glob("packages/*/package.json").scanSync({ cwd: root }),
-    ...new Bun.Glob("templates/packages/*/package.json").scanSync({ cwd: root }),
+    ...(await index.files("packages/*/package.json")),
+    ...(await index.files("templates/packages/*/package.json")),
   ].sort();
 
   for (const manifest of manifests) {
@@ -58,11 +60,11 @@ export async function checkPackageTargets(root: string): Promise<string[]> {
     if (!(await directoryExists(`${root}/${packageDir}/src`))) continue;
 
     const entries: Array<{ file: string; target: PackageTarget }> = [];
-    for (const file of new Bun.Glob(`${packageDir}/src/**/*.{ts,tsx}`).scanSync({ cwd: root })) {
+    for (const file of await index.files(`${packageDir}/src/**/*.{ts,tsx}`)) {
       if (file.endsWith(".d.ts")) continue;
       const relative = file.slice(packageDir.length + 1);
       if (ROOT_EXEMPT.has(relative)) continue;
-      entries.push({ file: relative, target: inferPackageTarget(relative, await Bun.file(`${root}/${file}`).text()) });
+      entries.push({ file: relative, target: inferPackageTarget(relative, await index.text(file)) });
     }
     if (entries.length === 0) continue;
 

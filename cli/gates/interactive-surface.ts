@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 /**
@@ -35,17 +36,18 @@ export type SurfaceFinding = { file: string; line: number; rule: string; detail:
 
 export async function checkInteractiveSurface(root: string): Promise<SurfaceFinding[]> {
   const findings: SurfaceFinding[] = [];
+  const index = fileIndex(root);
   const files: string[] = [];
   for (const dir of ["apps/web/src", "apps/mobile/src", "packages/ui/src"]) {
     // apps/mobile/src only exists after `bun erp apps:create <name> mobile`.
     if (!(await directoryExists(join(root, dir)))) continue;
-    files.push(...new Bun.Glob(`${dir}/**/*.tsx`).scanSync({ cwd: root }));
+    files.push(...(await index.files(`${dir}/**/*.tsx`)));
   }
 
   for (const file of files) {
     if (CONTEXTUAL_ERRORS.has(file) || REVIEWED_FEEDBACK_COMPONENTS.has(file)) continue;
 
-    const raw = await Bun.file(join(root, file)).text();
+    const raw = await index.text(file);
     raw.split("\n").forEach((line, index) => {
       if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
       if (!INLINE_FEEDBACK.test(line)) return;

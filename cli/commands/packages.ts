@@ -13,8 +13,8 @@ import { defineCommand } from "../registry.ts";
 
 export const commands = [
   defineCommand("packages:list", async () => {
-    const catalog = catalogPackageNames(repoRoot);
-    const installed = installedPackageNames(repoRoot);
+    const catalog = await catalogPackageNames(repoRoot);
+    const installed = await installedPackageNames(repoRoot);
     process.stdout.write(`Installed: ${installed.length > 0 ? installed.join(", ") : "(none)"}\n`);
     const available = catalog.filter((name) => !installed.includes(name));
     process.stdout.write(`Available: ${available.length > 0 ? available.join(", ") : "(none)"}\n`);

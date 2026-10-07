@@ -4,6 +4,8 @@
  * repo, not a preference — a failing item names the file to change.
  */
 
+import { fileIndex } from "../lib/file-index.ts";
+import { run } from "../lib/repo.ts";
 import { directoryExists } from "./exists.ts";
 
 export type ReadinessFinding = { rule: string; detail: string };
@@ -76,9 +78,13 @@ function checkSecretPlaceholders(env: string): Check {
 
 /** The template is public; a client domain in a tracked file is a leak, and scope already bans it. */
 async function checkNoRealDomains(root: string): Promise<Check> {
-  const proc = Bun.spawn(["git", "ls-files"], { cwd: root, stdout: "pipe", stderr: "pipe" });
-  const out = await new Response(proc.stdout).text();
-  await proc.exited;
+  const result = await run(["git", "ls-files"], "git ls-files", {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+    check: false,
+  });
+  const out = result.stdout;
 
   // Matches this deployment's own names only; the list lives in template.scope.json's spirit.
   // Kept narrow so it cannot accidentally ban a legitimate generic word.
@@ -106,10 +112,13 @@ async function checkNoRealDomains(root: string): Promise<Check> {
 
 /** A `.env` that slipped past .gitignore is the one mistake that cannot be undone by a later commit. */
 async function checkNoCommittedSecrets(root: string): Promise<Check> {
-  const proc = Bun.spawn(["git", "ls-files", ".env", ".env.*"], { cwd: root, stdout: "pipe", stderr: "pipe" });
-  const out = await new Response(proc.stdout).text();
-  await proc.exited;
-  const files = out.split("\n").filter((f) => f && !f.endsWith(".example"));
+  const result = await run(["git", "ls-files", ".env", ".env.*"], "git ls-files", {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+    check: false,
+  });
+  const files = result.stdout.split("\n").filter((f) => f && !f.endsWith(".example"));
   return {
     id: "ENV_COMMITTED",
     ok: files.length === 0,
@@ -132,7 +141,9 @@ async function checkMigrationsNumbered(root: string): Promise<Check> {
   const dir = `${root}/apps/server/database/migrations`;
   // The server app ships empty; with no server there is no migration ledger to verify yet.
   if (!(await directoryExists(dir))) return { id: "MIGRATIONS", ok: true, detail: "" };
-  const names = [...new Bun.Glob("*.ts").scanSync({ cwd: dir })].sort();
+  const names = (await fileIndex(root).files("apps/server/database/migrations/*.ts")).map(
+    (file) => file.split("/").at(-1) ?? "",
+  );
   if (names.length === 0) return { id: "MIGRATIONS", ok: false, detail: "no migrations found" };
 
   const numbers = names.map((n) => Number(n.slice(0, 4)));

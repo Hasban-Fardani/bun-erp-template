@@ -178,6 +178,12 @@ export const GATE_CATALOG = [
     file: "cli/gates/readiness.ts",
     summary: "Production prerequisites: scripts, secret placeholders, migration numbering and contract docs.",
   },
+  {
+    name: "bun-first",
+    command: "check:bun-first",
+    file: "cli/gates/bun-first.ts",
+    summary: "CLI, server catalog and shared packages use Bun's async APIs instead of sync Node built-ins.",
+  },
 ] as const satisfies readonly GateCatalogEntry[];
 
 export type GateName = (typeof GATE_CATALOG)[number]["name"];
@@ -267,6 +273,7 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
     const { checkReadiness } = await import("../gates/readiness.ts");
     return (await checkReadiness(root)).map((f) => `${f.rule}: ${f.detail}`);
   },
+  "bun-first": async (root) => (await import("../gates/bun-first.ts")).checkBunFirst(root),
 };
 
 /** Run a catalog gate against `root` and return its findings without throwing or exiting. */

@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { resolve } from "node:path";
 import { collectDbSchema } from "./db-schema.ts";
 import { installedFeatureNames } from "./feature-catalog.ts";
+import { fileIndex } from "./file-index.ts";
 import { GATE_CATALOG } from "./gates.ts";
 import { installedPackageNames } from "./package-catalog.ts";
 import { collectRoutes } from "./route-table.ts";
@@ -39,16 +40,10 @@ async function rootManifest(root: string): Promise<{
 }
 
 async function installedApps(root: string): Promise<AboutApp[]> {
-  let names: string[];
-  try {
-    names = [...new Bun.Glob("*/package.json").scanSync({ cwd: resolve(root, "apps") })]
-      .map((file) => file.split("/")[0])
-      .filter((name): name is string => Boolean(name))
-      .sort();
-  } catch {
-    // `apps/` ships empty; a missing directory means no apps, not an error.
-    return [];
-  }
+  const names = (await fileIndex(root).files("apps/*/package.json"))
+    .map((file) => file.split("/")[1])
+    .filter((name): name is string => Boolean(name))
+    .sort();
   const apps: AboutApp[] = [];
   for (const name of names) {
     const manifest = (await Bun.file(resolve(root, "apps", name, "package.json")).json()) as {
@@ -61,12 +56,7 @@ async function installedApps(root: string): Promise<AboutApp[]> {
 }
 
 async function migrationCount(root: string): Promise<number> {
-  const dir = resolve(root, "apps/server/database/migrations");
-  try {
-    return [...new Bun.Glob("*.ts").scanSync({ cwd: dir })].length;
-  } catch {
-    return 0;
-  }
+  return (await fileIndex(root).files("apps/server/database/migrations/*.ts")).length;
 }
 
 /** TCP reachability only: no credentials are sent and no query runs, so the probe is safe anywhere. */
@@ -128,7 +118,7 @@ export async function collectAbout(root: string): Promise<AboutReport> {
   const manifest = await rootManifest(root);
   const [apps, packages, features, migrations, tables, routes, database, codegraph] = await Promise.all([
     installedApps(root),
-    Promise.resolve(installedPackageNames(root)),
+    installedPackageNames(root),
     installedFeatureNames(root),
     migrationCount(root),
     collectDbSchema(root),

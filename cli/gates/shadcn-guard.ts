@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 /** Above this many options, a list must be searchable. */
@@ -197,6 +198,7 @@ export function validateVendoredSourceCatalog(input: {
 
 export async function checkShadcn(root: string): Promise<ShadcnFinding[]> {
   const findings: ShadcnFinding[] = [];
+  const index = fileIndex(root);
   const allowlist = (await Bun.file(join(root, "packages/ui/registry-allowlist.json")).json()) as {
     allowed: Registry[];
   };
@@ -211,7 +213,7 @@ export async function checkShadcn(root: string): Promise<ShadcnFinding[]> {
   const tanstack = (await Bun.file(join(root, "packages/ui/tanstack-sources.json")).json()) as {
     components: Record<string, Source>;
   };
-  const componentFiles = [...new Bun.Glob("packages/ui/src/**/*.tsx").scanSync({ cwd: root })].sort();
+  const componentFiles = await index.files("packages/ui/src/**/*.tsx");
   const mergedSources = {
     ...inventory.components,
     ...Object.fromEntries(Object.entries(dashboard).map(([path, source]) => [`packages/ui/${path}`, source])),
@@ -245,9 +247,9 @@ export async function checkShadcn(root: string): Promise<ShadcnFinding[]> {
       upstreamCommit: string;
       components: Parameters<typeof validateVendoredSourceCatalog>[0]["components"];
     };
-    const sourceFiles = [...new Bun.Glob(`packages/${packageName}/src/**/*.{ts,tsx}`).scanSync({ cwd: root })]
-      .filter((file) => file !== `packages/${packageName}/src/render.ts`)
-      .sort();
+    const sourceFiles = (await index.files(`packages/${packageName}/src/**/*.{ts,tsx}`)).filter(
+      (file) => file !== `packages/${packageName}/src/render.ts`,
+    );
     findings.push(...validateVendoredSourceCatalog({ packageName, ...catalog, sourceFiles }));
     if (!(await Bun.file(join(root, `packages/${packageName}/LICENSE.upstream`)).exists())) {
       findings.push({
@@ -263,21 +265,21 @@ export async function checkShadcn(root: string): Promise<ShadcnFinding[]> {
     const appSource = join(root, sourceDir);
     // Mobile is a catalog app: the default template has no apps/mobile/src to scan.
     if (!(await directoryExists(appSource))) continue;
-    for await (const path of new Bun.Glob("**/*.tsx").scan({ cwd: appSource })) {
-      const code = await Bun.file(join(appSource, path)).text();
+    for (const path of await index.files(`${sourceDir}/**/*.tsx`)) {
+      const code = await index.text(path);
       const lines = code.split("\n");
-      lines.forEach((line, index) => {
+      lines.forEach((line, lineNumber) => {
         for (const { pattern, shadcn } of BANNED_NATIVE) {
           if (pattern.test(line))
             findings.push({
-              file: `${sourceDir}/${path}`,
-              line: index + 1,
+              file: path,
+              line: lineNumber + 1,
               rule: "NATIVE_COMPONENT",
               detail: `native element where shadcn already ships one — use ${shadcn}`,
             });
         }
       });
-      findings.push(...oversizedLists(`${sourceDir}/${path}`, code));
+      findings.push(...oversizedLists(path, code));
     }
   }
   return findings;
