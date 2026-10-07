@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
+import type { AppContext } from "../../../bootstrap/context.ts";
 import { rowsOf } from "../../../database/migrate.ts";
 import { claimNextJob, enqueueJob, requeueDeadJob, runNextJob } from "../../../infra/jobs/queue.ts";
 import { JobRegistry } from "../../../infra/jobs/registry.ts";
@@ -89,16 +90,12 @@ test("handler failures retry with bounded delay then stop at max attempts withou
   await Bun.sleep(150);
   expect(await runNextJob(db, registry, logger, options)).toBe(true);
 
-  const rows = rowsOf<{ status: string; attempt_count: number; last_error_code: string }>(
-    await db.execute(sql`select status, attempt_count, last_error_code from background_jobs where id = ${id}`),
-  );
-  expect(rows[0]).toMatchObject({ status: "dead", attempt_count: 2, last_error_code: "JOB_HANDLER_FAILED" });
-  expect(JSON.stringify(rows)).not.toContain("sensitive details");
+  const row = await jobRow(db, id);
+  expect(row).toMatchObject({ status: "dead", attempt_count: 2, last_error_code: "JOB_HANDLER_FAILED" });
+  expect(JSON.stringify(row)).not.toContain("sensitive details");
   expect(await requeueDeadJob(db, id)).toBe(true);
   expect(await requeueDeadJob(db, id)).toBe(false);
-  const requeued = rowsOf<{ status: string; attempt_count: number; last_error_code: string | null }>(
-    await db.execute(sql`select status, attempt_count, last_error_code from background_jobs where id = ${id}`),
-  )[0];
+  const requeued = await jobRow(db, id);
   expect(requeued).toMatchObject({ status: "pending", attempt_count: 0, last_error_code: null });
 });
 
@@ -108,3 +105,77 @@ test("jobs scheduled in the future are not claimed early", async () => {
   await enqueueJob(db, { queue, name: "test.future", payload: {}, runAt: new Date(Date.now() + 60_000) });
   expect(await claimNextJob(db, queue)).toBeNull();
 });
+
+test("a transient lease-renewal error does not discard a successful result", async () => {
+  const { db } = await createTestContext();
+  const queue = `tests-${createUuid()}`;
+  const leaseMs = 3_000;
+  const registry = new JobRegistry();
+  registry.register("test.renewal", async () => {
+    // Long enough for the heartbeat (lease/3) to fire while the handler is still running.
+    await Bun.sleep(1_200);
+  });
+  const id = await enqueueJob(db, { queue, name: "test.renewal", payload: {} });
+  const flaky = flakyRenewalDatabase(db);
+
+  expect(await runNextJob(flaky.db, registry, logger, { queue, leaseMs })).toBe(true);
+
+  const row = await jobRow(db, id);
+  // A successful handler whose renewal blipped must stay completed; setting leaseLost would
+  // leave the row running and the worker would claim it again (duplicate side effects).
+  expect(row).toMatchObject({ status: "completed", attempt_count: 1 });
+  expect(flaky.failures()).toBe(1);
+});
+
+test("a job whose handler is not registered yet retries instead of dying on first claim", async () => {
+  const { db } = await createTestContext();
+  const queue = `tests-${createUuid()}`;
+  const id = await enqueueJob(db, { queue, name: "test.not_deployed_yet", payload: {}, maxAttempts: 2 });
+  const registry = new JobRegistry();
+  const options = { queue, retryBaseMs: 10, retryMaxMs: 20 };
+
+  expect(await runNextJob(db, registry, logger, options)).toBe(true);
+  const first = await jobRow(db, id);
+  // Rolling deploy: the handler may appear seconds later, so the claim is released for a retry.
+  expect(first).toMatchObject({ status: "pending", attempt_count: 1, last_error_code: "JOB_HANDLER_NOT_REGISTERED" });
+
+  await Bun.sleep(50);
+  expect(await runNextJob(db, registry, logger, options)).toBe(true);
+  const second = await jobRow(db, id);
+  // Bounded: after maxAttempts the missing handler is terminal, so it cannot loop forever.
+  expect(second).toMatchObject({ status: "dead", attempt_count: 2, last_error_code: "JOB_HANDLER_NOT_REGISTERED" });
+});
+
+async function jobRow(db: AppContext["db"], id: string) {
+  return rowsOf<{ status: string; attempt_count: number; last_error_code: string | null }>(
+    await db.execute(sql`select status, attempt_count, last_error_code from background_jobs where id = ${id}`),
+  )[0];
+}
+
+/** The renewal statement is the only `update background_jobs set lease_expires_at`; the claim is a CTE. */
+function flakyRenewalDatabase(db: AppContext["db"]) {
+  let failures = 0;
+  const wrapped = new Proxy(db, {
+    get(target, property, receiver) {
+      if (property !== "execute") return Reflect.get(target, property, receiver);
+      return async (query: unknown) => {
+        if (failures === 0 && isLeaseRenewal(query)) {
+          failures += 1;
+          throw new Error("connection reset");
+        }
+        return (target.execute as (statement: unknown) => Promise<unknown>)(query);
+      };
+    },
+  }) as AppContext["db"];
+  return { db: wrapped, failures: () => failures };
+}
+
+function isLeaseRenewal(query: unknown): boolean {
+  const chunks = (query as { queryChunks?: { value?: unknown }[] }).queryChunks ?? [];
+  const statement = chunks
+    .map((chunk) =>
+      Array.isArray(chunk.value) ? chunk.value.join("") : typeof chunk.value === "string" ? chunk.value : "",
+    )
+    .join("");
+  return statement.includes("update background_jobs set lease_expires_at");
+}

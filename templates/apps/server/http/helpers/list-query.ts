@@ -1,4 +1,7 @@
+import { type SQL, sql } from "drizzle-orm";
+import type { PgTable } from "drizzle-orm/pg-core";
 import * as z from "zod";
+import type { Database } from "../../database/index.ts";
 
 /**
  * List query contract shared by every collection endpoint: `?page=2&perPage=25&sort=name&dir=desc`.
@@ -38,6 +41,23 @@ export const listMetaSchemaProperties = {
 /** Translates the 1-based page contract into the offset the database wants. */
 export function toOffset(input: { page: number; perPage: number }): { limit: number; offset: number } {
   return { limit: input.perPage, offset: (input.page - 1) * input.perPage };
+}
+
+/**
+ * Escapes LIKE metacharacters so a user's `%` or `_` matches the literal character instead of
+ * acting as a wildcard. Postgres treats backslash as the default escape, so no `escape` clause is
+ * needed: pair it with `ilike(column, `%${escapeLikePattern(search)}%`)`.
+ */
+export function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+/**
+ * The one `count(*)` projection collection services share. The same filter expression as the items
+ * query keeps the reported total consistent with the rows a client can page through.
+ */
+export function countRows(db: Database, table: PgTable, where?: SQL) {
+  return db.select({ total: sql<number>`count(*)::int` }).from(table).where(where);
 }
 
 /**

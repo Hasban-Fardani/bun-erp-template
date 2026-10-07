@@ -123,6 +123,12 @@ test("the notifications API rejects an anonymous caller", async () => {
   expect(response.status).toBe(401);
 });
 
+test("an anonymous malformed query is 401, not 422: authorization precedes validation", async () => {
+  const api = await createHttpFixture();
+  const response = await api.client.api.v1.notifications.$get({ query: { page: "0" } });
+  expect(response.status).toBe(401);
+});
+
 test("the inbox accepts the list query the web client sends", async () => {
   const api = await createHttpFixture();
   await api.signInAsOwner();

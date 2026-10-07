@@ -11,6 +11,12 @@ export type NotifyInput = {
   title: string;
   body?: string;
   data?: Record<string, unknown>;
+  /**
+   * Stable identity for retryable fan-out: a retried notify with the same key enqueues one mail
+   * job. Keep it short (the channel prefixes it and appends the recipient); without one the mail
+   * channel falls back to a hash of the notification content.
+   */
+  idempotencyKey?: string;
   /** Defaults to the database channel only. */
   via?: readonly NotificationChannelName[];
 };

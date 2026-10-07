@@ -76,4 +76,16 @@ describe("UI and API agree on the list query contract", () => {
     const res = await api.app.request("/api/v1/users?sort=password", { headers: { cookie: api.cookie } });
     expect(res.status).toBe(422);
   });
+
+  test("search treats LIKE wildcards as literals, so % does not match every row", async () => {
+    // A role create records one audit row, so a wildcard has a row it could wrongly match.
+    await api.client.api.v1.roles.$post({ json: { key: "search-probe", name: "Search Probe" } });
+
+    for (const wildcard of ["%", "_"]) {
+      const res = await api.client.api.v1["audit-logs"].$get({ query: { search: wildcard } });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { data: { total: number } };
+      expect(body.data.total).toBe(0);
+    }
+  });
 });

@@ -9,7 +9,7 @@ import type { AppContext } from "./context.ts";
 
 export type BootstrapOptions = {
   env?: Env;
-  /** `false` for commands that handle their own migrations. */
+  /** Migrations are opt-in: callers that only read (CLI commands, tests) must not run DDL implicitly. */
   migrateOnStart?: boolean;
   migrationsDir?: string;
 };
@@ -21,7 +21,7 @@ export async function createContext(options: BootstrapOptions = {}): Promise<App
   const logger = createLogger(env);
   const { db, close } = createDatabase(env);
 
-  if (options.migrateOnStart !== false) {
+  if (options.migrateOnStart === true) {
     const ran = await migrate(db, options.migrationsDir ?? MIGRATIONS_DIR);
     if (ran.length > 0) logger.info({ event: "database.migrated", migrations: ran });
   }

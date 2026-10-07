@@ -36,6 +36,7 @@ export function notificationRoutes(ctx: AppContext) {
     .createApp()
     .get(
       "/",
+      authorizeActor(ctx),
       doc({
         tag: "notifications",
         summary: "Daftar notifikasi saya",
@@ -44,7 +45,7 @@ export function notificationRoutes(ctx: AppContext) {
       }),
       validate("query", ListNotificationsInput),
       async (c) => {
-        const actor = await authorizeActor(c, ctx);
+        const actor = c.get("actor");
         const input = c.req.valid("query");
         const { items, total } = await listNotifications(ctx.db, actor.userId, input);
         return ok(c, { items, ...listMeta(input, total) });
@@ -52,30 +53,33 @@ export function notificationRoutes(ctx: AppContext) {
     )
     .get(
       "/unread-count",
+      authorizeActor(ctx),
       doc({
         tag: "notifications",
         summary: "Jumlah notifikasi belum dibaca",
         data: { type: "object", properties: { count: { type: "integer" } } },
       }),
       async (c) => {
-        const actor = await authorizeActor(c, ctx);
+        const actor = c.get("actor");
         return ok(c, { count: await countUnread(ctx.db, actor.userId) });
       },
     )
     .post(
       "/read-all",
+      authorizeActor(ctx),
       doc({
         tag: "notifications",
         summary: "Tandai semua notifikasi dibaca",
         data: { type: "object", properties: { updated: { type: "integer" } } },
       }),
       async (c) => {
-        const actor = await authorizeActor(c, ctx);
+        const actor = c.get("actor");
         return ok(c, { updated: await markAllRead(ctx.db, actor.userId) });
       },
     )
     .post(
       "/:id/read",
+      authorizeActor(ctx),
       doc({
         tag: "notifications",
         summary: "Tandai satu notifikasi dibaca",
@@ -83,7 +87,7 @@ export function notificationRoutes(ctx: AppContext) {
       }),
       validate("param", idParam),
       async (c) => {
-        const actor = await authorizeActor(c, ctx);
+        const actor = c.get("actor");
         const id = c.req.param("id");
         if (!(await markRead(ctx.db, actor.userId, id))) throw ApiError.notFound("Notification not found");
         return ok(c, { id });

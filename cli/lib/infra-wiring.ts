@@ -115,10 +115,11 @@ function wireJobs(source: string): WiringEdit {
         'import { JobRegistry } from "../infra/jobs/registry.ts";',
         'import { registerMailJobs } from "./mail/wiring.ts";',
       ),
+    // Only `createJobRegistry` reaches the mailer; batch and schedule builders keep their narrower type.
     (input) =>
       replaceOnce(
         input,
-        '_ctx: Pick<AppContext, "env" | "db" | "logger">',
+        'ctx: Pick<AppContext, "env" | "db" | "logger">',
         'ctx: Pick<AppContext, "env" | "db" | "logger" | "mail">',
       ),
     (input) => insertAfter(input, "  const registry = new JobRegistry();", "  registerMailJobs(registry, ctx.mail);"),
@@ -209,14 +210,34 @@ function wireAuthSchema(source: string): WiringEdit {
   return { path: "", source: next ?? source, status: next === undefined ? "skipped" : "added" };
 }
 
-/** Adds the plugin's `activeOrganizationId` to the sessions table. */
+/** Adds the plugin's `activeOrganizationId` to the sessions table, with its index and FK. */
 function wireSessionField(source: string): WiringEdit {
   if (source.includes("activeOrganizationId")) return { path: "", source, status: "present" };
-  const next = insertAfter(
-    source,
-    '    userAgent: text("user_agent"),',
-    '    activeOrganizationId: uuid("active_organization_id"),',
-  );
+  const next = chain(source, [
+    (input) =>
+      insertAfter(
+        input,
+        'import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";',
+        'import { organizations } from "../organizations/schema.ts";',
+      ),
+    (input) =>
+      insertAfter(
+        input,
+        '    userAgent: text("user_agent"),',
+        '    activeOrganizationId: uuid("active_organization_id").references(() => organizations.id, { onDelete: "set null" }),',
+      ),
+    (input) =>
+      replaceOnce(
+        input,
+        '(table) => [index("session_user_idx").on(table.userId)],',
+        [
+          "(table) => [",
+          '    index("session_user_idx").on(table.userId),',
+          '    index("session_active_organization_idx").on(table.activeOrganizationId),',
+          "  ],",
+        ].join("\n"),
+      ),
+  ]);
   return { path: "", source: next ?? source, status: next === undefined ? "skipped" : "added" };
 }
 

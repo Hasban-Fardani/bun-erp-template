@@ -118,10 +118,16 @@ export async function runNextJob(
   if (!job) return false;
   const handler = registry.get(job.name);
   if (!handler) {
-    if (await finish(db, job, "dead", "JOB_HANDLER_NOT_REGISTERED")) {
-      logger.error({ event: "job.handler_missing", jobId: job.id, jobName: job.name });
-    } else {
+    // A rolling deploy may not have registered the handler yet: release the claim and retry with
+    // bounded backoff instead of dead-lettering a job the next replica can run.
+    const errorCode = "JOB_HANDLER_NOT_REGISTERED";
+    const { updated, terminal } = await retryOrDeadLetter(db, job, errorCode, options);
+    if (!updated) {
       logger.warn({ event: "job.lease_lost", jobId: job.id, jobName: job.name });
+    } else if (terminal) {
+      logger.error({ event: "job.dead", jobId: job.id, jobName: job.name, errorCode, attempt: job.attemptCount });
+    } else {
+      logger.warn({ event: "job.handler_missing", jobId: job.id, jobName: job.name, attempt: job.attemptCount });
     }
     return true;
   }
@@ -135,7 +141,14 @@ export async function runNextJob(
           if (!renewed) leaseLost = true;
         })
         .catch(() => {
-          leaseLost = true;
+          // Only a zero-row renewal means the lease was taken; a transient error must not discard
+          // a result the handler already produced. `finish()` is the authority on ownership.
+          logger.warn({
+            event: "job.lease_renew_failed",
+            jobId: job.id,
+            jobName: job.name,
+            errorCode: "JOB_LEASE_RENEW_FAILED",
+          });
         });
     },
     Math.max(1_000, Math.floor(leaseMs / 3)),
@@ -159,13 +172,7 @@ export async function runNextJob(
       return true;
     }
     const errorCode = safeErrorCode(error);
-    const terminal = job.attemptCount >= job.maxAttempts;
-    const delayMs = retryDelayMs({
-      attempt: job.attemptCount,
-      baseDelayMs: options.retryBaseMs ?? 1_000,
-      maxDelayMs: options.retryMaxMs ?? 60_000,
-    });
-    const updated = await finish(db, job, terminal ? "dead" : "pending", errorCode, terminal ? undefined : delayMs);
+    const { updated, terminal } = await retryOrDeadLetter(db, job, errorCode, options);
     if (updated) {
       logger.error({
         event: terminal ? "job.dead" : "job.retry_scheduled",
@@ -181,6 +188,23 @@ export async function runNextJob(
     clearInterval(heartbeat);
   }
   return true;
+}
+
+/** Reschedules with bounded backoff, or dead-letters at max attempts; `updated` is false when the lease was lost. */
+async function retryOrDeadLetter(
+  db: Database,
+  job: ClaimedJob,
+  errorCode: string,
+  options: { retryBaseMs?: number; retryMaxMs?: number },
+): Promise<{ updated: boolean; terminal: boolean }> {
+  const terminal = job.attemptCount >= job.maxAttempts;
+  const delayMs = retryDelayMs({
+    attempt: job.attemptCount,
+    baseDelayMs: options.retryBaseMs ?? 1_000,
+    maxDelayMs: options.retryMaxMs ?? 60_000,
+  });
+  const updated = await finish(db, job, terminal ? "dead" : "pending", errorCode, terminal ? undefined : delayMs);
+  return { updated, terminal };
 }
 
 export async function runJobBatch(

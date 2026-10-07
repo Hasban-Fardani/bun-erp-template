@@ -305,6 +305,7 @@ test("infra wiring edits the composition root and is idempotent", async () => {
   expect(registry?.source).toContain("mailChannel");
   const jobs = edits.find((entry) => entry.path === "apps/server/features/jobs.ts");
   expect(jobs?.source).toContain("registerMailJobs(registry, ctx.mail);");
+  expect(jobs?.source).toContain('ctx: Pick<AppContext, "env" | "db" | "logger" | "mail">');
 });
 
 test("the organizations manifest is an infra feature without a package, with a migration", async () => {
@@ -346,7 +347,10 @@ test("organizations wiring registers the plugin, schema map, session field, and 
   expect(auth?.source).toContain("invitation: invitations");
 
   const identity = edits.find((entry) => entry.path === "apps/server/features/identity/schema.ts");
-  expect(identity?.source).toContain('activeOrganizationId: uuid("active_organization_id"),');
+  expect(identity?.source).toContain(
+    'activeOrganizationId: uuid("active_organization_id").references(() => organizations.id, { onDelete: "set null" }),',
+  );
+  expect(identity?.source).toContain('index("session_active_organization_idx").on(table.activeOrganizationId)');
 
   const schema = edits.find((entry) => entry.path === "apps/server/database/schema.ts");
   expect(schema?.source).toContain(

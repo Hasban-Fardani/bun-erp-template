@@ -28,6 +28,7 @@ create table if not exists member (
 
 create index if not exists member_organization_idx on member (organization_id);
 create index if not exists member_user_idx on member (user_id);
+create unique index if not exists member_organization_user_idx on member (organization_id, user_id);
 
 create table if not exists invitation (
   id uuid primary key default uuidv7(),
@@ -43,7 +44,17 @@ create table if not exists invitation (
 create index if not exists invitation_organization_idx on invitation (organization_id);
 create index if not exists invitation_email_idx on invitation (email);
 
-alter table "session" add column if not exists active_organization_id uuid
+alter table "session" add column if not exists active_organization_id uuid;
+
+create index if not exists session_active_organization_idx on "session" (active_organization_id);
+
+-- Idempotent constraint creation: Postgres has no 'add constraint if not exists'.
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'session_active_organization_fk') then
+    alter table "session" add constraint session_active_organization_fk
+      foreign key (active_organization_id) references organization (id) on delete set null;
+  end if;
+end $$;
 `;
 
 export async function up(db: Database): Promise<void> {
