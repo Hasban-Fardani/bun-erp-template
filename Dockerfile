@@ -5,10 +5,11 @@ WORKDIR /app
 # Dependency layer first: manifests only, so an app or docs edit does not re-run the install.
 COPY package.json bun.lock bunfig.toml ./
 COPY packages ./packages
+# `cli/` carries the `prepare` script bun runs after install, so it has to be present here.
+COPY cli ./cli
 RUN bun install --frozen-lockfile
 
 # The template ships apps/ empty; the image installs the reference combination without agent wiring.
-COPY cli ./cli
 COPY templates ./templates
 RUN bun erp init --apps server,web --yes --no-agents
 
