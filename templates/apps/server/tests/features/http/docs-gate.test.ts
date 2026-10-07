@@ -24,6 +24,7 @@ const rawBase: Record<string, string> = {
   LOG_MAX_SIZE_MB: "1",
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/erp_test_p1a",
   BETTER_AUTH_URL: "http://localhost:3000",
+  BETTER_AUTH_SECRET: "test-only-secret-with-at-least-32-characters",
   STORAGE_DRIVER: "local",
   MAIL_DRIVER: "log",
   MAIL_FROM_ADDRESS: "no-reply@example.test",

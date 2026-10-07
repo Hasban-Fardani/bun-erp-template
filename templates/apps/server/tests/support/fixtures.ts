@@ -42,7 +42,8 @@ export const testEnv: Env = loadEnv({
   DATABASE_POOL_MAX: "2",
   DATABASE_SSL_MODE: "disable",
   BETTER_AUTH_URL: "http://localhost:3000",
-  BETTER_AUTH_SECRET: "",
+  // The schema refuses an empty secret outside development; tests are not development.
+  BETTER_AUTH_SECRET: "test-only-secret-with-at-least-32-characters",
   AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
   // Public self sign-up is off by default; tests that exercise it opt in explicitly (auth-hardening).
   AUTH_SIGNUP_ENABLED: "false",
