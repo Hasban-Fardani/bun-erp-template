@@ -121,9 +121,38 @@ jobs:
             .data/qa/qa-report.json
             .data/qa/*.log
             .data/qa/*.png
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Build the image
+        run: docker build -t bun-erp-template .
+      - name: Start a disposable PostgreSQL
+        run: |
+          docker network create erp
+          docker run -d --name erp-db --network erp \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=ci-disposable -e POSTGRES_DB=erp_docker \
+            postgres:18-alpine
+      - name: Run the image against it
+        run: |
+          docker run -d --name erp-app --network erp -p 3000:3000 \
+            -e DATABASE_URL=postgresql://postgres:ci-disposable@erp-db:5432/erp_docker \
+            -e BETTER_AUTH_SECRET=ci-only-secret-not-for-production \
+            -e APP_DEPLOY_TARGET=bun -e APP_WEB_MODE=integrated \
+            bun-erp-template
+      - name: Wait for the readiness endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/v1/ready; then exit 0; fi
+            sleep 2
+          done
+          docker logs erp-app
+          exit 1
   ci-ok:
     if: always()
-    needs: [gates, test-postgres, build-web, mobile-detect, mobile-build, e2e]
+    needs: [gates, test-postgres, build-web, mobile-detect, mobile-build, e2e, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

@@ -296,7 +296,10 @@ function Topbar({ session }: { session: SessionData }) {
             </span>
             <LocaleSwitcher className="h-8 max-w-32 rounded-md border border-border bg-surface px-2 text-xs text-ink-soft outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             <UserMenu.Root>
-              <UserMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent">
+              <UserMenu.Trigger
+                testId="user-menu-trigger"
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent"
+              >
                 <span className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-soft-foreground">
                   {(session?.user?.name ?? "?").slice(0, 1).toUpperCase()}
                 </span>
@@ -308,7 +311,9 @@ function Topbar({ session }: { session: SessionData }) {
                   <p className="truncate text-[12px] text-ink-muted">{session?.user?.email}</p>
                 </div>
                 <UserMenu.Separator />
-                <UserMenu.Item onSelect={() => signOut.mutate()}>{t("navigation.signOut")}</UserMenu.Item>
+                <UserMenu.Item testId="user-menu-sign-out" onSelect={() => signOut.mutate()}>
+                  {t("navigation.signOut")}
+                </UserMenu.Item>
               </UserMenu.Content>
             </UserMenu.Root>
           </div>

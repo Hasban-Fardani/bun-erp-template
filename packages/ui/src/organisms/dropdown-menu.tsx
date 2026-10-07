@@ -4,8 +4,12 @@ import { cn } from "../lib/cn.ts";
 
 export { Root } from "@radix-ui/react-dropdown-menu";
 
-export function Trigger({ children, className }: { children: ReactNode; className?: string }) {
-  return <DropdownMenu.Trigger className={className}>{children}</DropdownMenu.Trigger>;
+export function Trigger({ children, className, testId }: { children: ReactNode; className?: string; testId?: string }) {
+  return (
+    <DropdownMenu.Trigger className={className} data-testid={testId}>
+      {children}
+    </DropdownMenu.Trigger>
+  );
 }
 
 export function Content({ children }: { children: ReactNode }) {
@@ -27,14 +31,17 @@ export function Item({
   children,
   onSelect,
   className,
+  testId,
 }: {
   children: ReactNode;
   onSelect?: () => void;
   className?: string;
+  testId?: string;
 }) {
   return (
     <DropdownMenu.Item
       onSelect={onSelect}
+      data-testid={testId}
       className={cn(
         "flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-background focus-visible:ring-2 focus-visible:ring-accent",
         className,

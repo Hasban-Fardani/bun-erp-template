@@ -3,7 +3,10 @@
 Load only the skill triggered by the task. Rules are implemented by source/gates where stated;
 prose alone does not prove enforcement.
 
-- [Grill-me](../.agents/skills/grill-me/SKILL.md) and [grilling](../.agents/skills/grilling/SKILL.md): settle open design decisions before nontrivial implementation.
+- `grill-me` and `grilling` (from `mattpocock/skills`): settle open design decisions before
+  nontrivial implementation. Third-party skills are installed into `.agents/skills/` by
+  `bun erp init` / `bun erp ai:update` and pinned in [skills-lock.json](../skills-lock.json);
+  they are not tracked in git.
 
 - [Feature development](feature-development/SKILL.md): feature boundaries and work order.
 - [Database](database-drizzle/SKILL.md): Drizzle, migrations and driver parity.
