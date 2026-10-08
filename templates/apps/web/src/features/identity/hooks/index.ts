@@ -4,6 +4,7 @@ import { authRequest } from "@web/lib/auth.ts";
 import { call, rpc } from "@web/lib/rpc.ts";
 import { identityKeys } from "../api/keys.ts";
 import { sessionQuery } from "../api/queries.ts";
+import { leaveSession } from "../lib/leave-session.ts";
 
 export function useSession() {
   return useQuery(sessionQuery);
@@ -23,8 +24,8 @@ export function useSignOut() {
   return useMutation({
     mutationFn: async () => authRequest("sign-out"),
     onSuccess: () => {
-      queryClient.clear();
-      void navigate({ to: "/login" });
+      queryClient.setQueryData(identityKeys.session, { authenticated: false, user: null, permissions: [] });
+      return leaveSession(queryClient, () => navigate({ to: "/login" }));
     },
   });
 }
