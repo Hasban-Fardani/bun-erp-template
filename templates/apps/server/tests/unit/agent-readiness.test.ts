@@ -11,6 +11,8 @@ const BASE: AgentReadinessInput = {
     ...Array.from({ length: 30 }, (_, index) => `src/${index}.ts`),
   ],
   indexVersion: CODEGRAPH_VERSION,
+  templateMode: false,
+  guidelinesBlock: "<!-- guidelines:start -->\n- Apps: `server` (`@bun-erp/server`)\n<!-- guidelines:end -->",
 };
 
 test("agent readiness accepts installed startup skills, a complete index, and the pinned version", () => {
@@ -44,4 +46,21 @@ test("agent readiness flags an index that records no CLI version", () => {
   expect(evaluateAgentReadiness({ ...BASE, indexVersion: undefined })).toEqual([
     "CodeGraph index does not record its version; run bun erp init.",
   ]);
+});
+
+test("template mode ignores the state-neutral guidelines block", () => {
+  expect(evaluateAgentReadiness({ ...BASE, templateMode: true, guidelinesBlock: undefined })).toEqual([]);
+  expect(evaluateAgentReadiness({ ...BASE, templateMode: true, guidelinesBlock: "neutral" })).toEqual([]);
+});
+
+test("project mode requires the guidelines block generated for the installed catalog", () => {
+  expect(evaluateAgentReadiness({ ...BASE, guidelinesBlock: undefined })).toEqual([
+    "AGENTS.md has no guidelines block; run bun erp ai:update.",
+  ]);
+  expect(
+    evaluateAgentReadiness({
+      ...BASE,
+      guidelinesBlock: "<!-- guidelines:start -->\nstate-neutral\n<!-- guidelines:end -->",
+    }),
+  ).toEqual(["AGENTS.md guidelines block is not generated for this project; run bun erp ai:update."]);
 });

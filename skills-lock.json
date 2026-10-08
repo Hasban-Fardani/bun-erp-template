@@ -23,7 +23,7 @@
       "source": "cathrynlavery/diagram-design",
       "sourceType": "github",
       "skillPath": "skills/diagram-design/SKILL.md",
-      "computedHash": "0196b287260a5a87fccda79e280d7ab54df5d822742d00c9f334395e2acff6f5"
+      "computedHash": "f89f11b1cc3acbb7ac40c8937aff53496f1abaa37f74973174867ff26f4623db"
     },
     "exploratory-testing": {
       "source": "petrkindlmann/qa-skills",
@@ -41,7 +41,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "computedHash": "4dd886b0196bf43729d954ae326016f2bd9f5f79d892500b407c33a753362f14"
+      "computedHash": "ef1641a2047b71b60f1942cd35efb47d3afc9d584dff5a0b01f8c7db923aaa08"
     },
     "i-have-adhd": {
       "source": "ayghri/i-have-adhd",
@@ -53,7 +53,7 @@
       "source": "pbakaus/impeccable",
       "sourceType": "github",
       "skillPath": ".agents/skills/impeccable/SKILL.md",
-      "computedHash": "0ec7c50507fd8c0380628e4245095104dc0623427dd5ea489dbf55742f84ffad"
+      "computedHash": "bb4d6fad4900cfef09ddf05c41711b74ef9a1b2c3d4ef8b20743ec66aeadfb63"
     },
     "playwright-automation": {
       "source": "petrkindlmann/qa-skills",

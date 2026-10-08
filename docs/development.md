@@ -18,6 +18,13 @@ runs the first `bun install`, and configures project-local CodeGraph and the app
 skips the agent tooling (CI still runs it because `check:agents` verifies the index). Development
 commands do not sync or install agent tooling. Never commit `.env` or credentials.
 
+<!-- template-only -->
+A fork that starts a product runs `bun erp project:adopt --name <name> --purpose "<one line>"` (or
+answers yes when `bun erp init` offers it). That deletes `docs/template/`, strips the marked
+template-only blocks, fills the identity block, deletes `template.scope.json` and the `F3.*`
+template tasks, and turns the scope gate off. See [template lifecycle](template/README.md).
+<!-- /template-only -->
+
 ## Agent setup
 
 Run `bun erp init` from the repository root before code exploration or development. Beyond the app

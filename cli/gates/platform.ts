@@ -53,6 +53,8 @@ const PATH_ALLOWED = new Set([
  */
 const NODE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
   "cli/tasks/init-agents.ts": ["fs/promises", "os"],
+  // `project:adopt` removes directories and files; Bun has no `rm` equivalent outside `Bun.$`.
+  "cli/commands/project.ts": ["fs/promises"],
   // Temp-directory fixtures for the gate runner: mkdtemp/tmpdir/join have no direct Bun replacement.
   "apps/server/tests/unit/check-runner.test.ts": ["fs/promises", "os", "path"],
   "apps/server/tests/unit/gate-dispatch.test.ts": ["fs/promises", "os", "path"],

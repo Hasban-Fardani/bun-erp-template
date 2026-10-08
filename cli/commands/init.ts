@@ -1,9 +1,12 @@
+import { isTemplateRepo } from "../gates/lifecycle.ts";
 import { CATALOG_APP_KINDS, type CatalogAppKind, installCatalogApp, isCatalogAppKind } from "../lib/app-catalog.ts";
 import { isAppInstalled } from "../lib/apps.ts";
+import { refreshGuidelines } from "../lib/guidelines.ts";
 import { parseCommandOptions } from "../lib/options.ts";
-import { isInteractive, promptChoice } from "../lib/prompt.ts";
+import { isInteractive, promptChoice, resolveRequired } from "../lib/prompt.ts";
 import { repoRoot, run } from "../lib/repo.ts";
 import { defineCommand } from "../registry.ts";
+import { adoptProject } from "./project.ts";
 
 /** The seven installable combinations (Q24/Q29); the default matches the historical install. */
 const COMBINATIONS: ReadonlyArray<{ label: string; apps: readonly CatalogAppKind[] }> = [
@@ -17,6 +20,35 @@ const COMBINATIONS: ReadonlyArray<{ label: string; apps: readonly CatalogAppKind
 ];
 
 const DEFAULT_APPS: readonly CatalogAppKind[] = ["server", "web"];
+
+/**
+ * A fresh fork can become a project in the same run; CI and scripts get the command to run
+ * instead, because adoption needs a project name and purpose.
+ */
+async function offerProjectAdoption(): Promise<void> {
+  if (!(await isTemplateRepo(repoRoot))) return;
+  const adoptNow = isInteractive()
+    ? promptChoice(
+        "Configure this fork as a project now?",
+        [
+          { label: "Yes — set the project name and purpose", value: true },
+          { label: "No — keep it as the template repository", value: false },
+        ],
+        false,
+      )
+    : false;
+  if (!adoptNow) {
+    process.stdout.write(
+      'Still the template repository. Run `bun erp project:adopt --name <name> --purpose "<one line>"` to configure this fork as a project.\n',
+    );
+    return;
+  }
+  const name = resolveRequired(undefined, "Project name");
+  const purpose = resolveRequired(undefined, "Project purpose (one line)");
+  if (!name || !purpose) throw new Error('Usage: bun erp project:adopt --name <name> --purpose "<one line>"');
+  await adoptProject(repoRoot, { name, purpose });
+  process.stdout.write(`Adopted "${name}" as a project.\n`);
+}
 
 function parseAppList(value: string): CatalogAppKind[] {
   const parts = value
@@ -72,11 +104,16 @@ export const commands = [
       );
     }
     await run(["bun", "install"], "install workspace dependencies");
+    // The committed guidelines block is state-neutral; init is one of the two places that
+    // regenerates it for the catalog this project actually installed.
+    await refreshGuidelines(repoRoot);
 
     if (parsed.flags.has("no-agents")) {
       process.stdout.write("Skipped agent tooling (--no-agents). Run `bun erp init` again to install it.\n");
+      await offerProjectAdoption();
       return;
     }
     await run(["bun", "cli/tasks/init-agents.ts"], "initialize project agent tooling");
+    await offerProjectAdoption();
   }),
 ];

@@ -4,13 +4,13 @@ Start at the owner of the change below. Feature internals are optional: add api,
 providers, stores or types only when that feature needs them. Do not create empty folders to satisfy
 a convention.
 
-The repository ships `apps/` empty. `bun erp init` installs the chosen combination (server, web,
-mobile, or a mix) from `templates/apps/{server,web,mobile}` and registers the workspaces, so every
-`apps/...` path below describes an installed app. Web and mobile bind the server's typed Hono
-contract when the server app is present; without it they install in detached mode (stub
-`src/lib/rpc.ts`, no `@bun-erp/server` dependency) and a later `init` re-fits the real client.
-Server-owned CLI commands live in `apps/server/cli/` and appear in `bun erp --help` only once the
-server app is installed; the root `cli/` never imports `apps/**`.
+`bun erp init` installs the chosen combination (server, web, mobile, or a mix) from
+`templates/apps/{server,web,mobile}` and registers the workspaces, so every `apps/...` path below
+describes an installed app. Web and mobile bind the server's typed Hono contract when the server
+app is present; without it they install in detached mode (stub `src/lib/rpc.ts`, no
+`@bun-erp/server` dependency) and a later `init` re-fits the real client. Full flow:
+[development](development.md). Server-owned CLI commands live in `apps/server/cli/` and appear in
+`bun erp --help` only once the server app is installed; the root `cli/` never imports `apps/**`.
 
 | Change | Start here | Ownership |
 |---|---|---|
@@ -81,7 +81,7 @@ Better Auth serves its own endpoints under `/api/v1/auth/*` through one wildcard
 opt-in `organizations` feature extends that plugin set instead of mounting feature routes: it
 registers the Better Auth `organization` plugin, adds its tables to the drizzle adapter and to
 `database/schema.ts`, and adds `activeOrganizationId` to the session. The default server stays
-tenant-free and RBAC stays independent of organizations (Q28/Q33).
+tenant-free and RBAC stays independent of organizations.
 
 Route files register typed handlers directly on the Hono chain and compose feature routers with
 app.route(). This preserves path and RPC inference; generic controller functions can erase it.

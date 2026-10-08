@@ -67,12 +67,11 @@ verbatim for upstream re-sync, and `cli/gates/slop.ts` runs them in a Worker thr
 
 ## App catalog
 
-The template repo ships `apps/` empty. Apps wait in `templates/apps/<server|web|mobile>/` and are
-chosen at `bun erp init`: an interactive numbered choice list, or
-`bun erp init --apps server,web --yes` in scripts and CI. `init` copies the catalogs, registers the
-root `workspaces`, runs the first `bun install`, and installs the agent tooling unless `--no-agents`
-is passed. `bun erp apps:create <name> <server|web|mobile>` adds one app later; `server` scaffolds a
-minimal Bun service inline while `web`/`mobile` copy their catalog and rename the package.
+Apps install from `templates/apps/<server|web|mobile>/` through `bun erp init` (an interactive
+numbered choice list, or `bun erp init --apps server,web --yes` in scripts and CI) or through
+`bun erp apps:create <name> <server|web|mobile>` later. `init` is the single door: it copies the
+catalogs, registers the root `workspaces`, runs the first `bun install`, and installs the agent
+tooling unless `--no-agents`. Full flow: [development](development.md).
 
 Catalog apps keep their real package names, so `init` lands `@bun-erp/server`, `@bun-erp/web` and
 `@bun-erp/mobile` at their reference paths. Web and mobile bind the server's typed Hono contract when

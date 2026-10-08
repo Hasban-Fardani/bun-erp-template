@@ -2,15 +2,19 @@
 
 ## Product
 
+<!-- project-identity:start -->
+<!-- template-only -->
 This repository is a reusable starter for internal business applications. It is not a finished
 ERP and must not assume a client's business rules or production data. The current example surface
 is an admin console for authentication, users, roles, audit records, and platform health.
+<!-- /template-only -->
+<!-- project-identity:end -->
 
 ## Technology and test stack
 
-- Monorepo, Bun 1.4.2, TypeScript, Hono, Drizzle, PostgreSQL-compatible schema.
-- Local development runs Vite with HMR and a Bun/Hono API; the local database is persistent
-  PGlite at `.data/development`.
+- Monorepo, Bun 1.4.2, TypeScript, Hono, Drizzle, PostgreSQL.
+- Local development runs Vite with HMR and a Bun/Hono API against the PostgreSQL database from
+  `.env`; there is no file-backed server database.
 - Web UI uses React, Vite, TanStack Router, and TanStack Query.
 - Backend and package tests use `bun:test`; browser QA uses `playwright-core` through `bun run qa`.
 - Mobile uses React and Capacitor. Browser QA does not replace native iOS/Android validation.
@@ -20,8 +24,9 @@ is an admin console for authentication, users, roles, audit records, and platfor
 
 - Local URL defaults to `http://localhost:5173`; `/api/*` is proxied to the API listener.
 - Use an isolated local development database and disposable QA accounts only.
-- The local development server seeds the default organization and system RBAC records. It does not
-  create an owner user; `bun erp user:create` creates that account for the configured database.
+- The development seed creates the permission catalogue and the `owner`/`staff` role keys. It does
+  not create a user or an organization; `bun erp user:create` creates the first account for the
+  configured database.
 - Browser QA credentials come from `QA_EMAIL` and `QA_PASSWORD`. Never write credentials, cookies,
   tokens, or personal data into test reports or screenshots.
 - The Playwright runner writes machine output under ignored `.data/qa/`.

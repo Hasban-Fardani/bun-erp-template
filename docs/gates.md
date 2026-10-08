@@ -20,7 +20,8 @@ prints that catalog as a table.
    process. `check:fast` runs the file-level subset named in `FAST_GATE_NAMES`.
 4. `cli/commands/check.ts` registers the `check:*` commands and `check:gate`; `check:gate <name>`
    looks the command up in the catalog and forwards any extra arguments.
-5. `bun erp check` runs Biome, `tsc` and all 27 gates (up to eight at a time); `bun erp check:fast`
+5. `bun erp check` runs Biome, `tsc` and every gate in `GATE_CATALOG` (up to eight at a time;
+   `bun erp check:gate --list` prints the authoritative list and count); `bun erp check:fast`
    skips Biome, the typecheck, the React audit and the slower gates for the inner loop (Biome stays
    in `check` and the pre-push `check:biome` hook). Neither runs tests or builds — use `bun erp test`
    and the app build for those.
@@ -54,7 +55,8 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 | react | `check:react` | `cli/gates/react-doctor.ts` | React Doctor errors and high-complexity components | Missing `package.json` in web, mobile or UI |
 | readiness | `check:prod` | `cli/gates/readiness.ts` | Root scripts, secret placeholders, migration numbering and contract docs | Missing migration or app directories |
 | rpc | `check:rpc` | `cli/gates/rpc-guard.ts` | Typed Hono client, no runtime server imports, `/api/v1` prefix | Missing web, mobile or server apps; without a server there is no typed-client rule |
-| scope | `check:scope` | `cli/gates/scope.ts` | Client names, business rules and unknown top-level directories | Never; it reads Git-tracked files |
+| scope | `check:scope` | `cli/gates/scope.ts` | Client names, business rules and unknown top-level directories | Project mode (`docs/template/` is missing; `template.scope.json` is deleted by `bun erp project:adopt`) |
+| lifecycle | `check:lifecycle` | `cli/gates/lifecycle.ts` | Template-only markers and the template scope file are gone once `docs/template/` is removed | Template mode (`docs/template/` exists) |
 | shadcn | `check:shadcn` | `cli/gates/shadcn-guard.ts` | Approved registries, vendored provenance and banned native controls | Missing app source directories |
 | skills | `skills:validate` | `cli/gates/skills.ts` | `SKILL.md` frontmatter, matching name, trigger description and body length | `skills/` is missing |
 | slop | `check:slop` | `cli/gates/slop.ts` | Narrative comments, oversized page components, governance AST slop | Missing scan targets; a missing bundled validator is a finding |

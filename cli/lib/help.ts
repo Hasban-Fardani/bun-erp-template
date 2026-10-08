@@ -14,6 +14,10 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     title: "Project",
     commands: [
       ["init", "Choose the app combination, install agent tooling, and run the first bun install"],
+      [
+        'project:adopt --name <name> --purpose "<one line>"',
+        "Turn a template fork into a project: remove template-only material and write the identity",
+      ],
       ["doctor", "Check local environment and database readiness"],
       ["dev", "Start the web app with API and Vite HMR"],
       ["build", "Build the target selected by APP_DEPLOY_TARGET"],

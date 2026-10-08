@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { GATE_CATALOG } from "@cli/lib/gates.ts";
+import { GUIDELINES_START } from "@cli/lib/guidelines.ts";
 import { repoRoot } from "@cli/lib/repo.ts";
 
 type JsonRpcResponse = {
@@ -127,7 +128,8 @@ test("the MCP server completes a real handshake and answers every tool", async (
   expect(docs).toContain("docs/");
 
   const guidelines = byId.get(callId("guidelines"))?.result?.content?.[0]?.text ?? "";
-  expect(guidelines).toContain("packages/ui/llms.txt");
+  expect(guidelines).toContain(GUIDELINES_START);
+  expect(guidelines).toContain("bun erp");
 
   const unknown = byId.get(4 + TOOL_NAMES.length);
   expect(unknown?.error?.code).toBe(-32601);
