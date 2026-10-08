@@ -68,6 +68,13 @@ const rawSchema = z
      * See docs/security.md.
      */
     PERMISSION_CACHE_ENABLED: boolOr("true"),
+    /**
+     * Cache facade driver (infra/cache). `memory` is per process; `database` is shared across
+     * replicas and isolates; `cloudflare-kv` needs the Worker binding named by CACHE_KV_BINDING and
+     * is eventually consistent, so it is never used for permissions.
+     */
+    CACHE_DRIVER: z.enum(["memory", "database", "cloudflare-kv"]).default("memory"),
+    CACHE_KV_BINDING: z.string().trim().min(1).default("CACHE_KV"),
     // Google OAuth dormant (ADR-0009): the provider activates only when BOTH are set.
     GOOGLE_CLIENT_ID: z.string().default(""),
     GOOGLE_CLIENT_SECRET: z.string().default(""),
@@ -124,6 +131,13 @@ const rawSchema = z
         code: "custom",
         path: ["MAIL_DRIVER"],
         message: "SMTP needs raw sockets; use log or an HTTP mail driver on Cloudflare Workers",
+      });
+    }
+    if (env.CACHE_DRIVER === "cloudflare-kv" && env.APP_DEPLOY_TARGET !== "cloudflare") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["CACHE_DRIVER"],
+        message: "cloudflare-kv needs a Worker binding; use memory or database on Bun",
       });
     }
     // Every target needs a real signing secret; only local development may run without one.

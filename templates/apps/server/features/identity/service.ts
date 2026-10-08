@@ -58,7 +58,7 @@ async function withPermissionInvalidation<T>(
   write: (tx: Database) => Promise<T>,
 ): Promise<T> {
   const result = await db.transaction((tx) => write(tx as unknown as Database));
-  invalidateUser(userId);
+  await invalidateUser(userId);
   return result;
 }
 
