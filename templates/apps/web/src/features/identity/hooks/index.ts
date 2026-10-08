@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { authRequest } from "@web/lib/auth.ts";
+import { call, rpc } from "@web/lib/rpc.ts";
 import { identityKeys } from "../api/keys.ts";
 import { sessionQuery } from "../api/queries.ts";
 
@@ -24,6 +25,32 @@ export function useSignOut() {
     onSuccess: () => {
       queryClient.clear();
       void navigate({ to: "/login" });
+    },
+  });
+}
+
+/** Starts viewing the app as another user. Every cached read belonged to the admin, so all is dropped. */
+export function useStartImpersonation() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: (id: string) => call(rpc.users[":id"].impersonate.$post({ param: { id } })),
+    onSuccess: async () => {
+      queryClient.clear();
+      await navigate({ to: "/" });
+    },
+  });
+}
+
+/** Ends the impersonation; the admin's own session was never replaced, so they land back signed in. */
+export function useStopImpersonation() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: () => call(rpc.impersonation.stop.$post()),
+    onSuccess: async () => {
+      queryClient.clear();
+      await navigate({ to: "/" });
     },
   });
 }

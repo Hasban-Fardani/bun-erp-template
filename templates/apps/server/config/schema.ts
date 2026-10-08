@@ -80,6 +80,12 @@ const rawSchema = z
      * address). Better Auth keeps its own stricter limits on the auth endpoints.
      */
     API_RATE_LIMIT_ENABLED: boolOr("true"),
+    /**
+     * User impersonation (docs/security.md). `IMPERSONATION_ENABLED=false` turns the start endpoint off
+     * entirely (production kill switch); a session lasts at most IMPERSONATION_TTL_MINUTES.
+     */
+    IMPERSONATION_ENABLED: boolOr("true"),
+    IMPERSONATION_TTL_MINUTES: z.coerce.number().int().positive().max(1440).default(60),
     API_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
     API_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
     /**

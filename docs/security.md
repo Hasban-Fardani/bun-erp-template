@@ -17,6 +17,33 @@ Production env guards run during bootstrap. Password reset is described below.
 The OpenAPI document and Scalar reference (`/api/docs`) expose the full route surface, so they
 are off in production unless `API_DOCS_ENABLED=true` opts in deliberately.
 
+## User impersonation
+
+Owners can view the app as another user to reproduce an error (decision D6: full access, fully audited).
+
+- **Who.** Only holders of `user.impersonate` (granted to the `owner` role by default) may call
+  `POST /api/v1/users/:id/impersonate`. Without it: 403.
+- **Refused (403).** Impersonating yourself, a user who holds the `owner` role or `user.impersonate`, or
+  starting a second impersonation while one is active. An unknown user is 404; no session is 401.
+- **Session.** The start creates a normal `session` row for the target with `impersonated_by` set and
+  `expires_at` at `IMPERSONATION_TTL_MINUTES` (default 60). Its token travels in a separate
+  `erp_impersonation` cookie, so the admin's own session is never replaced. `POST /api/v1/impersonation/stop`
+  deletes the row and clears the cookie; the admin is back at once. The cookie only works together with the
+  admin's own live session. After the TTL the next request answers 401 and clears the cookie, and the
+  admin's original session is still valid. State is DB-only, so it behaves the same on a VPS and on Workers.
+- **Limits.** While the impersonation cookie is present, `/api/v1/auth/` change-password, set-password,
+  change-email, update-user, delete-user, revoke-session(s) and `two-factor/*` return 403, so the target's
+  credentials, sessions and 2FA cannot be changed.
+- **Audit.** `impersonation.started` and `impersonation.stopped` are audit events attributed to the admin.
+  Every other audit row written during an impersonation records the target as `actor_id` and the admin as
+  `impersonator_id`; the audit screen renders it as "by X as Y".
+- **Disable in production.** Set `IMPERSONATION_ENABLED=false`: the start endpoint answers 403 and no
+  session can be created. Sessions already issued still expire at their TTL; revoke them by deleting
+  `session` rows with `impersonated_by is not null`.
+
+Better Auth's admin plugin was not used: it needs its own `role` column and role model, which would replace
+this repository's RBAC.
+
 ## Password reset
 
 Reset exists only when the opt-in mail feature is installed (`bun erp features:install mail`). Without it,
