@@ -3,12 +3,15 @@ import { Button } from "@bun-erp/ui/atoms/button.tsx";
 import { Input } from "@bun-erp/ui/atoms/input.tsx";
 import { FormErrors, FormFieldError } from "@bun-erp/ui/molecules/form-errors.tsx";
 import { useForm } from "@tanstack/react-form";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { shippedFeatures } from "@web/config/navigation.ts";
 import { uiConfig } from "@web/config/ui.ts";
 import { safeRedirectTarget } from "@web/lib/redirect.ts";
 import { Eye, EyeOff, Loader2, Users as UsersIcon } from "lucide-react";
 import { useState } from "react";
+import { authOptionsQuery } from "../api/queries.ts";
+import { GoogleSignIn } from "../components/google-sign-in.tsx";
 import { useLogin } from "../hooks/index.ts";
 
 const routeApi = getRouteApi("/login");
@@ -34,7 +37,8 @@ export function LoginScreen() {
   const { t } = useI18n();
   const login = useLogin();
   const navigate = useNavigate();
-  const { redirect } = routeApi.useSearch();
+  const { redirect, error } = routeApi.useSearch();
+  const { data: options } = useSuspenseQuery(authOptionsQuery);
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({
@@ -113,95 +117,111 @@ export function LoginScreen() {
         >
           <h1 className="text-[22px] font-semibold tracking-tight">{t("auth.welcomeBack")}</h1>
 
-          <form.Field name="email">
-            {(field) => {
-              const errors = field.state.meta.errors;
-              return (
-                <>
-                  <label htmlFor="email" className="mt-6 block text-[13px] font-medium text-ink-soft">
-                    {t("common.email")}
-                  </label>
-                  <Input
-                    id="email"
-                    className="mt-1.5 h-11 rounded-lg px-3 text-base"
-                    type="email"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                    autoComplete="username"
-                    placeholder={t("auth.emailPlaceholder")}
-                    aria-invalid={errors.length > 0}
-                    aria-describedby={errors.length > 0 ? "email-error" : undefined}
-                    autoFocus
-                  />
-                  <FormFieldError id="email-error" errors={errors} />
-                </>
-              );
-            }}
-          </form.Field>
+          {options.google ? (
+            <GoogleSignIn
+              redirect={safeRedirectTarget(redirect)}
+              failed={error !== undefined}
+              withDivider={options.password}
+            />
+          ) : null}
 
-          <form.Field name="password">
-            {(field) => {
-              const errors = field.state.meta.errors;
-              return (
-                <>
-                  <div className="mt-4 flex items-baseline justify-between">
-                    <label htmlFor="password" className="text-[13px] font-medium text-ink-soft">
-                      {t("common.password")}
-                    </label>
-                    <Link
-                      to="/forgot-password"
-                      data-testid="login-recovery-action"
-                      className="rounded text-[12.5px] font-medium text-accent outline-none underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-accent"
-                    >
-                      {t("auth.forgotPassword")}
-                    </Link>
-                  </div>
-                  <div className="relative mt-1.5">
-                    <Input
-                      id="password"
-                      className="h-11 w-full rounded-lg pr-12 text-base"
-                      type={showPassword ? "text" : "password"}
-                      value={field.state.value}
-                      onChange={(event) => field.handleChange(event.target.value)}
-                      onBlur={field.handleBlur}
-                      autoComplete="current-password"
-                      aria-invalid={errors.length > 0}
-                      aria-describedby={errors.length > 0 ? "password-error" : undefined}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-pressed={showPassword}
-                      aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-                      className="absolute top-1/2 right-1.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted outline-none hover:bg-background hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
-                    >
-                      {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
-                    </button>
-                  </div>
-                  <FormFieldError id="password-error" errors={errors} />
-                </>
-              );
-            }}
-          </form.Field>
+          {options.password ? (
+            <>
+              <form.Field name="email">
+                {(field) => {
+                  const errors = field.state.meta.errors;
+                  return (
+                    <>
+                      <label htmlFor="email" className="mt-6 block text-[13px] font-medium text-ink-soft">
+                        {t("common.email")}
+                      </label>
+                      <Input
+                        id="email"
+                        className="mt-1.5 h-11 rounded-lg px-3 text-base"
+                        type="email"
+                        value={field.state.value}
+                        onChange={(event) => field.handleChange(event.target.value)}
+                        onBlur={field.handleBlur}
+                        autoComplete="username"
+                        placeholder={t("auth.emailPlaceholder")}
+                        aria-invalid={errors.length > 0}
+                        aria-describedby={errors.length > 0 ? "email-error" : undefined}
+                        autoFocus
+                      />
+                      <FormFieldError id="email-error" errors={errors} />
+                    </>
+                  );
+                }}
+              </form.Field>
 
-          <form.Subscribe selector={(state) => state.errors}>
-            {(errors) => <FormErrors errors={errors} />}
-          </form.Subscribe>
-          <Button
-            className="mt-6 h-11 w-full justify-center rounded-lg text-[15px]"
-            type="submit"
-            disabled={login.isPending}
-          >
-            {login.isPending ? (
-              <>
-                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                {t("auth.checking")}
-              </>
-            ) : (
-              t("auth.signIn")
-            )}
-          </Button>
+              <form.Field name="password">
+                {(field) => {
+                  const errors = field.state.meta.errors;
+                  return (
+                    <>
+                      <div className="mt-4 flex items-baseline justify-between">
+                        <label htmlFor="password" className="text-[13px] font-medium text-ink-soft">
+                          {t("common.password")}
+                        </label>
+                        <Link
+                          to="/forgot-password"
+                          data-testid="login-recovery-action"
+                          className="rounded text-[12.5px] font-medium text-accent outline-none underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-accent"
+                        >
+                          {t("auth.forgotPassword")}
+                        </Link>
+                      </div>
+                      <div className="relative mt-1.5">
+                        <Input
+                          id="password"
+                          className="h-11 w-full rounded-lg pr-12 text-base"
+                          type={showPassword ? "text" : "password"}
+                          value={field.state.value}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                          onBlur={field.handleBlur}
+                          autoComplete="current-password"
+                          aria-invalid={errors.length > 0}
+                          aria-describedby={errors.length > 0 ? "password-error" : undefined}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-pressed={showPassword}
+                          aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
+                          className="absolute top-1/2 right-1.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted outline-none hover:bg-background hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
+                        >
+                          {showPassword ? (
+                            <EyeOff size={17} aria-hidden="true" />
+                          ) : (
+                            <Eye size={17} aria-hidden="true" />
+                          )}
+                        </button>
+                      </div>
+                      <FormFieldError id="password-error" errors={errors} />
+                    </>
+                  );
+                }}
+              </form.Field>
+
+              <form.Subscribe selector={(state) => state.errors}>
+                {(errors) => <FormErrors errors={errors} />}
+              </form.Subscribe>
+              <Button
+                className="mt-6 h-11 w-full justify-center rounded-lg text-[15px]"
+                type="submit"
+                disabled={login.isPending}
+              >
+                {login.isPending ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    {t("auth.checking")}
+                  </>
+                ) : (
+                  t("auth.signIn")
+                )}
+              </Button>
+            </>
+          ) : null}
         </form>
       </div>
     </div>

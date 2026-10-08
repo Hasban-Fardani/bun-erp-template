@@ -31,9 +31,14 @@ import { generatePassword } from "../lib/password.ts";
 export const commands = [
   // Chicken-and-egg escape hatch: the first owner cannot be created over HTTP that requires a role.
   defineCommand("user:create", async (args) => {
-    const [emailArg, passwordArg, ...options] = args;
+    // Google-only sign-in never uses the password, so an unguessable one is generated instead of asked
+    // and the password argument may be left out (`user:create <email> --role owner`).
+    const googleOnly = loadEnv().AUTH_PASSWORD_ENABLED === false;
+    const skipPassword = googleOnly && (args[1] === undefined || args[1].startsWith("--"));
+    const [emailArg, ...rest] = args;
+    const [passwordArg, ...options] = skipPassword ? [undefined, ...rest] : rest;
     const email = resolveRequired(emailArg, "Email");
-    const password = resolveRequired(passwordArg, "Password");
+    const password = skipPassword ? generatePassword() : resolveRequired(passwordArg, "Password");
     if (!email || !password) {
       process.stderr.write("Usage: bun erp user:create <email> <password> [--role <key>] [--name <name>]\n");
       process.stderr.write(

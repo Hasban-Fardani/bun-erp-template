@@ -12,7 +12,9 @@ Secrets live in ignored environment files or deployment secrets. `env:list` disp
 presence only. Pino log redaction is in `infra/observability/logger.ts`; audit snapshots use
 entity allowlists plus secret filtering. Neither control replaces the other.
 
-Email/password auth uses Better Auth. Google is dormant unless both credentials are set.
+Email/password auth uses Better Auth. Google sign-in turns on when both Google credentials are set,
+and `AUTH_PASSWORD_ENABLED=false` makes it Google-only (no password hashing at all); only provisioned
+accounts can sign in unless self sign-up is on (ADR-0009).
 Production env guards run during bootstrap. Passwords are hashed with `PASSWORD_HASH`: `pbkdf2`
 (default, PBKDF2-HMAC-SHA256, `PASSWORD_HASH_ITERATIONS=30000`, fits Cloudflare Workers Free) or `scrypt`
 (memory-hard; prefer it on a VPS/Bun host). Stored hashes are self-describing, so switching never

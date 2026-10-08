@@ -180,6 +180,10 @@ in the Cloudflare dashboard before the first run. With the repository's Wrangler
 
 ### Workers Free plan
 
+For the lightest sign-in on Free, use Google: set `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (redirect URI
+`<APP_URL>/api/v1/auth/callback/google`) and `AUTH_PASSWORD_ENABLED=false`, so no request hashes a
+password. Email/password with `PASSWORD_HASH=pbkdf2` also fits the 10 ms budget.
+
 The template uses one Worker for `/api` and `/api/*`, plus Workers Static Assets for the web app.
 Static asset requests do not invoke the Worker; API and scheduled-job invocations do. The current
 Workers Free limits are 100,000 HTTP Worker requests per day and 10 ms CPU per HTTP request or Cron
