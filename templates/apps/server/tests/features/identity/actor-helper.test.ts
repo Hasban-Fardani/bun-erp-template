@@ -1,0 +1,26 @@
+import { expect, test } from "bun:test";
+import { resolve } from "node:path";
+import { actorOf } from "../../../http/helpers/actor.ts";
+
+const SERVER_ROOT = resolve(import.meta.dir, "../../..");
+
+test("actorOf keeps only the audit fields of an actor", () => {
+  const actor = {
+    userId: "u1",
+    traceId: "t1",
+    label: "a@example.test",
+    name: "A",
+    email: "a@example.test",
+    permissions: ["user.read"],
+  } as const;
+  expect(actorOf(actor)).toEqual({ userId: "u1", traceId: "t1", label: "a@example.test" });
+});
+
+test("actorOf is defined exactly once in server code", async () => {
+  const definitions: string[] = [];
+  for await (const path of new Bun.Glob("**/*.ts").scan({ cwd: SERVER_ROOT, absolute: true })) {
+    if (path.includes("/node_modules/") || path.includes("/tests/")) continue;
+    if (/(?:const|function)\s+actorOf\b/.test(await Bun.file(path).text())) definitions.push(path);
+  }
+  expect(definitions).toHaveLength(1);
+});
