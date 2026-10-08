@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, relative } from "node:path";
-import { berkasSumber, bersihkanKode } from "./log-coverage-validator.ts";
-import { jalankanValidator } from "./validator-cli.ts";
+import { sourceFiles, stripCode } from "./source-utils.ts";
+import { runValidator } from "./validator-cli.ts";
 
 /**
  * Validator slop kode (patch v2.12).
@@ -22,7 +22,7 @@ import { jalankanValidator } from "./validator-cli.ts";
  *   sengaja. Alasan kosong tidak dihormati.
  */
 
-export type AturanSlop =
+export type SlopRule =
   | "OBVIOUS_COMMENT"
   | "STALE_COMMENT"
   | "UNUSED_EXPORT"
@@ -31,18 +31,18 @@ export type AturanSlop =
   | "FIXME_LEFT"
   | "UNPARSED_REGION";
 
-export interface TemuanSlop {
-  rule: AturanSlop;
+export interface SlopFinding {
+  rule: SlopRule;
   file: string;
   line: number;
   detail: string;
 }
 
 /** Penanda opt-out: `slop-ok: <alasan>`. Harus ada alasan, bukan sekadar penanda. */
-const PENANDA_OK = /slop-ok:\s*\S+/;
+const OK_MARKER = /slop-ok:\s*\S+/;
 
 /** Kata yang tidak membawa makna untuk perbandingan komentar vs kode. */
-const KATA_UMUM = new Set([
+const COMMON_WORDS = new Set([
   "yang",
   "dan",
   "untuk",
@@ -102,7 +102,7 @@ const KATA_UMUM = new Set([
  * hilang. Dengan membuang kata kerja generik dari sisi komentar, yang tinggal
  * adalah kata benda ("total", "harga") dan perbandingannya jadi tepat.
  */
-const VERBA_UMUM = new Set([
+const COMMON_VERBS = new Set([
   "hitung",
   "ambil",
   "cek",
@@ -151,32 +151,32 @@ const VERBA_UMUM = new Set([
   "setel",
 ]);
 
-function potongKata(teks: string): string[] {
-  return teks
+function splitWords(text: string): string[] {
+  return text
     .toLowerCase()
     .split(/[^a-z0-9_]+/)
-    .filter((w) => w.length >= 3 && !KATA_UMUM.has(w));
+    .filter((w) => w.length >= 3 && !COMMON_WORDS.has(w));
 }
 
 /** Pisahkan camelCase / snake_case jadi kata dasar, supaya bisa dibandingkan. */
-function potongIdentifiers(teks: string): string[] {
-  return teks
+function splitIdentifiers(text: string): string[] {
+  return text
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter((w) => w.length >= 3 && !KATA_UMUM.has(w));
+    .filter((w) => w.length >= 3 && !COMMON_WORDS.has(w));
 }
 
 /** Ambil komentar `//` beserta nomor barisnya; abaikan komentar di dalam string. */
-function barisKomentar(kode: string): Array<{ line: number; teks: string }> {
-  const hasil: Array<{ line: number; teks: string }> = [];
-  kode.split("\n").forEach((isi, idx) => {
-    const bersih = isi.trim();
-    if (!bersih.startsWith("//")) return;
-    const teks = bersih.replace(/^\/\/+\s?/, "").trim();
-    if (teks.length > 0) hasil.push({ line: idx + 1, teks });
+function commentLines(source: string): Array<{ line: number; text: string }> {
+  const result: Array<{ line: number; text: string }> = [];
+  source.split("\n").forEach((content, idx) => {
+    const clean = content.trim();
+    if (!clean.startsWith("//")) return;
+    const text = clean.replace(/^\/\/+\s?/, "").trim();
+    if (text.length > 0) result.push({ line: idx + 1, text });
   });
-  return hasil;
+  return result;
 }
 
 /**
@@ -191,22 +191,22 @@ function barisKomentar(kode: string): Array<{ line: number; teks: string }> {
  * penunjuk lokasi, bukan ulangan kode; isinya justru informasi yang tidak ada di
  * baris mana pun. Pola itu langsung dilewati.
  */
-export function komentarMengulang(kode: string): TemuanSlop[] {
-  const temuan: TemuanSlop[] = [];
-  const baris = kode.split("\n");
-  const komentar = barisKomentar(kode);
+export function restatingComments(source: string): SlopFinding[] {
+  const findings: SlopFinding[] = [];
+  const lines = source.split("\n");
+  const comments = commentLines(source);
 
-  for (const k of komentar) {
+  for (const k of comments) {
     // Label "METODE /path -> keterangan" bukan ulangan kode.
-    if (/\b(GET|POST|PUT|PATCH|DELETE)\s+\/\S*/.test(k.teks)) continue;
-    if (/^[-=\s*_#/]+$/.test(k.teks)) continue;
+    if (/\b(GET|POST|PUT|PATCH|DELETE)\s+\/\S*/.test(k.text)) continue;
+    if (/^[-=\s*_#/]+$/.test(k.text)) continue;
 
     // Baris kode berikutnya yang bukan komentar dan bukan kosong.
     let target = "";
-    for (let i = k.line; i < baris.length && i < k.line + 4; i++) {
-      const isi = (baris[i] ?? "").trim();
-      if (isi && !isi.startsWith("//")) {
-        target = isi;
+    for (let i = k.line; i < lines.length && i < k.line + 4; i++) {
+      const content = (lines[i] ?? "").trim();
+      if (content && !content.startsWith("//")) {
+        target = content;
         break;
       }
     }
@@ -216,21 +216,21 @@ export function komentarMengulang(kode: string): TemuanSlop[] {
 
     // Kata kerja generik ("hitung", "ambil") dibuang: yang tersisa harus kata
     // benda yang benar-benar muncul di kode.
-    const kataKomentar = potongKata(k.teks).filter((w) => !VERBA_UMUM.has(w));
-    if (kataKomentar.length < 2) continue;
+    const commentWords = splitWords(k.text).filter((w) => !COMMON_VERBS.has(w));
+    if (commentWords.length < 2) continue;
 
-    const kataKode = new Set(potongIdentifiers(target));
-    const semuaAda = kataKomentar.every((w) => kataKode.has(w));
-    if (semuaAda) {
-      temuan.push({
+    const codeWords = new Set(splitIdentifiers(target));
+    const allPresent = commentWords.every((w) => codeWords.has(w));
+    if (allPresent) {
+      findings.push({
         rule: "OBVIOUS_COMMENT",
         file: "",
         line: k.line,
-        detail: `Komentar hanya mengulang kode di bawahnya, tanpa menambah keterangan: "${k.teks}"`,
+        detail: `Komentar hanya mengulang kode di bawahnya, tanpa menambah keterangan: "${k.text}"`,
       });
     }
   }
-  return temuan;
+  return findings;
 }
 
 /**
@@ -240,27 +240,27 @@ export function komentarMengulang(kode: string): TemuanSlop[] {
  * camelCase, karena itulah yang benar-benar dimaksudkan sebagai rujukan kode.
  * Kata biasa di dalam backtick (`data`, `hasil`) tidak dianggap rujukan.
  */
-export function komentarBasi(kode: string): TemuanSlop[] {
-  const temuan: TemuanSlop[] = [];
+export function staleComments(source: string): SlopFinding[] {
+  const findings: SlopFinding[] = [];
   // Komentar dibuang lebih dulu: kalau tidak, nama di dalam komentar itu sendiri
   // dianggap "masih ada di berkas" dan tuduhan tidak pernah muncul.
-  const kodeBersih = bersihkanKode(kode);
+  const cleanSource = stripCode(source);
 
-  for (const k of barisKomentar(kode)) {
-    const rujukan = [...k.teks.matchAll(/`([A-Za-z_$][A-Za-z0-9_$]*)`/g)].map((m) => m[1] ?? "").filter(Boolean);
-    for (const nama of rujukan) {
+  for (const k of commentLines(source)) {
+    const references = [...k.text.matchAll(/`([A-Za-z_$][A-Za-z0-9_$]*)`/g)].map((m) => m[1] ?? "").filter(Boolean);
+    for (const name of references) {
       // Rujukan nyata: menyambung kata (camelCase) atau dipanggil seperti fungsi.
-      if (!/[a-z][A-Z]/.test(nama)) continue;
-      if (kodeBersih.includes(nama)) continue;
-      temuan.push({
+      if (!/[a-z][A-Z]/.test(name)) continue;
+      if (cleanSource.includes(name)) continue;
+      findings.push({
         rule: "STALE_COMMENT",
         file: "",
         line: k.line,
-        detail: `Komentar menyebut \`${nama}\` yang tidak ada lagi di berkas ini.`,
+        detail: `Komentar menyebut \`${name}\` yang tidak ada lagi di berkas ini.`,
       });
     }
   }
-  return temuan;
+  return findings;
 }
 
 /**
@@ -272,71 +272,69 @@ export function komentarBasi(kode: string): TemuanSlop[] {
  * Dikecualikan: nama yang menyatakan transformasi/penamaan ulang, karena di situ
  * lapisan tipis memang punya arti.
  */
-export function fungsiTanpaIsi(kode: string): TemuanSlop[] {
-  const temuan: TemuanSlop[] = [];
-  const kodeBersih = bersihkanKode(kode);
+export function hollowFunctions(source: string): SlopFinding[] {
+  const findings: SlopFinding[] = [];
+  const cleanSource = stripCode(source);
   // Dua bentuk: `function nama(...)` dan `const nama = (...) =>`.
-  const pola =
+  const pattern =
     /(?:function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)|const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>)\s*(?::[^{]*)?\{/g;
-  let m: RegExpExecArray | null;
-
-  while ((m = pola.exec(kodeBersih)) !== null) {
-    const nama = m[1] || m[2] || "";
+  for (const m of cleanSource.matchAll(pattern)) {
+    const name = m[1] || m[2] || "";
     // Fungsi yang hanya meneruskan memang BERGUNA kalau namanya menerangkan
     // sesuatu yang tidak terlihat dari isinya (penamaan ulang, pembatas modul,
     // titik sambung impor). Hanya pembungkus yang tidak menambah keterangan
     // sama sekali yang dianggap slop.
     if (
       /^(to|from|as|parse|serial|map|format|normalis|normaliz|transform|konversi|ubah|petakan|bentuk|use|create|bikin|buat)/i.test(
-        nama,
+        name,
       )
     ) {
       continue;
     }
 
-    const awal = m.index + m[0].length - 1;
+    const start = m.index + m[0].length - 1;
     let depth = 0;
-    let akhir = -1;
-    for (let i = awal; i < kodeBersih.length; i++) {
-      if (kodeBersih[i] === "{") depth++;
-      else if (kodeBersih[i] === "}") {
+    let end = -1;
+    for (let i = start; i < cleanSource.length; i++) {
+      if (cleanSource[i] === "{") depth++;
+      else if (cleanSource[i] === "}") {
         depth--;
         if (depth === 0) {
-          akhir = i;
+          end = i;
           break;
         }
       }
     }
-    if (akhir === -1) continue;
+    if (end === -1) continue;
 
-    const badan = kodeBersih
-      .slice(awal + 1, akhir)
+    const body = cleanSource
+      .slice(start + 1, end)
       .split("\n")
       .map((b) => b.trim())
       .filter(Boolean)
       .join(" ");
 
     // Satu pernyataan, dan pernyataan itu memanggil fungsi lain.
-    if (!/^return\s+[\w$.]+\s*\([^)]*\)\s*;?$/.test(badan)) continue;
+    if (!/^return\s+[\w$.]+\s*\([^)]*\)\s*;?$/.test(body)) continue;
 
-    const baris = kodeBersih.slice(0, m.index).split("\n").length;
+    const lines = cleanSource.slice(0, m.index).split("\n").length;
     if (
-      PENANDA_OK.test(
-        kode
+      OK_MARKER.test(
+        source
           .split("\n")
-          .slice(Math.max(0, baris - 3), baris + 1)
+          .slice(Math.max(0, lines - 3), lines + 1)
           .join(" "),
       )
     )
       continue;
-    temuan.push({
+    findings.push({
       rule: "PASSTHROUGH_FUNCTION",
       file: "",
-      line: baris,
-      detail: `Fungsi \`${nama}\` hanya meneruskan panggilan tanpa menambah apa pun.`,
+      line: lines,
+      detail: `Fungsi \`${name}\` hanya meneruskan panggilan tanpa menambah apa pun.`,
     });
   }
-  return temuan;
+  return findings;
 }
 
 /**
@@ -346,58 +344,61 @@ export function fungsiTanpaIsi(kode: string): TemuanSlop[] {
  * ini sendiri) memuat katanya di dalam string regex; kalau ikut diperiksa, alat
  * menuduh dirinya sendiri dan pemeriksaan jadi tidak bisa dipercaya.
  */
-export function penandaTertinggal(kode: string): TemuanSlop[] {
-  const temuan: TemuanSlop[] = [];
-  const baris = kode.split("\n");
-  baris.forEach((isi, idx) => {
-    const t = isi.trim();
+export function leftoverMarkers(source: string): SlopFinding[] {
+  const findings: SlopFinding[] = [];
+  const lines = source.split("\n");
+  lines.forEach((content, idx) => {
+    const t = content.trim();
     if (!t.startsWith("//") && !t.startsWith("*") && !t.startsWith("/*")) return;
-    if (!/\b(TODO|FIXME|XXX|HACK)\b/.test(isi)) return;
-    if (PENANDA_OK.test(isi)) return;
-    temuan.push({
+    if (!/\b(TODO|FIXME|XXX|HACK)\b/.test(content)) return;
+    if (OK_MARKER.test(content)) return;
+    findings.push({
       rule: "FIXME_LEFT",
       file: "",
       line: idx + 1,
-      detail: `Penanda pekerjaan tertinggal di kode: ${isi.trim().slice(0, 80)}`,
+      detail: `Penanda pekerjaan tertinggal di kode: ${content.trim().slice(0, 80)}`,
     });
   });
-  return temuan;
+  return findings;
 }
 
 /** Periksa satu berkas; nama berkas diisi ke setiap temuan. */
-export function periksaBerkasBerkas(jalur: string, kode: string): TemuanSlop[] {
-  return [...komentarMengulang(kode), ...komentarBasi(kode), ...fungsiTanpaIsi(kode), ...penandaTertinggal(kode)].map(
-    (t) => ({ ...t, file: jalur }),
-  );
+export function checkFile(filePath: string, source: string): SlopFinding[] {
+  return [
+    ...restatingComments(source),
+    ...staleComments(source),
+    ...hollowFunctions(source),
+    ...leftoverMarkers(source),
+  ].map((t) => ({ ...t, file: filePath }));
 }
 
-export interface OpsiPemeriksaan {
+export interface CheckOptions {
   /** File yang tidak diperiksa (mis. kode pihak ketiga). */
-  lewati?: RegExp;
+  skip?: RegExp;
   /**
    * Folder tambahan yang hanya dibaca untuk mencari PEMAKAI ekspor (tests/,
    * scripts/). Isinya tidak diperiksa sebagai sumber temuan.
    */
-  pemakai?: string[];
+  consumers?: string[];
 }
 
 /** Jalankan seluruh pemeriksaan pada satu direktori. */
-export function periksaSlop(dir: string, opsi: OpsiPemeriksaan = {}): TemuanSlop[] {
-  const daftar = berkasSumber(dir)
-    .filter((p) => !opsi.lewati?.test(p))
-    .map((p) => ({ jalur: relative(dir, p), kode: readFileSync(p, "utf8") }));
+export function checkSlop(dir: string, options: CheckOptions = {}): SlopFinding[] {
+  const occurrences = sourceFiles(dir)
+    .filter((p) => !options.skip?.test(p))
+    .map((p) => ({ filePath: relative(dir, p), source: readFileSync(p, "utf8") }));
 
   // Pemakai ekspor biasanya ada di folder uji/skrip SEBELAH `src`, bukan di
   // dalamnya. Kalau tidak dicari, ekspor yang jelas dipakai uji salah dituduh
   // mati. Dicari otomatis supaya pemanggil tidak perlu ingat.
-  const dasar = dir.replace(/\/+$/, "");
-  const kandidat = ["tests", "test", "scripts"].flatMap((n) => [`${dasar}/${n}`, `${dirname(dasar)}/${n}`]);
-  const akarTambahan = [...(opsi.pemakai ?? []), ...kandidat.filter((d) => existsSync(d))].flatMap((d) =>
-    berkasSumber(d).map((p) => readFileSync(p, "utf8")),
+  const base = dir.replace(/\/+$/, "");
+  const candidates = ["tests", "test", "scripts"].flatMap((n) => [`${base}/${n}`, `${dirname(base)}/${n}`]);
+  const extraRoots = [...(options.consumers ?? []), ...candidates.filter((d) => existsSync(d))].flatMap((d) =>
+    sourceFiles(d).map((p) => readFileSync(p, "utf8")),
   );
 
-  const perBerkas = daftar.flatMap((b) => periksaBerkasBerkas(b.jalur, b.kode));
-  return [...perBerkas, ...blokGanda(daftar), ...eksporTakTerpakai(daftar, akarTambahan)].sort(
+  const perFile = occurrences.flatMap((b) => checkFile(b.filePath, b.source));
+  return [...perFile, ...duplicateBlocks(occurrences), ...unusedExports(occurrences, extraRoots)].sort(
     (a, b) => a.file.localeCompare(b.file) || a.line - b.line,
   );
 }
@@ -405,10 +406,10 @@ export function periksaSlop(dir: string, opsi: OpsiPemeriksaan = {}): TemuanSlop
 // Jalankan langsung: `bun adapters/slop-validator.ts <dir> [pemakai...]`
 if (import.meta.main) {
   const dir = process.argv[2] ?? ".";
-  jalankanValidator(
+  runValidator(
     "slop-validator.ts",
     "<dir> [folder-pemakai...]",
-    () => periksaSlop(dir, { pemakai: process.argv.slice(3) }),
+    () => checkSlop(dir, { consumers: process.argv.slice(3) }),
     (d) => `BERSIH: tidak ada pola slop terukur di ${d}`,
     dir,
   );
@@ -421,125 +422,128 @@ if (import.meta.main) {
  * (hanya kurung/tanda baca) tidak dihitung supaya blok deklarasi seragam tidak
  * dituduh sebagai salinan.
  */
-export function blokGanda(berkas: Array<{ jalur: string; kode: string }>, panjangJendela = 6): TemuanSlop[] {
-  const temuan: TemuanSlop[] = [];
-  const peta = new Map<string, Array<{ jalur: string; line: number; tanda: boolean }>>();
+export function duplicateBlocks(
+  sourceFile: Array<{ filePath: string; source: string }>,
+  chunkLength = 6,
+): SlopFinding[] {
+  const findings: SlopFinding[] = [];
+  const byKey = new Map<string, Array<{ filePath: string; line: number; flag: boolean }>>();
 
-  for (const { jalur, kode } of berkas) {
+  for (const { filePath, source } of sourceFile) {
     // Dua versi sejajar: baris bersih untuk perbandingan, baris asli untuk
     // membaca penanda `slop-ok` (komentar dibuang di versi bersih, jadi penanda
     // hanya terlihat di versi asli).
-    const barisAsli = kode.split("\n");
-    const baris = bersihkanKode(kode)
+    const originalLines = source.split("\n");
+    const lines = stripCode(source)
       .split("\n")
       .map((b) => b.trim().replace(/\s+/g, " "))
       .map((b) => (b.replace(/[^a-z0-9]/gi, "").length < 4 ? "" : b));
 
-    for (let i = 0; i + panjangJendela <= baris.length; i++) {
-      const jendela = baris.slice(i, i + panjangJendela);
+    for (let i = 0; i + chunkLength <= lines.length; i++) {
+      const chunk = lines.slice(i, i + chunkLength);
       // Jendela harus benar-benar berisi kode, bukan beberapa baris kosong.
-      if (jendela.filter(Boolean).length < panjangJendela - 1) continue;
+      if (chunk.filter(Boolean).length < chunkLength - 1) continue;
       // Sekurang-kurangnya dua baris harus berupa pernyataan (ada `=` atau
       // pemanggilan). Tanpa ini, blok yang bentuknya sama tapi isinya data
       // (literal seed, daftar field DTO, potongan JSX) ikut dituduh salinan.
-      const pernyataan = jendela.filter((b) => b.includes("=") || /[a-zA-Z_$][\w$]*\s*\(/.test(b)).length;
-      if (pernyataan < 2) continue;
+      const statement = chunk.filter((b) => b.includes("=") || /[a-zA-Z_$][\w$]*\s*\(/.test(b)).length;
+      if (statement < 2) continue;
       // Salinan yang memang disengaja ditandai di sekitar blok.
       // Manusia menaruh penanda di mana saja dekat blok (di atas komentar
       // pengantar, di baris elemen, di dalam JSX). Rentangnya dilebarkan supaya
       // penanda yang jelas-jelas menunjuk blok ini tetap terbaca.
-      const sekitar = barisAsli.slice(Math.max(0, i - 4), i + panjangJendela + 4).join(" ");
-      const tanda = PENANDA_OK.test(sekitar);
-      const kunci = jendela.join("\n");
-      if (kunci.replace(/[^a-z0-9]/gi, "").length < 60) continue;
-      const daftar = peta.get(kunci) ?? [];
-      daftar.push({ jalur, line: i + 1, tanda });
-      peta.set(kunci, daftar);
+      const surrounding = originalLines.slice(Math.max(0, i - 4), i + chunkLength + 4).join(" ");
+      const flag = OK_MARKER.test(surrounding);
+      const key = chunk.join("\n");
+      if (key.replace(/[^a-z0-9]/gi, "").length < 60) continue;
+      const occurrences = byKey.get(key) ?? [];
+      occurrences.push({ filePath, line: i + 1, flag });
+      byKey.set(key, occurrences);
     }
   }
 
   // Satu salinan panjang menghasilkan puluhan jendela yang saling bertumpuk.
   // Itu bukan puluhan masalah, tapi satu. Kumpulkan per pasangan berkas, lalu
   // gabungkan jendela yang bersambung jadi satu rentang.
-  const perPasangan = new Map<string, Array<{ line: number; asalLine: number }>>();
+  const perPair = new Map<string, Array<{ line: number; originLine: number }>>();
 
-  for (const [, daftar] of peta) {
-    if (daftar.length < 2) continue;
-    const [pertama, ...salinan] = daftar;
-    if (!pertama) continue;
-    const asal = pertama;
+  for (const [, occurrences] of byKey) {
+    if (occurrences.length < 2) continue;
+    const [first, ...copies] = occurrences;
+    if (!first) continue;
+    const origin = first;
     // Penanda di SALAH SATU sisi sudah cukup: tujuannya menyatakan pasangan ini
     // memang disengaja, bukan mengukur di sisi mana penandanya ditulis.
-    if (asal.tanda) continue;
-    for (const s of salinan) {
-      if (s.tanda) continue;
-      if (s.jalur === asal.jalur && Math.abs(s.line - asal.line) < panjangJendela) continue;
-      const kunci = `${s.jalur}|${asal.jalur}|${asal.line}`;
-      const isi = perPasangan.get(kunci) ?? [];
-      isi.push({ line: s.line, asalLine: asal.line });
-      perPasangan.set(kunci, isi);
+    if (origin.flag) continue;
+    for (const s of copies) {
+      if (s.flag) continue;
+      if (s.filePath === origin.filePath && Math.abs(s.line - origin.line) < chunkLength) continue;
+      const key = `${s.filePath}|${origin.filePath}|${origin.line}`;
+      const content = perPair.get(key) ?? [];
+      content.push({ line: s.line, originLine: origin.line });
+      perPair.set(key, content);
     }
   }
 
   // Gabungkan pasangan yang menunjuk asal berdekatan di berkas yang sama.
-  const perBerkas = new Map<string, Array<{ line: number; asalLine: number }>>();
-  for (const [kunci, isi] of perPasangan) {
-    const [jalur, asalJalur] = kunci.split("|");
-    const kunciBerkas = `${jalur}|${asalJalur}`;
-    const gabung = perBerkas.get(kunciBerkas) ?? [];
-    gabung.push(...isi);
-    perBerkas.set(kunciBerkas, gabung);
+  const perFile = new Map<string, Array<{ line: number; originLine: number }>>();
+  for (const [key, content] of perPair) {
+    const [filePath = "", originPath = ""] = key.split("|");
+    const fileKey = `${filePath}|${originPath}`;
+    const merged = perFile.get(fileKey) ?? [];
+    merged.push(...content);
+    perFile.set(fileKey, merged);
   }
 
-  for (const [kunci, isi] of perBerkas) {
-    const [jalur, asalJalur] = kunci.split("|");
-    isi.sort((a, b) => a.line - b.line || a.asalLine - b.asalLine);
+  for (const [key, content] of perFile) {
+    const [filePath = "", originPath = ""] = key.split("|");
+    content.sort((a, b) => a.line - b.line || a.originLine - b.originLine);
 
-    const asalRentang = new Map<number, { awal: number; akhir: number }>();
-    for (const s of isi) {
-      const r = asalRentang.get(s.asalLine);
+    const originRange = new Map<number, { start: number; end: number }>();
+    for (const s of content) {
+      const r = originRange.get(s.originLine);
       if (!r) {
-        asalRentang.set(s.asalLine, { awal: s.line, akhir: s.line });
+        originRange.set(s.originLine, { start: s.line, end: s.line });
       } else {
-        r.akhir = s.line;
+        r.end = s.line;
       }
     }
 
     // Salinan bersambung digabung jadi satu rentang; asal diambil yang terkecil.
-    let awal = -1;
-    let akhir = -1;
-    let asalLine = -1;
-    for (const [asal, r] of [...asalRentang].sort((a, b) => a[1].awal - b[1].awal)) {
-      if (awal === -1) {
-        awal = r.awal;
-        akhir = r.akhir;
-        asalLine = asal;
+    let start = -1;
+    let end = -1;
+    let originLine = -1;
+    for (const [origin, r] of [...originRange].sort((a, b) => a[1].start - b[1].start)) {
+      if (start === -1) {
+        start = r.start;
+        end = r.end;
+        originLine = origin;
         continue;
       }
-      if (r.awal - akhir <= panjangJendela) {
-        akhir = Math.max(akhir, r.akhir);
+      if (r.start - end <= chunkLength) {
+        end = Math.max(end, r.end);
         continue;
       }
-      temuan.push({
+      findings.push({
         rule: "DUPLICATE_BLOCK",
-        file: jalur,
-        line: awal,
-        detail: `baris ${awal}-${akhir + panjangJendela - 1} identik dengan ${asalJalur}:${asalLine}. Kalau bukan kebetulan, angkat jadi satu fungsi.`,
+        file: filePath,
+        line: start,
+        detail: `baris ${start}-${end + chunkLength - 1} identik dengan ${originPath}:${originLine}. Kalau bukan kebetulan, angkat jadi satu fungsi.`,
       });
-      awal = r.awal;
-      akhir = r.akhir;
-      asalLine = asal;
+      start = r.start;
+      end = r.end;
+      originLine = origin;
     }
-    if (awal !== -1) {
-      temuan.push({
+    if (start !== -1) {
+      findings.push({
         rule: "DUPLICATE_BLOCK",
-        file: jalur,
-        line: awal,
-        detail: `baris ${awal}-${akhir + panjangJendela - 1} identik dengan ${asalJalur}:${asalLine}. Kalau bukan kebetulan, angkat jadi satu fungsi.`,
+        file: filePath,
+        line: start,
+        detail: `baris ${start}-${end + chunkLength - 1} identik dengan ${originPath}:${originLine}. Kalau bukan kebetulan, angkat jadi satu fungsi.`,
       });
     }
   }
-  return temuan;
+  return findings;
 }
 
 /**
@@ -554,68 +558,68 @@ export function blokGanda(berkas: Array<{ jalur: string; kode: string }>, panjan
  * korpus dikurangi jumlah kata di berkas pemiliknya. Hasil sama, tanpa pemindaian
  * ulang per ekspor.
  */
-export function eksporTakTerpakai(
-  berkas: Array<{ jalur: string; kode: string }>,
-  akarTambahan: string[] = [],
-): TemuanSlop[] {
-  const temuan: TemuanSlop[] = [];
-  const KATA = /[A-Za-z_$][\w$]*/g;
+export function unusedExports(
+  sourceFile: Array<{ filePath: string; source: string }>,
+  extraRoots: string[] = [],
+): SlopFinding[] {
+  const findings: SlopFinding[] = [];
+  const WORD_PATTERN = /[A-Za-z_$][\w$]*/g;
 
   // Peta ekspor->pemakai: satu hitungan kata untuk seluruh korpus, plus hitungan
   // per berkas supaya pemakaian di berkas pemilik bisa dikurangkan.
   const total = new Map<string, number>();
-  const hitung = (kode: string): Map<string, number> => {
-    const perKata = new Map<string, number>();
-    for (const m of kode.matchAll(KATA)) {
-      const kata = m[0];
-      perKata.set(kata, (perKata.get(kata) ?? 0) + 1);
-      total.set(kata, (total.get(kata) ?? 0) + 1);
+  const count = (source: string): Map<string, number> => {
+    const perWord = new Map<string, number>();
+    for (const m of source.matchAll(WORD_PATTERN)) {
+      const word = m[0];
+      perWord.set(word, (perWord.get(word) ?? 0) + 1);
+      total.set(word, (total.get(word) ?? 0) + 1);
     }
-    return perKata;
+    return perWord;
   };
-  const perBerkas = berkas.map((b) => hitung(b.kode));
+  const perFile = sourceFile.map((b) => count(b.source));
   // Pemakai bisa berada di luar folder yang diperiksa (tests, scripts). Tanpa
   // teks itu, ekspor yang jelas dipakai uji akan salah dituduh mati.
-  for (const kode of akarTambahan) hitung(kode);
+  for (const source of extraRoots) count(source);
 
-  for (const [index, { jalur, kode }] of berkas.entries()) {
+  for (const [index, { filePath, source }] of sourceFile.entries()) {
     // Entry point dan berkas rute tidak dianggap ekspor mati.
-    if (/(^|\/)(index|main|server|app|sw|worker)\.(ts|tsx|js|mjs)$/.test(jalur)) continue;
-    if (/\.(test|spec)\.(ts|tsx)$/.test(jalur)) continue;
+    if (/(^|\/)(index|main|server|app|sw|worker)\.(ts|tsx|js|mjs)$/.test(filePath)) continue;
+    if (/\.(test|spec)\.(ts|tsx)$/.test(filePath)) continue;
 
-    const nama = new Set<string>();
-    for (const m of kode.matchAll(
+    const name = new Set<string>();
+    for (const m of source.matchAll(
       /export\s+(?:async\s+)?(?:function|class|const|let|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g,
     )) {
-      nama.add(m[1]);
+      if (m[1]) name.add(m[1]);
     }
 
-    const barisKode = kode.split("\n");
-    const adaPenanda = (n: string) => {
-      const i = barisKode.findIndex((b) => new RegExp(`\\b${n}\\b`).test(b));
+    const codeLines = source.split("\n");
+    const hasMarker = (n: string) => {
+      const i = codeLines.findIndex((b) => new RegExp(`\\b${n}\\b`).test(b));
       // Penanda boleh di baris deklarasi atau satu baris di atasnya.
-      const konteks = barisKode.slice(Math.max(0, i - 1), i + 1).join(" ");
-      return PENANDA_OK.test(konteks);
+      const context = codeLines.slice(Math.max(0, i - 1), i + 1).join(" ");
+      return OK_MARKER.test(context);
     };
 
-    const hitungBerkas = perBerkas[index] ?? new Map<string, number>();
-    for (const n of nama) {
-      if (adaPenanda(n)) continue;
+    const fileCounts = perFile[index] ?? new Map<string, number>();
+    for (const n of name) {
+      if (hasMarker(n)) continue;
       // Pemakaian dihitung di LUAR berkas pemilik: korpus total dikurangi kata di
       // berkas ini. Cara ini tidak salah menuduh ekspor yang dipakai berkas lain,
       // dan tidak melewatkan ekspor yang tidak dipakai siapa pun.
-      const dipakaiLuar = (total.get(n) ?? 0) - (hitungBerkas.get(n) ?? 0) > 0;
+      const usedOutside = (total.get(n) ?? 0) - (fileCounts.get(n) ?? 0) > 0;
       // Dipakai di dalam berkas ini sendiri (mis. oleh fungsi lain): masih hidup.
-      const diDalam = hitungBerkas.get(n) ?? 0;
-      if (dipakaiLuar || diDalam > 1) continue;
-      const baris = kode.split("\n").findIndex((b) => new RegExp(`\\b${n}\\b`).test(b)) + 1;
-      temuan.push({
+      const inside = fileCounts.get(n) ?? 0;
+      if (usedOutside || inside > 1) continue;
+      const lines = source.split("\n").findIndex((b) => new RegExp(`\\b${n}\\b`).test(b)) + 1;
+      findings.push({
         rule: "UNUSED_EXPORT",
-        file: jalur,
-        line: baris,
+        file: filePath,
+        line: lines,
         detail: `\`${n}\` diekspor tapi tidak dipakai di mana pun. Hapus, atau tambahkan \`slop-ok: <alasan>\`.`,
       });
     }
   }
-  return temuan;
+  return findings;
 }
