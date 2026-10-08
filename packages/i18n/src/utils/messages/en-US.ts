@@ -59,6 +59,10 @@ export const enUS = {
   "auth.checking": "Checking…",
   "auth.signIn": "Sign in",
   "auth.welcomeBack": "Welcome back",
+  "auth.continueWithGoogle": "Continue with Google",
+  "auth.googleFailed":
+    "Google sign-in did not go through. Ask an administrator to create your account, then try again.",
+  "auth.orWithEmail": "or with email",
   "auth.accessSummary": "Your roles and permissions determine what you can access after signing in.",
   "auth.featureHeading": "What you can manage here",
   "auth.accessByRole": "Access to each area follows your account role.",

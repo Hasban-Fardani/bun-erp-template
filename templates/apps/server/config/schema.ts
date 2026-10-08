@@ -77,6 +77,8 @@ const rawSchema = z
     // pbkdf2 only; workerd rejects more than 100,000 iterations, so the cap holds on every target.
     PASSWORD_HASH_ITERATIONS: z.coerce.number().int().min(1000).max(100000).default(30000),
     AUTH_SIGNUP_ENABLED: boolOr("false"),
+    /** Email/password sign-in. Turn it off for Google-only sign-in (needs GOOGLE_CLIENT_ID/SECRET). */
+    AUTH_PASSWORD_ENABLED: boolOr("true"),
     /** Better Auth rate limiting; the auth endpoints keep their stricter built-in rules. */
     AUTH_RATE_LIMIT_ENABLED: boolOr("true"),
     /**
@@ -151,6 +153,21 @@ const rawSchema = z
         code: "custom",
         path: ["APP_WEB_MODE"],
         message: "Cloudflare currently requires integrated Workers Static Assets hosting",
+      });
+    }
+    const googleKeys = [env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET].filter((value) => value !== "").length;
+    if (googleKeys === 1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["GOOGLE_CLIENT_SECRET"],
+        message: "set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET together",
+      });
+    }
+    if (!env.AUTH_PASSWORD_ENABLED && googleKeys < 2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["AUTH_PASSWORD_ENABLED"],
+        message: "false needs Google sign-in (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET), or nobody can sign in",
       });
     }
     if (env.DATABASE_URL === "") {

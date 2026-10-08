@@ -30,3 +30,10 @@ export const sessionQuery = queryOptions({
   },
   staleTime: 30_000,
 });
+
+/** Which sign-in methods the server has on; public and cheap, so the login screen reads it before rendering. */
+export const authOptionsQuery = queryOptions({
+  queryKey: identityKeys.authOptions,
+  queryFn: async (): Promise<{ password: boolean; google: boolean }> => call(rpc["auth-options"].$get()),
+  staleTime: Number.POSITIVE_INFINITY,
+});

@@ -74,7 +74,9 @@ export function createAuth(env: Env, db: Database) {
       ipAddress: env.TRUST_PROXY ? { ipAddressHeaders: ["x-forwarded-for"] } : { ipAddressHeaders: [] },
     },
     emailAndPassword: {
-      enabled: true,
+      // AUTH_PASSWORD_ENABLED=false leaves Google as the only way in; the config schema refuses that
+      // combination without Google credentials.
+      enabled: env.AUTH_PASSWORD_ENABLED,
       // Public self sign-up is opt-in; accounts normally come from `bun erp user:create`.
       disableSignUp: !env.AUTH_SIGNUP_ENABLED,
       minPasswordLength: 10,
@@ -88,12 +90,19 @@ export function createAuth(env: Env, db: Database) {
       // answers 400, so the UI never offers a button that sends nothing.
       sendResetPassword: undefined,
     },
-    // Google OAuth dormant: the provider registers only when both of its env vars are set.
+    // Google registers only when both of its env vars are set. Accounts still come from
+    // `bun erp user:create` unless self sign-up is on: an unknown Google account is refused, and a
+    // known email links to its existing user because Google verifies the address.
     ...(googleEnabled
       ? {
           socialProviders: {
-            google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
+            google: {
+              clientId: env.GOOGLE_CLIENT_ID,
+              clientSecret: env.GOOGLE_CLIENT_SECRET,
+              disableImplicitSignUp: !env.AUTH_SIGNUP_ENABLED,
+            },
           },
+          account: { accountLinking: { enabled: true, trustedProviders: ["google"] } },
         }
       : {}),
   });

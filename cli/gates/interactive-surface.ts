@@ -19,6 +19,8 @@ const CONTEXTUAL_ERRORS = new Set([
   // Recovery screens keep their failure and expired-link errors beside the form that caused them.
   "apps/web/src/features/identity/components/forgot-password-view.tsx",
   "apps/web/src/features/identity/components/reset-password-view.tsx",
+  // A refused Google sign-in returns to the login screen; the reason stays beside the Google button.
+  "apps/web/src/features/identity/components/google-sign-in.tsx",
   // Installed by the roles catalog feature; reviewed when it lands in apps/web.
   "apps/web/src/features/roles/components/role-sheet.tsx",
   "apps/mobile/src/features/offline/components/offline-drafts.tsx",

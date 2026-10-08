@@ -76,6 +76,24 @@ export function apiRoutes(ctx: AppContext) {
       },
     )
 
+    .get(
+      `${API_PREFIX}/auth-options`,
+      doc({
+        public: true,
+        tag: "auth",
+        summary: "Metode masuk yang aktif",
+        data: {
+          type: "object",
+          properties: { password: { type: "boolean" }, google: { type: "boolean" } },
+        },
+      }),
+      (c) =>
+        ok(c, {
+          password: ctx.env.AUTH_PASSWORD_ENABLED,
+          google: ctx.env.GOOGLE_CLIENT_ID !== "" && ctx.env.GOOGLE_CLIENT_SECRET !== "",
+        }),
+    )
+
     // Auth handlers belong to Better Auth, so their routes are not built here and cannot carry
     // per-route docs; the operations the app uses are documented in `http/openapi.ts`.
     // While an impersonation cookie is present, credential self-service would hit the ADMIN's own

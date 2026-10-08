@@ -1,11 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { sessionQuery } from "../features/identity/api/queries.ts";
+import { authOptionsQuery, sessionQuery } from "../features/identity/api/queries.ts";
 import { LoginScreen } from "../features/identity/screens/login.tsx";
 import { safeRedirectTarget } from "../lib/redirect.ts";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; error?: string } => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    error: typeof search.error === "string" ? search.error : undefined,
   }),
   beforeLoad: async ({ context, search }) => {
     const session = await context.queryClient.fetchQuery(sessionQuery);
@@ -14,5 +15,6 @@ export const Route = createFileRoute("/login")({
     const target = safeRedirectTarget(search.redirect);
     throw target ? redirect({ href: target }) : redirect({ to: "/" });
   },
+  loader: ({ context }) => context.queryClient.ensureQueryData(authOptionsQuery),
   component: LoginScreen,
 });

@@ -68,3 +68,17 @@ export function useResetPassword() {
     mutationFn: (input: { token: string; newPassword: string }) => authRequest("reset-password", input),
   });
 }
+
+/** Starts Google OAuth; Better Auth answers with the consent URL and the browser follows it. */
+export function useGoogleLogin() {
+  return useMutation({
+    mutationFn: async (callbackURL: string) => {
+      const result = (await authRequest("sign-in/social", {
+        provider: "google",
+        callbackURL,
+        errorCallbackURL: `${window.location.origin}/login`,
+      })) as { url?: string };
+      if (result.url) window.location.assign(result.url);
+    },
+  });
+}
