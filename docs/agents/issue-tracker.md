@@ -1,8 +1,23 @@
 # Issue tracker: docs/tasks
 
-Project-owned. The engineering skills (`to-spec`, `to-tickets`, `implement`, `implement-spec`,
-`code-review`) read this file instead of using GitHub Issues or `.scratch/`. Work lives in
-`docs/tasks/` and is validated by `bun erp check:gate tasks`.
+Project-owned. The engineering skills (`to-spec`, `to-tickets`, `implement`, `code-review`) do
+**not** read this file: they say "run `/setup-matt-pocock-skills`" and default to GitHub issues,
+`.scratch/` and the `ready-for-agent` label. `AGENTS.md` overrides that: whenever a skill asks for
+the tracker or labels, follow this file. Work lives in `docs/tasks/` and is validated by
+`bun erp check:gate task`.
+
+## Mapping
+
+| Skill vocabulary | This repository |
+| --- | --- |
+| `/setup-matt-pocock-skills`, "issue tracker not provided" | Never run it; this file is the configuration |
+| Issue, spec issue, ticket issue | One markdown file `docs/tasks/<id>-<slug>.md`, created with `bun erp task:new` |
+| Publish to the tracker, `.scratch/<slug>/issues/` | Write the file in `docs/tasks/`; never GitHub issues or `.scratch/` |
+| `ready-for-agent` | `status: in_progress` (an agent may take it) |
+| `needs-triage`, `needs-info` | `status: draft` (not started); `blocked` when waiting on a person |
+| Issue number or URL argument | The task id, e.g. `S12.2` |
+| Blocking edge or link | `depends_on:` plus the `## Blocked by` section |
+| Close the issue | A human sets `ready` then `done`; agents stop at `in_progress` |
 
 ## Conventions
 
@@ -10,12 +25,12 @@ Project-owned. The engineering skills (`to-spec`, `to-tickets`, `implement`, `im
   `bun erp task:new <id> "<title>"` and then edited. Never create GitHub issues.
 - A spec uses the id `S<NN>` (for example `S12`). Its tickets use `S<NN>.<n>` (`S12.1`, `S12.2`),
   numbered from 1, one file each, never a combined list.
-- Front matter keys are exactly `id`, `title`, `status`, `depends_on`, `evidence` (read
+- Front matter keys are `id`, `title`, `status`, `depends_on`, `evidence`, plus `tdd: required` (read
   `cli/gates/tasks.ts` for the rules). Agents write only `draft` or `in_progress`; `ready`, `done`
   and `approved_by` belong to a human.
 - Tickets are tracer-bullet vertical slices (UI, API, database and test together), each demoable
   alone. Describe behavior, not file paths, and use the vocabulary of `GLOSSARY.md`.
-- Triage labels are not used. `in_progress` means an agent may take it; `draft` means not started.
+- Triage labels are not used; see the Mapping table.
 
 ## Spec file (`to-spec`)
 

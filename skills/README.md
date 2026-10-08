@@ -5,9 +5,10 @@ prose alone does not prove enforcement.
 
 Planning-to-delivery flow (`mattpocock/skills`, installed into `.agents/skills/` by
 `bun erp init` / `bun erp ai:update`, pinned in [skills-lock.json](../skills-lock.json), not
-tracked in git). Tickets live in `docs/tasks/`, not GitHub Issues; the config is
-[docs/agents/issue-tracker.md](../docs/agents/issue-tracker.md) and
-[docs/agents/domain.md](../docs/agents/domain.md) (`GLOSSARY.md`, `docs/adr/`).
+tracked in git). Tickets live in `docs/tasks/`, not GitHub Issues. The skills do not read the
+config themselves: where one asks for a tracker, triage labels or `/setup-matt-pocock-skills`, use
+the Mapping table in [docs/agents/issue-tracker.md](../docs/agents/issue-tracker.md); glossary and
+ADRs are in [docs/agents/domain.md](../docs/agents/domain.md) (`GLOSSARY.md`, `docs/adr/`).
 
 1. `grill-with-docs` (or `grill-me` / `grilling`): settle open product decisions; it writes
    glossary terms and ADRs through `domain-modeling`.

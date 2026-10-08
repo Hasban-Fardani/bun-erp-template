@@ -73,6 +73,10 @@ Laravel-level productivity for agents and humans, on one codebase that runs on a
 2. Pick one canonical document with docs/README.md; read docs/architecture.md and docs/conventions.md
    before code changes. docs/gates.md catalogs every gate and how to add one.
 3. Use the matching skill from skills/README.md; source gates are the enforceable rules.
+   When a mattpocock skill (`to-spec`, `to-tickets`, `implement`, `code-review`) asks for an issue
+   tracker, triage labels or `/setup-matt-pocock-skills`, use `docs/agents/issue-tracker.md`
+   instead; never GitHub issues, `.scratch/` or `ready-for-agent`. Tickets are
+   `docs/tasks/<id>-*.md` with status `draft` or `in_progress`.
 4. Query CodeGraph first when locating or tracing code (MCP when available, otherwise the pinned
    CLI). Use text search after CodeGraph narrows the files.
 5. Before a nontrivial feature or architecture change, run the planning flow (skills/README.md):
@@ -133,8 +137,9 @@ Mandatory agent tools:
   client cannot express.
 - Record red→green evidence in the task file. Never claim a test passed without running it;
   unverified work is NOT_RUN or BLOCKED.
-- Never set a task to ready or done. Leave agent work `in_progress` with evidence; the human moves
-  IMPLEMENTATION_DONE → API_UNIT_TESTED → UI_TESTED → READY_FOR_USE. Agent commits (or working-tree
+- Never set a task to ready or done. Leave agent work `in_progress` with evidence; a human sets
+  `ready` (evidence reviewed), then `done` with `approved_by`, in a commit without an AI co-author
+  trailer (`HUMAN_TASK_APPROVAL=1` for a pre-commit `bun erp check`). Agent commits (or working-tree
   edits) that raise `status` or set `approved_by` fail the `task-approval` gate.
 - `tdd: required` tasks need, for every ticked `**<ID>**` item, ``- red: <ID> `cmd` — output`` then
   ``- green: <ID> `cmd` — output`` (docs-only: `- red: <ID> n/a — reason`); see docs/gates.md.
