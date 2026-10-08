@@ -4,6 +4,7 @@ const config = Bun.JSONC.parse(await Bun.file("wrangler.jsonc").text()) as {
   hyperdrive?: { id?: string }[];
   vars?: Record<string, string>;
   limits?: { cpu_ms?: number };
+  r2_buckets?: { binding?: string; bucket_name?: string }[];
   assets?: { not_found_handling?: string; run_worker_first?: string[] };
 };
 const findings = await validateCloudflarePreflight(

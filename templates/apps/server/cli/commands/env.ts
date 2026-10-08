@@ -1,9 +1,43 @@
 import { resolve } from "node:path";
+import { applyCloudflareVars, parseEnvFile, splitCloudflareEnv } from "@cli/lib/cloudflare.ts";
+import { parseCommandOptions } from "@cli/lib/options.ts";
 import { repoRoot } from "@cli/lib/repo.ts";
 import { defineCommand } from "@cli/registry.ts";
 import { loadEnv, strayKeyWarnings } from "../../config/index.ts";
 
+/** Where the git-ignored `wrangler secret bulk` file is written. */
+const SECRETS_FILE = ".data/cloudflare-secrets.json";
+
 export const commands = [
+  defineCommand("env:cloudflare", async (args) => {
+    const options = parseCommandOptions(args, { flags: ["write"], values: ["env-file"] });
+    const envFile = options.values.get("env-file") ?? ".env";
+    const file = Bun.file(resolve(repoRoot, envFile));
+    if (!(await file.exists())) {
+      process.stderr.write(`${envFile} not found.\n`);
+      process.exit(1);
+    }
+    const { vars, secrets, skipped } = splitCloudflareEnv(parseEnvFile(await file.text()));
+    await Bun.write(resolve(repoRoot, SECRETS_FILE), `${JSON.stringify(secrets, null, 2)}\n`);
+    process.stdout.write(
+      `Secrets (${Object.keys(secrets).length}) written to ${SECRETS_FILE} (git-ignored; values not shown):\n`,
+    );
+    for (const key of Object.keys(secrets)) process.stdout.write(`  ${key}\n`);
+    if (skipped.length > 0)
+      process.stdout.write(`Not pushed (the Worker reads it from Hyperdrive): ${skipped.join(", ")}\n`);
+    process.stdout.write(`Push with: bun run --cwd apps/web wrangler secret bulk ../../${SECRETS_FILE}\n`);
+
+    if (options.flags.has("write")) {
+      const wrangler = Bun.file(resolve(repoRoot, "wrangler.jsonc"));
+      await Bun.write(wrangler, applyCloudflareVars(await wrangler.text(), vars));
+      process.stdout.write(`wrangler.jsonc vars updated (${Object.keys(vars).length} keys).\n`);
+    } else {
+      process.stdout.write(
+        `wrangler.jsonc vars (${Object.keys(vars).length} keys) not changed; pass --write to merge them.\n`,
+      );
+    }
+  }),
+
   defineCommand("env:list", async () => {
     const env = loadEnv();
     process.stdout.write("Config keys (values of secrets are never printed):\n");
