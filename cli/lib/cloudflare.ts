@@ -25,10 +25,11 @@ export async function buildCloudflare(): Promise<void> {
 }
 
 /**
- * Lowest `limits.cpu_ms` a production deploy may declare while email/password sign-in is on.
- * Workers Free is fixed at 10 ms CPU per invocation and Workers Paid defaults to 30 s (max 5 min,
- * checked against the Workers limits page via Context7 on 2026-10-08). Password hashing measured
- * ~110 ms CPU locally, so 200 ms leaves headroom without implying the Free plan can run it.
+ * Lowest `limits.cpu_ms` a production deploy may declare while sign-in hashes with scrypt
+ * (`PASSWORD_HASH=scrypt`). Workers Free is fixed at 10 ms CPU per invocation and Workers Paid
+ * defaults to 30 s (max 5 min, checked against the Workers limits page via Context7 on 2026-10-08).
+ * scrypt measured ~110 ms CPU locally, so 200 ms leaves headroom without implying the Free plan can
+ * run it. The default `pbkdf2` (~2-4 ms) fits Workers Free and has no floor.
  */
 export const MIN_PAID_CPU_MS = 200;
 

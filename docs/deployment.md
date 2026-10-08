@@ -45,7 +45,7 @@ other paths use the web asset fallback. Hyperdrive supplies PostgreSQL.
 The Worker does not run DDL or seed data during requests. The manual Cloudflare workflow runs
 checks, tests, migrations and seed before deploy. Configure the Hyperdrive ID, app URL,
 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL and BETTER_AUTH_SECRET in the project.
-The sections "Production on Cloudflare requires Workers Paid", "Object storage on Cloudflare" and
+The sections "Password hashing and the Workers CPU budget", "Object storage on Cloudflare" and
 "Secrets flow" below cover the rest of the production setup.
 Local emulation uses .dev.vars.example with a disposable PostgreSQL database.
 
@@ -96,7 +96,7 @@ at boot, with a test per guard.
 | Vite Cloudflare Worker build | 1,244,243 B raw / 321,552 B gzip | `bun erp cloudflare:build` |
 | Worker startup time | not reported by this Wrangler version | the dry run prints size and bindings only; measure in the dashboard |
 | Script size cap | 64 MiB uncompressed on Free and Paid, no compressed limit | Cloudflare Workers limits page, re-checked 2026-10-08 |
-| scrypt sign-in cost | ~110 ms CPU per hash/verify locally | `better-auth/crypto`, N=16384 r=16 p=1 dkLen=64, Bun 1.4.2 on Apple silicon — about ten times the 10 ms Free budget |
+| scrypt sign-in cost | ~110 ms CPU per hash/verify locally (pbkdf2 at 30,000 iterations: ~2-4 ms) | `better-auth/crypto`, N=16384 r=16 p=1 dkLen=64, Bun 1.4.2 on Apple silicon — about ten times the 10 ms Free budget |
 | Jobs throughput, cron only | 288 ticks/day × batch 1 = 288 jobs/day | `wrangler.jsonc` cron `*/5`; a 1,000-job burst is ~3.5 days |
 
 The dry-run bundle is larger than the gate bundle because Wrangler bundles with `nodejs_compat` and a
@@ -184,7 +184,7 @@ The template uses one Worker for `/api` and `/api/*`, plus Workers Static Assets
 Static asset requests do not invoke the Worker; API and scheduled-job invocations do. The current
 Workers Free limits are 100,000 HTTP Worker requests per day and 10 ms CPU per HTTP request or Cron
 invocation. The preflight rejects configurations that route frontend traffic through the Worker. Workers Free
-is fine for a staging or demo deploy, but production needs Workers Paid (see below). Hyperdrive is available on Free with
+can run sign-in with the default `PASSWORD_HASH=pbkdf2` (see below). Hyperdrive is available on Free with
 a current limit of 100,000 database statements per day. These are account quotas: operations that
 exceed a limit can fail until the quota resets. Check Cloudflare's live
 [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/),
@@ -208,27 +208,38 @@ Hyperdrive within their Free quotas, and check the database provider's own free-
 
 The Cron trigger still polls PostgreSQL when the queue is empty, about 288 times per day with the
 default five-minute schedule. API/auth traffic and job handlers consume additional Worker CPU and
-Hyperdrive statements. Better Auth's default password hashing uses scrypt; Cloudflare notes that
-authentication workloads can use 10–20 ms CPU, above the Free per-invocation limit. The template's
-own sign-in path was measured locally at ~110 ms CPU per hash or verify (median of 15 runs;
-`better-auth/crypto` `hashPassword`/`verifyPassword` with scrypt N=16384, r=16, p=1, dkLen=64;
-Bun 1.4.2 on Apple silicon; wall time via `performance.now()`, CPU via `process.cpuUsage()`), roughly
-ten times the Free budget. Do not weaken password hashing to fit a quota; production on Cloudflare uses
-Workers Paid (next section). A template build and local dry run can verify the bundle and bindings, but
+Hyperdrive statements. Better Auth's default password hashing uses scrypt, which costs ~110 ms CPU per hash or verify
+(median of 15 runs; `better-auth/crypto` N=16384, r=16, p=1, dkLen=64; Bun 1.4.2 on Apple silicon; wall
+time via `performance.now()`), about ten times the Free budget. The template therefore defaults to
+`PASSWORD_HASH=pbkdf2` (next section). Remaining Free limits still apply: 10 ms CPU for the whole
+request, 100,000 requests per day, 100,000 Hyperdrive statements per day and the cron polling above.
+A template build and local dry run can verify the bundle and bindings, but
 only a deployment using the target account, real database, and secrets can verify runtime CPU and
 external services end to end.
 
-### Production on Cloudflare requires Workers Paid
+### Password hashing and the Workers CPU budget
 
-Password sign-in costs ~110 ms CPU and Workers Free allows 10 ms CPU per invocation (Paid: 30 s by
-default, 5 minutes at most). The preflight therefore fails a production deploy
-(`vars.APP_ENV=production`) unless `wrangler.jsonc` sets `limits.cpu_ms` to at least **200**
-(`MIN_PAID_CPU_MS` in `cli/lib/cloudflare.ts`); the template ships `cpu_ms: 500`. Cloudflare's docs
-list Free at a fixed 10 ms and describe raising `limits.cpu_ms` as a Paid setting; they do not say
-whether a Free account rejects a larger value at deploy or keeps 10 ms, so treat Free as unable to
-run sign-in and check the CPU metric after the first deploy. A staging deploy (`APP_ENV` other than
-`production`) is not enforced. The VPS/Bun target has no such limit and remains the default
-production target.
+`PASSWORD_HASH` selects the algorithm for new passwords (`features/identity/password.ts`):
+
+- `pbkdf2` (default): Web Crypto PBKDF2-HMAC-SHA256, `PASSWORD_HASH_ITERATIONS=30000`. Measured
+  ~2.3 ms per hash/verify in Bun on an idle Apple-silicon machine and 3.6 ms under heavy load (50,000
+  iterations: 3.9-6 ms; 100,000: 7.8-12 ms), so a sign-in leaves most of the 10 ms Free budget for
+  routing and session work. The setting is capped at 100,000 because Cloudflare
+  workerd throws `NotSupportedError` above that (reported by Cloudflare users; not enforced by
+  `wrangler dev` or Bun, so verify on a deployed Worker, not locally). OWASP recommends far more
+  iterations for PBKDF2-SHA256; 30,000 trades strength for the Free CPU budget.
+- `scrypt`: Better Auth's default, memory-hard, ~110 ms CPU. Use it on a VPS/Bun host. On production
+  Cloudflare it needs Workers Paid: the preflight fails `PASSWORD_HASH=scrypt` unless
+  `limits.cpu_ms` is at least **200** (`MIN_PAID_CPU_MS` in `cli/lib/cloudflare.ts`). Cloudflare lists
+  Free at a fixed 10 ms and raising `limits.cpu_ms` as a Paid setting. `wrangler.jsonc` ships with no
+  `limits` block because pbkdf2 needs none.
+
+Stored hashes are self-describing (`pbkdf2-sha256$<iterations>$<salt>$<hash>` or Better Auth's
+`salt:hash` scrypt format), and verification follows the stored format, so switching the setting in
+either direction keeps every existing password working. Better Auth has no rehash-on-login hook, so
+an account moves to the configured algorithm on its next password change or reset. A staging deploy
+(`APP_ENV` other than `production`) is not enforced. The VPS/Bun target has no CPU limit and remains
+the default production target.
 
 ### Object storage on Cloudflare
 
@@ -291,7 +302,7 @@ code. Do each move in a maintenance window: put the old side read-only, copy, sw
    with the database, but handlers are at-least-once, so a job claimed mid-move can run twice.
 6. Cron granularity: Cloudflare sweeps every 5 minutes instead of the 5-second Bun poll, so job
    latency rises unless the optional Queues wake-up is enabled.
-7. Plan: the account must be on Workers Paid (see above). Deploy, then check `/api/v1/ready`.
+7. Plan: Workers Free fits sign-in with `PASSWORD_HASH=pbkdf2`; `scrypt` needs Workers Paid (see above). Deploy, then check `/api/v1/ready`.
 
 **Cloudflare to VPS (Bun)**
 

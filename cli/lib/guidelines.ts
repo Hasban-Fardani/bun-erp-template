@@ -92,7 +92,7 @@ export function renderGoalBlock(): string {
     GOAL_START,
     "Build internal applications as a semi-monolith that can split into services later, with",
     "Laravel-level productivity for agents and humans, on one codebase that runs on a plain VPS",
-    "(Bun/Docker, the default production target) and on Cloudflare Workers (Paid for production):",
+    "(Bun/Docker, the default production target) and on Cloudflare Workers (Free or Paid):",
     "",
     "- **Semi-monolith, microservice-ready.** Feature boundaries are explicit and a feature owns its",
     "  routes, jobs and tables, so extraction is a move, not a rewrite (docs/architecture.md,",
@@ -100,9 +100,9 @@ export function renderGoalBlock(): string {
     "- **Laravel-level productivity.** `bun erp make:feature`, `make:migration` and `make:seeder` emit a",
     "  fully wired, tested slice; the feature catalog installs whole modules.",
     "- **Two production targets.** VPS/Bun is the default (`APP_DEPLOY_TARGET=bun`). Cloudflare",
-    "  (`APP_DEPLOY_TARGET=cloudflare`) needs Workers Paid in production; Workers Free suits staging and",
-    "  demos. One Worker serves `/api` and `/api/*`; static assets bypass Worker CPU. See Platform limits",
-    "  before adding runtime work.",
+    "  (`APP_DEPLOY_TARGET=cloudflare`) sign-in fits Workers Free with the default PBKDF2 hash; Paid is",
+    "  needed for `PASSWORD_HASH=scrypt` and heavier workloads. One Worker serves `/api` and `/api/*`;",
+    "  static assets bypass Worker CPU. See Platform limits before adding runtime work.",
     GOAL_END,
   ].join("\n");
 }
@@ -119,8 +119,8 @@ export function renderPlatformBlock(): string {
     "  migration/seed modules reachable from the Worker entry; migrations run outside the Worker. Keep",
     "  browser PDF rendering out of the Worker graph.",
     "- **When `APP_DEPLOY_TARGET=cloudflare`, CPU:** Workers Free allows 10 ms CPU per invocation and",
-    "  password scrypt was measured at ~110 ms, so production needs Workers Paid (preflight enforces",
-    "  `cpu_ms`); Free is for staging only (docs/deployment.md).",
+    "  sign-in hashes with PBKDF2 (`PASSWORD_HASH=pbkdf2`, default, ~2-4 ms) and fits Free; `scrypt` is",
+    "  ~110 ms and needs Workers Paid (preflight enforces `cpu_ms`) (docs/deployment.md).",
     PLATFORM_END,
   ].join("\n");
 }

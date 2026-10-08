@@ -4,9 +4,9 @@
   "main": "apps/server/bootstrap/cloudflare-entry.ts",
   "compatibility_date": "2026-10-04",
   "compatibility_flags": ["nodejs_compat"],
-  // Production needs Workers Paid: password sign-in costs ~110 ms CPU and Workers Free allows 10 ms.
-  // Paid defaults to 30 s; the preflight requires at least 200 ms and this keeps a runaway bounded.
-  "limits": { "cpu_ms": 500 },
+  // PASSWORD_HASH=pbkdf2 (below) signs in within the Workers Free 10 ms CPU budget, so no limit is set.
+  // For PASSWORD_HASH=scrypt (~110 ms CPU) use Workers Paid and add "limits": { "cpu_ms": 500 };
+  // the preflight requires at least 200 ms in that case.
   "triggers": { "crons": ["*/5 * * * *"] },
   "assets": {
     "directory": "./apps/web/dist",
@@ -62,6 +62,8 @@
     "BETTER_AUTH_URL": "https://bun-erp-template.example.workers.dev",
     "AUTH_TRUSTED_ORIGINS": "https://bun-erp-template.example.workers.dev",
     "PERMISSION_CACHE_ENABLED": "false",
+    "PASSWORD_HASH": "pbkdf2",
+    "PASSWORD_HASH_ITERATIONS": "30000",
     "STORAGE_DRIVER": "r2",
     "STORAGE_LOCAL_ROOT": ".data/storage",
     "STORAGE_PUBLIC_URL": "https://bun-erp-template.example.workers.dev/api/v1/files",

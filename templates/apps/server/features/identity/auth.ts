@@ -7,6 +7,7 @@ import type { Database } from "../../database/index.ts";
 import { rateLimits } from "../../database/rate-limit.ts";
 import { uuidv7 } from "../../database/uuidv7.ts";
 import { recordAudit, snapshot } from "../audit/index.ts";
+import { passwordHasherFor } from "./password.ts";
 import { accounts, sessions, users, verifications } from "./schema.ts";
 
 /**
@@ -77,6 +78,9 @@ export function createAuth(env: Env, db: Database) {
       // Public self sign-up is opt-in; accounts normally come from `bun erp user:create`.
       disableSignUp: !env.AUTH_SIGNUP_ENABLED,
       minPasswordLength: 10,
+      // PASSWORD_HASH picks the algorithm for new hashes; verify reads the stored format, so a switch
+      // never locks anyone out. Better Auth has no rehash-on-login hook (docs/security.md).
+      password: passwordHasherFor(env),
       // One-hour single-use token; every session is revoked once the password changes.
       resetPasswordTokenExpiresIn: RESET_PASSWORD_TTL_SECONDS,
       revokeSessionsOnPasswordReset: true,

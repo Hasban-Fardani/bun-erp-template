@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { verifyPassword } from "better-auth/crypto";
 import { eq } from "drizzle-orm";
 import type { AppContext } from "@/bootstrap/context.ts";
 import { commands } from "@/cli/commands/user.ts";
 import { generatePassword } from "@/cli/lib/password.ts";
+import { passwordHasherFor } from "@/features/identity/password.ts";
 import { accounts, sessions } from "@/features/identity/schema.ts";
 import { createUser, resetUserPassword } from "@/features/identity/service.ts";
 import { createSeededContext } from "../../support/fixtures.ts";
@@ -73,7 +73,9 @@ describe("resetUserPassword", () => {
 
     const { credential, google } = await accountPair(user.id);
     expect(credential?.password).toBeDefined();
-    expect(await verifyPassword({ hash: credential?.password as string, password: NEW_PASSWORD })).toBe(true);
+    expect(
+      await passwordHasherFor(ctx.env).verify({ hash: credential?.password as string, password: NEW_PASSWORD }),
+    ).toBe(true);
     expect(google?.password).toBe("oauth-placeholder");
   });
 
@@ -127,7 +129,9 @@ describe("user:passwd CLI", () => {
     expect((password as string).length).toBeGreaterThanOrEqual(16);
 
     const { credential, google } = await accountPair(user.id);
-    expect(await verifyPassword({ hash: credential?.password as string, password: password as string })).toBe(true);
+    expect(
+      await passwordHasherFor(ctx.env).verify({ hash: credential?.password as string, password: password as string }),
+    ).toBe(true);
     expect(google?.password).toBe("oauth-placeholder");
     expect(await ctx.db.select().from(sessions).where(eq(sessions.userId, user.id))).toEqual([]);
   });

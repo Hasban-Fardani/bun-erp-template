@@ -5,6 +5,7 @@ import { defineCommand } from "@cli/registry.ts";
 import { eq } from "drizzle-orm";
 import { loadEnv } from "../../config/index.ts";
 import { recordAudit, snapshot } from "../../features/audit/service.ts";
+import { passwordHasherFor } from "../../features/identity/password.ts";
 import { users } from "../../features/identity/schema.ts";
 import {
   createUser,
@@ -95,6 +96,7 @@ export const commands = [
         ctx.db,
         { ...parsedInput.data, roleKey },
         { userId: null, traceId: `cli-${Date.now()}`, label: "cli" },
+        passwordHasherFor(ctx.env).hash,
       );
       const target = `configured database (${ctx.env.APP_ENV}/${ctx.env.DATABASE_DRIVER})`;
       process.stdout.write(`Created ${created.email} (${created.roles.map((r) => r.key).join(", ")}) in ${target}.\n`);
@@ -282,7 +284,7 @@ export const commands = [
     const ctx = await createCliContext({ migrateOnStart: false });
     try {
       const user = await requireUserByEmail(ctx.db, email);
-      await resetUserPassword(ctx.db, user.id, password, cliActor());
+      await resetUserPassword(ctx.db, user.id, password, cliActor(), passwordHasherFor(ctx.env).hash);
       process.stdout.write(`Password updated: ${email}\nNew password: ${password}\n`);
     } finally {
       await ctx.close();

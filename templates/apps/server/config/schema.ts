@@ -72,6 +72,10 @@ const rawSchema = z
     BETTER_AUTH_SECRET: z.string().default(""),
     AUTH_TRUSTED_ORIGINS: z.string().default(""),
     /** Public email/password self sign-up. Off by default: admins create accounts (CLI `user:create`). */
+    // Hash for new passwords: pbkdf2 fits Workers Free (10 ms CPU), scrypt is memory-hard for hosts without a CPU cap.
+    PASSWORD_HASH: z.enum(["pbkdf2", "scrypt"]).default("pbkdf2"),
+    // pbkdf2 only; workerd rejects more than 100,000 iterations, so the cap holds on every target.
+    PASSWORD_HASH_ITERATIONS: z.coerce.number().int().min(1000).max(100000).default(30000),
     AUTH_SIGNUP_ENABLED: boolOr("false"),
     /** Better Auth rate limiting; the auth endpoints keep their stricter built-in rules. */
     AUTH_RATE_LIMIT_ENABLED: boolOr("true"),

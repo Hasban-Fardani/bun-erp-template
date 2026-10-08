@@ -1,8 +1,4 @@
-import { hashPassword } from "better-auth/crypto";
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
-
-/** Re-export: the CLI (cli/) uses the same hash primitives, not a duplicate. */
-export { hashPassword };
 
 import type { Database } from "../../database/index.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
@@ -21,6 +17,7 @@ import {
   userHoldsRoleKey,
   userRoles,
 } from "../rbac/index.ts";
+import { hashPassword } from "./password.ts";
 import { accounts, sessions, users } from "./schema.ts";
 import type { CreateUserInput, ListUsersInput, UpdateUserInput } from "./validation.ts";
 
@@ -212,12 +209,13 @@ export async function updateUser(
 
 /**
  * Creates a user + email/password credentials in one go (admin invite without a mail server).
- * The hash uses Better Auth's own primitives so the next sign-in is valid immediately.
+ * The hash uses the configured `PASSWORD_HASH` algorithm (`passwordHasherFor(env).hash`) so the next sign-in is valid immediately.
  */
 export async function createUser(
   db: Database,
   input: CreateUserInput,
   actor: { userId: string | null; traceId: string; label?: string },
+  hash: (password: string) => Promise<string> = hashPassword,
 ): Promise<PublicUser> {
   return db.transaction(async (tx) => {
     const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, input.email)).limit(1);
@@ -237,7 +235,7 @@ export async function createUser(
       accountId: user.id,
       providerId: "credential",
       userId: user.id,
-      password: await hashPassword(input.password),
+      password: await hash(input.password),
     });
 
     if (input.roleKey) {
@@ -300,8 +298,9 @@ export async function resetUserPassword(
   userId: string,
   password: string,
   actor: { userId: string | null; traceId: string; label?: string },
+  hashWith: (password: string) => Promise<string> = hashPassword,
 ): Promise<{ id: string }> {
-  const hash = await hashPassword(password);
+  const hash = await hashWith(password);
   return db.transaction(async (tx) => {
     const user = await findUserOrThrow(tx, userId);
 

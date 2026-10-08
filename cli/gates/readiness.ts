@@ -62,6 +62,8 @@ function checkSecretPlaceholders(env: string): Check {
   const suspicious = env
     .split("\n")
     .filter((line) => /^[A-Z_]*(SECRET|PASSWORD|TOKEN|KEY)[A-Z_]*=/.test(line))
+    // PASSWORD_HASH* name an algorithm and its cost, not a credential.
+    .filter((line) => !line.startsWith("PASSWORD_HASH"))
     .filter((line) => {
       const value = line.split("=")[1]?.trim() ?? "";
       return value.length > 0 && !/^(|change-me|placeholder|<.*>|\$\{.*\})$/.test(value);

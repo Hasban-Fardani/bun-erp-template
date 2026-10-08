@@ -13,7 +13,12 @@ presence only. Pino log redaction is in `infra/observability/logger.ts`; audit s
 entity allowlists plus secret filtering. Neither control replaces the other.
 
 Email/password auth uses Better Auth. Google is dormant unless both credentials are set.
-Production env guards run during bootstrap. Password reset is described below.
+Production env guards run during bootstrap. Passwords are hashed with `PASSWORD_HASH`: `pbkdf2`
+(default, PBKDF2-HMAC-SHA256, `PASSWORD_HASH_ITERATIONS=30000`, fits Cloudflare Workers Free) or `scrypt`
+(memory-hard; prefer it on a VPS/Bun host). Stored hashes are self-describing, so switching never
+invalidates existing passwords; accounts move to the new algorithm on their next password change
+(Better Auth has no rehash-on-login hook). Comparison is constant-time and a stored iteration count
+outside 1000-100000 is rejected. Details: docs/deployment.md. Password reset is described below.
 The OpenAPI document and Scalar reference (`/api/docs`) expose the full route surface, so they
 are off in production unless `API_DOCS_ENABLED=true` opts in deliberately.
 

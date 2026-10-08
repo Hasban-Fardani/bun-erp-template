@@ -9,6 +9,7 @@ import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-quer
 import { idParam, idRoleKeyParam } from "../../http/helpers/params.ts";
 import { validate } from "../../http/helpers/validate.ts";
 import { IMPERSONATION_COOKIE, startImpersonation } from "./impersonation.ts";
+import { passwordHasherFor } from "./password.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
 import {
   assignUserRole,
@@ -78,7 +79,7 @@ export function identityRoutes(ctx: AppContext) {
       async (c) => {
         const actor = c.get("actor");
         const input = c.req.valid("json");
-        return ok(c, await createUser(ctx.db, input, actorOf(actor)));
+        return ok(c, await createUser(ctx.db, input, actorOf(actor), passwordHasherFor(ctx.env).hash));
       },
     )
     .delete(
