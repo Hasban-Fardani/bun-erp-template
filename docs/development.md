@@ -10,7 +10,7 @@ From a clean clone:
     bun erp user:create <email> <password> --role owner --name <name>
     bun dev
 
-The template ships `apps/` empty; `bun erp init` is the single door. It offers the seven
+`apps/` is a disposable install of the app catalog (empty on a fresh checkout); `bun erp init` is the single door. It offers the seven
 combinations (server, web, mobile, server+web, server+mobile, web+mobile, server+web+mobile) as a
 numbered choice list, copies the chosen catalogs from `templates/apps/`, registers the workspaces,
 runs the first `bun install`, and configures project-local CodeGraph and the approved agent skills
@@ -31,7 +31,7 @@ Run `bun erp init` from the repository root before code exploration or developme
 catalogs and the first `bun install`, it pins and syncs the local CodeGraph index at the release in
 `cli/gates/codegraph.ts`, wires the CodeGraph MCP server into every detected agent (opencode
 included, normalized to opencode's real schema), aligns an older global `codegraph` to the pinned
-release, and installs the required agent skills — Matthew Pocock, Petr Kindlmann QA, Impeccable,
+release, and installs the required agent skills — Matthew Pocock (the planning-to-delivery flow), Petr Kindlmann QA, Impeccable,
 i-have-adhd and diagram-design — when any are missing. Re-running it updates the index, repairs
 missing skills, and re-fits a detached web/mobile shell once a server app exists. CI setup runs
 `bun erp init --apps server,web --yes` on every job; `bun dev` does not. The index is local state
@@ -67,10 +67,15 @@ The skills are installed from [Matthew Pocock's skills repository](https://githu
 [Impeccable](https://github.com/pbakaus/impeccable),
 [i-have-adhd](https://github.com/ayghri/i-have-adhd) and
 [diagram-design](https://github.com/cathrynlavery/diagram-design). Two skill directories coexist and
-are not interchangeable: `skills/` holds this template's own skills (see `skills/README.md`), while
+are not interchangeable: `skills/` holds this repository's own skills (see `skills/README.md`), while
 `.agents/skills/` holds the externally installed skills above. `skills-lock.json` records their
 pinned sources; `.agents/skills/` itself is ignored by Git and restored by `bun erp ai:update`. The QA
 project context at `.agents/qa-project-context.md` records this repository's test stack and rules.
+
+The Matthew Pocock set is the planning-to-delivery flow: `grill-with-docs`, `domain-modeling`,
+`to-spec`, `to-tickets`, `implement`, `tdd`, `code-review`, `diagnosing-bugs` and `codebase-design`
+(plus `grill-me`, `grilling`). They are configured for `docs/tasks/` instead of GitHub Issues by
+`docs/agents/issue-tracker.md` and `docs/agents/domain.md`; the ordered flow is in `skills/README.md`.
 
 `bun erp check:impeccable` runs the pinned Impeccable design detector over every UI surface that
 exists on disk and requires 0 findings. It runs in `bun erp check` but not `bun erp check:fast`; the
@@ -148,7 +153,7 @@ through the CLI with the same `.env` database configuration used by the app:
 The command prints the environment and driver used. CLI operations and the running app use the same
 PostgreSQL connection concurrently, so user and role changes are immediately shared. New passwords
 must be at least 10 characters. With the development app running,
-`bun run qa:login` uses Playwright to verify failed login feedback appears as an accessible toast
+`bun erp qa --only=login` uses Playwright to verify failed login feedback appears as an accessible toast
 outside the form.
 
 The seeded role keys are `owner` and `staff`; `admin` and `user` are not role keys. If the
@@ -173,6 +178,40 @@ sessions, join tables). `--sequence <key>` with `--prefix`/`--padding` adds the 
 `make:migration create_posts_table` and `add_status_to_posts_table` fill the table and column names
 into the SQL template, and `make:seeder users` normalizes a `-seeder` suffix to `users.ts`. After
 generating a feature, add the domain fields and run `bun erp db:migrate` followed by `bun erp db:seed`.
+
+### Generators
+
+`bun erp --help` lists every generator under "Generators". Each one plans all of its paths and
+wiring anchors before it writes, refuses to overwrite an existing file, and formats what it wrote,
+so a failed run leaves the tree untouched and a second run is a no-op error.
+
+| Command | Writes | Wires |
+|---|---|---|
+| `make:feature <name>` | server module, web screen, create-table migration, test, factory | permissions, audit entity, route mount, sidebar, both locale catalogs |
+| `make:migration <name>` | numbered forward-only migration | none |
+| `make:seeder <name>` | `database/seeders/<name>.ts` (use a factory for rows) | picked up by `db:seed` |
+| `make:factory <feature> [--table <export>]` | `database/factories/<feature>.ts` | none; fills every notNull column without a default |
+| `make:job <name>` | `apps/server/jobs/<name>.ts` and an idempotency test | `registry.register(...)` in `features/jobs.ts` (`// @erp:jobs`) |
+| `make:event <feature> <name>` | `features/<feature>/events/<name>.ts` (`defineEvent` and its payload type) | none |
+| `make:listener <feature> <name> --event <event>` | `features/<feature>/listeners/<name>.ts` and a dispatch test (rollback, idempotency key) | `features/events.ts` (`// @erp:listeners`) |
+| `make:command <group:name>` | `cli/commands/<group>-<name>.ts` and a test | none: the registry reads the `defineCommand` literal |
+| `make:test <feature> [name]` | `tests/features/<feature>/<name>.test.ts` (typed `testClient` when the feature has routes) | none |
+| `make:notification <name> [--type domain.event]` | `features/notifications/<name>.notification.ts` and a test | export in `notifications/index.ts` (`// @erp:notifications`) |
+| `make:mail <name>` | `apps/server/mail/<name>.ts` (pure renderer + queue helper) and a test | none; needs `bun erp features:install mail` |
+
+A generator that needs a core file edit looks for an explicit `// @erp:` marker and stops before
+writing when it is gone; restore the marker or wire by hand. After any generator, run
+`bun erp check:fast` and `bun erp test --filter <feature>`. Generated tests carry `test.todo`
+placeholders: write the failing test for the real behaviour first, then implement.
+
+### Console
+
+`bun erp tinker` opens a REPL with `db`, `schema` (every table), `env`, `sql`, `orm` (all of
+`drizzle-orm`), `ctx` and a `vars` object that persists between lines. One input is one expression
+(top-level `await` works) or a function body with `return`. `--eval "<expr>"` runs one input and
+exits, for scripts: `bun erp tinker --eval "await db.select().from(schema.roles)"`. It refuses
+`NODE_ENV=production` or `APP_ENV=production` unless you pass `--force`; it runs your code against
+the configured database, so use it on production only for reads you could run in `psql`.
 
 `bun erp apps` lists workspace apps with build, port, and test status; `apps:status <name>` shows
 one app's entry point, scripts, build output, and environment file; `apps:create <name> <server|web|mobile>`

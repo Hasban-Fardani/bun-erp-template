@@ -1,5 +1,6 @@
 import type { AppContext } from "../../bootstrap/context.ts";
 import { factory } from "../../http/factory.ts";
+import { actorOf } from "../../http/helpers/actor.ts";
 import { doc } from "../../http/helpers/api-docs.ts";
 import { authorize } from "../../http/helpers/authorize.ts";
 import { ok } from "../../http/helpers/errors.ts";
@@ -19,12 +20,6 @@ const idRef = { type: "object", properties: { id: { type: "string" } } } as cons
  * but not deleted: `statements.ts` is the source of truth, and the seed will bring them back.
  */
 export function rbacRoutes(ctx: AppContext) {
-  const actorOf = (actor: { userId: string; traceId: string; label: string }) => ({
-    userId: actor.userId,
-    traceId: actor.traceId,
-    label: actor.label,
-  });
-
   return (
     factory
       .createApp()

@@ -2,12 +2,12 @@
  * End-to-end QA against a running deployment.
  *
  * Usage:
- *   bun run qa                        # core suite + every installed feature suite
- *   bun run qa -- --list              # show suites and why one is skipped
- *   bun run qa -- --dry-run           # print the plan (suites + checks) without a browser
- *   bun run qa -- --only=core,users   # run selected suites only
- *   QA_BASE_URL=https://erp.example bun run qa
- *   CHROME_PATH=/usr/bin/chromium bun run qa
+ *   bun erp qa                        # core suite + every installed feature suite
+ *   bun erp qa --list              # show suites and why one is skipped
+ *   bun erp qa --dry-run           # print the plan (suites + checks) without a browser
+ *   bun erp qa --only=core,users   # run selected suites only
+ *   QA_BASE_URL=https://erp.example bun erp qa
+ *   CHROME_PATH=/usr/bin/chromium bun erp qa
  *
  * The core suite only touches what a default install ships (login, Beranda, notifications,
  * sign-out, unauthenticated redirect); `users`, `roles` and `audit` run only when their catalog
@@ -18,6 +18,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { chromium } from "playwright-core";
+import { isExpectedConsoleError, isExpectedResponse } from "./expected.ts";
 import { type QaCheck, type QaContext, type QaSuite, SUITES } from "./suites.ts";
 
 const WEB = process.env.QA_BASE_URL ?? "http://localhost:4173";
@@ -91,7 +92,7 @@ function printPlan(): void {
 if (args.includes("--help") || args.includes("-h")) {
   console.log(
     [
-      "Usage: bun run qa [-- --list] [-- --dry-run] [-- --only=core,users,roles,audit]",
+      "Usage: bun erp qa [--list] [--dry-run] [--only=core,login,users,roles,audit]",
       "",
       "  --list      show suites and whether they will run",
       "  --dry-run   print the plan without launching a browser",
@@ -175,11 +176,14 @@ for (const suite of run) {
   const suiteErrors: string[] = [];
   page.on("pageerror", (error) => suiteErrors.push(String(error)));
   page.on("console", (message) => {
-    if (message.type() === "error" && !message.text().includes("favicon")) suiteErrors.push(message.text());
+    if (message.type() !== "error" || message.text().includes("favicon")) return;
+    if (isExpectedConsoleError({ text: message.text(), locationUrl: message.location().url })) return;
+    suiteErrors.push(message.text());
   });
   /** Tracking every non-2xx is how a rejected query shape gets caught instead of shrugged at. */
   page.on("response", (response) => {
-    if (response.url().includes("/api/") && response.status() >= 400) {
+    const failure = { method: response.request().method(), url: response.url(), status: response.status() };
+    if (failure.url.includes("/api/") && failure.status >= 400 && !isExpectedResponse(failure)) {
       suiteBadResponses.push(`${response.status()} ${response.url().slice(0, 110)}`);
     }
   });

@@ -23,6 +23,19 @@ const timezone = z.string().refine(
   { message: "must be a valid IANA timezone" },
 );
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** `https` anywhere, or plain `http` on a loopback hostname only (parsed, never prefix-matched). */
+function isSecurePublicUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:") return true;
+    return url.protocol === "http:" && LOOPBACK_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 const rawSchema = z
   .strictObject({
     // Application
@@ -63,11 +76,31 @@ const rawSchema = z
     /** Better Auth rate limiting; the auth endpoints keep their stricter built-in rules. */
     AUTH_RATE_LIMIT_ENABLED: boolOr("true"),
     /**
+     * Business API limiter on `/api/v1/*` (PostgreSQL fixed window, keyed by user id, else client
+     * address). Better Auth keeps its own stricter limits on the auth endpoints.
+     */
+    API_RATE_LIMIT_ENABLED: boolOr("true"),
+    /**
+     * User impersonation (docs/security.md). `IMPERSONATION_ENABLED=false` turns the start endpoint off
+     * entirely (production kill switch); a session lasts at most IMPERSONATION_TTL_MINUTES.
+     */
+    IMPERSONATION_ENABLED: boolOr("true"),
+    IMPERSONATION_TTL_MINUTES: z.coerce.number().int().positive().max(1440).default(60),
+    API_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+    API_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+    /**
      * Per-process permission cache. On for single-process dev; set false for Cloudflare Workers
      * and multi-replica Bun, where an invalidation only reaches the process that wrote it.
      * See docs/security.md.
      */
     PERMISSION_CACHE_ENABLED: boolOr("true"),
+    /**
+     * Cache facade driver (infra/cache). `memory` is per process; `database` is shared across
+     * replicas and isolates; `cloudflare-kv` needs the Worker binding named by CACHE_KV_BINDING and
+     * is eventually consistent, so it is never used for permissions.
+     */
+    CACHE_DRIVER: z.enum(["memory", "database", "cloudflare-kv"]).default("memory"),
+    CACHE_KV_BINDING: z.string().trim().min(1).default("CACHE_KV"),
     // Google OAuth dormant (ADR-0009): the provider activates only when BOTH are set.
     GOOGLE_CLIENT_ID: z.string().default(""),
     GOOGLE_CLIENT_SECRET: z.string().default(""),
@@ -88,7 +121,7 @@ const rawSchema = z
 
     // Mail: consumed by the opt-in @bun-erp/mail package (`bun erp features:install mail`).
     // The keys stay in the core schema so one validated environment serves every install.
-    MAIL_DRIVER: z.enum(["log", "smtp"]),
+    MAIL_DRIVER: z.enum(["log", "smtp", "http"]),
     MAIL_FROM_ADDRESS: z.string().trim().min(1),
     MAIL_FROM_NAME: z.string().trim().min(1),
     SMTP_HOST: z.string().trim().default(""),
@@ -96,6 +129,9 @@ const rawSchema = z
     SMTP_SECURE: boolOr("false"),
     SMTP_USERNAME: z.string().trim().default(""),
     SMTP_PASSWORD: z.string().default(""),
+    /** `http` driver adapter; only `resend` ships. Works on Bun and Cloudflare Workers. */
+    MAIL_HTTP_PROVIDER: z.enum(["resend"]).default("resend"),
+    MAIL_API_KEY: z.string().default(""),
 
     // Jobs: `none` polls the database (Bun worker and Cloudflare cron sweeper); `cloudflare-queue`
     // sends a wake-up through the JOBS_QUEUE binding after each committed enqueue.
@@ -119,11 +155,21 @@ const rawSchema = z
     if (env.MAIL_DRIVER === "smtp" && env.SMTP_HOST === "") {
       ctx.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "required when MAIL_DRIVER=smtp" });
     }
+    if (env.MAIL_DRIVER === "http" && env.MAIL_API_KEY === "") {
+      ctx.addIssue({ code: "custom", path: ["MAIL_API_KEY"], message: "required when MAIL_DRIVER=http" });
+    }
     if (env.APP_DEPLOY_TARGET === "cloudflare" && env.MAIL_DRIVER === "smtp") {
       ctx.addIssue({
         code: "custom",
         path: ["MAIL_DRIVER"],
-        message: "SMTP needs raw sockets; use log or an HTTP mail driver on Cloudflare Workers",
+        message: "SMTP needs raw sockets; use MAIL_DRIVER=http (Resend) on Cloudflare Workers",
+      });
+    }
+    if (env.CACHE_DRIVER === "cloudflare-kv" && env.APP_DEPLOY_TARGET !== "cloudflare") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["CACHE_DRIVER"],
+        message: "cloudflare-kv needs a Worker binding; use memory or database on Bun",
       });
     }
     // Every target needs a real signing secret; only local development may run without one.
@@ -150,7 +196,7 @@ const rawSchema = z
         message: "must be at least 32 characters in production (run: bun erp key:generate)",
       });
     }
-    if (!env.APP_URL.startsWith("https://") && !env.APP_URL.startsWith("http://localhost")) {
+    if (!isSecurePublicUrl(env.APP_URL)) {
       ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "public URL must use https in production" });
     }
     // Hyperdrive terminates TLS on Cloudflare; on Bun the database connection carries it.

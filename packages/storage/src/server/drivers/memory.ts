@@ -21,6 +21,17 @@ export function createMemoryStorageDriver(): StorageDriver & { readonly objects:
     async exists(key) {
       return objects.has(storageKey(key));
     },
+    async list({ prefix = "", cursor, limit = 1000 } = {}) {
+      const keys = [...objects.keys()].filter((key) => key.startsWith(prefix)).sort();
+      const start = cursor ? keys.findIndex((key) => key > cursor) : 0;
+      const slice = start === -1 ? [] : keys.slice(start, start + limit);
+      const last = slice.at(-1);
+      const more = last !== undefined && keys.indexOf(last) < keys.length - 1;
+      return {
+        objects: slice.map((key) => ({ key, size: objects.get(key)?.byteLength ?? 0 })),
+        cursor: more ? last : undefined,
+      };
+    },
     async url(key) {
       return `memory://${storageKey(key)}`;
     },

@@ -12,6 +12,10 @@ export type MailConfig = {
   SMTP_SECURE: boolean;
   SMTP_USERNAME: string;
   SMTP_PASSWORD: string;
+  /** `http` driver: which provider adapter formats the request. Only `resend` ships. */
+  MAIL_HTTP_PROVIDER: string;
+  /** `http` driver: provider API key (secret-class). */
+  MAIL_API_KEY: string;
 };
 
 /** The one logger method the transport uses; an app's structured logger satisfies it. */
@@ -36,6 +40,8 @@ export type MailMessage = {
   attachments?: MailAttachment[];
   /** Overrides MAIL_FROM_ADDRESS/NAME for this message only. */
   from?: MailAddress;
+  /** Forwarded to providers that dedupe sends (the `http` driver's Idempotency-Key header). */
+  idempotencyKey?: string;
 };
 
 /** Everything a driver needs after defaults are applied and both bodies are present. */
@@ -49,6 +55,7 @@ export type ResolvedMail = {
   html: string;
   text: string;
   attachments: MailAttachment[];
+  idempotencyKey?: string;
 };
 
 export type MailSendResult = { driver: string; messageId: string };
@@ -57,9 +64,16 @@ export type MailSendResult = { driver: string; messageId: string };
 export type MailDriver = {
   readonly name: string;
   send(message: ResolvedMail): Promise<MailSendResult>;
+  /** Optional cheap connectivity/credential check that sends nothing (SMTP: `transporter.verify()`). */
+  verify?(): Promise<void>;
 };
 
-export type MailDriverContext = { config: MailConfig; logger: MailLogger };
+export type MailDriverContext = {
+  config: MailConfig;
+  logger: MailLogger;
+  /** HTTP drivers call this instead of the global, so tests and Workers can inject it. */
+  fetch?: typeof fetch;
+};
 export type MailDriverFactory = (context: MailDriverContext) => MailDriver;
 
 export type MailQueueOptions = { idempotencyKey?: string; runAt?: Date };
@@ -68,6 +82,8 @@ export type MailQueueOptions = { idempotencyKey?: string; runAt?: Date };
 export type Mailer = {
   readonly driver: string;
   send(message: MailMessage): Promise<MailSendResult>;
+  /** Checks the transport without sending; resolves for drivers that have nothing to check. */
+  verify(): Promise<void>;
   queue(message: MailMessage, options?: MailQueueOptions): Promise<string>;
 };
 

@@ -39,6 +39,10 @@ describe("migration ledger integrity", () => {
     const dir = await scopedDir({ "0003_rbac.ts": "create table probe_widgets (id uuid primary key);" });
     const failure = await rejectionOf(dir);
     expectRejection(failure, "MigrationLedgerMismatch", "0003_auth.sql", "0003_rbac.ts");
+    // The first hint is the likely cause (a shared or older database); the destructive reset comes last.
+    expect(failure.message).toContain("belongs to another project");
+    expect(failure.message).toContain("DATABASE_URL");
+    expect(failure.message.indexOf("DATABASE_URL")).toBeLessThan(failure.message.indexOf("db:reset --force"));
     // The mismatched file must not run: the schema it builds belongs to a different catalog.
     expect(await tableExists(ctx, "probe_widgets")).toBe(false);
   });

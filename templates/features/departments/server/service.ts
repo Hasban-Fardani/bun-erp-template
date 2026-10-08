@@ -80,7 +80,7 @@ export async function createDepartment(
 
     const rows = await tx.insert(departments).values({ name: input.name, code: input.code }).returning();
     const after = rows[0] as Department;
-    await recordDepartmentEvent(tx as unknown as Database, actor, "department.created", after.id, undefined, after);
+    await recordDepartmentEvent(tx, actor, "department.created", after.id, undefined, after);
     return after;
   });
 }
@@ -92,7 +92,7 @@ export async function updateDepartment(
   actor: Actor = { userId: null, traceId: "" },
 ): Promise<Department> {
   return db.transaction(async (tx) => {
-    const before = await requireDepartment(tx as unknown as Database, id);
+    const before = await requireDepartment(tx, id);
 
     const patch: { name?: string; code?: string; updatedAt: Date; version: SQL } = {
       updatedAt: new Date(),
@@ -109,12 +109,12 @@ export async function updateDepartment(
       .returning();
     const after = rows[0];
     if (!after) {
-      const current = await findDepartment(tx as unknown as Database, id, { includeDeleted: true });
+      const current = await findDepartment(tx, id, { includeDeleted: true });
       if (!current) throw ApiError.notFound("Department not found");
       throw ApiError.versionConflict(current.version);
     }
 
-    await recordDepartmentEvent(tx as unknown as Database, actor, "department.updated", after.id, before, after);
+    await recordDepartmentEvent(tx, actor, "department.updated", after.id, before, after);
     return after;
   });
 }
@@ -125,12 +125,12 @@ export async function deleteDepartment(
   actor: Actor = { userId: null, traceId: "" },
 ): Promise<Department> {
   return db.transaction(async (tx) => {
-    const before = await requireDepartment(tx as unknown as Database, id);
+    const before = await requireDepartment(tx, id);
 
-    const after = await softDeleteRow(tx as unknown as Database, departments, id);
+    const after = await softDeleteRow(tx, departments, id);
     if (!after) throw ApiError.notFound("Department not found");
 
-    await recordDepartmentEvent(tx as unknown as Database, actor, "department.deleted", id, before, after);
+    await recordDepartmentEvent(tx, actor, "department.deleted", id, before, after);
     return after;
   });
 }
@@ -141,12 +141,12 @@ export async function restoreDepartment(
   actor: Actor = { userId: null, traceId: "" },
 ): Promise<Department> {
   return db.transaction(async (tx) => {
-    const before = await requireDepartment(tx as unknown as Database, id, { includeDeleted: true });
+    const before = await requireDepartment(tx, id, { includeDeleted: true });
 
-    const after = await restoreRow(tx as unknown as Database, departments, id);
+    const after = await restoreRow(tx, departments, id);
     if (!after) throw ApiError.notFound("Department not found");
 
-    await recordDepartmentEvent(tx as unknown as Database, actor, "department.restored", id, before, after);
+    await recordDepartmentEvent(tx, actor, "department.restored", id, before, after);
     return after;
   });
 }
@@ -157,11 +157,11 @@ export async function forceDeleteDepartment(
   actor: Actor = { userId: null, traceId: "" },
 ): Promise<{ id: string }> {
   return db.transaction(async (tx) => {
-    const before = await requireDepartment(tx as unknown as Database, id, { includeDeleted: true });
+    const before = await requireDepartment(tx, id, { includeDeleted: true });
 
-    await forceDeleteRow(tx as unknown as Database, departments, id);
+    await forceDeleteRow(tx, departments, id);
 
-    await recordDepartmentEvent(tx as unknown as Database, actor, "department.force_deleted", id, before, undefined);
+    await recordDepartmentEvent(tx, actor, "department.force_deleted", id, before, undefined);
     return { id };
   });
 }

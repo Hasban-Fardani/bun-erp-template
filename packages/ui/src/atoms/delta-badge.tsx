@@ -2,8 +2,8 @@
 
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type * as React from "react";
-import { formatDelta } from "../atoms/dashboard-format.ts";
 import { cn } from "../lib/cn.ts";
+import { formatDelta } from "../lib/dashboard-format.ts";
 
 export type DeltaDirection = "up" | "down" | "flat";
 

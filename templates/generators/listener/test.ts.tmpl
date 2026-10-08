@@ -1,0 +1,53 @@
+import { expect, test } from "bun:test";
+import { createUuid } from "@bun-erp/utils";
+import { sql } from "drizzle-orm";
+import type { Database } from "@/database/index.ts";
+import { rowsOf } from "@/database/rows.ts";
+import { createEventListeners } from "@/features/events.ts";
+import { {{eventCamel}}Event } from "@/features/{{feature}}/events/{{event}}.ts";
+import { {{camel}}Listener } from "@/features/{{feature}}/listeners/{{name}}.ts";
+import { createEventBus } from "@/infra/events/index.ts";
+import { createTestContext } from "../../support/fixtures.ts";
+
+async function jobCount(db: Database, idempotencyKey: string): Promise<number> {
+  const rows = rowsOf<{ total: number }>(
+    await db.execute(
+      sql`select count(*)::int as total from background_jobs where job_name = ${{{camel}}Listener.jobName} and idempotency_key = ${idempotencyKey}`,
+    ),
+  );
+  return rows[0]?.total ?? 0;
+}
+
+test("{{name}} is registered in features/events.ts", () => {
+  expect(createEventListeners().map((listener) => listener.jobName)).toContain({{camel}}Listener.jobName);
+});
+
+test("dispatching {{eventName}} enqueues one durable job for {{name}}, once per idempotency key", async () => {
+  const { db } = await createTestContext();
+  const bus = createEventBus([{{camel}}Listener]);
+  const idempotencyKey = `{{name}}-${createUuid()}`;
+  const dispatchOnce = () =>
+    db.transaction((tx) =>
+      bus.dispatch(tx, {{eventCamel}}Event, { id: "sample" }, { idempotencyKey }),
+    );
+
+  expect(await dispatchOnce()).toBe(1);
+  await dispatchOnce();
+  expect(await jobCount(db, idempotencyKey)).toBe(1);
+});
+
+test("a rolled-back transaction enqueues nothing for {{name}}", async () => {
+  const { db } = await createTestContext();
+  const bus = createEventBus([{{camel}}Listener]);
+  const idempotencyKey = `{{name}}-${createUuid()}`;
+
+  await expect(
+    db.transaction(async (tx) => {
+      await bus.dispatch(tx, {{eventCamel}}Event, { id: "sample" }, { idempotencyKey });
+      throw new Error("rollback");
+    }),
+  ).rejects.toThrow("rollback");
+  expect(await jobCount(db, idempotencyKey)).toBe(0);
+});
+
+test.todo("{{name}} handler is safe to run twice for the same payload", () => {});

@@ -36,3 +36,11 @@ test("ignores Indonesian user-facing copy nested in JSX fragments", () => {
 
   expect(checkTechnicalLanguageSource(source, "fixture.tsx")).toEqual([]);
 });
+
+test("scans a regular expression literal that contains a hash without hanging", () => {
+  const source = 'const title = text.replace(/^# Heading[ \\t]*$/m, "x"); const temaPengguna = 1;';
+
+  const findings = checkTechnicalLanguageSource(source, "fixture.ts");
+
+  expect(findings.map((finding) => finding.term)).toEqual(["tema", "pengguna"]);
+}, 5000);

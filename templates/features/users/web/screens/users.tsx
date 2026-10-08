@@ -14,7 +14,9 @@ import { useResourceTableLabels } from "@web/lib/resource-table-labels.ts";
 import { useTableState } from "@web/lib/use-table-state.ts";
 import { Pencil, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { useSession } from "../../identity/hooks/index.ts";
+import { ImpersonateDialog } from "../../identity/components/impersonate-dialog.tsx";
+import { useSession, useStartImpersonation } from "../../identity/hooks/index.ts";
+import { canImpersonate } from "../../identity/lib/impersonation.ts";
 import { UserSheet } from "../components/user-sheet.tsx";
 import { useDeleteUser, useUpdateUser, useUsers } from "../hooks/index.ts";
 import type { PublicUser } from "../types/index.ts";
@@ -28,6 +30,7 @@ export function UsersScreen() {
   const users = useUsers(table.queryString);
   const deleteUser = useDeleteUser();
   const updateUser = useUpdateUser();
+  const startImpersonation = useStartImpersonation();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<PublicUser | null>(null);
   const toast = useToast();
@@ -89,6 +92,7 @@ export function UsersScreen() {
   const canWrite = permissions.includes("user.update");
   const canCreate = permissions.includes("user.create");
   const canDelete = permissions.includes("user.delete");
+  const canImpersonateAny = permissions.includes("user.impersonate");
 
   if (!canRead) {
     return (
@@ -129,9 +133,21 @@ export function UsersScreen() {
               ) : null
             }
             actions={
-              canWrite || canDelete
+              canWrite || canDelete || canImpersonateAny
                 ? (u) => (
                     <>
+                      {session.data && canImpersonate(session.data, u) ? (
+                        <ImpersonateDialog
+                          name={u.name}
+                          disabled={startImpersonation.isPending}
+                          onConfirm={() =>
+                            startImpersonation.mutate(u.id, {
+                              onError: (err) =>
+                                toast.error(err instanceof ApiError ? err.message : t("impersonation.startFailed")),
+                            })
+                          }
+                        />
+                      ) : null}
                       {canWrite ? (
                         <IconButton
                           icon={Pencil}

@@ -1,3 +1,7 @@
 # Local Cloudflare dev vars (wrangler). Fill in a real secret before running `bun erp cloudflare:dev`.
+# Copy to .dev.vars (git-ignored); never commit real values. Production secrets are pushed by the
+# deploy workflow with `wrangler secret bulk` (generate the file with `bun erp env:cloudflare`).
 BETTER_AUTH_SECRET=
 CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://postgres:postgres@127.0.0.1:5432/erp
+# Mail credentials, only when the matching driver is enabled:
+# SMTP_PASSWORD=

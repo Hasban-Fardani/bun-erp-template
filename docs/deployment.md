@@ -45,6 +45,8 @@ other paths use the web asset fallback. Hyperdrive supplies PostgreSQL.
 The Worker does not run DDL or seed data during requests. The manual Cloudflare workflow runs
 checks, tests, migrations and seed before deploy. Configure the Hyperdrive ID, app URL,
 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL and BETTER_AUTH_SECRET in the project.
+The sections "Production on Cloudflare requires Workers Paid", "Object storage on Cloudflare" and
+"Secrets flow" below cover the rest of the production setup.
 Local emulation uses .dev.vars.example with a disposable PostgreSQL database.
 
 ### Booted Worker proof (2026-10-07)
@@ -62,7 +64,7 @@ resolves, `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` is set (env
 `apps/web/.dev.vars`) and its database answers. The boot itself stays a manual, documented step
 because it starts Vite + workerd; run it whenever a change touches the Worker entry or its bindings.
 
-### Target matrix — Bun/VPS and Cloudflare Workers (F3.3 Phase 7)
+### Target matrix — Bun/VPS and Cloudflare Workers
 
 | Concern | Bun / VPS | Cloudflare Workers |
 |---|---|---|
@@ -72,19 +74,20 @@ because it starts Vite + workerd; run it whenever a change touches the Worker en
 | Jobs | durable `background_jobs` + the polling worker (`jobs:work`), scheduler ticks every 5 s | same table; cron `*/5` sweeps and the optional `JOBS_QUEUE` wake-up signals new work after commit |
 | Scheduler | tick inside `jobs:work` | tick inside the `scheduled` handler |
 | Rate limiting | Better Auth `storage: "database"` (shared across processes) | same table through Hyperdrive (per-isolate memory would be bypassable) |
-| Permission cache | `PERMISSION_CACHE_ENABLED=true` is safe (per-process, 10 s TTL, database is the source of truth) | set `false` in `wrangler.jsonc`; every isolate would otherwise hold its own copy |
-| Mail | `log`, `memory`, or `smtp` | `log`/`memory`/HTTP driver; **`smtp` is refused** (no raw sockets) |
-| Storage | `local` (dev/test only), `s3`, `memory` | `r2` binding, `s3`, `memory`; `local` is refused in production |
+| Permission cache | `PERMISSION_CACHE_ENABLED=true` is safe on one process (10 s TTL, database is the source of truth); `CACHE_DRIVER=database` for replicas | set `false` in `wrangler.jsonc`, or `CACHE_DRIVER=database` to share entries across isolates |
+| Cache facade | `CACHE_DRIVER=memory` (default) or `database` | `database`, or `cloudflare-kv` with a `kv_namespaces` binding named by `CACHE_KV_BINDING` (eventually consistent; never for permissions) |
+| Mail | `log`, `memory`, `smtp`, or `http` (Resend; `MAIL_HTTP_PROVIDER`, `MAIL_API_KEY`) | `log`/`memory`/`http`; **`smtp` is refused** (no raw sockets) |
+| Storage | `local` (dev/test only), `s3`, `memory` | `r2` binding or `memory`; **`s3` is refused** (needs `Bun.S3Client`); `local` is refused in production |
 | Web assets | `APP_WEB_MODE=integrated` (Bun serves `apps/web/dist`) | Workers Static Assets; **non-integrated is refused** |
-| API docs | `/api/docs` + `/api/openapi.json` follow `API_DOCS_ENABLED` (off by default in production) | same; Scalar stays in the bundle within budget |
-| Secrets | `BETTER_AUTH_SECRET` required outside development (≥32 chars in production) | same, via `wrangler secret put` |
+| API docs | `/api/docs` + `/api/openapi.json` follow `API_DOCS_ENABLED` (off by default in production) | same routes, but the Scalar reference page is loaded on the Bun target only (the Worker serves `/api/openapi.json`) |
+| Secrets | `BETTER_AUTH_SECRET` required outside development (≥32 chars in production) | same, pushed with `wrangler secret bulk` (`bun erp env:cloudflare`); secret-class keys never sit in `wrangler.jsonc` vars |
 | Local speed | Bun-first: `check:fast` < 1.5 s, `--help` < 120 ms; `bun-first` gate bans sync Node IO and Bun-only APIs leaking into the Worker graph | the Worker graph is validated by `check:worker`; bundle and startup budget in the table above |
 
 Both targets share one codebase, one schema and one queue table; the differences above are the whole
 list. A configuration that would be unsafe on either target is refused by `templates/apps/server/config/schema.ts`
 at boot, with a test per guard.
 
-### Measured Worker budget (F3.3 Phase 0, 2026-10-07, commit 1a2d76e)
+### Measured Worker budget (2026-10-07)
 
 | Measurement | Value | How |
 |---|---|---|
@@ -92,7 +95,7 @@ at boot, with a test per guard.
 | Gate bundle (`Bun.build`, browser/workerd target) | ~1.04 MB raw / ~288 KB gzip | `bun erp check:worker` |
 | Vite Cloudflare Worker build | 1,244,243 B raw / 321,552 B gzip | `bun erp cloudflare:build` |
 | Worker startup time | not reported by this Wrangler version | the dry run prints size and bindings only; measure in the dashboard |
-| Free script cap | 64 MiB uncompressed (the old 3 MiB compressed cap is gone) | platform facts, F3.3 |
+| Script size cap | 64 MiB uncompressed on Free and Paid, no compressed limit | Cloudflare Workers limits page, re-checked 2026-10-08 |
 | scrypt sign-in cost | ~110 ms CPU per hash/verify locally | `better-auth/crypto`, N=16384 r=16 p=1 dkLen=64, Bun 1.4.2 on Apple silicon — about ten times the 10 ms Free budget |
 | Jobs throughput, cron only | 288 ticks/day × batch 1 = 288 jobs/day | `wrangler.jsonc` cron `*/5`; a 1,000-job burst is ~3.5 days |
 
@@ -112,15 +115,26 @@ emitted source around each hit:
 
 `bun erp check:worker` (part of `bun erp check`) bundles this entry for a browser/workerd-like target
 and fails when a Bun global without a `typeof Bun` guard, a new Node built-in, a migration/seed
-module or an over-budget script reaches it. The Vite Cloudflare build of this template measured
+module or an over-budget script reaches it. The Vite Cloudflare build of this stack measured
 1,244,243 bytes raw / 321,552 bytes gzip (314 KiB) for the Worker script; the gate's own `Bun.build`
-bundle is ~1.04 MB raw / ~288 KB gzip. Workers Free caps a script at 3 MiB gzip, so the gate fails
-above a 1 MiB gzip template budget — a third of the platform limit.
+bundle is ~1.04 MB raw / ~288 KB gzip. Cloudflare caps a Worker script at **64 MiB uncompressed**
+on both Free and Paid and has no compressed limit (only the wrangler "Total Upload" figure counts), so
+the gate keeps one template budget of **2 MiB uncompressed** on its own bundle, about twice today's
+size. The gate constant is `WORKER_RAW_BUDGET_BYTES` in `cli/gates/worker-gate.ts`; its failure message
+and this section state the same numbers, and a test pins that.
 
-The permission cache (`PERMISSION_CACHE_ENABLED`, default true) is a per-process `Map` with a
-10-second TTL; PostgreSQL is always the source of truth. On Workers every isolate has its own copy,
-so a role change handled by one isolate is invisible to the others until the TTL expires. The
-deploy config sets `PERMISSION_CACHE_ENABLED=false`; do the same for multi-replica Bun. With the
+The API reference UI (Scalar) is never part of the Worker script: `http/build-app.ts` builds the app
+without it and only `http/app.ts` (the Bun entry) adds `/api/docs`. The Worker gate was measured at
+bundle at 1,043,345 B raw / 289,326 B gzip before and 1,040,722 B raw / 288,292 B gzip after, which
+includes the new file route (Scalar's Hono wrapper is small because the page loads its viewer from
+a CDN). The gate now fails if any `@scalar/*` import reaches the Worker graph.
+
+The permission cache (`PERMISSION_CACHE_ENABLED`, default true) uses the cache facade with a
+10-second TTL; PostgreSQL is always the source of truth. With `CACHE_DRIVER=memory` every Workers
+isolate has its own copy, so a role change handled by one isolate is invisible to the others until
+the TTL expires. The deploy config sets `PERMISSION_CACHE_ENABLED=false`; do the same for
+multi-replica Bun, or set `CACHE_DRIVER=database` to share entries and invalidations (one extra
+query per authorized request instead of the join). With the
 cache off, every authorized request runs the RBAC join once (more Hyperdrive statements, no stale
 grants). See [security](security.md).
 
@@ -134,7 +148,7 @@ drain it:
   jobs while it stays under a 10-second wall-clock budget, at most 10 per invocation. There are
   `24 * 60 / 5 = 288` sweeps per day. With the previous one-job-per-tick default, cron-only mode
   drained at most 288 jobs per day, so a burst of 1,000 queued jobs took about 3.5 days to clear.
-  The time budget raises that ceiling, but each sweep still has to fit the Free plan's 10 ms CPU,
+  The time budget raises that ceiling, but each sweep still has to fit the plan's CPU budget (10 ms on Free),
   so treat cron-only mode as the recovery path for lost wake-ups, not a throughput path.
 - **Queue wake-up (opt-in).** After a transaction commits, the Worker sends one `{ jobId }` message
   to the `JOBS_QUEUE` producer. The consumer calls `runJobById`, which re-claims the row with the
@@ -169,8 +183,8 @@ in the Cloudflare dashboard before the first run. With the repository's Wrangler
 The template uses one Worker for `/api` and `/api/*`, plus Workers Static Assets for the web app.
 Static asset requests do not invoke the Worker; API and scheduled-job invocations do. The current
 Workers Free limits are 100,000 HTTP Worker requests per day and 10 ms CPU per HTTP request or Cron
-invocation. Wrangler explicitly caps this template at 10 ms, and the deployment preflight rejects
-configurations that route frontend traffic through the Worker. Hyperdrive is available on Free with
+invocation. The preflight rejects configurations that route frontend traffic through the Worker. Workers Free
+is fine for a staging or demo deploy, but production needs Workers Paid (see below). Hyperdrive is available on Free with
 a current limit of 100,000 database statements per day. These are account quotas: operations that
 exceed a limit can fail until the quota resets. Check Cloudflare's live
 [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/),
@@ -184,7 +198,7 @@ Cloudflare serves those assets directly; the Worker applies Hono security header
 This keeps the single-deployment shape aligned with the Bun semi-monolith without routing web assets
 through Worker CPU or request quotas.
 
-Cloudflare Free does not provide this template's PostgreSQL database. Hyperdrive is the free
+Cloudflare Free does not provide the PostgreSQL database. Hyperdrive is the free
 connection pool/proxy; the PostgreSQL 16, 17, or 18 origin must be provisioned with a provider that
 accepts Hyperdrive connections. Provider availability, storage limits, and database charges are
 separate from Cloudflare Workers. The deploy workflow therefore requires a real Hyperdrive ID,
@@ -199,12 +213,104 @@ authentication workloads can use 10–20 ms CPU, above the Free per-invocation l
 own sign-in path was measured locally at ~110 ms CPU per hash or verify (median of 15 runs;
 `better-auth/crypto` `hashPassword`/`verifyPassword` with scrypt N=16384, r=16, p=1, dkLen=64;
 Bun 1.4.2 on Apple silicon; wall time via `performance.now()`, CPU via `process.cpuUsage()`), roughly
-ten times the Free budget. Do not weaken password hashing to fit a quota. Before relying on password
-sign-in at scale, deploy to the target Free account and inspect CPU metrics; if it consistently
-exceeds 10 ms, use a paid Worker plan or move authentication/API compute to a host with an
-appropriate CPU budget. A template build and local dry run can verify the bundle and bindings, but
+ten times the Free budget. Do not weaken password hashing to fit a quota; production on Cloudflare uses
+Workers Paid (next section). A template build and local dry run can verify the bundle and bindings, but
 only a deployment using the target account, real database, and secrets can verify runtime CPU and
 external services end to end.
+
+### Production on Cloudflare requires Workers Paid
+
+Password sign-in costs ~110 ms CPU and Workers Free allows 10 ms CPU per invocation (Paid: 30 s by
+default, 5 minutes at most). The preflight therefore fails a production deploy
+(`vars.APP_ENV=production`) unless `wrangler.jsonc` sets `limits.cpu_ms` to at least **200**
+(`MIN_PAID_CPU_MS` in `cli/lib/cloudflare.ts`); the template ships `cpu_ms: 500`. Cloudflare's docs
+list Free at a fixed 10 ms and describe raising `limits.cpu_ms` as a Paid setting; they do not say
+whether a Free account rejects a larger value at deploy or keeps 10 ms, so treat Free as unable to
+run sign-in and check the CPU metric after the first deploy. A staging deploy (`APP_ENV` other than
+`production`) is not enforced. The VPS/Bun target has no such limit and remains the default
+production target.
+
+### Object storage on Cloudflare
+
+- **R2 binding.** `wrangler.jsonc` declares `r2_buckets` with binding `STORAGE` (the name
+  `STORAGE_R2_BINDING` selects). Create the bucket first:
+  `bun run --cwd apps/web wrangler r2 bucket create bun-erp-template-files`. Preflight fails when
+  `STORAGE_DRIVER=r2` has no matching binding with a `bucket_name`.
+- **`s3` is not supported on Workers.** The `s3` driver uses `Bun.S3Client`; preflight fails a
+  Cloudflare config with `STORAGE_DRIVER=s3`. Use `r2` on Workers and `s3` on the Bun target (R2's
+  S3 endpoint works from Bun and from the CLI).
+- **File route.** `GET /api/v1/files/:key{.+}` streams the object from the active driver. It needs
+  a session (401 otherwise), answers 404 for a missing key and 400 for an unsafe key such as
+  `../x`, and returns `Content-Type`, a content-hash `ETag` (`If-None-Match` answers 304),
+  `Cache-Control: private, max-age=0, must-revalidate`, `nosniff` and a sandboxing CSP. The route
+  lives under `/api` because the Worker only runs for `/api` and `/api/*`; set `STORAGE_PUBLIC_URL`
+  to `<APP_URL>/api/v1/files` (preflight checks this on Cloudflare). R2 bindings cannot presign, so
+  files stay private behind the session. A feature that needs per-file permissions checks them
+  before linking to a file.
+- **`storage:copy`.** `bun erp storage:copy --from <prefix|current> --to <prefix|current>
+  [--key-prefix <path/>] [--dry-run]` copies every object between two configured stores. A prefix
+  names an environment namespace: `SOURCE_` reads `SOURCE_STORAGE_DRIVER`, `SOURCE_S3_BUCKET`,
+  `SOURCE_S3_ENDPOINT` and so on; `current` reads the live `STORAGE_*` / `S3_*` keys. Objects
+  already at the destination with the same size are skipped, so an interrupted copy resumes by
+  re-running the same command. It prints a summary and exits 1 if any object failed. Content types
+  are re-derived from the key extension. The CLI cannot hold a Worker binding, so reach R2 through
+  its S3 endpoint with the `s3` driver (`S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com`,
+  `S3_REGION=auto`, R2 API token keys).
+
+### Secrets flow
+
+One list decides what is secret (`isSecretKey` in `cli/lib/cloudflare.ts`): `BETTER_AUTH_SECRET`,
+`DATABASE_URL` and any key ending `_SECRET`, `_PASSWORD`, `_API_KEY`, `_ACCESS_KEY_ID`,
+`_SECRET_ACCESS_KEY`, `_TOKEN` or `_PRIVATE_KEY`. `bun erp env:cloudflare [--env-file .env] [--write]`
+splits an env file: secrets go to `.data/cloudflare-secrets.json` (git-ignored; only key names are
+printed) and the rest can be merged into the `wrangler.jsonc` `vars` block with `--write` (comments
+and layout are kept). `DATABASE_URL` is not pushed because the Worker reads its connection from the
+Hyperdrive binding; it stays a CI secret for migrations. Push the file with
+`bun run --cwd apps/web wrangler secret bulk ../../.data/cloudflare-secrets.json`. The deploy
+workflow does this for every secret before `wrangler deploy`, and preflight fails when a secret-class
+key holds a value inside `vars`. Local `wrangler dev` secrets go in `.dev.vars` (copy
+`.dev.vars.example`).
+
+### Moving between targets (runbook)
+
+Both targets share one codebase, schema and queue table, so a move is data and configuration, not
+code. Do each move in a maintenance window: put the old side read-only, copy, switch, verify.
+
+**VPS (Bun) to Cloudflare**
+
+1. Database: provision a Hyperdrive config on the same PostgreSQL (or restore a dump into a
+   Hyperdrive-reachable host), disable Hyperdrive query caching, set the real ID in `wrangler.jsonc`.
+2. Storage: create the R2 bucket, then run `storage:copy` with `SOURCE_*` pointing at the VPS store
+   (`local` root or `s3`) and the destination as `s3` against R2's S3 endpoint. Re-run until it
+   reports 0 copied, then set `STORAGE_DRIVER=r2` and `STORAGE_PUBLIC_URL=<APP_URL>/api/v1/files`.
+3. Secrets: `bun erp env:cloudflare --write`, then push with `wrangler secret bulk`. Keep the same
+   `BETTER_AUTH_SECRET` or every session and verification link becomes invalid.
+4. `APP_URL`: a new origin invalidates session cookies (users sign in again) and every link already
+   emailed. Update `APP_URL`, `BETTER_AUTH_URL`, `AUTH_TRUSTED_ORIGINS` and `CLOUDFLARE_APP_URL` together.
+5. Queue backlog: let `jobs:work` drain the Bun side first. Queued rows live in PostgreSQL and move
+   with the database, but handlers are at-least-once, so a job claimed mid-move can run twice.
+6. Cron granularity: Cloudflare sweeps every 5 minutes instead of the 5-second Bun poll, so job
+   latency rises unless the optional Queues wake-up is enabled.
+7. Plan: the account must be on Workers Paid (see above). Deploy, then check `/api/v1/ready`.
+
+**Cloudflare to VPS (Bun)**
+
+1. Database: point `DATABASE_URL` at PostgreSQL directly with `DATABASE_SSL_MODE=require` or
+   `verify-full` (`disable` is refused on Bun in production; Hyperdrive no longer terminates TLS).
+2. Storage: `storage:copy --from SOURCE_ --to current` with `SOURCE_*` set to the R2 S3 endpoint and
+   the destination `s3` (`local` is refused in production). Set `STORAGE_PUBLIC_URL` to the new
+   `/api/v1/files` origin.
+3. Secrets: Cloudflare secrets are write-only, so take the originals from your secret manager and
+   put them in the host's environment.
+4. `APP_URL` and session impact: same as above in reverse.
+5. Queue backlog: the `background_jobs` table moves with the database. Stop the Worker cron first so
+   two consumers do not run side by side, then start `jobs:work`.
+6. Cron granularity: the Bun scheduler ticks every 5 s and the Worker `scheduled` handler stops.
+   `PERMISSION_CACHE_ENABLED=true` is only safe for a single process.
+
+**Jobs throughput on Workers.** Each cron sweep (every 5 minutes, 288 per day) runs up to 10 jobs
+within a 10-second wall-clock budget, so cron-only capacity is up to 2,880 jobs per day; enable the
+Queues wake-up for near-real-time delivery.
 
 ## PostgreSQL versions
 

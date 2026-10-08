@@ -4,7 +4,9 @@
   "main": "apps/server/bootstrap/cloudflare-entry.ts",
   "compatibility_date": "2026-10-04",
   "compatibility_flags": ["nodejs_compat"],
-  "limits": { "cpu_ms": 10 },
+  // Production needs Workers Paid: password sign-in costs ~110 ms CPU and Workers Free allows 10 ms.
+  // Paid defaults to 30 s; the preflight requires at least 200 ms and this keeps a runaway bounded.
+  "limits": { "cpu_ms": 500 },
   "triggers": { "crons": ["*/5 * * * *"] },
   "assets": {
     "directory": "./apps/web/dist",
@@ -12,6 +14,9 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api", "/api/*"]
   },
+  // Private object storage for STORAGE_DRIVER=r2 (docs/deployment.md, "Object storage").
+  // Create the bucket first: bun run --cwd apps/web wrangler r2 bucket create bun-erp-template-files
+  "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "bun-erp-template-files" }],
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
@@ -59,7 +64,7 @@
     "PERMISSION_CACHE_ENABLED": "false",
     "STORAGE_DRIVER": "r2",
     "STORAGE_LOCAL_ROOT": ".data/storage",
-    "STORAGE_PUBLIC_URL": "https://bun-erp-template.example.workers.dev/files",
+    "STORAGE_PUBLIC_URL": "https://bun-erp-template.example.workers.dev/api/v1/files",
     "STORAGE_R2_BINDING": "STORAGE",
     "MAIL_DRIVER": "log",
     "MAIL_FROM_ADDRESS": "no-reply@example.test",
@@ -69,7 +74,6 @@
     "SMTP_PORT": "587",
     "SMTP_SECURE": "false",
     "SMTP_USERNAME": "",
-    "SMTP_PASSWORD": "",
     "FEATURE_ADVANCED_REPORTS": "false"
   }
 }

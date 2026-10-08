@@ -32,7 +32,8 @@ const IGNORED = [
   /^(GET|POST) \/api\/v1\/auth\/\*$/,
 ];
 
-const normalize = (path: string) => path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
+// `:key{.+}` is a Hono regex parameter; the spec names it `{key}` without the pattern.
+const normalize = (path: string) => path.replace(/:([A-Za-z0-9_]+)(?:\{[^}]*\})?/g, "{$1}");
 
 test("setiap route bisnis terdaftar punya operasi di spesifikasi", async () => {
   const app = fixture.app;

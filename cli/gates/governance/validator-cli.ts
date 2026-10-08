@@ -9,7 +9,7 @@ import { existsSync } from "node:fs";
  * validator seragam dan bisa dipakai berantai di skrip.
  */
 
-export interface TemuanUmum {
+export interface GenericFinding {
   rule: string;
   file: string;
   line: number;
@@ -24,15 +24,15 @@ export interface TemuanUmum {
  * @param periksa pemeriksaannya
  * @param ringkasApakahKosong kalimat saat tidak ada temuan
  */
-export function jalankanValidator(
-  namaBerkas: string,
-  pakai: string,
-  periksa: () => TemuanUmum[],
-  ringkasApakahKosong: (dir: string) => string,
+export function runValidator(
+  fileName: string,
+  usage: string,
+  check: () => GenericFinding[],
+  cleanSummary: (dir: string) => string,
   dir: string,
 ): never {
   if (!dir) {
-    console.error(`Pakai: bun adapters/${namaBerkas} ${pakai}`);
+    console.error(`Pakai: bun adapters/${fileName} ${usage}`);
     process.exit(2);
   }
   // Folder yang salah ketik bukan kegagalan pemeriksaan. Tanpa ini alat
@@ -42,19 +42,19 @@ export function jalankanValidator(
     process.exit(2);
   }
 
-  const temuan = periksa();
-  if (temuan.length === 0) {
-    console.log(ringkasApakahKosong(dir));
+  const findings = check();
+  if (findings.length === 0) {
+    console.log(cleanSummary(dir));
     process.exit(0);
   }
 
-  const perAturan = new Map<string, number>();
-  for (const t of temuan) perAturan.set(t.rule, (perAturan.get(t.rule) ?? 0) + 1);
+  const perRule = new Map<string, number>();
+  for (const t of findings) perRule.set(t.rule, (perRule.get(t.rule) ?? 0) + 1);
 
-  for (const t of temuan) console.log(`${t.rule} ${t.file}:${t.line} ${t.detail}`);
+  for (const t of findings) console.log(`${t.rule} ${t.file}:${t.line} ${t.detail}`);
   console.log("\nRingkasan:");
-  for (const [r, n] of [...perAturan].sort((a, b) => b[1] - a[1])) console.log(`  ${r}: ${n}`);
-  console.log(`${temuan.length} temuan`);
+  for (const [r, n] of [...perRule].sort((a, b) => b[1] - a[1])) console.log(`  ${r}: ${n}`);
+  console.log(`${findings.length} temuan`);
 
   process.exit(1);
 }

@@ -2,7 +2,7 @@
 
 ## Catalog app
 
-Mobile is not part of the default workspace. The template ships `apps/server` + `apps/web`; the
+Mobile is not part of the default workspace, which is `apps/server` + `apps/web`; the
 React + Capacitor app waits in `templates/apps/mobile/` and is installed on demand:
 
     bun erp apps:create mobile mobile
@@ -11,6 +11,14 @@ React + Capacitor app waits in `templates/apps/mobile/` and is installed on dema
 The commands below assume the created app is `apps/mobile`. With another name, replace `apps/mobile`
 with `apps/<name>`. `bun erp mobile:*` prints this instruction when `apps/mobile` is absent, and
 every gate and CI job skips the mobile contract instead of failing.
+
+## Status
+
+The mobile app is a catalog shell, not a finished product. Native authentication is not
+implemented and cookie behavior has not been validated on a device. Offline drafts are
+device-local and never synchronized. Both are deferred until a team can verify them on real iOS and
+Android hardware; browser emulation is not evidence for them. Treat everything else here as
+reference structure.
 
 ## Source ownership
 
@@ -57,7 +65,7 @@ stripped before the remaining arguments reach the Capacitor CLI, so release flag
 
 Packaged mobile builds load bundled assets. Do not configure server.url to load a remote web app.
 Set MOBILE_APP_ID and MOBILE_APP_NAME in the copied application before generating native projects.
-The template contains no production identity, signing key or store secret.
+This app contains no production identity, signing key or store secret.
 
 ## Logging and versions
 

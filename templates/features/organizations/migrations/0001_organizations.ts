@@ -1,7 +1,7 @@
 import type { Database } from "../index.ts";
 import { runSqlMigration } from "../sql-migration.ts";
 
-const statements = `-- Better Auth organization plugin tables (Q27/Q33).
+const statements = `-- Better Auth organization plugin tables (docs/architecture.md).
 --
 -- Table and column names follow the plugin contract verbatim (snake_case), not our own taste:
 -- the Drizzle adapter compares the adapter schema map against getAuthTables() and the plugin

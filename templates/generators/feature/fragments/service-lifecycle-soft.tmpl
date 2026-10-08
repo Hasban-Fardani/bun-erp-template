@@ -6,12 +6,12 @@ export async function restore{{pascal}}(
   actor: Actor,
 ): Promise<{{pascal}}> {
   return db.transaction(async (tx) => {
-    const before = await require{{pascal}}(tx as unknown as Database, id, { includeDeleted: true });
+    const before = await require{{pascal}}(tx, id, { includeDeleted: true });
 
-    const after = await restoreRow(tx as unknown as Database, {{camel}}, id);
+    const after = await restoreRow(tx, {{camel}}, id);
     if (!after) throw ApiError.notFound("{{pascal}} not found");
 
-    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.restored", id, before, after);
+    await record{{pascal}}Event(tx, actor, "{{resource}}.restored", id, before, after);
     return after;
   });
 }
@@ -22,11 +22,11 @@ export async function forceDelete{{pascal}}(
   actor: Actor,
 ): Promise<{ id: string }> {
   return db.transaction(async (tx) => {
-    const before = await require{{pascal}}(tx as unknown as Database, id, { includeDeleted: true });
+    const before = await require{{pascal}}(tx, id, { includeDeleted: true });
 
-    await forceDeleteRow(tx as unknown as Database, {{camel}}, id);
+    await forceDeleteRow(tx, {{camel}}, id);
 
-    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.force_deleted", id, before, undefined);
+    await record{{pascal}}Event(tx, actor, "{{resource}}.force_deleted", id, before, undefined);
     return { id };
   });
 }

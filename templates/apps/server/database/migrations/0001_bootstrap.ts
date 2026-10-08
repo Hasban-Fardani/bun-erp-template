@@ -4,7 +4,7 @@ import { runSqlMigration } from "../sql-migration.ts";
 const statements = `-- Bootstrap: shared database primitives.
 --
 -- The default server has no tenant concept; an opt-in organizations feature adds one later
--- (F3.0 Q27/Q33).
+-- (docs/architecture.md, "Better Auth" section).
 
 -- PG18 owns uuidv7; older servers receive a compatible function without an extension.
 do $bootstrap$

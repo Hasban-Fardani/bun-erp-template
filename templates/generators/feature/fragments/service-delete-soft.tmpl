@@ -4,12 +4,12 @@ export async function delete{{pascal}}(
   actor: Actor,
 ): Promise<{{pascal}}> {
   return db.transaction(async (tx) => {
-    const before = await require{{pascal}}(tx as unknown as Database, id);
+    const before = await require{{pascal}}(tx, id);
 
-    const after = await softDeleteRow(tx as unknown as Database, {{camel}}, id);
+    const after = await softDeleteRow(tx, {{camel}}, id);
     if (!after) throw ApiError.notFound("{{pascal}} not found");
 
-    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.deleted", id, before, after);
+    await record{{pascal}}Event(tx, actor, "{{resource}}.deleted", id, before, after);
     return after;
   });
 }

@@ -39,7 +39,8 @@ export const commands = [
       );
       if (plan.mismatches.length > 0) {
         process.stdout.write(
-          "The schema is out of date with the catalog; run `bun erp db:reset --force` on local data.\n",
+          "This database probably belongs to another project or an older catalog; point DATABASE_URL at a fresh database. " +
+            "Only for local disposable data: `bun erp db:reset --force`.\n",
         );
       }
       if (plan.pending.length + plan.mismatches.length + plan.duplicates.length > 0) process.exitCode = 1;

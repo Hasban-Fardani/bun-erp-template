@@ -92,3 +92,25 @@ test("a markerless, unwired file is skipped with the marker in the reason", asyn
     expect(edits[0]?.reason).toMatch(/@erp:mail/);
   });
 });
+
+test("auth-reset wires the mail-backed sender; before the install password reset stays off", async () => {
+  const manifest: InfraFeatureManifest = { ...contextManifest, wiring: ["auth-reset"] };
+  const pristine = [
+    "// @erp:mail",
+    'import { betterAuth } from "better-auth";',
+    "export const options = {",
+    "  sendResetPassword: undefined,",
+    "};",
+    "",
+  ].join("\n");
+  await withTempRoot(
+    { "apps/server/features/identity/auth.ts": pristine },
+    async (root) => {
+      const edits = await planInfraWiring(root, manifest);
+      expect(edits[0]?.status).toBe("added");
+      expect(edits[0]?.source).toContain('import { createPasswordResetSender } from "../mail/index.ts";');
+      expect(edits[0]?.source).toContain("sendResetPassword: createPasswordResetSender(db),");
+    },
+    "infra-wiring-",
+  );
+});

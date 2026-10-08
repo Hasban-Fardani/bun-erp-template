@@ -77,7 +77,7 @@ export async function seedRbac(db: Database): Promise<{ permissions: number; rol
 
 /** Union of permissions across all of a user's roles. Per-record filtering is the module policy's job. */
 export async function permissionsForUser(db: Database, userId: string): Promise<PermissionKey[]> {
-  const cached = readCachedPermissions(userId);
+  const cached = await readCachedPermissions(userId);
   if (cached) return [...cached];
 
   const rows = await db
@@ -88,7 +88,7 @@ export async function permissionsForUser(db: Database, userId: string): Promise<
     .where(eq(userRoles.userId, userId));
 
   const resolved = rows.map((r) => r.key) as PermissionKey[];
-  writeCachedPermissions(userId, resolved);
+  await writeCachedPermissions(userId, resolved);
   return resolved;
 }
 
@@ -225,7 +225,7 @@ export async function createRole(
   input: { key: string; name: string; description?: string },
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<Role> {
-  return db.transaction((tx) => insertRole(tx as unknown as Database, input, actor));
+  return db.transaction((tx) => insertRole(tx, input, actor));
 }
 
 /**
@@ -239,13 +239,12 @@ export async function createRoleWithPermissions(
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<Role> {
   const role = await db.transaction(async (tx) => {
-    const database = tx as unknown as Database;
-    const created = await insertRole(database, input, actor);
-    if (permissionKeys.length > 0) await setRolePermissionsInTx(database, created.id, permissionKeys, actor);
+    const created = await insertRole(tx, input, actor);
+    if (permissionKeys.length > 0) await setRolePermissionsInTx(tx, created.id, permissionKeys, actor);
     return created;
   });
   // Permission edits affect an unknown set of users, so the whole cache goes — after commit.
-  invalidateAll();
+  await invalidateAll();
   return role;
 }
 
@@ -269,7 +268,7 @@ export async function updateRole(
 
     // slop-ok: bentuknya sama dengan call site lain karena helper memusatkan field tetap;
     // yang berbeda hanya nama event, dan itu memang data, bukan duplikasi logika.
-    await auditChange(tx as unknown as Database, {
+    await auditChange(tx, {
       actor,
       event: "role.updated",
       subject: { type: "role", id: id },
@@ -296,7 +295,7 @@ export async function deleteRole(
 
     await tx.delete(roles).where(eq(roles.id, id));
 
-    await auditChange(tx as unknown as Database, {
+    await auditChange(tx, {
       actor,
       event: "role.deleted",
       subject: { type: "role", id: id },
@@ -357,9 +356,9 @@ export async function setRolePermissions(
   keys: readonly string[],
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<{ permissions: string[] }> {
-  const result = await db.transaction((tx) => setRolePermissionsInTx(tx as unknown as Database, id, keys, actor));
+  const result = await db.transaction((tx) => setRolePermissionsInTx(tx, id, keys, actor));
   // Permission edits affect an unknown set of users, so the whole cache goes.
-  invalidateAll();
+  await invalidateAll();
   return result;
 }
 

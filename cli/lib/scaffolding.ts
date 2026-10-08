@@ -1,3 +1,4 @@
+import factoryTemplate from "../../templates/generators/factory/factory.ts.tmpl" with { type: "text" };
 import featureModuleTemplate from "../../templates/generators/feature/feature.ts.tmpl" with { type: "text" };
 import migrationDeletedAtColumnTemplate from "../../templates/generators/feature/fragments/migration-deleted-at-column.tmpl" with {
   type: "text",
@@ -296,8 +297,12 @@ export function renderFeatureScaffold(rawName: string, options: FeatureScaffoldO
       contents: renderFeatureIndex({ name, camel, pascal, softDelete }),
     },
     {
+      path: `apps/server/database/factories/${name}.ts`,
+      contents: renderFactorySource({ name, export: camel, sequenced: options.sequence !== undefined }),
+    },
+    {
       path: `apps/server/tests/features/${name}/${name}.test.ts`,
-      contents: renderFeatureTest(name, { softDelete, version }),
+      contents: renderFeatureTest(name, camel, { softDelete, version }),
     },
   ];
   return { name, resource: name, table, pascal, camel, files };
@@ -485,7 +490,120 @@ function renderFeatureIndex(input: { name: string; camel: string; pascal: string
   return renderTemplate(indexTemplate, { name, camel, pascal, serviceExports }, "feature index");
 }
 
-function renderFeatureTest(name: string, options: { softDelete: boolean; version: boolean }): string {
+/**
+ * A factory for one feature table. `values` is the object-literal source for the generated
+ * `(n) => (...)`; `usesN` says whether it reads the sequence, `needsRequired` whether it calls
+ * `requiredOverride`. A feature scaffold only needs the sequenced `number` column, which has no
+ * database default; every other generated column has one.
+ */
+export function renderFactorySource(input: {
+  name: string;
+  export: string;
+  sequenced?: boolean;
+  values?: string;
+  usesN?: boolean;
+  needsRequired?: boolean;
+}): string {
+  const prefix = input.name.toUpperCase();
+  const sequenced = input.sequenced === true;
+  const values = input.values ?? (sequenced ? `{ number: \`${prefix}-\${n}\` }` : "{}");
+  const usesN = input.usesN ?? sequenced;
+  return renderTemplate(
+    factoryTemplate,
+    {
+      name: input.name,
+      export: input.export,
+      imports: input.needsRequired ? "defineFactory, requiredOverride" : "defineFactory",
+      param: usesN ? "n" : "_n",
+      values,
+    },
+    "factory",
+  );
+}
+
+/** One column of a Drizzle table declaration, as far as a factory needs to know. */
+export type FactoryColumn = { key: string; type: string; required: boolean; reference: boolean };
+
+const GENERATED_DEFAULT = /\.(default|defaultNow|\$defaultFn|\$default|generatedAlwaysAs|generatedAlwaysAsIdentity)\(/;
+
+/**
+ * Reads the notNull-without-default columns out of `export const <table> = pgTable(...)`. Columns
+ * come from the declaration text: a column starts at two-space indent as `key: type(` and runs to
+ * the next such line, so chained calls on following lines (`.notNull()`, `.references(...)`) count.
+ */
+export function parseFactoryColumns(schemaSource: string, table: string): FactoryColumn[] {
+  const start = schemaSource.indexOf(`export const ${table} = pgTable(`);
+  if (start === -1) return [];
+  const lines = schemaSource.slice(start).split("\n");
+  const columns: FactoryColumn[] = [];
+  let current: { key: string; type: string; text: string } | undefined;
+  let indent: string | undefined;
+  const flush = () => {
+    if (!current) return;
+    const { key, type, text } = current;
+    const required = text.includes(".notNull()") && !GENERATED_DEFAULT.test(text);
+    columns.push({ key, type, required, reference: text.includes(".references(") });
+    current = undefined;
+  };
+  for (const line of lines.slice(1)) {
+    // The table closes at column 0 (`});`, `},` or `);`); nothing after it is a column.
+    if (line.startsWith("}") || line.startsWith(");")) break;
+    const column = /^( {2,4})(\w+): (\w+)\(/.exec(line);
+    // The first column fixes the indent, so a nested `key: call(` deeper down is not a column.
+    if (column && (indent === undefined || column[1] === indent)) {
+      indent = column[1];
+      flush();
+      current = { key: column[2] ?? "", type: column[3] ?? "", text: line };
+    } else if (current) current.text += `\n${line}`;
+  }
+  flush();
+  return columns;
+}
+
+/** A value source for one required column, or `undefined` when only the caller can know it. */
+function factoryValueFor(column: FactoryColumn, prefix: string): string | undefined {
+  if (column.reference) return undefined;
+  switch (column.type) {
+    case "text":
+    case "varchar":
+      return column.key === "number" ? `\`${prefix}-\${n}\`` : `\`${column.key} \${n}\``;
+    case "integer":
+    case "smallint":
+    case "serial":
+      return "n";
+    case "boolean":
+      return "false";
+    case "timestamp":
+    case "date":
+      return "new Date()";
+    case "numeric":
+      return '"0"';
+    case "jsonb":
+    case "json":
+      return "{}";
+    default:
+      return undefined;
+  }
+}
+
+/** Builds the factory source for a table declared in `schemaSource`, covering every required column. */
+export function renderFactoryForSchema(input: { name: string; export: string; schemaSource: string }): string {
+  const prefix = input.name.toUpperCase();
+  const required = parseFactoryColumns(input.schemaSource, input.export).filter((column) => column.required);
+  const entries = required.map((column) => {
+    const value = factoryValueFor(column, prefix);
+    return value === undefined ? `${column.key}: requiredOverride("${column.key}")` : `${column.key}: ${value}`;
+  });
+  return renderFactorySource({
+    name: input.name,
+    export: input.export,
+    values: entries.length === 0 ? "{}" : `{ ${entries.join(", ")} }`,
+    usesN: entries.some((entry) => /\$\{n\}|: n$/.test(entry)),
+    needsRequired: entries.some((entry) => entry.includes("requiredOverride(")),
+  });
+}
+
+function renderFeatureTest(name: string, camel: string, options: { softDelete: boolean; version: boolean }): string {
   const { softDelete, version } = options;
   const roundTripName = softDelete
     ? "create, list, update, delete, and restore round-trip"
@@ -494,6 +612,7 @@ function renderFeatureTest(name: string, options: { softDelete: boolean; version
     testTemplate,
     {
       name,
+      camel,
       roundTripName,
       dataShape: version ? testDataShapeVersionedTemplate : testDataShapePlainTemplate,
       patchBody: version ? testPatchBodyVersionedTemplate : testPatchBodyPlainTemplate,

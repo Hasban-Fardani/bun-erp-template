@@ -6,24 +6,7 @@ import { rowsOf } from "@/database/rows.ts";
 import { claimNextJob, enqueueJob, runJobBatch, runJobById } from "@/infra/jobs/queue.ts";
 import { JobRegistry } from "@/infra/jobs/registry.ts";
 import { JobWakeUp, type JobWakeUpDriver, type JobWakeUpSignal } from "@/infra/jobs/wake-up.ts";
-import type { Logger } from "@/infra/observability/logger.ts";
-import { createTestContext } from "../../support/fixtures.ts";
-
-// slop-ok: the no-op logger fixture is deliberately identical across the job test files
-const logger: Logger = {
-  trace: () => {},
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  fatal: () => {},
-};
-
-/** A clean context plus a queue name no other test file can see. */
-async function jobTest() {
-  const { db } = await createTestContext();
-  return { db, queue: `tests-${createUuid()}` };
-}
+import { createJobTest as jobTest, silentLogger as logger } from "../../support/jobs.ts";
 
 test("a wake-up is sent once after commit and never after a rollback", async () => {
   const { db, queue } = await jobTest();

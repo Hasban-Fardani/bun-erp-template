@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { type AgentReadinessInput, evaluateAgentReadiness } from "@cli/gates/agent-readiness.ts";
 import { REQUIRED_AGENT_SKILLS } from "@cli/gates/agent-skills.ts";
 import { CODEGRAPH_VERSION } from "@cli/gates/codegraph.ts";
+import { repoRoot } from "@cli/lib/repo.ts";
 
 const BASE: AgentReadinessInput = {
   installedSkills: [...REQUIRED_AGENT_SKILLS],
@@ -63,4 +64,32 @@ test("project mode requires the guidelines block generated for the installed cat
       guidelinesBlock: "<!-- guidelines:start -->\nstate-neutral\n<!-- guidelines:end -->",
     }),
   ).toEqual(["AGENTS.md guidelines block is not generated for this project; run bun erp ai:update."]);
+});
+
+const FLOW_SKILLS = [
+  "grill-me",
+  "grill-with-docs",
+  "domain-modeling",
+  "to-spec",
+  "to-tickets",
+  "tdd",
+  "implement",
+  "code-review",
+  "diagnosing-bugs",
+  "codebase-design",
+];
+
+test("required skills cover the planning-to-delivery flow", () => {
+  for (const skill of FLOW_SKILLS) expect(REQUIRED_AGENT_SKILLS).toContain(skill as never);
+});
+
+test("the issue tracker config sends tickets to docs/tasks, not GitHub Issues or .scratch", async () => {
+  const root = `${repoRoot}/`;
+  const tracker = await Bun.file(`${root}docs/agents/issue-tracker.md`).text();
+  expect(tracker).toContain("docs/tasks/");
+  expect(tracker).toContain("bun erp task:new");
+  expect(tracker).toContain("depends_on");
+  expect(tracker).not.toMatch(/gh issue create/);
+  const agents = await Bun.file(`${root}AGENTS.md`).text();
+  expect(agents).toContain("docs/agents/issue-tracker.md");
 });

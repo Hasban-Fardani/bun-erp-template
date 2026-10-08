@@ -1,6 +1,42 @@
-#!/usr/bin/env sh
+#!/bin/sh
+# Local pre-push guard: Biome, the fast gates, then tests for the server features this push touches.
+# Bypass with `git push --no-verify`; CI runs the full gates and is the final judge.
 set -eu
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
+
 bun run check:biome
+bun erp check:fast
+
+if [ ! -d apps/server ]; then
+  echo "NOTICE: apps/server is not installed; feature tests were not run before this push."
+  exit 0
+fi
+if [ -z "${TEST_DATABASE_URL:-}" ]; then
+  echo "NOTICE: TEST_DATABASE_URL is not set; feature tests were not run before this push (CI will run them)."
+  exit 0
+fi
+
+upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+if [ -z "$upstream" ]; then
+  echo "NOTICE: no upstream branch; cannot derive touched features, feature tests were not run."
+  exit 0
+fi
+
+features=$(git diff --name-only "$upstream...HEAD" |
+  sed -n -e 's#^apps/server/features/\([^/]*\)/.*#\1#p' \
+    -e 's#^templates/features/\([^/]*\)/.*#\1#p' \
+    -e 's#^apps/server/tests/features/\([^/]*\)/.*#\1#p' | sort -u)
+if [ -z "$features" ]; then
+  echo "NOTICE: no server feature changed since $upstream; no feature tests selected."
+  exit 0
+fi
+for feature in $features; do
+  if [ ! -d "apps/server/tests/features/$feature" ]; then
+    echo "NOTICE: feature $feature is not installed under apps/server; its tests were not run."
+    continue
+  fi
+  echo "pre-push: bun erp test --filter $feature"
+  bun erp test --filter "$feature"
+done

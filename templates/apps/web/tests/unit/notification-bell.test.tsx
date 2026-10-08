@@ -3,7 +3,7 @@ import { I18nProvider } from "@bun-erp/i18n/react";
 import { NotificationBell, NotificationItem, NotificationList } from "@bun-erp/ui/organisms/notification-bell.tsx";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NotificationFeed } from "../../src/features/notifications/components/notification-feed.tsx";
-import type { Notification } from "../../src/features/notifications/types/index.ts";
+import type { AppNotification } from "../../src/features/notifications/types/index.ts";
 
 const at = new Date("2026-01-01T00:00:00Z");
 const time = <time dateTime={at.toISOString()}>baru saja</time>;
@@ -62,7 +62,7 @@ test("the feed maps a notification row to a rendered item", () => {
     body: "Rincian",
     readAt: null,
     createdAt: at.toISOString(),
-  } as unknown as Notification;
+  } as unknown as AppNotification;
   const html = renderToStaticMarkup(
     <I18nProvider>
       <NotificationFeed items={[item]} onOpen={() => {}} />

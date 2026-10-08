@@ -1,6 +1,6 @@
 # CI
 
-The template ships `apps/` empty, so the shared setup action runs
+`apps/` is a disposable install of the catalog, so the shared setup action runs
 `bun erp init --apps server,web --yes` after the frozen install: every gate, test, build and QA job
 starts from the reference server+web combination. Change that command in
 `.github/actions/setup/action.yml` to test a different combination. The mobile build job skips
@@ -24,6 +24,10 @@ credentials never belong in artifacts.
 The mobile build uses a reserved example API origin solely to verify packaging; it does not test native authentication or devices.
 `.github/workflows/mobile-build.yml` and `.github/workflows/mobile-release.yml` detect `apps/mobile` first and skip their jobs while the catalog app is absent. A `v*` tag or manual dispatch uploads a signed Android bundle to Play internal testing and a signed iOS app to TestFlight after the copied application configures its `mobile-release` environment credentials.
 
-Owner action: enable branch protection for master with **ci-ok** required. A workflow file
+Owner action: enable branch protection for the default branch with **ci-ok** required and
+pull-request review required, so no agent push reaches it unchecked and a human approves task status
+(`task-approval` and the `tdd: required` evidence grammar run inside `bun erp check` there). This is
+a GitHub setting; the template does not automate it. Local `.githooks/pre-push` can be skipped with
+`--no-verify`, so CI is the final judge. A workflow file
 does not enable that setting. The first GitHub run and branch protection are NOT_RUN until
 observed on GitHub. CI creates disposable credentials; deployment secrets are not required.

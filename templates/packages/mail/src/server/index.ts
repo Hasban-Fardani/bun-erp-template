@@ -1,3 +1,4 @@
+export { MailHttpError } from "./drivers/http.ts";
 export { createMemoryMailDriver } from "./drivers/memory.ts";
 export { escapeHtml } from "./escape-html.ts";
 export { type CreateMailerOptions, createMailer, htmlToText, resolveMail } from "./mailer.ts";

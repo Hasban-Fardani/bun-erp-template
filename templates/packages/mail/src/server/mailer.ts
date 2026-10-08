@@ -65,6 +65,7 @@ export function resolveMail(message: MailMessage, config: MailConfig): ResolvedM
     html,
     text: message.text ?? htmlToText(html),
     attachments: message.attachments ?? [],
+    idempotencyKey: message.idempotencyKey,
   };
 }
 
@@ -114,6 +115,9 @@ export function createMailer(options: CreateMailerOptions): Mailer {
     driver: driver.name,
     async send(message): Promise<MailSendResult> {
       return driver.send(resolveMail(message, options.config));
+    },
+    async verify(): Promise<void> {
+      await driver.verify?.();
     },
     async queue(message: MailMessage, queueOptions: MailQueueOptions = {}): Promise<string> {
       if (!options.enqueue) return (await driver.send(resolveMail(message, options.config))).messageId;

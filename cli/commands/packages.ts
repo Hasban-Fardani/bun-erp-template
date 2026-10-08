@@ -5,6 +5,7 @@ import {
   catalogPackageNames,
   copyCatalogPackage,
   installedPackageNames,
+  PACKAGE_CATALOG_DIR,
   PACKAGES_DIR,
 } from "../lib/package-catalog.ts";
 import { resolveRequired } from "../lib/prompt.ts";
@@ -22,27 +23,46 @@ export const commands = [
 
   defineCommand("packages:install", async (args) => {
     const parsed = parseCommandOptions(args, { values: ["from"] });
-    const name = resolveRequired(parsed.positional[0], "Package name");
-    if (!name) {
-      process.stderr.write("Usage: bun erp packages:install <name> [--from <path|git-url>]\n");
+    const asked = parsed.positional.length > 0 ? parsed.positional : [resolveRequired(undefined, "Package name")];
+    const names = [...new Set(asked.filter((name): name is string => Boolean(name)))];
+    if (names.length === 0) {
+      process.stderr.write("Usage: bun erp packages:install <name> [<name>...] [--from <path|git-url>]\n");
       process.exit(1);
     }
-    if (!/^[a-z][a-z0-9-]*$/.test(name)) throw new Error("Package name must be kebab-case, e.g. data-table");
-
-    if (await Bun.file(resolve(repoRoot, PACKAGES_DIR, name, "package.json")).exists()) {
-      process.stdout.write(`packages/${name} is already installed.\n`);
-      return;
+    const from = parsed.values.get("from");
+    if (from && names.length > 1) throw new Error("--from installs one package; pass a single name with it.");
+    // Validate every name first so one typo does not leave the earlier packages half installed.
+    for (const name of names) {
+      if (!/^[a-z][a-z0-9-]*$/.test(name)) throw new Error("Package name must be kebab-case, e.g. data-table");
+      if (!from && !(await Bun.file(resolve(repoRoot, PACKAGE_CATALOG_DIR, name, "package.json")).exists())) {
+        const available = await catalogPackageNames(repoRoot);
+        throw new Error(
+          `No package "${name}" in ${PACKAGE_CATALOG_DIR}.` +
+            (available.length > 0 ? ` Available: ${available.join(", ")}` : " The catalog is empty."),
+        );
+      }
     }
 
-    await copyCatalogPackage(repoRoot, name, { from: parsed.values.get("from") });
+    const installed: string[] = [];
+    for (const name of names) {
+      if (await Bun.file(resolve(repoRoot, PACKAGES_DIR, name, "package.json")).exists()) {
+        process.stdout.write(`packages/${name} is already installed.\n`);
+        continue;
+      }
+      await copyCatalogPackage(repoRoot, name, { from });
+      installed.push(name);
+    }
+    if (installed.length === 0) return;
     await Bun.$`bun install`.quiet();
     if ((await refreshGuidelines(repoRoot)) === "updated") {
       process.stdout.write("Updated AGENTS.md guidelines block.\n");
     }
 
-    process.stdout.write(
-      `Installed packages/${name}.\n` +
-        `Next: add "@bun-erp/${name}": "workspace:*" to the app that needs it, then import from "@bun-erp/${name}".\n`,
-    );
+    for (const name of installed) {
+      process.stdout.write(
+        `Installed packages/${name}.\n` +
+          `Next: add "@bun-erp/${name}": "workspace:*" to the app that needs it, then import from "@bun-erp/${name}".\n`,
+      );
+    }
   }),
 ];

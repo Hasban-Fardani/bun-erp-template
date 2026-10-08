@@ -242,7 +242,10 @@ async function executeClaimedJob(
       return;
     }
     const errorCode = safeErrorCode(error);
-    const { updated, terminal } = await retryOrDeadLetter(db, job, errorCode, options);
+    // A handler opts out of retries by throwing an error whose `retryable` is exactly `false`
+    // (a rejected SMTP login, a 4xx from the mail API); anything else keeps at-least-once retries.
+    const permanent = typeof error === "object" && error !== null && "retryable" in error && error.retryable === false;
+    const { updated, terminal } = await retryOrDeadLetter(db, job, errorCode, options, permanent);
     if (updated) {
       logger.error({
         event: terminal ? "job.dead" : "job.retry_scheduled",
@@ -265,8 +268,9 @@ async function retryOrDeadLetter(
   job: ClaimedJob,
   errorCode: string,
   options: { retryBaseMs?: number; retryMaxMs?: number },
+  permanent = false,
 ): Promise<{ updated: boolean; terminal: boolean }> {
-  const terminal = job.attemptCount >= job.maxAttempts;
+  const terminal = permanent || job.attemptCount >= job.maxAttempts;
   const delayMs = retryDelayMs({
     attempt: job.attemptCount,
     baseDelayMs: options.retryBaseMs ?? 1_000,

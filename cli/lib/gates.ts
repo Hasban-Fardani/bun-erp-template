@@ -171,7 +171,13 @@ export const GATE_CATALOG = [
     name: "task",
     command: "check:task",
     file: "cli/gates/tasks.ts",
-    summary: "docs/tasks front matter uses valid statuses and records evidence for human-approved states.",
+    summary: "docs/tasks front matter is valid; tdd: required tasks carry red/green evidence per ticked item.",
+  },
+  {
+    name: "task-approval",
+    command: "check:task-approval",
+    file: "cli/gates/task-approval.ts",
+    summary: "No agent commit or uncommitted change raises a task to ready/done or sets approved_by.",
   },
   {
     name: "tdd",
@@ -285,6 +291,7 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
   "package-targets": async (root) => (await import("../gates/package-targets.ts")).checkPackageTargets(root),
   skills: async (root) => (await validateSkills(join(root, "skills"))).map((f) => `${f.file}: ${f.message}`),
   task: async (root) => validateTasks(await loadTasks(join(root, "docs/tasks"))).map((f) => `${f.file}: ${f.message}`),
+  "task-approval": async (root) => (await import("../gates/task-approval.ts")).checkTaskApproval(root),
   tdd: async (root) => {
     const { checkTdd } = await import("../gates/tdd.ts");
     return (await checkTdd(root)).map((f) => `${f.file} ${f.rule} — ${f.detail}`);

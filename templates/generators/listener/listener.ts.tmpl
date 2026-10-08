@@ -1,0 +1,14 @@
+import { defineListener } from "../../../infra/events/index.ts";
+import { {{eventCamel}}Event } from "../events/{{event}}.ts";
+
+/**
+ * Delivery is at-least-once: a retry or a second worker can run this again, so every side effect
+ * must be idempotent. The payload comes from the stored queue row; validate it before trusting it.
+ */
+export const {{camel}}Listener = defineListener({
+  name: "{{name}}",
+  event: {{eventCamel}}Event,
+  handler: async (_payload, _context) => {
+    throw new Error("Listener {{name}} is not implemented; write the failing test first");
+  },
+});

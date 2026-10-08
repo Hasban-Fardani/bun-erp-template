@@ -8,7 +8,7 @@ import { repoRoot, run } from "../lib/repo.ts";
 import { defineCommand } from "../registry.ts";
 import { adoptProject } from "./project.ts";
 
-/** The seven installable combinations (Q24/Q29); the default matches the historical install. */
+/** The seven installable combinations (docs/development.md); the default matches the historical install. */
 const COMBINATIONS: ReadonlyArray<{ label: string; apps: readonly CatalogAppKind[] }> = [
   { label: "server", apps: ["server"] },
   { label: "web", apps: ["web"] },
@@ -89,7 +89,7 @@ export const commands = [
     }
 
     const installed: string[] = [];
-    // The server installs first so web/mobile can bind its typed contract in the same run (Q30).
+    // The server installs first so web/mobile can bind its typed contract in the same run.
     const ordered = [...apps].sort((a, b) => (a === "server" ? -1 : b === "server" ? 1 : 0));
     const hasServer = ordered.includes("server") || (await isAppInstalled("server"));
     for (const kind of ordered) {

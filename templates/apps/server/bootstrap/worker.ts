@@ -1,6 +1,6 @@
 import { createUuid } from "@bun-erp/utils";
 import { createJobRegistry, createSchedules } from "../features/jobs.ts";
-import { createApp } from "../http/app.ts";
+import { buildApp } from "../http/build-app.ts";
 import { isApiPath } from "../http/routing.ts";
 import { usingWorkerContext } from "../infra/cloudflare/lifecycle.ts";
 import { runJobBatch, runJobById } from "../infra/jobs/queue.ts";
@@ -46,7 +46,7 @@ export default {
             binding: bindings.JOBS_QUEUE,
             logger: context.logger,
           });
-          return createApp({ ...context, db: wakeUp.wrap(context.db) }).fetch(request);
+          return buildApp({ ...context, db: wakeUp.wrap(context.db) }).fetch(request);
         },
         execution,
       );

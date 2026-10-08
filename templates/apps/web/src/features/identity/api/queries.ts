@@ -20,6 +20,12 @@ export const sessionQuery = queryOptions({
       authenticated: true,
       user: { id: me.userId, name: me.name, email: me.email },
       permissions: me.permissions,
+      impersonation: me.impersonation
+        ? {
+            by: { name: me.impersonation.by.name, email: me.impersonation.by.email },
+            expiresAt: String(me.impersonation.expiresAt),
+          }
+        : null,
     };
   },
   staleTime: 30_000,

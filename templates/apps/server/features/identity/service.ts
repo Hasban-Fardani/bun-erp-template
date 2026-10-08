@@ -57,8 +57,8 @@ async function withPermissionInvalidation<T>(
   userId: string,
   write: (tx: Database) => Promise<T>,
 ): Promise<T> {
-  const result = await db.transaction((tx) => write(tx as unknown as Database));
-  invalidateUser(userId);
+  const result = await db.transaction((tx) => write(tx));
+  await invalidateUser(userId);
   return result;
 }
 
@@ -198,7 +198,7 @@ export async function updateUser(
     const rows = await tx.update(users).set(patch).where(eq(users.id, id)).returning();
     const after = rows[0] as User;
 
-    await auditChange(tx as unknown as Database, {
+    await auditChange(tx, {
       actor,
       event: "user.updated",
       subject: { type: "user", id: id },
@@ -206,7 +206,7 @@ export async function updateUser(
       after: snapshot("user", after as unknown as Record<string, unknown>),
     });
 
-    return toPublicUser(tx as unknown as Database, after);
+    return toPublicUser(tx, after);
   });
 }
 
@@ -241,20 +241,20 @@ export async function createUser(
     });
 
     if (input.roleKey) {
-      const role = await findRoleByKey(tx as unknown as Database, input.roleKey);
+      const role = await findRoleByKey(tx, input.roleKey);
       if (!role) throw ApiError.notFound(`Role not found: ${input.roleKey}`);
-      if (role.key === OWNER_ROLE) await assertCanManageOwner(tx as unknown as Database, actor);
-      await assignRole(tx as unknown as Database, { userId: user.id, roleId: role.id });
+      if (role.key === OWNER_ROLE) await assertCanManageOwner(tx, actor);
+      await assignRole(tx, { userId: user.id, roleId: role.id });
     }
 
-    await auditChange(tx as unknown as Database, {
+    await auditChange(tx, {
       actor,
       event: "user.created",
       subject: { type: "user", id: user.id },
       after: snapshot("user", user as unknown as Record<string, unknown>),
     });
 
-    return toPublicUser(tx as unknown as Database, user);
+    return toPublicUser(tx, user);
   });
 }
 
@@ -303,7 +303,7 @@ export async function resetUserPassword(
 ): Promise<{ id: string }> {
   const hash = await hashPassword(password);
   return db.transaction(async (tx) => {
-    const user = await findUserOrThrow(tx as unknown as Database, userId);
+    const user = await findUserOrThrow(tx, userId);
 
     const updated = await tx
       .update(accounts)
@@ -317,7 +317,7 @@ export async function resetUserPassword(
     // A stolen cookie must not survive the reset.
     await tx.delete(sessions).where(eq(sessions.userId, userId));
 
-    await auditChange(tx as unknown as Database, {
+    await auditChange(tx, {
       actor,
       event: "user.password_reset",
       subject: { type: "user", id: userId },

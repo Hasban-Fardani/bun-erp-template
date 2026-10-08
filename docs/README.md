@@ -12,6 +12,11 @@ decision has been implemented.
 | API envelope, pagination and versioning | [API contract](api-contract.md) |
 | Auth, RBAC, audit and secrets | [Security](security.md) |
 | Queue behavior, logs, health and backup | [Operations](operations.md) |
+| API rate limiting, maintenance mode, database TLS, mail and object storage settings | [Operations](operations.md) |
+| Cache facade, events and listeners | [Architecture](architecture.md), [ADR 0016](adr/0016-cache-and-events.md) |
+| Tests, factories, fixtures and generators | [Testing](testing.md), [Development](development.md) |
+| Password reset and mail-backed auth flows | [Security](security.md) |
+| Move between Bun/VPS and Cloudflare Workers (secrets, R2 storage, `storage:copy`) | [Deployment](deployment.md) |
 | CI, deployment targets and releases | [CI](ci.md), [Deployment](deployment.md) |
 | Quality gates and how to add one | [Gates](gates.md) |
 | Mobile structure, offline storage and native builds | [Mobile](mobile.md) |
@@ -20,6 +25,7 @@ decision has been implemented.
 | Shared localization and locale behavior | [Internationalization](i18n.md) |
 | Reusable package boundaries and imports | [Architecture](architecture.md), each package's package.json exports |
 | Architecture decisions | [ADR index](adr/README.md) |
+| Agent skill configuration (tickets in `docs/tasks/`, glossary, ADRs) | [Issue tracker](agents/issue-tracker.md), [Domain docs](agents/domain.md) |
 
 `docs/tasks/` records work and verification with human-owned status. It is not current
 implementation guidance; consult it only when reviewing the referenced historical change.

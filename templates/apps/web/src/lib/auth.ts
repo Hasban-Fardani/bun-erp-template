@@ -1,7 +1,7 @@
 import { API_BASE } from "../config/env.ts";
 import { ApiError } from "./api.ts";
 
-type AuthPath = "sign-in/email" | "sign-out";
+type AuthPath = "sign-in/email" | "sign-out" | "request-password-reset" | "reset-password";
 
 type AuthErrorBody = { code?: unknown; message?: unknown };
 

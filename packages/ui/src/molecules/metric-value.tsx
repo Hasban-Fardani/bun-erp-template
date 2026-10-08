@@ -1,6 +1,6 @@
 import type * as React from "react";
-import { formatNumber, type NumberFormat } from "../atoms/dashboard-format.ts";
 import { cn } from "../lib/cn.ts";
+import { formatNumber, type NumberFormat } from "../lib/dashboard-format.ts";
 import { Tooltip } from "./tooltip.tsx";
 
 /** Values at or above this are abbreviated by default. */

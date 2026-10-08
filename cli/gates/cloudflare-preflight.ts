@@ -1,3 +1,5 @@
+import { isSecretKey, MIN_PAID_CPU_MS } from "../lib/cloudflare.ts";
+
 type PreflightEnvironment = {
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
@@ -10,6 +12,7 @@ type WranglerConfig = {
   hyperdrive?: Array<{ id?: string }>;
   vars?: Record<string, string>;
   limits?: { cpu_ms?: number };
+  r2_buckets?: Array<{ binding?: string; bucket_name?: string }>;
   assets?: {
     not_found_handling?: string;
     run_worker_first?: string[];
@@ -41,9 +44,22 @@ export async function validateCloudflarePreflight(
   if (missing.length > 0) return [`Missing required deployment values: ${missing.join(", ")}.`];
 
   const findings: string[] = [];
+  const vars = config.vars ?? {};
   const cpuLimit = config.limits?.cpu_ms;
-  if (!Number.isInteger(cpuLimit) || cpuLimit === undefined || cpuLimit < 1 || cpuLimit > 10) {
-    findings.push("Cloudflare Free requires limits.cpu_ms to be explicitly set between 1 and 10.");
+  // Email/password sign-in is always on (D1): production needs a Workers Paid CPU budget.
+  if (vars.APP_ENV === "production" && (!Number.isInteger(cpuLimit) || (cpuLimit ?? 0) < MIN_PAID_CPU_MS)) {
+    findings.push(
+      `Production on Cloudflare requires Workers Paid: set limits.cpu_ms to at least ${MIN_PAID_CPU_MS} (password hashing costs ~110 ms CPU; Workers Free allows 10 ms).`,
+    );
+  }
+  findings.push(...storageFindings(vars, config.r2_buckets));
+  const plaintextSecrets = Object.entries(vars)
+    .filter(([key, value]) => isSecretKey(key) && value !== "")
+    .map(([key]) => key);
+  if (plaintextSecrets.length > 0) {
+    findings.push(
+      `Secret-class keys must not sit in wrangler.jsonc vars: ${plaintextSecrets.join(", ")}. Push them with wrangler secret bulk (bun erp env:cloudflare).`,
+    );
   }
   if (config.assets?.not_found_handling !== "single-page-application") {
     findings.push("Keep assets.not_found_handling set to single-page-application for file-based web routes.");
@@ -68,7 +84,6 @@ export async function validateCloudflarePreflight(
   }
 
   const appUrl = env.CLOUDFLARE_APP_URL ?? "";
-  const vars = config.vars ?? {};
   const trusted = (vars.AUTH_TRUSTED_ORIGINS ?? "").split(",").map((origin) => origin.trim());
   if (
     !appUrl.startsWith("https://") ||
@@ -153,6 +168,34 @@ export async function validateCloudflarePreflight(
     findings.push("Hyperdrive origin host, port, database and PostgreSQL scheme must match DATABASE_URL.");
   }
 
+  return findings;
+}
+
+function storageFindings(vars: Record<string, string>, buckets: WranglerConfig["r2_buckets"]): string[] {
+  const driver = vars.STORAGE_DRIVER;
+  if (driver === "s3") {
+    return ["STORAGE_DRIVER=s3 is not supported on Cloudflare (it needs Bun.S3Client); use r2."];
+  }
+  if (driver !== "r2") return [];
+  const binding = vars.STORAGE_R2_BINDING || "STORAGE";
+  const findings: string[] = [];
+  if (!buckets?.some((bucket) => bucket.binding === binding && bucket.bucket_name)) {
+    findings.push(
+      `STORAGE_DRIVER=r2 needs an r2_buckets entry in wrangler.jsonc with binding "${binding}" and a bucket_name.`,
+    );
+  }
+  // The Worker only runs for /api and /api/*, so the private file route must be served from there.
+  let publicPath = "";
+  try {
+    publicPath = new URL(vars.STORAGE_PUBLIC_URL ?? "").pathname.replace(/\/+$/, "");
+  } catch {
+    publicPath = "";
+  }
+  if (publicPath !== "/api/v1/files") {
+    findings.push(
+      "STORAGE_PUBLIC_URL must end in /api/v1/files on Cloudflare (the Worker only runs for /api and /api/*).",
+    );
+  }
   return findings;
 }
 

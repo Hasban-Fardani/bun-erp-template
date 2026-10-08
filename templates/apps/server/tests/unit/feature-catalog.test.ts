@@ -229,11 +229,13 @@ test("the mail infra manifest validates and plans server-only destinations", asy
   const manifest = await readFeatureManifest(repoRoot, "mail");
   if (manifest.kind !== "infra") throw new Error("mail must stay an infra feature");
   expect(manifest.requires).toEqual(["mail"]);
-  expect(manifest.wiring).toEqual(["context", "bootstrap", "cloudflare", "jobs", "notifications"]);
+  expect(manifest.wiring).toEqual(["context", "bootstrap", "cloudflare", "jobs", "notifications", "auth-reset"]);
 
   const destinations = await installDestinations("mail");
   expect(destinations).toContain("apps/server/features/mail/wiring.ts");
   expect(destinations).toContain("apps/server/features/mail/channel.ts");
+  expect(destinations).toContain("apps/server/features/mail/password-reset.ts");
+  expect(destinations).toContain("apps/server/tests/features/mail/password-reset.test.ts");
   expect(destinations).toContain("apps/server/tests/features/mail/mail.test.ts");
   expect(destinations.some((destination) => destination.startsWith("apps/web/"))).toBe(false);
 });
@@ -292,6 +294,7 @@ test("infra wiring edits the composition root and is idempotent", async () => {
     "apps/server/bootstrap/bootstrap.ts",
     "apps/server/bootstrap/cloudflare-context.ts",
     "apps/server/bootstrap/context.ts",
+    "apps/server/features/identity/auth.ts",
     "apps/server/features/jobs.ts",
     "apps/server/features/notifications/channels/registry.ts",
     "apps/server/features/notifications/types.ts",

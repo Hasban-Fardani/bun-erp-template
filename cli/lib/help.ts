@@ -33,6 +33,10 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["check:prod", "Check production deployment readiness"],
       ["check:gate <name>", "Run one focused gate; use --list to see names"],
       [
+        "qa [--only=<suite,...>] [--list] [--dry-run]",
+        "Run the web app's Playwright QA suites against a running deployment (needs the web app)",
+      ],
+      [
         "test",
         "Run backend, web, and package test suites (mobile when installed); --filter <feature> runs one feature",
       ],
@@ -52,6 +56,17 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["make:feature <name>", "Create a server + web CRUD feature, its test, and its create-table migration"],
       ["make:migration <name>", "Create a numbered migration; create_x_table fills the table name"],
       ["make:seeder <name>", "Create an idempotent feature seeder scaffold"],
+      ["make:factory <feature> [--table <name>]", "Create a deterministic table factory for tests and seeders"],
+      ["make:job <name>", "Create a queue job handler, register it, and write its idempotency test"],
+      ["make:event <feature> <name>", "Create a typed domain event inside a feature"],
+      [
+        "make:listener <feature> <name> --event <event>",
+        "Create an event listener, register it and write its dispatch test",
+      ],
+      ["make:command <group:name>", "Create a server CLI command that the registry discovers"],
+      ["make:test <feature> [name]", "Create a feature test skeleton (typed testClient when the feature has routes)"],
+      ["make:notification <name> [--type <domain.event>]", "Create a database-channel notification definition"],
+      ["make:mail <name>", "Create a mail renderer and queue helper (requires the mail feature)"],
       ["task:new <id> <title>", "Create a plan/task markdown with TDD checkpoints and an evidence section"],
     ],
   },
@@ -60,7 +75,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     commands: [
       ["packages:list", "List installed packages and the opt-in catalog"],
       [
-        "packages:install <name> [--from <path|git-url>]",
+        "packages:install <name>... [--from <path|git-url>]",
         "Install an opt-in package into packages/ and register the workspace",
       ],
     ],
@@ -69,7 +84,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     title: "Features",
     commands: [
       ["features:list", "List installed features and the opt-in catalog"],
-      ["features:install <name>", "Install a catalog feature into apps/ and wire it automatically"],
+      ["features:install <name>...", "Install catalog features into apps/ and wire them automatically"],
     ],
   },
   {
@@ -96,8 +111,11 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     title: "Application",
     commands: [
       ["route:list", "List routes from the assembled Hono app"],
+      ["down [--message <text>]", "Put the API in maintenance mode (503 except health and bypass sessions)"],
+      ["up", "Leave maintenance mode"],
       ["env:list", "Show safe configuration values and warnings"],
       ["key:generate", "Generate the local authentication secret"],
+      ["tinker [--eval <expr>] [--force]", "Open a REPL with db, schema and env preloaded; --eval runs one expression"],
       ["role:list", "List available role keys"],
       ["role:show <key>", "Show one role with its permissions"],
       ["role:create <key> [--name] [--description] [--permissions a,b]", "Create a custom role"],
@@ -127,6 +145,10 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["jobs:tick", "Enqueue every due schedule; safe to run from cron"],
       ["jobs:schedule [--json]", "Sync registered schedules and show their next runs"],
     ],
+  },
+  {
+    title: "Mail",
+    commands: [["mail:test --to <address>", "Verify the mail driver and send one test message"]],
   },
   {
     title: "Cloudflare",

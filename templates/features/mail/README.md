@@ -12,10 +12,13 @@ What installs:
 
 - `packages/mail` (`@bun-erp/mail`) — app-agnostic transport: driver registry, `log`/`memory`/`smtp`
   drivers, `resolveMail`/`htmlToText`/`escapeHtml`. `nodemailer` is its dependency.
+- `apps/server/features/mail/index.ts` — the public surface other features import (feature-boundary rule).
 - `apps/server/features/mail/wiring.ts` — app adapter: `createMailEnqueue(db)`, `createAppMailer`,
   `registerMailJobs`.
 - `apps/server/features/mail/channel.ts` — the notifications `mail` channel.
-- `apps/server/tests/features/mail/mail.test.ts` — worker delivery and channel integration tests.
+- `apps/server/features/mail/password-reset.ts` — the Better Auth `sendResetPassword` sender: it enqueues a
+  durable `mail.send` job, never sends inline (see [security](../../docs/security.md#password-reset)).
+- `apps/server/tests/features/mail/{mail,password-reset}.test.ts` — worker delivery, channel and reset-flow tests.
 
 Wiring edits (all deterministic, all fail the install when an anchor is missing):
 
@@ -25,13 +28,30 @@ Wiring edits (all deterministic, all fail the install when an anchor is missing)
   `createAppMailer`.
 - `apps/server/features/jobs.ts` registers the `mail.send` job.
 - `apps/server/features/notifications/types.ts` and `channels/registry.ts` add the `mail` channel.
+- `apps/server/features/identity/auth.ts` sets `sendResetPassword`, which turns password reset on.
 
 ## Configure
 
-`MAIL_DRIVER` selects the transport: `log` (default, structured line only), `smtp` (nodemailer;
-refused on Cloudflare Workers) or a custom registered driver. `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`
-and `SMTP_*` are read from the same validated environment; the keys exist in the app config schema
-whether or not this feature is installed.
+`MAIL_DRIVER` selects the transport:
+
+| Driver | Use | Cloudflare Workers |
+|---|---|---|
+| `log` (default) | development; writes a structured line, sends nothing | allowed (nothing is delivered) |
+| `smtp` | Bun/VPS through nodemailer (`SMTP_*`) | refused by the config schema |
+| `http` | Resend over `fetch`: `MAIL_HTTP_PROVIDER=resend`, `MAIL_API_KEY` (secret) | supported |
+
+`memory` is registry-only (tests), not a valid `MAIL_DRIVER` value. The sender address comes from
+`MAIL_FROM_ADDRESS` and `MAIL_FROM_NAME`. On Cloudflare set `MAIL_API_KEY` with `wrangler secret put`; it is
+redacted in `env:list`. All keys live in the core config schema whether or not this feature is installed.
+
+Production password reset needs `MAIL_DRIVER=http` or `smtp`: with `log` the reset link is only written to the
+log of the worker, so nobody receives it.
+
+## Switching drivers
+
+Set `MAIL_DRIVER` (`smtp` or `http`) plus its keys, restart the app and worker, then run
+`bun erp mail:test --to <address>`; queued jobs keep working. Steps and caveats (SPF/DKIM/DMARC, SMTP is
+VPS-only, non-retryable errors, SMTP duplicate-on-crash): docs/operations.md, "Switching mail drivers".
 
 ## Verify
 

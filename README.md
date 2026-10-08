@@ -1,7 +1,7 @@
-# Bun ERP Template
-
 <!-- project-identity:start -->
 <!-- template-only -->
+# Bun ERP Template
+
 Starter for internal applications: versioned Hono RPC API, Drizzle/PostgreSQL, Better Auth,
 RBAC and append-only audit, and a file-routed React admin app. An optional React + Capacitor mobile
 app waits in the app catalog. The React apps share atomic UI, i18n and editor packages. This
@@ -41,7 +41,7 @@ serves the built React app at `/` and the versioned Hono API at `/api/*`. Set
 Cloudflare currently requires integrated hosting. These are the only runtime adapters implemented.
 
 Browser QA uses Playwright only: set `QA_EMAIL` and `QA_PASSWORD`, start `bun dev`, install the
-admin screens (`bun erp features:install users roles audit`), then run `bun run qa`. Planning,
+admin screens (`bun erp features:install users roles audit`), then run `bun erp qa`. Planning,
 exploratory testing, and report rules are documented in `.agents/qa-project-context.md` and the
 installed QA skills.
 

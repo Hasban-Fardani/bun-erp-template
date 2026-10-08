@@ -51,8 +51,27 @@ const NODE_BUILTIN_ALLOWLIST: Readonly<Record<string, string>> = {
   sqlite: "better-auth kysely adapter (dynamic import, unused with the postgres driver)",
 };
 
-/** Workers Free compresses the script to 3 MiB; the template fails at a third of that. */
-export const WORKER_GZIP_BUDGET_BYTES = 1024 * 1024;
+/**
+ * Workers limits (Cloudflare docs, checked 2026-10-08): the script may be 64 MiB uncompressed on
+ * Free and Paid alike, and there is no compressed-size limit. Larger scripts also slow startup,
+ * so the template keeps its own much smaller budget on the uncompressed size.
+ */
+export const WORKER_PLATFORM_LIMIT_BYTES = 64 * 1024 * 1024;
+/** The one size cap this gate enforces, on the uncompressed script (`wrangler` "Total Upload"). */
+export const WORKER_RAW_BUDGET_BYTES = 2 * 1024 * 1024;
+
+/** Packages that must never reach the Worker script (Scalar is Bun-target only, see `http/app.ts`). */
+const WORKER_FORBIDDEN_PACKAGES = ["@scalar/"] as const;
+
+const mib = (bytes: number) => `${bytes / (1024 * 1024)} MiB`;
+
+/** The single size rule: raw script bytes against the template budget. */
+export function workerSizeFindings(rawBytes: number): string[] {
+  if (rawBytes <= WORKER_RAW_BUDGET_BYTES) return [];
+  return [
+    `WORKER_BUNDLE_SIZE: the script is ${rawBytes} bytes uncompressed, above the ${WORKER_RAW_BUDGET_BYTES} byte (${mib(WORKER_RAW_BUDGET_BYTES)}) template budget (Workers allows ${mib(WORKER_PLATFORM_LIMIT_BYTES)} uncompressed on Free and Paid)`,
+  ];
+}
 
 const NODE_BUILTIN =
   /^(assert|async_hooks|buffer|child_process|cluster|console|constants|crypto|dgram|diagnostics_channel|dns|domain|events|fs|http|http2|https|inspector|module|net|os|path|perf_hooks|process|punycode|querystring|readline|repl|sqlite|stream|string_decoder|sys|timers|tls|trace_events|tty|url|util|v8|vm|wasi|worker_threads|zlib)(\/.*)?$/;
@@ -97,6 +116,9 @@ function moduleFindings(file: string, code: string): string[] {
     findings.push(`WORKER_IMPORT_META: ${file} uses ${metaRefs.join(", ")}; workerd has no Bun path metadata`);
   }
   for (const specifier of importSpecifiers(code)) {
+    if (WORKER_FORBIDDEN_PACKAGES.some((prefix) => specifier.startsWith(prefix))) {
+      findings.push(`WORKER_FORBIDDEN_PACKAGE: ${file} imports ${specifier}; load it only on the Bun target`);
+    }
     if (specifier.startsWith("node:")) {
       findings.push(
         `WORKER_NODE_BUILTIN: ${file} imports ${specifier}; only documented Node built-ins may reach the Worker graph`,
@@ -212,11 +234,7 @@ async function bundleWorker(root: string, entry: string): Promise<WorkerGateResu
 
   const bytes = new Uint8Array(await (result.outputs[0] as Bun.BuildArtifact).arrayBuffer());
   const gzipBytes = Bun.gzipSync(bytes).byteLength;
-  if (gzipBytes > WORKER_GZIP_BUDGET_BYTES) {
-    findings.push(
-      `WORKER_BUNDLE_SIZE: the bundle is ${gzipBytes} bytes gzip, above the ${WORKER_GZIP_BUDGET_BYTES} byte budget (Workers Free caps the script at 3 MiB)`,
-    );
-  }
+  findings.push(...workerSizeFindings(bytes.byteLength));
 
   const text = new TextDecoder().decode(bytes);
   const metaHits = [...new Set([...text.matchAll(/import\.meta\.(?:dir|file|dirname|filename)\b/g)].map((m) => m[0]))];
@@ -243,6 +261,12 @@ async function bundleWorker(root: string, entry: string): Promise<WorkerGateResu
     );
   }
 
+  for (const prefix of WORKER_FORBIDDEN_PACKAGES) {
+    if (inputs.some(([file]) => file.includes(`node_modules/${prefix}`))) {
+      findings.push(`WORKER_FORBIDDEN_PACKAGE: ${prefix}* is in the Worker bundle; load it only on the Bun target`);
+    }
+  }
+
   let firstParty = 0;
   for (const [file] of inputs) {
     const display = displayPath(root, file);
@@ -255,7 +279,7 @@ async function bundleWorker(root: string, entry: string): Promise<WorkerGateResu
   }
 
   report.push(
-    `worker bundle: ${bytes.byteLength} bytes raw / ${gzipBytes} bytes gzip (budget ${WORKER_GZIP_BUDGET_BYTES} bytes gzip; Workers Free limit 3 MiB)`,
+    `worker bundle: ${bytes.byteLength} bytes raw / ${gzipBytes} bytes gzip (budget ${WORKER_RAW_BUDGET_BYTES} bytes uncompressed; Workers limit ${mib(WORKER_PLATFORM_LIMIT_BYTES)} uncompressed)`,
   );
   report.push(`worker graph: ${firstParty} first-party modules, ${inputs.length} total`);
   report.push(`worker node built-ins: ${[...builtins].sort().join(", ") || "none"}`);

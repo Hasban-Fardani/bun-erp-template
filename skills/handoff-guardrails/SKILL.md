@@ -1,6 +1,6 @@
 ---
-name: template-guardrails
-description: Use when verifying work or reporting a completed change in this template.
+name: handoff-guardrails
+description: Use when verifying work or reporting a completed change in this repository.
 ---
 
 # Handoff guardrails

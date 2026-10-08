@@ -1,11 +1,14 @@
+import { setCookie } from "hono/cookie";
 import type { AppContext } from "../../bootstrap/context.ts";
 import { factory } from "../../http/factory.ts";
+import { actorOf } from "../../http/helpers/actor.ts";
 import { doc } from "../../http/helpers/api-docs.ts";
 import { authorize } from "../../http/helpers/authorize.ts";
 import { ApiError, ok } from "../../http/helpers/errors.ts";
 import { listMeta, listMetaSchemaProperties } from "../../http/helpers/list-query.ts";
 import { idParam, idRoleKeyParam } from "../../http/helpers/params.ts";
 import { validate } from "../../http/helpers/validate.ts";
+import { IMPERSONATION_COOKIE, startImpersonation } from "./impersonation.ts";
 import { ACTION_PERMISSION } from "./policy.ts";
 import {
   assignUserRole,
@@ -25,12 +28,6 @@ const listData = {
   type: "object",
   properties: { items: { type: "array", items: userRef }, ...listMetaSchemaProperties },
 };
-
-const actorOf = (actor: { userId: string; traceId: string; label: string }) => ({
-  userId: actor.userId,
-  traceId: actor.traceId,
-  label: actor.label,
-});
 
 /** User administration (needs RBAC). Sign-up/sign-in belongs to the Better Auth handlers. */
 export function identityRoutes(ctx: AppContext) {
@@ -153,6 +150,33 @@ export function identityRoutes(ctx: AppContext) {
       async (c) => {
         const actor = c.get("actor");
         return ok(c, await replaceUserRoles(ctx.db, c.req.param("id"), c.req.valid("json").roleKeys, actorOf(actor)));
+      },
+    )
+    .post(
+      "/:id/impersonate",
+      authorize(ctx, ACTION_PERMISSION.impersonate),
+      doc({
+        tag: "users",
+        permission: ACTION_PERMISSION.impersonate,
+        summary: "Lihat aplikasi sebagai pengguna lain (sesi terbatas waktu, diaudit)",
+        data: {
+          type: "object",
+          properties: { userId: { type: "string" }, name: { type: "string" }, expiresAt: { type: "string" } },
+        },
+      }),
+      validate("param", idParam),
+      async (c) => {
+        if (!ctx.env.IMPERSONATION_ENABLED) throw ApiError.forbidden("Impersonation is disabled");
+        const ttlMinutes = ctx.env.IMPERSONATION_TTL_MINUTES;
+        const started = await startImpersonation(ctx.db, { ttlMinutes }, c.get("actor"), c.req.param("id"));
+        setCookie(c, IMPERSONATION_COOKIE, started.token, {
+          path: "/",
+          httpOnly: true,
+          sameSite: "Lax",
+          secure: ctx.env.BETTER_AUTH_URL.startsWith("https://"),
+          expires: started.expiresAt,
+        });
+        return ok(c, { userId: started.target.id, name: started.target.name, expiresAt: started.expiresAt });
       },
     )
     .delete(

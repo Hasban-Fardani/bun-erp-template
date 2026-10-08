@@ -7,8 +7,10 @@
  * opt-in. Every check is isolated: a failure is recorded and the run continues, and a suite whose
  * prerequisite fails is reported as skipped instead of taking the rest of the run down with it.
  */
+
 import type { Browser, Page } from "playwright-core";
 import { STORAGE_KEYS } from "../../src/config/storage-keys.ts";
+import { paceSignIn } from "./pacing.ts";
 
 export type CheckOutcome = boolean | string | undefined;
 
@@ -43,6 +45,7 @@ export type QaSuite = {
 export const RESPONSIVE_WIDTHS = [320, 360, 390, 430, 767, 768, 1024, 1440] as const;
 
 export async function signIn(page: Page, baseUrl: string, email: string, password: string): Promise<void> {
+  await paceSignIn();
   await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
   await page.fill("#email", email);
   await page.fill("#password", password);
@@ -413,7 +416,9 @@ export const usersSuite: QaSuite = {
         await page.locator("[cmdk-input]").fill("owner");
         await roleItems.filter({ hasText: /owner/i }).waitFor({ state: "visible" });
         const after = await roleItems.count();
+        /** The first Escape closes only the popover; the second is swallowed until its exit animation ends. */
         await page.keyboard.press("Escape");
+        await page.locator("[cmdk-input]").waitFor({ state: "detached" });
         await page.keyboard.press("Escape");
         await page.locator('[data-testid="user-role"]').waitFor({ state: "hidden" });
         return before > 1 && after === 1 ? true : `before=${before} after=${after}`;
@@ -449,4 +454,29 @@ export const auditSuite: QaSuite = {
   checks: tableScreenChecks("audit", "/api/v1/audit-logs", "role"),
 };
 
-export const SUITES: readonly QaSuite[] = [coreSuite, usersSuite, rolesSuite, auditSuite];
+/** Failed sign-in feedback; needs no account, so `bun erp qa --only=login` works against any deployment. */
+export const loginSuite: QaSuite = {
+  name: "login",
+  checks: [
+    {
+      name: "login: a failed sign-in is announced as a toast outside the form",
+      run: async ({ page, baseUrl }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await paceSignIn();
+        await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
+        await page.fill("#email", "missing-user@example.test");
+        await page.fill("#password", "invalid-password-for-browser-test");
+        await page.click('button[type="submit"]');
+        const toast = page.getByRole("alert");
+        await toast.waitFor({ state: "visible", timeout: 10_000 });
+        const message = (await toast.innerText()).trim();
+        const alertsInsideForm = await page.locator("form [role='alert']").count();
+        return message && alertsInsideForm === 0
+          ? true
+          : `Expected a visible toast outside the login form (message=${Boolean(message)}, inline=${alertsInsideForm})`;
+      },
+    },
+  ],
+};
+
+export const SUITES: readonly QaSuite[] = [coreSuite, loginSuite, usersSuite, rolesSuite, auditSuite];

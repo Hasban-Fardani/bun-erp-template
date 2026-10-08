@@ -36,6 +36,7 @@ test("the session query resolves identity and permissions from one /me request",
     authenticated: true,
     user: { id: "u1", name: "Ada", email: "ada@example.test" },
     permissions: ["user.read"],
+    impersonation: null,
   });
 });
 

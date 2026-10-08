@@ -1,13 +1,16 @@
 import { sql } from "drizzle-orm";
+import { deleteCookie, getCookie } from "hono/cookie";
 import type { AppContext } from "../bootstrap/context.ts";
 import { auditFeature } from "../features/audit/feature.ts";
 import { identityFeature } from "../features/identity/feature.ts";
+import { IMPERSONATION_COOKIE, isBlockedAuthPath, stopImpersonation } from "../features/identity/impersonation.ts";
 import { requireActor } from "../features/identity/policy.ts";
 import { notificationFeature } from "../features/notifications/feature.ts";
 import { rbacFeature } from "../features/rbac/feature.ts";
+import { storageFeature } from "../features/storage/feature.ts";
 import { factory } from "../http/factory.ts";
 import { doc } from "../http/helpers/api-docs.ts";
-import { ok } from "../http/helpers/errors.ts";
+import { ApiError, ok } from "../http/helpers/errors.ts";
 import { type FeatureDefinition, registerFeatures } from "../http/helpers/feature.ts";
 
 export const API_PREFIX = "/api/v1";
@@ -21,6 +24,7 @@ const FEATURES = [
   rbacFeature,
   auditFeature,
   notificationFeature,
+  storageFeature,
   // @erp:routes
 ] as const satisfies readonly FeatureDefinition[];
 
@@ -74,7 +78,14 @@ export function apiRoutes(ctx: AppContext) {
 
     // Auth handlers belong to Better Auth, so their routes are not built here and cannot carry
     // per-route docs; the operations the app uses are documented in `http/openapi.ts`.
-    .on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => ctx.auth.handler(c.req.raw))
+    // While an impersonation cookie is present, credential self-service would hit the ADMIN's own
+    // Better Auth account; refuse it so the target's password, email, sessions and 2FA stay put.
+    .on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => {
+      if (getCookie(c, IMPERSONATION_COOKIE) && isBlockedAuthPath(c.req.path.slice(`${API_PREFIX}/auth`.length))) {
+        throw ApiError.forbidden("Not allowed while impersonating");
+      }
+      return ctx.auth.handler(c.req.raw);
+    })
 
     .get(
       `${API_PREFIX}/me`,
@@ -88,6 +99,10 @@ export function apiRoutes(ctx: AppContext) {
             name: { type: "string" },
             email: { type: "string" },
             permissions: { type: "array", items: { type: "string" } },
+            impersonation: {
+              type: ["object", "null"],
+              description: "Set while an admin views the app as this user.",
+            },
           },
         },
       }),
@@ -98,7 +113,33 @@ export function apiRoutes(ctx: AppContext) {
           name: actor.name,
           email: actor.email,
           permissions: actor.permissions,
+          impersonation: actor.impersonator
+            ? {
+                by: {
+                  userId: actor.impersonator.userId,
+                  name: actor.impersonator.name,
+                  email: actor.impersonator.email,
+                },
+                expiresAt: actor.impersonator.expiresAt,
+              }
+            : null,
         });
+      },
+    )
+
+    .post(
+      `${API_PREFIX}/impersonation/stop`,
+      doc({
+        tag: "auth",
+        summary: "Hentikan impersonasi dan kembali ke sesi asli",
+        data: { type: "object", properties: { stopped: { type: "boolean" } } },
+      }),
+      async (c) => {
+        const actor = await requireActor(c, ctx);
+        if (!actor.impersonator) throw ApiError.notFound("No active impersonation");
+        await stopImpersonation(ctx.db, actor.impersonator.token, { ...actor, impersonator: actor.impersonator });
+        deleteCookie(c, IMPERSONATION_COOKIE, { path: "/" });
+        return ok(c, { stopped: true });
       },
     );
 

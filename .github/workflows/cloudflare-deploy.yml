@@ -59,7 +59,8 @@ jobs:
           BETTER_AUTH_URL: ${{ vars.CLOUDFLARE_APP_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           AUTH_TRUSTED_ORIGINS: ${{ vars.CLOUDFLARE_APP_URL }}
-          STORAGE_DRIVER: s3
+          STORAGE_DRIVER: r2
+          STORAGE_R2_BINDING: STORAGE
           STORAGE_LOCAL_ROOT: .data/storage
           MAIL_DRIVER: log
           MAIL_FROM_ADDRESS: no-reply@example.test
@@ -68,16 +69,28 @@ jobs:
           SMTP_PORT: "587"
           SMTP_SECURE: "false"
           SMTP_USERNAME: ""
-          SMTP_PASSWORD: ""
           FEATURE_ADVANCED_REPORTS: "false"
       - name: Seed base records
         run: bun erp db:seed
         env: *production-env
       - name: Deploy API and web assets
         run: |
-          printf '%s' "$BETTER_AUTH_SECRET" | bun run --cwd apps/web wrangler secret put BETTER_AUTH_SECRET --config dist/bun_erp_template/wrangler.json
+          # Secret-class keys travel only through wrangler secret bulk, never through wrangler.jsonc vars.
+          umask 077
+          mkdir -p .data
+          {
+            printf 'BETTER_AUTH_SECRET=%s\n' "$BETTER_AUTH_SECRET"
+            printf 'SMTP_PASSWORD=%s\n' "$SMTP_PASSWORD"
+            printf 'MAIL_API_KEY=%s\n' "$MAIL_API_KEY"
+          } > .data/secrets.env
+          bun erp env:cloudflare --env-file .data/secrets.env
+          rm -f .data/secrets.env
+          bun run --cwd apps/web wrangler secret bulk ../../.data/cloudflare-secrets.json --config dist/bun_erp_template/wrangler.json
+          rm -f .data/cloudflare-secrets.json
           bun run --cwd apps/web wrangler deploy --config dist/bun_erp_template/wrangler.json
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_API_KEY: ${{ secrets.MAIL_API_KEY }}

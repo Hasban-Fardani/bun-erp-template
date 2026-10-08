@@ -93,8 +93,8 @@ function wireBootstrap(source: string): ApplyResult {
     (input) =>
       replaceOnce(
         input,
-        "return { env, db, logger, auth, storage, close };",
-        "return { env, db, logger, auth, mail, storage, close };",
+        "return { env, db, logger, auth, storage, cache, close };",
+        "return { env, db, logger, auth, mail, storage, cache, close };",
       ),
   ]);
   return wired(
@@ -115,14 +115,14 @@ function wireCloudflare(source: string): ApplyResult {
     (input) =>
       insertAfter(
         input,
-        '  const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);',
+        "  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED, cache });",
         "  const mail = createAppMailer(env, logger, db);",
       ),
     (input) =>
       replaceOnce(
         input,
-        "return { env, db, logger, storage, close };",
-        "return { env, db, logger, mail, storage, close };",
+        "return { env, db, logger, storage, cache, close };",
+        "return { env, db, logger, mail, storage, cache, close };",
       ),
   ]);
   return wired(
@@ -138,7 +138,7 @@ function wireJobs(source: string): ApplyResult {
       insertAfter(
         input,
         'import { JobRegistry } from "../infra/jobs/registry.ts";',
-        'import { registerMailJobs } from "./mail/wiring.ts";',
+        'import { registerMailJobs } from "./mail/index.ts";',
       ),
     // Only `createJobRegistry` reaches the mailer; batch and schedule builders keep their narrower type.
     (input) =>
@@ -180,7 +180,7 @@ function wireNotificationRegistry(source: string): ApplyResult {
       insertBefore(
         input,
         'import { databaseChannel } from "./database.ts";',
-        'import { mailChannel } from "../../mail/channel.ts";',
+        'import { mailChannel } from "../../mail/index.ts";',
       ),
     (input) =>
       replaceOnce(
@@ -190,6 +190,15 @@ function wireNotificationRegistry(source: string): ApplyResult {
       ),
   ]);
   return wired(next, source, "the channels/registry.ts anchors (database import or registration) are missing");
+}
+
+/** Hands Better Auth the mail-backed password-reset sender; without it reset stays disabled. */
+function wireAuthReset(source: string): ApplyResult {
+  const next = chain(source, [
+    (input) => insertAfter(input, MAIL_MARKER, 'import { createPasswordResetSender } from "../mail/index.ts";'),
+    (input) => replaceOnce(input, "sendResetPassword: undefined,", "sendResetPassword: createPasswordResetSender(db),"),
+  ]);
+  return wired(next, source, "the identity/auth.ts anchors (mail marker or sendResetPassword) are missing");
 }
 
 /** Registers the Better Auth organization plugin in the auth composition root. */
@@ -303,7 +312,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
       markers: [
         'import { createAppMailer } from "../features/mail/wiring.ts";',
         "  const mail = createAppMailer(env, logger, db);",
-        "return { env, db, logger, auth, mail, storage, close };",
+        "return { env, db, logger, auth, mail, storage, cache, close };",
       ],
       apply: wireBootstrap,
     },
@@ -315,7 +324,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
       markers: [
         'import { createAppMailer } from "../features/mail/wiring.ts";',
         "  const mail = createAppMailer(env, logger, db);",
-        "return { env, db, logger, mail, storage, close };",
+        "return { env, db, logger, mail, storage, cache, close };",
       ],
       apply: wireCloudflare,
     },
@@ -325,7 +334,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
       path: "apps/server/features/jobs.ts",
       anchor: MAIL_MARKER,
       markers: [
-        'import { registerMailJobs } from "./mail/wiring.ts";',
+        'import { registerMailJobs } from "./mail/index.ts";',
         'ctx: Pick<AppContext, "env" | "db" | "logger" | "mail">',
         "  registerMailJobs(registry, ctx.mail);",
       ],
@@ -345,8 +354,19 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
     {
       path: "apps/server/features/notifications/channels/registry.ts",
       anchor: MAIL_MARKER,
-      markers: ['import { mailChannel } from "../../mail/channel.ts";', '.register("mail", mailChannel);'],
+      markers: ['import { mailChannel } from "../../mail/index.ts";', '.register("mail", mailChannel);'],
       apply: wireNotificationRegistry,
+    },
+  ],
+  "auth-reset": [
+    {
+      path: "apps/server/features/identity/auth.ts",
+      anchor: MAIL_MARKER,
+      markers: [
+        'import { createPasswordResetSender } from "../mail/index.ts";',
+        "sendResetPassword: createPasswordResetSender(db),",
+      ],
+      apply: wireAuthReset,
     },
   ],
   "auth-plugin": [

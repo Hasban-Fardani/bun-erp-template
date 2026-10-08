@@ -1,4 +1,5 @@
 import { DriverRegistry } from "@bun-erp/utils";
+import { httpMailDriver } from "./drivers/http.ts";
 import { logMailDriver } from "./drivers/log.ts";
 import { memoryMailDriver } from "./drivers/memory.ts";
 import { smtpMailDriver } from "./drivers/smtp.ts";
@@ -17,6 +18,7 @@ export class MailDriverRegistry extends DriverRegistry<MailDriverContext, MailDr
 /** Built-in drivers. `memory` is registered here too so tests share the resolver, not a side path. */
 export function createMailRegistry(): MailDriverRegistry {
   return new MailDriverRegistry()
+    .register("http", httpMailDriver)
     .register("log", logMailDriver)
     .register("memory", memoryMailDriver)
     .register("smtp", smtpMailDriver);

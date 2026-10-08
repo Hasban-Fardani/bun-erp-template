@@ -1,3 +1,4 @@
+// @erp:mail
 import { betterAuth } from "better-auth";
 // @erp:organizations
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -17,6 +18,9 @@ const coreAuthAdapter = {
   provider: "pg",
   schema: { user: users, session: sessions, account: accounts, verification: verifications },
 } as const;
+
+/** One hour: long enough for a slow inbox, short enough that a leaked link is rarely live. */
+export const RESET_PASSWORD_TTL_SECONDS = 3600;
 
 /** Better Auth instance; split out so CLI/tests can use it without a server. */
 export function createAuth(env: Env, db: Database) {
@@ -73,8 +77,11 @@ export function createAuth(env: Env, db: Database) {
       // Public self sign-up is opt-in; accounts normally come from `bun erp user:create`.
       disableSignUp: !env.AUTH_SIGNUP_ENABLED,
       minPasswordLength: 10,
-      // Email password reset does not exist yet; the transport is the opt-in mail feature.
-      // Leaving it on would hand users a button that never sends anything.
+      // One-hour single-use token; every session is revoked once the password changes.
+      resetPasswordTokenExpiresIn: RESET_PASSWORD_TTL_SECONDS,
+      revokeSessionsOnPasswordReset: true,
+      // Reset is off until the opt-in mail feature installs a sender: without one Better Auth
+      // answers 400, so the UI never offers a button that sends nothing.
       sendResetPassword: undefined,
     },
     // Google OAuth dormant: the provider registers only when both of its env vars are set.

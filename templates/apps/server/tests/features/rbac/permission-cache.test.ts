@@ -80,7 +80,7 @@ describe("permission cache", () => {
   });
 
   test("repeat requests are served from cache, so the join runs once", async () => {
-    resetPermissionCache();
+    await resetPermissionCache();
     const before = { ...cacheStats };
 
     await api.client.api.v1.me.$get();
@@ -117,7 +117,7 @@ async function roleIdByKey(key: string): Promise<string> {
 async function cachedUser(email: string): Promise<string> {
   const user = await createUser(email);
   await permissionsForUser(api.ctx.db, user.id);
-  expect(readCachedPermissions(user.id)).toBeDefined();
+  expect(await readCachedPermissions(user.id)).toBeDefined();
   return user.id;
 }
 
@@ -125,7 +125,7 @@ async function cachedUser(email: string): Promise<string> {
 async function rollbackRoleWrite(write: (tx: Database) => Promise<unknown>): Promise<void> {
   await expect(
     api.ctx.db.transaction(async (tx) => {
-      await write(tx as unknown as Database);
+      await write(tx);
       throw new Error("rollback");
     }),
   ).rejects.toThrow("rollback");
@@ -138,7 +138,7 @@ describe("permission cache invalidation ordering", () => {
     await rollbackRoleWrite(async (tx) => assignRole(tx, { userId, roleId: await roleIdByKey("owner") }));
 
     // Invalidation before the commit would have cleared this entry even though the write vanished.
-    expect(readCachedPermissions(userId)).toBeDefined();
+    expect(await readCachedPermissions(userId)).toBeDefined();
   });
 
   test("a rolled-back role revoke leaves the cache untouched (invalidate after commit)", async () => {
@@ -146,7 +146,7 @@ describe("permission cache invalidation ordering", () => {
 
     await rollbackRoleWrite(async (tx) => revokeRole(tx, userId, await roleIdByKey("staff")));
 
-    expect(readCachedPermissions(userId)).toBeDefined();
+    expect(await readCachedPermissions(userId)).toBeDefined();
   });
 
   test("role permission edits invalidate only after the transaction resolves", async () => {
@@ -161,7 +161,7 @@ describe("permission cache invalidation ordering", () => {
           return async (fn: (tx: unknown) => Promise<unknown>) =>
             realTransaction(async (tx) => {
               const result = await fn(tx);
-              clearedInsideTransaction = readCachedPermissions(userId) === undefined;
+              clearedInsideTransaction = (await readCachedPermissions(userId)) === undefined;
               return result;
             });
         }
@@ -177,6 +177,6 @@ describe("permission cache invalidation ordering", () => {
     });
 
     expect(clearedInsideTransaction).toBe(false);
-    expect(readCachedPermissions(userId)).toBeUndefined();
+    expect(await readCachedPermissions(userId)).toBeUndefined();
   });
 });

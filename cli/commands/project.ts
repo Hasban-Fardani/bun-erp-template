@@ -20,7 +20,75 @@ import { defineCommand } from "../registry.ts";
 const IDENTITY_FILES = ["AGENTS.md", "README.md", ".agents/qa-project-context.md"] as const;
 const TEMPLATE_TASK_GLOB = "docs/tasks/F3.*.md";
 
-export type AdoptResult = { stripped: string[]; tasks: string[] };
+export type AdoptResult = { stripped: string[]; tasks: string[]; renamed: string[] };
+
+const TEMPLATE_SLUG = "bun-erp-template";
+/** Files that carry names derived from the template slug (worker, queue, bucket, image, URLs). */
+const RENAME_FILES = ["wrangler.jsonc", ".github/workflows/ci.yml", "docs/deployment.md"] as const;
+
+const TASKS_README = `# Tasks
+
+Work records for this project. Create one with \`bun erp task:new <id> "<title>"\`; each file carries
+front matter (\`id\`, \`title\`, \`status\`, \`evidence\`) that \`bun erp check\` validates. Status moves are
+human-owned: agents leave work \`in_progress\` with evidence. Tasks record history, not current
+implementation guidance; the canonical documents are listed in \`docs/README.md\`.
+`;
+
+/** Lowercase DNS-safe slug used for the package, Worker, queue and bucket names. */
+export function projectSlug(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/, "");
+  if (!slug) throw new Error(`Cannot derive a slug from the project name "${name}"; use letters or digits.`);
+  return slug;
+}
+
+/** Postgres-safe database name for a project: lowercase snake case, never starting with a digit. */
+export function projectDatabaseName(name: string): string {
+  const base = projectSlug(name).replaceAll("-", "_");
+  return /^[a-z]/.test(base) ? base : `erp_${base}`;
+}
+
+/** Swaps only the database name in `DATABASE_URL`, so host, port, credentials and query stay as written. */
+async function renameDatabase(root: string, database: string): Promise<string[]> {
+  const changed: string[] = [];
+  for (const file of [".env.example", ".env"]) {
+    const path = join(root, file);
+    if (!(await Bun.file(path).exists())) continue;
+    const source = await Bun.file(path).text();
+    const next = source.replace(/^(DATABASE_URL=["']?[a-z]+:\/\/[^/\s"']*\/)[^?\s"']*/m, `$1${database}`);
+    if (next === source) continue;
+    await Bun.write(path, next);
+    changed.push(file);
+  }
+  return changed;
+}
+
+async function renameFromTemplate(root: string, slug: string): Promise<string[]> {
+  const renamed: string[] = [];
+  const pkgPath = join(root, "package.json");
+  if (await Bun.file(pkgPath).exists()) {
+    const source = await Bun.file(pkgPath).text();
+    const next = source.replace(/("name"\s*:\s*)"bun-erp-template"/, `$1"${slug}"`);
+    if (next !== source) {
+      await Bun.write(pkgPath, next);
+      renamed.push("package.json");
+    }
+  }
+  for (const file of RENAME_FILES) {
+    const path = join(root, file);
+    if (!(await Bun.file(path).exists())) continue;
+    const source = await Bun.file(path).text();
+    const next = source.replaceAll(TEMPLATE_SLUG, slug);
+    if (next === source) continue;
+    await Bun.write(path, next);
+    renamed.push(file);
+  }
+  return renamed;
+}
 
 function identityContent(file: string, name: string, purpose: string): string {
   if (file === "AGENTS.md") return `- **Name:** ${name}\n- **Purpose:** ${purpose}`;
@@ -34,6 +102,7 @@ function identityContent(file: string, name: string, purpose: string): string {
  * adopted (`docs/template/` is the template marker).
  */
 export async function adoptProject(root: string, options: { name: string; purpose: string }): Promise<AdoptResult> {
+  const slug = projectSlug(options.name);
   if (!(await isTemplateRepo(root))) {
     throw new Error(
       "This repository is already a project: docs/template/ is missing. bun erp project:adopt refuses to run twice.",
@@ -63,18 +132,27 @@ export async function adoptProject(root: string, options: { name: string; purpos
     const path = join(root, file);
     if (!(await Bun.file(path).exists())) continue;
     const filled = fillIdentityBlock(await Bun.file(path).text(), identityContent(file, options.name, options.purpose));
-    if (filled !== undefined) await Bun.write(path, filled);
+    if (filled !== undefined) {
+      const titled = file === "README.md" ? filled.replace(/^# Bun ERP Template[ \t]*$/m, `# ${options.name}`) : filled;
+      await Bun.write(path, titled);
+    }
   }
+
+  const renamed = [
+    ...(await renameFromTemplate(root, slug)),
+    ...(await renameDatabase(root, projectDatabaseName(options.name))),
+  ];
 
   await rm(join(root, TEMPLATE_DIR), { recursive: true, force: true });
   await rm(join(root, SCOPE_FILE), { force: true });
   const tasks = await index.files(TEMPLATE_TASK_GLOB);
   for (const task of tasks) await rm(join(root, task), { force: true });
+  await Bun.write(join(root, "docs/tasks/README.md"), TASKS_README);
 
   // The index memoized pre-adopt file lists and contents; the guidelines pass must see the result.
   clearFileIndexes();
   await refreshGuidelines(root);
-  return { stripped, tasks };
+  return { stripped, tasks, renamed };
 }
 
 export const commands = [
@@ -90,7 +168,7 @@ export const commands = [
     const result = await adoptProject(repoRoot, { name, purpose });
     process.stdout.write(
       `Adopted "${name}": removed ${TEMPLATE_DIR}/, stripped template-only blocks in ${result.stripped.length} file(s), ` +
-        `wrote the identity block, deleted ${SCOPE_FILE} and ${result.tasks.length} template task(s).\n` +
+        `wrote the identity block, renamed ${result.renamed.length} file(s) to "${projectSlug(name)}", wrote docs/tasks/README.md, deleted ${SCOPE_FILE} and ${result.tasks.length} template task(s).\n` +
         "This repository is now a project; the scope gate is skipped.\n",
     );
   }),

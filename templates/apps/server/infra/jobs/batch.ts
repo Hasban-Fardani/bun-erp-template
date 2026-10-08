@@ -149,7 +149,7 @@ export async function createJobBatch(
       )[0];
       if (!existing) throw new Error("Batch insert did not return an identifier");
       if (existing.jobId) return { batchId: existing.id, jobId: existing.jobId };
-      const jobId = await enqueueBatchJob(tx as unknown as Database, {
+      const jobId = await enqueueBatchJob(tx, {
         batchId: existing.id,
         queue,
         maxAttempts: input.maxAttempts,
@@ -171,7 +171,7 @@ export async function createJobBatch(
       `);
     }
 
-    const jobId = await enqueueBatchJob(tx as unknown as Database, {
+    const jobId = await enqueueBatchJob(tx, {
       batchId,
       queue,
       maxAttempts: input.maxAttempts,
@@ -265,13 +265,13 @@ export async function resumeJobBatch(db: Database, batchId: string): Promise<boo
       if (job?.status === "pending") {
         queued = true;
       } else if (job?.status === "dead") {
-        queued = await requeueDeadJob(tx as unknown as Database, batch.jobId);
+        queued = await requeueDeadJob(tx, batch.jobId);
       }
     }
     if (!queued) {
       // A fresh key: the completed or deleted runner still holds `batch:<batchId>` and would win
       // the idempotency conflict, silently pointing the batch at a job that will never run again.
-      const jobId = await enqueueBatchJob(tx as unknown as Database, {
+      const jobId = await enqueueBatchJob(tx, {
         batchId,
         queue: batch.queue,
         maxAttempts: batch.maxAttempts,

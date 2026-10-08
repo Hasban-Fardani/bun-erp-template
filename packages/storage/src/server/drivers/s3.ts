@@ -44,6 +44,17 @@ export const s3StorageDriver: StorageDriverFactory = ({ config }): StorageDriver
     async exists(key: string): Promise<boolean> {
       return client.exists(storageKey(key));
     },
+    async list({ prefix, cursor, limit } = {}) {
+      const result = await client.list({
+        prefix: prefix || undefined,
+        continuationToken: cursor,
+        maxKeys: limit,
+      });
+      return {
+        objects: (result.contents ?? []).map((entry) => ({ key: entry.key, size: entry.size ?? 0 })),
+        cursor: result.isTruncated ? result.nextContinuationToken : undefined,
+      };
+    },
     async url(key: string, options): Promise<string> {
       const safe = storageKey(key);
       if (base !== "" && options?.expiresInSeconds === undefined) return `${base}/${safe}`;

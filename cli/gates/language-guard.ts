@@ -1,6 +1,7 @@
 import { LanguageVariant, SyntaxKind } from "typescript/unstable/ast";
 import { createScanner } from "typescript/unstable/ast/scanner";
 import { fileIndex } from "../lib/file-index.ts";
+import { rescanRegex } from "../lib/ts-scan.ts";
 
 const INDONESIAN_TECHNICAL_WORDS = new Set([
   "kertas",
@@ -111,8 +112,9 @@ function scanCode(source: string, isTsx: boolean): Token[] {
   const templateFrames: { braceDepth: number }[] = [];
 
   while (true) {
-    const kind = mode === "jsx-text" ? scanner.scanJsxToken() : scanner.scan();
+    let kind = mode === "jsx-text" ? scanner.scanJsxToken() : scanner.scan();
     if (kind === SyntaxKind.EndOfFile) break;
+    if (mode === "code") kind = rescanRegex(scanner, kind, previous?.kind);
 
     if (mode === "jsx-text") {
       if (kind === SyntaxKind.JsxText) continue;

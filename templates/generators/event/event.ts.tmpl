@@ -1,0 +1,13 @@
+import { defineEvent } from "../../../infra/events/index.ts";
+
+/** Fact payload. Keep it small and JSON-serialisable: it is stored on every listener's queue row. */
+export type {{pascal}}Payload = {
+  id: string;
+};
+
+/**
+ * Domain event `{{eventName}}`. Dispatch it inside the write transaction that causes it:
+ * `await dispatch(tx, {{camel}}Event, payload, { idempotencyKey })`. Listeners live in
+ * `../listeners/` (`bun erp make:listener {{feature}} <name> --event {{file}}`).
+ */
+export const {{camel}}Event = defineEvent<{{pascal}}Payload>("{{eventName}}");

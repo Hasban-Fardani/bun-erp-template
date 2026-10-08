@@ -6,7 +6,7 @@ import { users } from "../identity/index.ts";
  * Spatie-style RBAC: permission = static statements from code, role = dynamic in the DB.
  * Code must not depend on a role an admin can delete, and vice versa.
  * The default server is single-tenant: roles and assignments are global. Tenant scoping belongs
- * to the opt-in `organizations` feature, not to RBAC (Q28).
+ * to the opt-in `organizations` feature, not to RBAC (docs/architecture.md).
  */
 export const permissions = pgTable("permissions", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),

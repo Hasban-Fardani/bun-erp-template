@@ -1,0 +1,21 @@
+import { defineCommand } from "@cli/registry.ts";
+import type { AppContext } from "../../bootstrap/context.ts";
+import { createCliContext } from "../lib/context.ts";
+
+/** The command's work, separate from process wiring so a test can call it with the test context. */
+export async function run{{pascal}}(_ctx: Pick<AppContext, "db" | "logger">, args: readonly string[]): Promise<string> {
+  // Domain work goes here; return the line the command prints.
+  return `{{command}}: ${args.length} argument(s)`;
+}
+
+// `bun erp --help` lists this command under "Other" until you add a summary in cli/lib/help.ts.
+export const commands = [
+  defineCommand("{{command}}", async (args) => {
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      process.stdout.write(`${await run{{pascal}}(ctx, args)}\n`);
+    } finally {
+      await ctx.close();
+    }
+  }),
+];

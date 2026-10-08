@@ -6,10 +6,15 @@ import { enqueueJob } from "../../infra/jobs/queue.ts";
 import type { JobRegistry } from "../../infra/jobs/registry.ts";
 import type { Logger } from "../../infra/observability/logger.ts";
 
-/** The database-backed queue writer: `ctx.mail.queue()` stores a `mail.send` job for the worker. */
-export function createMailEnqueue(db: Database): MailEnqueue {
+/**
+ * The database-backed queue writer: `ctx.mail.queue()` stores a `mail.send` job for the worker.
+ * `queue` defaults to the shared `default` queue; tests pass a private one so no other file's
+ * runner can claim their rows.
+ */
+export function createMailEnqueue(db: Database, queue?: string): MailEnqueue {
   return (input) =>
     enqueueJob(db, {
+      queue,
       name: input.name,
       payload: input.payload,
       idempotencyKey: input.idempotencyKey,
@@ -40,15 +45,18 @@ const mailPayload = z.object({
 
 /** Registered at the runtime composition root so queued mail is actually delivered by the worker. */
 export function registerMailJobs(registry: JobRegistry, mailer: Mailer): void {
-  registry.register("mail.send", async (payload) => {
+  registry.register("mail.send", async (payload, context) => {
     const message = mailPayload.safeParse(payload);
     if (!message.success) throw invalidPayload();
-    await mailer.send(message.data);
+    // The job id is stable across retries, so providers that dedupe sends never deliver twice.
+    await mailer.send({ ...message.data, idempotencyKey: `mail.send:${context.jobId}` });
   });
 }
 
 function invalidPayload(): Error {
-  const error = new Error("Invalid mail.send payload") as Error & { code: string };
+  const error = new Error("Invalid mail.send payload") as Error & { code: string; retryable: boolean };
   error.code = "MAIL_PAYLOAD_INVALID";
+  // A malformed payload never heals on retry, so the runner dead-letters it on the first attempt.
+  error.retryable = false;
   return error;
 }

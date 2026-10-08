@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
-  "description": "App-agnostic server mail transport: driver registry, log/memory/SMTP drivers, message resolution",
+  "description": "App-agnostic server mail transport: driver registry, log/memory/SMTP/HTTP drivers, message resolution",
   "scripts": {
     "check": "bunx --bun tsc --noEmit -p tsconfig.json",
     "test": "bun test tests"

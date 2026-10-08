@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { adoptProject } from "@cli/commands/project.ts";
+import { adoptProject, projectDatabaseName, projectSlug } from "@cli/commands/project.ts";
 import { checkLifecycle } from "@cli/gates/lifecycle.ts";
 import { checkScope } from "@cli/gates/scope.ts";
 import { withTempRoot } from "./support/temp-root.ts";
@@ -145,4 +145,132 @@ Reusable starter.
     },
     "lifecycle-adopt-",
   );
+});
+
+test("project:adopt renames package, wrangler, queue, bucket and URL names derived from the template", async () => {
+  await withTempRoot(
+    {
+      "docs/template/README.md": "# Template material\n",
+      "AGENTS.md": `${MARKED_AGENTS}\n<!-- guidelines:start -->\nold\n<!-- guidelines:end -->\n`,
+      "package.json": '{\n  "name": "bun-erp-template",\n  "private": true\n}\n',
+      "wrangler.jsonc": `{
+  "name": "bun-erp-template",
+  "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "bun-erp-template-files" }],
+  // wrangler queues create bun-erp-template-jobs
+  "vars": { "APP_URL": "https://bun-erp-template.example.workers.dev" }
+}
+`,
+    },
+    async (root) => {
+      await adoptProject(root, { name: "Acme ERP!", purpose: "ERP for Acme" });
+      const pkg = JSON.parse(await Bun.file(`${root}/package.json`).text()) as { name: string };
+      expect(pkg.name).toBe("acme-erp");
+      const wrangler = await Bun.file(`${root}/wrangler.jsonc`).text();
+      expect(wrangler).toContain('"name": "acme-erp"');
+      expect(wrangler).toContain("acme-erp-files");
+      expect(wrangler).toContain("acme-erp-jobs");
+      expect(wrangler).toContain("https://acme-erp.example.workers.dev");
+      expect(wrangler).not.toContain("bun-erp-template");
+    },
+    "lifecycle-adopt-names-",
+  );
+});
+
+test("project:adopt gives the project its own database name and leaves host and credentials alone", async () => {
+  await withTempRoot(
+    {
+      "docs/template/README.md": "# Template material\n",
+      "AGENTS.md": MARKED_AGENTS,
+      ".env.example": "A=1\nDATABASE_URL=postgresql://postgres:postgres@localhost:5432/bun_erp\nB=2\n",
+      ".env": 'DATABASE_URL="postgresql://u:p%40ss@db.internal:55418/erp_ci?sslmode=disable"\n',
+    },
+    async (root) => {
+      await adoptProject(root, { name: "Acme Ops", purpose: "ERP for Acme" });
+      expect(await Bun.file(`${root}/.env.example`).text()).toBe(
+        "A=1\nDATABASE_URL=postgresql://postgres:postgres@localhost:5432/acme_ops\nB=2\n",
+      );
+      expect(await Bun.file(`${root}/.env`).text()).toBe(
+        'DATABASE_URL="postgresql://u:p%40ss@db.internal:55418/acme_ops?sslmode=disable"\n',
+      );
+    },
+    "lifecycle-adopt-db-",
+  );
+});
+
+test("projectDatabaseName makes an identifier-safe name", () => {
+  expect(projectDatabaseName("Acme Ops")).toBe("acme_ops");
+  expect(projectDatabaseName("3d-print")).toBe("erp_3d_print");
+});
+
+test("projectSlug derives a lowercase DNS-safe name and rejects an empty result", () => {
+  expect(projectSlug("Acme ERP!")).toBe("acme-erp");
+  expect(projectSlug("  --Hello__World--  ")).toBe("hello-world");
+  expect(() => projectSlug("!!!")).toThrow(/project name/i);
+});
+
+test("project:adopt writes docs/tasks/README.md and the task gate ignores it", async () => {
+  await withTempRoot(
+    {
+      "docs/template/README.md": "# Template material\n",
+      "AGENTS.md": MARKED_AGENTS,
+    },
+    async (root) => {
+      await adoptProject(root, { name: "Acme", purpose: "ERP for Acme" });
+      const readme = await Bun.file(`${root}/docs/tasks/README.md`).text();
+      expect(readme).toContain("bun erp task:new");
+      const { loadTasks } = await import("@cli/gates/tasks.ts");
+      expect(await loadTasks(`${root}/docs/tasks`)).toEqual([]);
+      expect(await checkLifecycle(root)).toEqual([]);
+    },
+    "lifecycle-adopt-tasks-",
+  );
+});
+
+test("project mode: leak phrases outside template-only markers are findings", async () => {
+  await withTempRoot(
+    {
+      "README.md": "# Bun ERP Template\n",
+      "docs/a.md": "The repo ships `apps/` empty.\n",
+      "docs/b.md": "Use this template carefully.\n",
+      "docs/c.md": "## Deployment (F3.2 Q9)\n",
+      "docs/tasks/F3.9-x.md": "history F3.9 and this template\n",
+      "docs/ok.md": "Clean project text about F30 and templates/apps catalogs.\n",
+    },
+    async (root) => {
+      const text = (await checkLifecycle(root)).join("\n");
+      expect(text).toContain("README.md");
+      expect(text).toContain("docs/a.md");
+      expect(text).toContain("docs/b.md");
+      expect(text).toContain("docs/c.md");
+      expect(text).not.toContain("docs/tasks");
+      expect(text).not.toContain("docs/ok.md");
+    },
+    "lifecycle-leaks-",
+  );
+});
+
+test("template mode: leak phrases are allowed", async () => {
+  await withTempRoot(
+    {
+      "docs/template/README.md": "# Template material\n",
+      "README.md": "# Bun ERP Template\nThis template ships `apps/` empty (F3.4).\n",
+    },
+    async (root) => {
+      expect(await checkLifecycle(root)).toEqual([]);
+    },
+    "lifecycle-leaks-template-",
+  );
+});
+
+test("first-party documents carry no leak phrase outside template-only blocks", async () => {
+  const { fileIndex } = await import("@cli/lib/file-index.ts");
+  const { DOCUMENT_GLOBS, findLeakPhrases } = await import("@cli/gates/lifecycle.ts");
+  const root = import.meta.dir.split("/").slice(0, -4).join("/");
+  const index = fileIndex(root);
+  const leaks: string[] = [];
+  for (const file of await index.files([...DOCUMENT_GLOBS])) {
+    if (file.startsWith("docs/tasks/") || file.startsWith("docs/template/")) continue;
+    for (const label of findLeakPhrases(await index.text(file))) leaks.push(`${file}: ${label}`);
+  }
+  expect(leaks).toEqual([]);
 });

@@ -4,7 +4,9 @@ import {
   GUIDELINES_END,
   GUIDELINES_START,
   refreshGuidelines,
+  renderGoalBlock,
   renderGuidelinesBlock,
+  renderPlatformBlock,
 } from "@cli/lib/guidelines.ts";
 import { repoRoot } from "@cli/lib/repo.ts";
 import { withTempRoot } from "./support/temp-root.ts";
@@ -50,5 +52,70 @@ test("refreshGuidelines rewrites the block on a fixture and settles to unchanged
       expect(await refreshGuidelines(root)).toBe("unchanged");
     },
     "guidelines-",
+  );
+});
+
+test("project mode points installed apps at project docs, never at the template catalog guide", async () => {
+  await withTempRoot(
+    { "apps/server/package.json": '{"name":"@acme/server"}\n', "AGENTS.md": "x\n" },
+    async (root) => {
+      const block = await renderGuidelinesBlock(root);
+      expect(block).toContain("guide: `docs/development.md`");
+      expect(block).not.toContain("templates/apps/README.md");
+    },
+    "guidelines-project-apps-",
+  );
+});
+
+test("template mode keeps the catalog guide for apps without their own README", async () => {
+  await withTempRoot(
+    {
+      "docs/template/README.md": "x\n",
+      "apps/server/package.json": '{"name":"@acme/server"}\n',
+      "AGENTS.md": "x\n",
+    },
+    async (root) => {
+      expect(await renderGuidelinesBlock(root)).toContain("templates/apps/README.md");
+    },
+    "guidelines-template-apps-",
+  );
+});
+
+test("goal and platform blocks are per target: VPS default, Workers Paid for production", () => {
+  const goal = renderGoalBlock();
+  expect(goal).not.toContain("fits Cloudflare Workers Free");
+  expect(goal).toContain("VPS");
+  expect(goal).toContain("Workers Paid");
+  const platform = renderPlatformBlock();
+  expect(platform).toContain("APP_DEPLOY_TARGET=cloudflare");
+  expect(platform).toContain("Workers Paid");
+  expect(platform).toContain("10 ms");
+  expect(platform).toContain("VPS");
+});
+
+test("refreshGuidelines also regenerates the goal and platform blocks and settles", async () => {
+  const agents = [
+    "# A",
+    "<!-- guidelines:start -->",
+    "x",
+    "<!-- guidelines:end -->",
+    "<!-- goal:start -->",
+    "stale goal",
+    "<!-- goal:end -->",
+    "<!-- platform-limits:start -->",
+    "stale platform",
+    "<!-- platform-limits:end -->",
+    "",
+  ].join("\n");
+  await withTempRoot(
+    { "AGENTS.md": agents },
+    async (root) => {
+      expect(await refreshGuidelines(root)).toBe("updated");
+      const text = await Bun.file(`${root}/AGENTS.md`).text();
+      expect(text).not.toContain("stale");
+      expect(text).toContain("APP_DEPLOY_TARGET=cloudflare");
+      expect(await refreshGuidelines(root)).toBe("unchanged");
+    },
+    "guidelines-blocks-",
   );
 });

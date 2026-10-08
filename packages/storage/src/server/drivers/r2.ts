@@ -16,6 +16,11 @@ type R2Bucket = {
   get(key: string): Promise<R2ObjectBody | null>;
   head(key: string): Promise<{ size: number; httpEtag?: string } | null>;
   delete(key: string): Promise<void>;
+  list(options?: {
+    prefix?: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ objects: Array<{ key: string; size: number }>; truncated: boolean; cursor?: string }>;
 };
 
 /**
@@ -56,6 +61,13 @@ export const r2StorageDriver: StorageDriverFactory = ({ config, bindings }): Sto
     },
     async exists(key: string): Promise<boolean> {
       return (await bucket.head(storageKey(key))) !== null;
+    },
+    async list({ prefix, cursor, limit } = {}) {
+      const result = await bucket.list({ prefix: prefix || undefined, cursor, limit });
+      return {
+        objects: result.objects.map(({ key, size }) => ({ key, size })),
+        cursor: result.truncated ? result.cursor : undefined,
+      };
     },
     async url(key: string): Promise<string> {
       return `${base}/${storageKey(key)}`;

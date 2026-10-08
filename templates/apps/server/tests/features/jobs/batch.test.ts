@@ -13,18 +13,8 @@ import {
 } from "@/infra/jobs/batch.ts";
 import { claimNextJob, runNextJob } from "@/infra/jobs/queue.ts";
 import { JobRegistry } from "@/infra/jobs/registry.ts";
-import type { Logger } from "@/infra/observability/logger.ts";
 import { createTestContext } from "../../support/fixtures.ts";
-
-// slop-ok: the no-op logger fixture is deliberately identical across the job test files
-const logger: Logger = {
-  trace: () => {},
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  fatal: () => {},
-};
+import { silentLogger as logger } from "../../support/jobs.ts";
 
 function itemsOf(count: number) {
   return Array.from({ length: count }, (_, index) => ({ key: `row-${index + 1}`, payload: { value: index + 1 } }));

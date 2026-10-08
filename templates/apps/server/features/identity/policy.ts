@@ -1,8 +1,10 @@
 import type { Context } from "hono";
+import { deleteCookie, getCookie } from "hono/cookie";
 import type { AppContext } from "../../bootstrap/context.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
 import type { PermissionKey } from "../rbac/index.ts";
 import { permissionsForUser } from "../rbac/index.ts";
+import { IMPERSONATION_COOKIE, resolveImpersonation } from "./impersonation.ts";
 
 /**
  * Per-request identity. Built from the Better Auth session, not from client-sent
@@ -17,6 +19,11 @@ export type Actor = {
   email: string;
   /** Actor name as frozen text for the audit — names can change, records cannot. */
   label: string;
+  /**
+   * Present while an admin views the app as this user: `userId` is the target, `impersonator` the
+   * admin. Audit rows written from this actor carry both ids.
+   */
+  impersonator?: { userId: string; name: string; email: string; label: string; token: string; expiresAt: Date };
 };
 
 /**
@@ -32,10 +39,43 @@ export async function resolveActor(c: Context, ctx: AppContext): Promise<Actor |
     name?: string | null;
     email?: string | null;
   };
+  const base = {
+    traceId: (c.get("requestId") as string | undefined) ?? "",
+  };
+
+  // The impersonation token is checked against the admin's own live session: when that session
+  // ends, so does the impersonation. A dead token clears its cookie and answers 401; the admin's
+  // original session is untouched, so the next request works.
+  const token = getCookie(c, IMPERSONATION_COOKIE);
+  if (token) {
+    const resolved = await resolveImpersonation(ctx.db, token, user.id);
+    if (resolved.state !== "active") {
+      deleteCookie(c, IMPERSONATION_COOKIE, { path: "/" });
+      return null;
+    }
+    const target = resolved.target;
+    return {
+      ...base,
+      userId: target.id,
+      permissions: await permissionsForUser(ctx.db, target.id),
+      name: target.name,
+      email: target.email,
+      label: target.email,
+      impersonator: {
+        userId: user.id,
+        name: user.name ?? "",
+        email: user.email ?? "",
+        label: user.email ?? user.name ?? "",
+        token,
+        expiresAt: resolved.expiresAt,
+      },
+    };
+  }
+
   return {
+    ...base,
     userId: user.id,
     permissions: await permissionsForUser(ctx.db, user.id),
-    traceId: (c.get("requestId") as string | undefined) ?? "",
     name: user.name ?? "",
     email: user.email ?? "",
     // Email outlives the display name, and stays readable during an investigation.
@@ -69,4 +109,5 @@ export const ACTION_PERMISSION = {
   assignRole: "role.assign",
   replaceRoles: "role.assign",
   revokeRole: "role.assign",
+  impersonate: "user.impersonate",
 } as const satisfies Record<string, PermissionKey>;
