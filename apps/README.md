@@ -1,6 +1,7 @@
 # Apps
 
-This directory ships empty. The template installs the apps you choose at `bun erp init`:
+This directory holds the installed apps (`apps/server`, `apps/web`, `apps/mobile`). They are copied
+from the catalog by `bun erp init`, which is also how an empty checkout is populated:
 
 ```
 bun erp init                       # interactive choice list

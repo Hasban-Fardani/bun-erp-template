@@ -1,6 +1,6 @@
 # CI
 
-The template ships `apps/` empty, so the shared setup action runs
+`apps/` is a disposable install of the catalog, so the shared setup action runs
 `bun erp init --apps server,web --yes` after the frozen install: every gate, test, build and QA job
 starts from the reference server+web combination. Change that command in
 `.github/actions/setup/action.yml` to test a different combination. The mobile build job skips

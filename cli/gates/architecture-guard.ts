@@ -225,7 +225,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
     }
   }
   // The rule only makes sense when two attached app runtimes exist to share the utility. Detached
-  // web/mobile shells (Q30) ship no server contract and legitimately consume nothing yet.
+  // web/mobile shells (docs/api-contract.md, detached mode) ship no server contract and legitimately consume nothing yet.
   const hasServerApp = await directoryExists(`${root}/apps/server`);
   if (hasServerApp && installedRoots >= 2 && consumers.size < 2)
     findings.push("packages/utils: UTILS_NOT_CROSS_PLATFORM — require consumers in at least two apps");

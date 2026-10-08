@@ -23,4 +23,7 @@ Read [mobile](../../docs/mobile.md) for native boundaries and
 
 Check at phone/tablet/desktop widths, reduced motion and both themes. Browser mobile emulation
 is viewport evidence only; iOS/Android keyboard, safe area, back navigation and plugins need
-actual native execution. Do not introduce client workflows or fake data into the template.
+actual native execution.
+<!-- template-only -->
+Do not introduce client workflows or fake data into the template.
+<!-- /template-only -->

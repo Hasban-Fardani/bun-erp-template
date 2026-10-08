@@ -64,7 +64,7 @@ resolves, `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` is set (env
 `apps/web/.dev.vars`) and its database answers. The boot itself stays a manual, documented step
 because it starts Vite + workerd; run it whenever a change touches the Worker entry or its bindings.
 
-### Target matrix — Bun/VPS and Cloudflare Workers (F3.3 Phase 7)
+### Target matrix — Bun/VPS and Cloudflare Workers
 
 | Concern | Bun / VPS | Cloudflare Workers |
 |---|---|---|
@@ -87,7 +87,7 @@ Both targets share one codebase, one schema and one queue table; the differences
 list. A configuration that would be unsafe on either target is refused by `templates/apps/server/config/schema.ts`
 at boot, with a test per guard.
 
-### Measured Worker budget (F3.3 Phase 0, 2026-10-07, commit 1a2d76e)
+### Measured Worker budget (2026-10-07)
 
 | Measurement | Value | How |
 |---|---|---|
@@ -95,7 +95,7 @@ at boot, with a test per guard.
 | Gate bundle (`Bun.build`, browser/workerd target) | ~1.04 MB raw / ~288 KB gzip | `bun erp check:worker` |
 | Vite Cloudflare Worker build | 1,244,243 B raw / 321,552 B gzip | `bun erp cloudflare:build` |
 | Worker startup time | not reported by this Wrangler version | the dry run prints size and bindings only; measure in the dashboard |
-| Script size cap | 64 MiB uncompressed on Free and Paid, no compressed limit | Cloudflare Workers limits page, re-checked 2026-10-08 (F3.4) |
+| Script size cap | 64 MiB uncompressed on Free and Paid, no compressed limit | Cloudflare Workers limits page, re-checked 2026-10-08 |
 | scrypt sign-in cost | ~110 ms CPU per hash/verify locally | `better-auth/crypto`, N=16384 r=16 p=1 dkLen=64, Bun 1.4.2 on Apple silicon — about ten times the 10 ms Free budget |
 | Jobs throughput, cron only | 288 ticks/day × batch 1 = 288 jobs/day | `wrangler.jsonc` cron `*/5`; a 1,000-job burst is ~3.5 days |
 
@@ -124,7 +124,7 @@ size. The gate constant is `WORKER_RAW_BUDGET_BYTES` in `cli/gates/worker-gate.t
 and this section state the same numbers, and a test pins that.
 
 The API reference UI (Scalar) is never part of the Worker script: `http/build-app.ts` builds the app
-without it and only `http/app.ts` (the Bun entry) adds `/api/docs`. F3.4 B6 measured the Worker gate
+without it and only `http/app.ts` (the Bun entry) adds `/api/docs`. The Worker gate was measured at
 bundle at 1,043,345 B raw / 289,326 B gzip before and 1,040,722 B raw / 288,292 B gzip after, which
 includes the new file route (Scalar's Hono wrapper is small because the page loads its viewer from
 a CDN). The gate now fails if any `@scalar/*` import reaches the Worker graph.

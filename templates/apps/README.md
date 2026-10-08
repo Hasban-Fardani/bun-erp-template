@@ -1,7 +1,8 @@
 # App catalog
 
-The template repo ships `apps/` empty; app combinations are chosen at `bun erp init`. The catalog
-holds the three installable apps:
+`apps/` holds the installed apps; app combinations are chosen at `bun erp init`, which copies them
+from this catalog (an unconfigured template checkout has `apps/` empty). The catalog holds the three
+installable apps:
 
 - `server/` — the full Hono + Drizzle API (`@bun-erp/server`), including `tests/` and the
   server-owned CLI commands under `cli/`.

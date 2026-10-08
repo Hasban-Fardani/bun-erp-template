@@ -14,7 +14,7 @@ prose alone does not prove enforcement.
 - [UI](antislop-ui/SKILL.md): existing components, operator feedback, and the `bun erp check:gate motion` reduced-motion gate.
 - [Responsive layout](antislop-layoutmobile/SKILL.md): viewport/touch/native checks.
 - [Mobile development](mobile-development/SKILL.md): source ownership, API, logging and Capacitor release boundaries.
-- [Guardrails](template-guardrails/SKILL.md): gate diagnosis and truthful handoff.
+- [Guardrails](handoff-guardrails/SKILL.md): gate diagnosis and truthful handoff.
 - [Shared utilities](cross-platform-utilities/SKILL.md): when code belongs in `packages/utils`.
 - [Background jobs](background-jobs/SKILL.md): durable enqueue, retries and handler conventions.
 - [UI registry](ui-registry/SKILL.md): inspect the approved shadcn source before changing atomic UI.

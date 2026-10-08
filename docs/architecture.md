@@ -20,7 +20,9 @@ app is present; without it they install in detached mode (stub `src/lib/rpc.ts`,
 | Compose HTTP behavior | apps/server/http/app.ts, apps/server/routes/api.ts | Middleware, docs and error envelope; version prefix and feature route mounts |
 | Add an API feature | apps/server/features/<name> | route.ts, validation.ts, service.ts, policy.ts, schema.ts; optional jobs.ts |
 | Add a migration | apps/server/database/migrations/NNNN_name.ts | Forward-only TypeScript migration exporting up(database) |
-| Add shared runtime services | apps/server/infra | Config, database, logging and durable jobs |
+| Add shared runtime services | apps/server/infra | Config, database, logging, durable jobs, cache facade and transactional events |
+| Cache a computed value or react to a domain event | apps/server/infra/cache, apps/server/infra/events | `cache.remember(...)`; `defineEvent`/`defineListener` dispatched in the write transaction (see Cache and events below) |
+| Throttle, pause or harden the HTTP surface | apps/server/http, apps/server/cli/commands/app.ts | Database-backed rate limiter, `bun erp down`/`up` maintenance mode, cross-site request guard (see operations.md) |
 | Add a web URL | apps/web/src/pages | Small TanStack file route wrappers; route tree is generated |
 | Implement a web screen | apps/web/src/features/<name>/screens | Screen composition; feature API, hooks, components and types stay nearby |
 | Start or add mobile screens | apps/mobile/src/main.tsx, apps/mobile/src/screens (install with `bun erp init` or bun erp apps:create <name> mobile) | Separate React entry and mobile-only composition |
@@ -37,7 +39,7 @@ app is present; without it they install in detached mode (stub `src/lib/rpc.ts`,
 ## Runtime modes
 
 Hono's `fetch` contract lets the HTTP application run behind different host adapters; it does not
-make every application dependency runtime-neutral. This template currently implements and tests
+make every application dependency runtime-neutral. This codebase implements and tests
 two targets: Bun (`apps/server/bootstrap/server.ts`) and Cloudflare Workers (`apps/server/bootstrap/cloudflare-entry.ts`,
 the wrangler entry that re-exports `apps/server/bootstrap/worker.ts`). The
 bootstrap, CLI, migrations and local tooling use Bun APIs, so Node, Deno and Google Cloud Functions

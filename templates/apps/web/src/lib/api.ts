@@ -1,6 +1,6 @@
 /**
  * Wire envelope shared with the server contract (docs/api-contract.md). Kept structural so the
- * web shell typechecks even when the server app is not installed (Q30 detached mode).
+ * web shell typechecks even when the server app is not installed (detached mode, templates/apps/README.md).
  */
 export type FieldError = { path: string; message: string };
 export type ApiErrorBody = {

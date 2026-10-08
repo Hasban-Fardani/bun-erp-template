@@ -30,7 +30,7 @@ prints that catalog as a table.
 
 `bun erp check:gate --list` is authoritative; this table explains the same entries.
 
-Since `apps/` ships empty, the UI gates (`design`, `copy`, `motion`, `ui`, and the contrast half of
+Because `apps/` can be empty or partial, the UI gates (`design`, `copy`, `motion`, `ui`, and the contrast half of
 `design`) also scan the catalog copies under `templates/apps/web`, `templates/apps/mobile`,
 `templates/features/*/web` and `templates/packages/*/src`; a directory that does not exist is
 skipped. `check:design` reads `cli/gates/design-exemptions.json` for documented known gaps (one

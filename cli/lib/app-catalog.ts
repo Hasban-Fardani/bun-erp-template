@@ -17,7 +17,7 @@ const DETACHED_MARKER = "detached-shell";
 const SERVER_COUPLED_TESTS = ["tests/rpc-types.ts", "tests/unit/identity-validation.test.ts"];
 
 /**
- * Q30: web/mobile bind the server's typed Hono contract when a server app exists, and ship a
+ * Detached mode (templates/apps/README.md): web/mobile bind the server's typed Hono contract when a server app exists, and ship a
  * detached stub with no `@bun-erp/server` dependency when it does not. A later `bun erp init`
  * that adds the server re-fits the real client.
  */
