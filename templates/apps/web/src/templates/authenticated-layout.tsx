@@ -14,6 +14,7 @@ import { Menu, PanelLeftClose, PanelLeftOpen, Users as UsersIcon } from "lucide-
 import { useLayoutEffect, useRef, useState } from "react";
 import { type NavItem, navLocationForPath, visibleNavGroups } from "../config/navigation.ts";
 import { uiConfig } from "../config/ui.ts";
+import { AssistantPanel } from "../features/assistant/components/assistant-panel.tsx";
 import { ImpersonationBanner } from "../features/identity/components/impersonation-banner.tsx";
 import { useSession, useSignOut } from "../features/identity/hooks/index.ts";
 import type { SessionView } from "../features/identity/types/index.ts";
@@ -291,6 +292,7 @@ function Topbar({ session }: { session: SessionView }) {
 
           <div className="ml-auto flex items-center gap-1.5">
             <CommandPalette permissions={session.permissions} onSignOut={() => signOut.mutate()} />
+            {session.permissions.includes("ai.use") ? <AssistantPanel /> : null}
             <NotificationsBell />
             <span className="hidden sm:block">
               <ThemeSwitcher />

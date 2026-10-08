@@ -59,6 +59,7 @@ const APP_ENV_PREFIXES = [
   "MAIL_",
   "SMTP_",
   "JOBS_",
+  "AI_",
   "FEATURE_",
 ];
 

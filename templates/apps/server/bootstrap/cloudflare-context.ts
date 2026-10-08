@@ -4,6 +4,7 @@ import { createPostgresDatabase } from "../database/postgres.ts";
 import { createEventListeners } from "../features/events.ts";
 import { createAuth } from "../features/identity/auth.ts";
 import { configurePermissionCache } from "../features/rbac/cache.ts";
+import { createAi } from "../infra/ai/index.ts";
 import { createCacheFromEnv } from "../infra/cache/from-env.ts";
 import { registerEventListeners } from "../infra/events/index.ts";
 import { createWorkerLogger } from "../infra/observability/worker-logger.ts";
@@ -41,7 +42,8 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   const cache = createCacheFromEnv({ env, db, bindings });
   configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED, cache });
   const storage = createStorage({ env, bindings });
-  return { env, db, logger, storage, cache, close };
+  const ai = createAi({ env, bindings });
+  return { env, db, logger, ai, storage, cache, close };
 }
 
 /** HTTP requests need auth; scheduled queue ticks only need the database and logger. */

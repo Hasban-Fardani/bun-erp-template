@@ -37,9 +37,9 @@ test("permissionsForRoles batches the per-role permission lookup", async () => {
   const owner = await roleIdByKey("owner");
 
   const batched = await permissionsForRoles(ctx.db, [staff, owner]);
-  expect(batched.get(staff)).toEqual(["user.read"]);
+  expect(batched.get(staff)).toEqual(["ai.use", "user.read"]);
   expect((batched.get(owner) ?? []).length).toBeGreaterThan(0);
-  expect(await permissionsForRole(ctx.db, staff)).toEqual(["user.read"]);
+  expect(await permissionsForRole(ctx.db, staff)).toEqual(["ai.use", "user.read"]);
 
   // An empty id list must not hit the database or invent entries.
   expect((await permissionsForRoles(ctx.db, [])).size).toBe(0);

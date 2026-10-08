@@ -62,6 +62,7 @@ export const testEnv: Env = loadEnv({
   MAIL_HTTP_PROVIDER: "resend",
   MAIL_API_KEY: "",
   FEATURE_ADVANCED_REPORTS: "false",
+  AI_DRIVER: "fake",
 });
 
 /**

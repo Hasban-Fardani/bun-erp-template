@@ -21,6 +21,8 @@ const CONTEXTUAL_ERRORS = new Set([
   "apps/web/src/features/identity/components/reset-password-view.tsx",
   // A refused Google sign-in returns to the login screen; the reason stays beside the Google button.
   "apps/web/src/features/identity/components/google-sign-in.tsx",
+  // The failed answer belongs next to the question it failed, with its retry, not in a toast.
+  "apps/web/src/features/assistant/components/assistant-panel.tsx",
   // Installed by the roles catalog feature; reviewed when it lands in apps/web.
   "apps/web/src/features/roles/components/role-sheet.tsx",
   "apps/mobile/src/features/offline/components/offline-drafts.tsx",

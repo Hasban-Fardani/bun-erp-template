@@ -17,6 +17,7 @@ their history stays in `docs/tasks/`.
 | [0014 Mobile source](0014-mobile-capacitor.md) | Separate React entry and shared atomic UI; offline local store present, native auth absent |
 | [0015 Background jobs](0015-postgres-background-jobs.md) | Durable PostgreSQL queue, Bun polling worker and Cloudflare scheduled adapter |
 | [0016 Cache and events](0016-cache-and-events.md) | `infra/cache` facade (memory, database, Cloudflare KV) and transactional events on the job queue |
+| [0017 AI assistant](0017-ai-assistant.md) | Core `ctx.ai` (Workers AI binding/REST, OpenAI-compatible, fake) and the streaming assistant panel |
 
 <!-- template-only -->
 Template-lifecycle decisions live in `docs/template/` and are deleted by `bun erp project:adopt`:

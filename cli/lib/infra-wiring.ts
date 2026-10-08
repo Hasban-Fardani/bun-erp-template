@@ -93,8 +93,8 @@ function wireBootstrap(source: string): ApplyResult {
     (input) =>
       replaceOnce(
         input,
-        "return { env, db, logger, auth, storage, cache, close };",
-        "return { env, db, logger, auth, mail, storage, cache, close };",
+        "return { env, db, logger, auth, ai, storage, cache, close };",
+        "return { env, db, logger, auth, ai, mail, storage, cache, close };",
       ),
   ]);
   return wired(
@@ -121,8 +121,8 @@ function wireCloudflare(source: string): ApplyResult {
     (input) =>
       replaceOnce(
         input,
-        "return { env, db, logger, storage, cache, close };",
-        "return { env, db, logger, mail, storage, cache, close };",
+        "return { env, db, logger, ai, storage, cache, close };",
+        "return { env, db, logger, ai, mail, storage, cache, close };",
       ),
   ]);
   return wired(
@@ -312,7 +312,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
       markers: [
         'import { createAppMailer } from "../features/mail/wiring.ts";',
         "  const mail = createAppMailer(env, logger, db);",
-        "return { env, db, logger, auth, mail, storage, cache, close };",
+        "return { env, db, logger, auth, ai, mail, storage, cache, close };",
       ],
       apply: wireBootstrap,
     },
@@ -324,7 +324,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
       markers: [
         'import { createAppMailer } from "../features/mail/wiring.ts";',
         "  const mail = createAppMailer(env, logger, db);",
-        "return { env, db, logger, mail, storage, cache, close };",
+        "return { env, db, logger, ai, mail, storage, cache, close };",
       ],
       apply: wireCloudflare,
     },

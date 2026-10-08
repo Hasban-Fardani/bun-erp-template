@@ -7,6 +7,8 @@ export const statements = {
   role: ["create", "read", "update", "delete", "assign"],
   // @erp:permissions
   audit: ["read"],
+  // `use` = ask the built-in assistant; every question counts against AI_DAILY_LIMIT (docs/ai.md).
+  ai: ["use"],
   // `maintenance_bypass` lets a session keep using the API while `bun erp down` is active.
   app: ["maintenance_bypass"],
 } as const;
@@ -35,8 +37,8 @@ export const systemRoles = {
   },
   staff: {
     name: "Staff",
-    description: "Membaca data dan mengubah profilnya sendiri.",
-    permissions: ["user.read"] as readonly PermissionKey[],
+    description: "Membaca data, mengubah profilnya sendiri, dan bertanya ke asisten AI.",
+    permissions: ["user.read", "ai.use"] as readonly PermissionKey[],
   },
 } as const satisfies Record<string, { name: string; description: string; permissions: readonly PermissionKey[] }>;
 
