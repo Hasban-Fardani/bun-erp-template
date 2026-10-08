@@ -34,7 +34,7 @@ function parseFrontMatter(body: string): Record<string, string> {
 export async function loadTasks(dir: string): Promise<Task[]> {
   const files: string[] = [];
   try {
-    for await (const file of new Bun.Glob("*.md").scan({ cwd: dir })) files.push(file);
+    for await (const file of new Bun.Glob("*.md").scan({ cwd: dir })) if (file !== "README.md") files.push(file);
   } catch {
     return [];
   }

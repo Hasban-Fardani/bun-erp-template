@@ -41,6 +41,19 @@ export function fillIdentityBlock(source: string, content: string): string | und
   return `${source.slice(0, start + IDENTITY_START.length)}\n${content}\n${source.slice(end)}`;
 }
 
+/** Phrases that mean a project document still talks as the template; tasks are history and exempt. */
+const LEAK_PATTERNS: readonly { regex: RegExp; label: string }[] = [
+  { regex: /ships `apps\/` empty/, label: "ships `apps/` empty" },
+  { regex: /this template/i, label: "this template" },
+  { regex: /Bun ERP Template/, label: "Bun ERP Template" },
+  { regex: /\bF3\.\d+\b/, label: "F3.<n> reference" },
+];
+
+export function findLeakPhrases(source: string): string[] {
+  const body = stripTemplateOnlyBlocks(source);
+  return LEAK_PATTERNS.filter(({ regex }) => regex.test(body)).map(({ label }) => label);
+}
+
 export async function checkLifecycle(root: string): Promise<string[]> {
   if (await isTemplateRepo(root)) return [];
   const findings: string[] = [];
@@ -59,6 +72,12 @@ export async function checkLifecycle(root: string): Promise<string[]> {
     }
     if (body.includes(TEMPLATE_ONLY_START) || body.includes(TEMPLATE_ONLY_END)) {
       findings.push(`${file}: template-only marker left in a project; run bun erp project:adopt or remove the block`);
+    }
+    if (file.startsWith("docs/tasks/")) continue;
+    for (const label of findLeakPhrases(body)) {
+      findings.push(
+        `${file}: template phrase "${label}" in a project document; rephrase it or wrap it in a template-only block`,
+      );
     }
   }
   return findings;
