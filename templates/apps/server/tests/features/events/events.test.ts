@@ -41,9 +41,7 @@ test("dispatch enqueues one durable job per listener, inside the caller's transa
     defineListener({ name: "update-ledger", event, queue, handler: async (p) => void seen.push(`ledger:${p.amount}`) }),
   ]);
 
-  const count = await db.transaction((tx) =>
-    bus.dispatch(tx as unknown as Database, event, { invoiceId: "i1", amount: 5 }),
-  );
+  const count = await db.transaction((tx) => bus.dispatch(tx, event, { invoiceId: "i1", amount: 5 }));
   expect(count).toBe(2);
   expect((await jobsFor(db, queue)).map((j) => j.status)).toEqual(["pending", "pending"]);
 
@@ -60,7 +58,7 @@ test("a rolled-back transaction dispatches nothing", async () => {
 
   await expect(
     db.transaction(async (tx) => {
-      await bus.dispatch(tx as unknown as Database, event, { invoiceId: "i2", amount: 1 });
+      await bus.dispatch(tx, event, { invoiceId: "i2", amount: 1 });
       throw new Error("rollback");
     }),
   ).rejects.toThrow("rollback");

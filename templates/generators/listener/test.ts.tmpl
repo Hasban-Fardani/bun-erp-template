@@ -28,7 +28,7 @@ test("dispatching {{eventName}} enqueues one durable job for {{name}}, once per 
   const idempotencyKey = `{{name}}-${createUuid()}`;
   const dispatchOnce = () =>
     db.transaction((tx) =>
-      bus.dispatch(tx as unknown as Database, {{eventCamel}}Event, { id: "sample" }, { idempotencyKey }),
+      bus.dispatch(tx, {{eventCamel}}Event, { id: "sample" }, { idempotencyKey }),
     );
 
   expect(await dispatchOnce()).toBe(1);
@@ -43,7 +43,7 @@ test("a rolled-back transaction enqueues nothing for {{name}}", async () => {
 
   await expect(
     db.transaction(async (tx) => {
-      await bus.dispatch(tx as unknown as Database, {{eventCamel}}Event, { id: "sample" }, { idempotencyKey });
+      await bus.dispatch(tx, {{eventCamel}}Event, { id: "sample" }, { idempotencyKey });
       throw new Error("rollback");
     }),
   ).rejects.toThrow("rollback");

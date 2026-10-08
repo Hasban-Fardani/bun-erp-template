@@ -274,7 +274,7 @@ export async function runDueSchedules(
   const lockSeconds = options.lockSeconds ?? DEFAULT_LOCK_SECONDS;
 
   return db.transaction(async (transaction) => {
-    const tx = transaction as unknown as Database;
+    const tx = transaction;
     const acquired = rowsOf<{ locked: boolean }>(
       await tx.execute(sql`select pg_try_advisory_xact_lock(hashtextextended('bun-erp:job-schedules', 0)) as locked`),
     )[0]?.locked;

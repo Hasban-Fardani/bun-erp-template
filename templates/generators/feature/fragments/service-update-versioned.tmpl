@@ -6,7 +6,7 @@ export async function update{{pascal}}(
 ): Promise<{{pascal}}> {
   return db.transaction(async (tx) => {
     const { expectedVersion, ...patch } = input;
-    const before = await require{{pascal}}(tx as unknown as Database, id);
+    const before = await require{{pascal}}(tx, id);
 
     // One statement: the data change and the version bump happen together, guarded by the version.
     const rows = await tx
@@ -21,7 +21,7 @@ export async function update{{pascal}}(
       throw ApiError.versionConflict(current.version);
     }
 
-    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.updated", after.id, before, after);
+    await record{{pascal}}Event(tx, actor, "{{resource}}.updated", after.id, before, after);
     return after;
   });
 }

@@ -95,7 +95,7 @@ export class JobWakeUp {
   ): Promise<T> {
     const signals: JobWakeUpSignal[] = [];
     const result = await db.transaction(async (transaction) => {
-      const tx = transaction as unknown as Database;
+      const tx = transaction;
       trackWakeUpSignals(tx, signals);
       return write(tx);
     }, config);

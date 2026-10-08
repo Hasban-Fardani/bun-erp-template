@@ -125,7 +125,7 @@ async function cachedUser(email: string): Promise<string> {
 async function rollbackRoleWrite(write: (tx: Database) => Promise<unknown>): Promise<void> {
   await expect(
     api.ctx.db.transaction(async (tx) => {
-      await write(tx as unknown as Database);
+      await write(tx);
       throw new Error("rollback");
     }),
   ).rejects.toThrow("rollback");

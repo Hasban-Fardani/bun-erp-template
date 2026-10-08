@@ -155,7 +155,7 @@ export async function startImport(
     ]);
   }
   return db.transaction(async (tx) => {
-    const { batchId, jobId } = await createJobBatch(tx as unknown as Database, {
+    const { batchId, jobId } = await createJobBatch(tx, {
       name: IMPORT_BATCH_NAME,
       items: rows.map((row) => ({
         key: String(row.row),
@@ -168,7 +168,7 @@ export async function startImport(
       },
       ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
     });
-    await recordAudit(tx as unknown as Database, {
+    await recordAudit(tx, {
       actorId: input.actor.userId,
       actorLabel: input.actor.label ?? "",
       traceId: input.actor.traceId,
