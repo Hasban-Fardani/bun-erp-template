@@ -76,6 +76,13 @@ const rawSchema = z
     /** Better Auth rate limiting; the auth endpoints keep their stricter built-in rules. */
     AUTH_RATE_LIMIT_ENABLED: boolOr("true"),
     /**
+     * Business API limiter on `/api/v1/*` (PostgreSQL fixed window, keyed by user id, else client
+     * address). Better Auth keeps its own stricter limits on the auth endpoints.
+     */
+    API_RATE_LIMIT_ENABLED: boolOr("true"),
+    API_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+    API_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+    /**
      * Per-process permission cache. On for single-process dev; set false for Cloudflare Workers
      * and multi-replica Bun, where an invalidation only reaches the process that wrote it.
      * See docs/security.md.

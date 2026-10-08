@@ -5,6 +5,7 @@ import { secureHeaders } from "hono/secure-headers";
 import type { AppContext } from "../bootstrap/context.ts";
 import { type AppEnv, factory } from "./factory.ts";
 import { requestId } from "./helpers/errors.ts";
+import { apiRateLimit } from "./rate-limit.ts";
 
 export function registerMiddleware(app: Hono<AppEnv>, ctx: AppContext) {
   app.use(
@@ -28,6 +29,8 @@ export function registerMiddleware(app: Hono<AppEnv>, ctx: AppContext) {
       maxAge: 86_400,
     }),
   );
+
+  app.use("*", apiRateLimit(ctx));
 
   app.use(
     factory.createMiddleware(async (c, next) => {
