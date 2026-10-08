@@ -6,10 +6,15 @@ import { enqueueJob } from "../../infra/jobs/queue.ts";
 import type { JobRegistry } from "../../infra/jobs/registry.ts";
 import type { Logger } from "../../infra/observability/logger.ts";
 
-/** The database-backed queue writer: `ctx.mail.queue()` stores a `mail.send` job for the worker. */
-export function createMailEnqueue(db: Database): MailEnqueue {
+/**
+ * The database-backed queue writer: `ctx.mail.queue()` stores a `mail.send` job for the worker.
+ * `queue` defaults to the shared `default` queue; tests pass a private one so no other file's
+ * runner can claim their rows.
+ */
+export function createMailEnqueue(db: Database, queue?: string): MailEnqueue {
   return (input) =>
     enqueueJob(db, {
+      queue,
       name: input.name,
       payload: input.payload,
       idempotencyKey: input.idempotencyKey,
