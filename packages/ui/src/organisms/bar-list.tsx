@@ -1,7 +1,7 @@
 // Adapted from dashboardcn (MIT); see THIRD_PARTY_NOTICES-dashboard.md.
 import * as React from "react";
-import { formatNumber } from "../atoms/dashboard-format.ts";
 import { cn } from "../lib/cn.ts";
+import { formatNumber } from "../lib/dashboard-format.ts";
 
 export interface BarListItem {
   name: string;
