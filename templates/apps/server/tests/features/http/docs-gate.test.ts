@@ -37,6 +37,7 @@ const productionBase: Record<string, string> = {
   APP_URL: "https://example.test",
   BETTER_AUTH_URL: "https://example.test",
   BETTER_AUTH_SECRET: "x".repeat(40),
+  DATABASE_SSL_MODE: "require",
   STORAGE_DRIVER: "s3",
 };
 
