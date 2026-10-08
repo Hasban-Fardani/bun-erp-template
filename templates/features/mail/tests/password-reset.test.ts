@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { createMailer, createMemoryMailDriver } from "@bun-erp/mail/server";
+import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
 import { rowsOf } from "@/database/rows.ts";
 import { createJobRegistry } from "@/features/jobs.ts";
@@ -68,9 +69,12 @@ test("the worker mails the reset link and the token changes the password and rev
   expect(cookie).not.toBe("");
 
   await post(api.app, "/request-password-reset", resetBody("reset@example.test"));
+  // The reset job lands on the shared default queue; claim it from a private one so no other file's runner can.
+  const queue = `tests-reset-${createUuid()}`;
+  await api.ctx.db.execute(sql`update background_jobs set queue_name = ${queue} where job_name = 'mail.send'`);
   const driver = createMemoryMailDriver();
   const mailer = createMailer({ config: api.ctx.env, logger, driver, enqueue: createMailEnqueue(api.ctx.db) });
-  expect(await runNextJob(api.ctx.db, createJobRegistry({ ...api.ctx, mail: mailer }), logger)).toBe(true);
+  expect(await runNextJob(api.ctx.db, createJobRegistry({ ...api.ctx, mail: mailer }), logger, { queue })).toBe(true);
 
   expect(driver.sent).toHaveLength(1);
   const mail = driver.sent[0];

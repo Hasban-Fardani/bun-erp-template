@@ -131,7 +131,7 @@ export async function migrate(db: Database, dir: string): Promise<string[]> {
       await tx.execute(sql`select pg_advisory_xact_lock(${MIGRATION_LOCK_KEY})`);
       const ledger = rowsOf<{ name: string }>(await tx.execute<{ name: string }>(sql`select name from _migrations`));
       if (ledger.some(({ name }) => migrationId(name) === migrationId(file))) return false;
-      await migration.up?.(tx as unknown as Database);
+      await migration.up?.(tx);
       await tx.execute(sql`insert into _migrations (name) values (${file})`);
       return true;
     });

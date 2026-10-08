@@ -47,6 +47,12 @@ redacted in `env:list`. All keys live in the core config schema whether or not t
 Production password reset needs `MAIL_DRIVER=http` or `smtp`: with `log` the reset link is only written to the
 log of the worker, so nobody receives it.
 
+## Switching drivers
+
+Set `MAIL_DRIVER` (`smtp` or `http`) plus its keys, restart the app and worker, then run
+`bun erp mail:test --to <address>`; queued jobs keep working. Steps and caveats (SPF/DKIM/DMARC, SMTP is
+VPS-only, non-retryable errors, SMTP duplicate-on-crash): docs/operations.md, "Switching mail drivers".
+
 ## Verify
 
 ```

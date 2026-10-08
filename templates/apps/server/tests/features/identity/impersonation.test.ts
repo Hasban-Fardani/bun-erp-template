@@ -213,3 +213,31 @@ describe("impersonation audit (I3)", () => {
     expect(row?.impersonatorId).toBeNull();
   });
 });
+
+describe("impersonation routes pass csrfProtection", () => {
+  const ownOrigin = () => new URL(api.ctx.env.APP_URL).origin;
+  const FOREIGN_ORIGIN = "https://evil.example.test";
+
+  test("start accepts a matching Origin and refuses a foreign one with 403", async () => {
+    const client = createTestClient(api.app, api.cookie).api.v1.users[":id"].impersonate;
+
+    const foreign = await client.$post({ param: { id: staffId } }, { headers: { origin: FOREIGN_ORIGIN } });
+    expect(foreign.status).toBe(403);
+    expect(foreign.headers.get("set-cookie") ?? "").not.toContain(IMPERSONATION_COOKIE);
+
+    const own = await client.$post({ param: { id: staffId } }, { headers: { origin: ownOrigin() } });
+    expect(own.status).toBe(200);
+  });
+
+  test("stop accepts a matching Origin and refuses a foreign one with 403", async () => {
+    const started = await start(staffId);
+    const client = createTestClient(api.app, started.cookie).api.v1.impersonation.stop;
+
+    const foreign = await client.$post(undefined, { headers: { origin: FOREIGN_ORIGIN } });
+    expect(foreign.status).toBe(403);
+    expect((await me(started.cookie)).body.data.impersonation).not.toBeNull();
+
+    const own = await client.$post(undefined, { headers: { origin: ownOrigin() } });
+    expect(own.status).toBe(200);
+  });
+});

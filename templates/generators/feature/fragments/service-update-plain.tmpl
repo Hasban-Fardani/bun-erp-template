@@ -5,7 +5,7 @@ export async function update{{pascal}}(
   actor: Actor,
 ): Promise<{{pascal}}> {
   return db.transaction(async (tx) => {
-    const before = await require{{pascal}}(tx as unknown as Database, id);
+    const before = await require{{pascal}}(tx, id);
 
     const rows = await tx
       .update({{camel}})
@@ -15,7 +15,7 @@ export async function update{{pascal}}(
     const after = rows[0];
     if (!after) throw ApiError.notFound("{{pascal}} not found");
 
-    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.updated", after.id, before, after);
+    await record{{pascal}}Event(tx, actor, "{{resource}}.updated", after.id, before, after);
     return after;
   });
 }

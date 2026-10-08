@@ -162,7 +162,7 @@ test("make:feature opts into soft delete and out of optimistic locking per flag"
 
   const softService = softContents.get("apps/server/features/sales-orders/service.ts") ?? "";
   expect(softService).toContain("notDeleted(salesOrders)");
-  expect(softService).toContain("softDeleteRow(tx as unknown as Database, salesOrders, id)");
+  expect(softService).toContain("softDeleteRow(tx, salesOrders, id)");
   expect(softService).toContain("export async function restoreSalesOrders(");
   expect(softService).toContain("export async function forceDeleteSalesOrders(");
 

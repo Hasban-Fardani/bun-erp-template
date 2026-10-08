@@ -43,7 +43,7 @@ export async function create{{pascal}}(
   return db.transaction(async (tx) => {
     const rows = await tx.insert({{camel}}).values({{createValues}}).returning();
     const after = rows[0] as {{pascal}};
-    await record{{pascal}}Event(tx as unknown as Database, actor, "{{resource}}.created", after.id, undefined, after);
+    await record{{pascal}}Event(tx, actor, "{{resource}}.created", after.id, undefined, after);
     return after;
   });
 }

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { createMailer, createMemoryMailDriver } from "@bun-erp/mail/server";
+import { createUuid } from "@bun-erp/utils";
 import { sql } from "drizzle-orm";
 import type { AppContext } from "@/bootstrap/context.ts";
 import { rowsOf } from "@/database/rows.ts";
@@ -9,6 +10,13 @@ import { notify } from "@/features/notifications/service.ts";
 import { enqueueJob, runNextJob } from "@/infra/jobs/queue.ts";
 import type { Logger } from "@/infra/observability/logger.ts";
 import { createHttpFixture, createTestContext, dataOf, testEnv, truncateAll } from "../../support/fixtures.ts";
+
+/**
+ * Each test gets a queue no other file can see (as D4 did for the jobs tests): the mailer enqueues
+ * onto it and the runner claims only from it, so a slow full-suite run cannot hand the job to
+ * another file's runner or leave this test with an empty `default` queue.
+ */
+const newQueue = () => `tests-mail-${createUuid()}`;
 
 const logger: Logger = {
   trace: () => {},
@@ -31,8 +39,9 @@ async function memoryQueue() {
   const ctx = await createTestContext();
   await truncateAll(ctx);
   const driver = createMemoryMailDriver();
-  const mailer = createMailer({ config: testEnv, logger, driver, enqueue: createMailEnqueue(ctx.db) });
-  return { ctx, driver, mailer };
+  const queue = newQueue();
+  const mailer = createMailer({ config: testEnv, logger, driver, enqueue: createMailEnqueue(ctx.db, queue) });
+  return { ctx, driver, mailer, queue };
 }
 
 /** A signed-in owner plus a queue-backed mailer, for the notification channel tests. */
@@ -40,8 +49,9 @@ async function ownerWithQueue() {
   const api = await createHttpFixture();
   await api.signInAsOwner();
   const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
-  const mailer = createMailer({ config: api.ctx.env, logger, enqueue: createMailEnqueue(api.ctx.db) });
-  return { api, me, mailer };
+  const queue = newQueue();
+  const mailer = createMailer({ config: api.ctx.env, logger, enqueue: createMailEnqueue(api.ctx.db, queue) });
+  return { api, me, mailer, queue };
 }
 
 test("the composition root builds the mailer named by MAIL_DRIVER", async () => {
@@ -50,7 +60,7 @@ test("the composition root builds the mailer named by MAIL_DRIVER", async () => 
 });
 
 test("a queued message is delivered by the worker through the registered mail job", async () => {
-  const { ctx, driver, mailer } = await memoryQueue();
+  const { ctx, driver, mailer, queue } = await memoryQueue();
 
   const jobId = await mailer.queue(
     { to: "queued@example.test", subject: "Dari queue", text: "Isi" },
@@ -59,7 +69,7 @@ test("a queued message is delivered by the worker through the registered mail jo
   expect(jobId).toBeTruthy();
   expect(driver.sent).toHaveLength(0);
 
-  expect(await runNextJob(ctx.db, createJobRegistry({ ...ctx, mail: mailer }), logger)).toBe(true);
+  expect(await runNextJob(ctx.db, createJobRegistry({ ...ctx, mail: mailer }), logger, { queue })).toBe(true);
   expect(driver.sent).toHaveLength(1);
   expect(driver.sent[0]?.subject).toBe("Dari queue");
 });
@@ -69,7 +79,8 @@ test("the mail channel queues a message the worker delivers", async () => {
   await api.signInAsOwner();
   const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
   const driver = createMemoryMailDriver();
-  const mailer = createMailer({ config: api.ctx.env, logger, driver, enqueue: createMailEnqueue(api.ctx.db) });
+  const queue = newQueue();
+  const mailer = createMailer({ config: api.ctx.env, logger, driver, enqueue: createMailEnqueue(api.ctx.db, queue) });
 
   await notify(
     { ...api.ctx, mail: mailer },
@@ -83,7 +94,9 @@ test("the mail channel queues a message the worker delivers", async () => {
   );
 
   expect(driver.sent).toHaveLength(0);
-  expect(await runNextJob(api.ctx.db, createJobRegistry({ ...api.ctx, mail: mailer }), logger)).toBe(true);
+  // The channel enqueues on the shared default queue; move its job to this test's private queue.
+  await api.ctx.db.execute(sql`update background_jobs set queue_name = ${queue} where job_name = 'mail.send'`);
+  expect(await runNextJob(api.ctx.db, createJobRegistry({ ...api.ctx, mail: mailer }), logger, { queue })).toBe(true);
   expect(driver.sent).toHaveLength(1);
   expect(driver.sent[0]?.subject).toBe("Akun dibuat");
 });
@@ -124,10 +137,10 @@ test("the mail channel deduplicates repeat notifications with a stable key", asy
 });
 
 test("a malformed mail.send payload is rejected before it reaches the driver", async () => {
-  const { ctx, driver, mailer } = await memoryQueue();
-  const id = await enqueueJob(ctx.db, { name: "mail.send", payload: { subject: 42 }, maxAttempts: 1 });
+  const { ctx, driver, mailer, queue } = await memoryQueue();
+  const id = await enqueueJob(ctx.db, { name: "mail.send", payload: { subject: 42 }, maxAttempts: 1, queue });
 
-  expect(await runNextJob(ctx.db, createJobRegistry({ ...ctx, mail: mailer }), logger)).toBe(true);
+  expect(await runNextJob(ctx.db, createJobRegistry({ ...ctx, mail: mailer }), logger, { queue })).toBe(true);
   expect(driver.sent).toHaveLength(0);
   const row = rowsOf<{ status: string; last_error_code: string }>(
     await ctx.db.execute(sql`select status, last_error_code from background_jobs where id = ${id}`),
