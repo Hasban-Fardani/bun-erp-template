@@ -33,6 +33,10 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["check:prod", "Check production deployment readiness"],
       ["check:gate <name>", "Run one focused gate; use --list to see names"],
       [
+        "qa [--only=<suite,...>] [--list] [--dry-run]",
+        "Run the web app's Playwright QA suites against a running deployment (needs the web app)",
+      ],
+      [
         "test",
         "Run backend, web, and package test suites (mobile when installed); --filter <feature> runs one feature",
       ],
@@ -71,7 +75,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     commands: [
       ["packages:list", "List installed packages and the opt-in catalog"],
       [
-        "packages:install <name> [--from <path|git-url>]",
+        "packages:install <name>... [--from <path|git-url>]",
         "Install an opt-in package into packages/ and register the workspace",
       ],
     ],
@@ -80,7 +84,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     title: "Features",
     commands: [
       ["features:list", "List installed features and the opt-in catalog"],
-      ["features:install <name>", "Install a catalog feature into apps/ and wire it automatically"],
+      ["features:install <name>...", "Install catalog features into apps/ and wire them automatically"],
     ],
   },
   {

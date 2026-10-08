@@ -52,7 +52,25 @@ export async function copyCatalogPackage(root: string, name: string, options: { 
   if (clone) await Bun.$`rm -rf ${clone}`.quiet();
 
   await registerWorkspace(root, name);
+  await excludeInTemplate(root, name);
   return destination;
+}
+
+/**
+ * In the template repository (`docs/template/` exists) an installed catalog package is a
+ * disposable test install, like `apps/**`, so it goes into the clone-local `.git/info/exclude` and
+ * `git status` stays clean. In a project the package is real source and must be committed.
+ */
+async function excludeInTemplate(root: string, name: string): Promise<void> {
+  if (!(await Bun.file(resolve(root, "docs/template/README.md")).exists())) return;
+  const probe = await Bun.$`git rev-parse --git-path info/exclude`.cwd(root).quiet().nothrow();
+  if (probe.exitCode !== 0) return;
+  const excludePath = resolve(root, probe.text().trim());
+  const entry = `/${PACKAGES_DIR}/${name}`;
+  const current = (await Bun.file(excludePath).exists()) ? await Bun.file(excludePath).text() : "";
+  if (current.split("\n").includes(entry)) return;
+  await Bun.$`mkdir -p ${resolve(excludePath, "..")}`.quiet();
+  await Bun.write(excludePath, `${current}${current === "" || current.endsWith("\n") ? "" : "\n"}${entry}\n`);
 }
 
 /** Adds `packages/<name>` to the root workspaces; returns false when it is already registered. */

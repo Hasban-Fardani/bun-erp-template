@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "workspaces": [
+    "apps/web",
+    "apps/server",
     "packages/ui",
     "packages/utils",
     "packages/storage",
@@ -24,8 +26,7 @@
     "check:prod": "bun erp check:prod",
     "install:prod": "bun install --production",
     "test": "bun erp test",
-    "qa": "bun apps/web/tests/browser/admin-workflow.ts",
-    "qa:login": "bun apps/web/tests/browser/login-feedback.ts"
+    "qa": "bun erp qa"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

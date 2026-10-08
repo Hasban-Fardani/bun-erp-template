@@ -32,8 +32,9 @@ isolation and deletion through a fake adapter; they do not replace native SQLCip
 Web tests cover routes, form feedback and RPC behavior; the opt-in data-table package carries its
 own table state tests and runs them once installed. TypeScript checks the generated TanStack route
 tree. The web build verifies that file routes split into lazy chunks.
-Browser QA needs a running API, built web preview and local test credentials. Artifacts live in
-ignored .data/qa.
+Browser QA is `bun erp qa [--only=<suite,...>] [--list] [--dry-run]` (listed once the web app is
+installed; runner `apps/web/tests/browser/qa.ts`, suites in `suites.ts`). It needs a running API, built
+web preview and local test credentials. Artifacts live in ignored .data/qa.
 
 Mobile web-asset builds do not prove Android/iOS plugin execution, encryption, device behavior or
 store submission. CI produces Android debug and iOS simulator artifacts; device tests remain
