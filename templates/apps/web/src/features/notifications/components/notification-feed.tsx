@@ -1,9 +1,13 @@
 import { useI18n } from "@bun-erp/i18n/react";
 import type { ActivityTone } from "@bun-erp/ui/molecules/activity-feed.tsx";
 import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
-import { type AppNotification, NotificationItem, NotificationList } from "@bun-erp/ui/organisms/notification-bell.tsx";
+import {
+  NotificationItem,
+  NotificationList,
+  type AppNotification as UiNotification,
+} from "@bun-erp/ui/organisms/notification-bell.tsx";
 import { Bell, CircleCheck, CircleX, Info } from "lucide-react";
-import type { Notification } from "../types/index.ts";
+import type { AppNotification } from "../types/index.ts";
 
 /** `domain.action_result` names map to an icon tone; unknown types fall back to neutral info. */
 function notificationTone(type: string): ActivityTone {
@@ -19,7 +23,7 @@ function notificationIcon(type: string) {
   return <Bell />;
 }
 
-function toAppNotification(notification: Notification): AppNotification {
+function toUiNotification(notification: AppNotification): UiNotification {
   return {
     id: notification.id,
     title: notification.title,
@@ -36,8 +40,8 @@ export function NotificationFeed({
   items,
   onOpen,
 }: {
-  items: Notification[];
-  onOpen: (notification: AppNotification) => void;
+  items: AppNotification[];
+  onOpen: (notification: UiNotification) => void;
 }) {
   const { t, formatRelativeTime } = useI18n();
   if (items.length === 0) return <EmptyState message={t("notifications.empty")} />;
@@ -46,7 +50,7 @@ export function NotificationFeed({
       {items.map((item) => (
         <NotificationItem
           key={item.id}
-          notification={toAppNotification(item)}
+          notification={toUiNotification(item)}
           time={
             <time dateTime={item.createdAt} className="text-[11.5px] text-ink-muted">
               {formatRelativeTime(item.createdAt)}

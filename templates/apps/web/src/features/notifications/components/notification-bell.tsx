@@ -39,19 +39,19 @@ export function NotificationsBell() {
         <Alert variant="destructive" className="m-3 flex items-center justify-between gap-2 py-2.5">
           <AlertDescription className="text-[12.5px]">{t("notifications.unreadError")}</AlertDescription>
           <Button variant="ghost" onClick={() => void unread.refetch()}>
-            {t("table.retry")}
+            {t("notifications.retry")}
           </Button>
         </Alert>
       ) : null}
       {list.isPending ? (
         <p role="status" className="px-4 py-8 text-center text-[12.5px] text-ink-muted">
-          {t("common.loading")}
+          {t("notifications.loading")}
         </p>
       ) : list.isError ? (
         <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-          <p className="text-[12.5px] text-ink-muted">{t("table.empty.error.title")}</p>
+          <p className="text-[12.5px] text-ink-muted">{t("notifications.error.title")}</p>
           <Button variant="ghost" onClick={() => void list.refetch()}>
-            {t("table.retry")}
+            {t("notifications.retry")}
           </Button>
         </div>
       ) : (

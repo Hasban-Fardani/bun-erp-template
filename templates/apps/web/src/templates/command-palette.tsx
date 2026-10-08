@@ -13,6 +13,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Check, LogOut, Monitor, Moon, Search, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { visibleNavGroups } from "../config/navigation.ts";
+import { commandShortcut } from "../lib/platform.ts";
 import type { ThemePreference } from "../lib/theme.ts";
 import { useTheme } from "../lib/theme.tsx";
 
@@ -35,6 +36,9 @@ export function CommandPalette({ permissions, onSignOut }: { permissions: readon
   const navigate = useNavigate();
   const { preference, setPreference } = useTheme();
   const [open, setOpen] = useState(false);
+  // Resolved after mount so server rendering and hydration agree on the first paint.
+  const [shortcut, setShortcut] = useState("Ctrl+K");
+  useEffect(() => setShortcut(commandShortcut()), []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -60,7 +64,7 @@ export function CommandPalette({ permissions, onSignOut }: { permissions: readon
       >
         <Search size={14} aria-hidden="true" />
         <span className="hidden sm:inline">{t("command.open")}</span>
-        <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
+        <Kbd className="hidden sm:inline-flex">{shortcut}</Kbd>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
