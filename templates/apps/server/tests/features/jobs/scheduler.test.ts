@@ -4,11 +4,8 @@ import { sql } from "drizzle-orm";
 import type { Database } from "@/database/index.ts";
 import { rowsOf } from "@/database/rows.ts";
 import { defineSchedule, runDueSchedules, type ScheduleDefinition } from "@/infra/jobs/scheduler.ts";
-import type { Logger } from "@/infra/observability/logger.ts";
 import { createTestContext } from "../../support/fixtures.ts";
-
-const noop = (): void => {};
-const logger: Logger = { trace: noop, debug: noop, info: noop, warn: noop, error: noop, fatal: noop };
+import { silentLogger as logger } from "../../support/jobs.ts";
 
 type ScheduleRow = {
   nextRunAtMs: number;

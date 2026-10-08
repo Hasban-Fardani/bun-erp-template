@@ -174,6 +174,38 @@ sessions, join tables). `--sequence <key>` with `--prefix`/`--padding` adds the 
 into the SQL template, and `make:seeder users` normalizes a `-seeder` suffix to `users.ts`. After
 generating a feature, add the domain fields and run `bun erp db:migrate` followed by `bun erp db:seed`.
 
+### Generators
+
+`bun erp --help` lists every generator under "Generators". Each one plans all of its paths and
+wiring anchors before it writes, refuses to overwrite an existing file, and formats what it wrote,
+so a failed run leaves the tree untouched and a second run is a no-op error.
+
+| Command | Writes | Wires |
+|---|---|---|
+| `make:feature <name>` | server module, web screen, create-table migration, test, factory | permissions, audit entity, route mount, sidebar, both locale catalogs |
+| `make:migration <name>` | numbered forward-only migration | none |
+| `make:seeder <name>` | `database/seeders/<name>.ts` (use a factory for rows) | picked up by `db:seed` |
+| `make:factory <feature> [--table <export>]` | `database/factories/<feature>.ts` | none; fills every notNull column without a default |
+| `make:job <name>` | `apps/server/jobs/<name>.ts` and an idempotency test | `registry.register(...)` in `features/jobs.ts` (`// @erp:jobs`) |
+| `make:command <group:name>` | `cli/commands/<group>-<name>.ts` and a test | none: the registry reads the `defineCommand` literal |
+| `make:test <feature> [name]` | `tests/features/<feature>/<name>.test.ts` (typed `testClient` when the feature has routes) | none |
+| `make:notification <name> [--type domain.event]` | `features/notifications/<name>.notification.ts` and a test | export in `notifications/index.ts` (`// @erp:notifications`) |
+| `make:mail <name>` | `apps/server/mail/<name>.ts` (pure renderer + queue helper) and a test | none; needs `bun erp features:install mail` |
+
+A generator that needs a core file edit looks for an explicit `// @erp:` marker and stops before
+writing when it is gone; restore the marker or wire by hand. After any generator, run
+`bun erp check:fast` and `bun erp test --filter <feature>`. Generated tests carry `test.todo`
+placeholders: write the failing test for the real behaviour first, then implement.
+
+### Console
+
+`bun erp tinker` opens a REPL with `db`, `schema` (every table), `env`, `sql`, `orm` (all of
+`drizzle-orm`), `ctx` and a `vars` object that persists between lines. One input is one expression
+(top-level `await` works) or a function body with `return`. `--eval "<expr>"` runs one input and
+exits, for scripts: `bun erp tinker --eval "await db.select().from(schema.roles)"`. It refuses
+`NODE_ENV=production` or `APP_ENV=production` unless you pass `--force`; it runs your code against
+the configured database, so use it on production only for reads you could run in `psql`.
+
 `bun erp apps` lists workspace apps with build, port, and test status; `apps:status <name>` shows
 one app's entry point, scripts, build output, and environment file; `apps:create <name> <server|web|mobile>`
 adds a workspace app under `apps/` (server scaffolds inline; web and mobile copy their catalog under

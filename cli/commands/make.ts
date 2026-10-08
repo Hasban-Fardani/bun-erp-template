@@ -1,5 +1,15 @@
 import { resolve } from "node:path";
 import { requireApps } from "../lib/apps.ts";
+import {
+  type MakePlan,
+  planMakeCommand,
+  planMakeFactory,
+  planMakeJob,
+  planMakeMail,
+  planMakeNotification,
+  planMakeTest,
+  writeMakePlan,
+} from "../lib/make-artifacts.ts";
 import { ensureFeatureWebDependencies, planMakeFeature, writeMakeFeature } from "../lib/make-feature.ts";
 import { parseCommandOptions } from "../lib/options.ts";
 import { resolveRequired } from "../lib/prompt.ts";
@@ -23,6 +33,19 @@ const WIRING_PATHS = {
   enUS: "packages/i18n/src/utils/messages/en-US.ts",
   idID: "packages/i18n/src/utils/messages/id-ID.ts",
 } as const;
+
+/** Applies a generator plan, formats what it touched and prints one line per file. */
+async function applyArtifactPlan(plan: MakePlan, next: readonly string[]): Promise<void> {
+  const touched = await writeMakePlan(repoRoot, plan);
+  await formatScaffold(touched);
+  for (const path of touched) process.stdout.write(`Created or updated: ${path}\n`);
+  for (const line of next) process.stdout.write(`${line}\n`);
+}
+
+function usage(text: string): never {
+  process.stderr.write(`Usage: bun erp ${text}\n`);
+  process.exit(1);
+}
 
 export const commands = [
   defineCommand("make:feature", async (args) => {
@@ -143,5 +166,62 @@ export const commands = [
     await writeScaffold(target, renderSeederSource(name));
     process.stdout.write(`Created seeder scaffold: apps/server/database/seeders/${name}.ts\n`);
     process.stdout.write("`bun erp db:seed` runs all feature seeders; add deterministic, idempotent data first.\n");
+  }),
+  defineCommand("make:factory", async (args) => {
+    await requireApps(["server"]);
+    const parsed = parseCommandOptions(args, { values: ["table"] });
+    const feature = resolveRequired(parsed.positional[0], "Feature name");
+    if (!feature) usage("make:factory <feature> [--table <exportName>]");
+    const table = parsed.values.get("table");
+    const plan = await planMakeFactory(repoRoot, feature, table ? { table } : {});
+    await applyArtifactPlan(plan, [
+      "Fill every notNull column that has no default, then use it from tests and seeders.",
+    ]);
+  }),
+  defineCommand("make:job", async (args) => {
+    await requireApps(["server"]);
+    const name = resolveRequired(args[0], "Job name");
+    if (!name || name.startsWith("--")) usage("make:job <name>   (for example invoice.send)");
+    const plan = await planMakeJob(repoRoot, name);
+    await applyArtifactPlan(plan, [
+      "Registered the handler in apps/server/features/jobs.ts.",
+      "Next: write the failing handler test, keep the handler idempotent, enqueue inside the write transaction.",
+    ]);
+  }),
+  defineCommand("make:command", async (args) => {
+    await requireApps(["server"]);
+    const name = resolveRequired(args[0], "Command name");
+    if (!name || name.startsWith("--")) usage("make:command <group:name>   (for example invoices:export)");
+    const plan = await planMakeCommand(repoRoot, name);
+    await applyArtifactPlan(plan, [
+      'The command registry discovers it automatically; add a summary in cli/lib/help.ts to move it out of "Other".',
+    ]);
+  }),
+  defineCommand("make:test", async (args) => {
+    await requireApps(["server"]);
+    const feature = resolveRequired(args[0], "Feature name");
+    if (!feature || feature.startsWith("--")) usage("make:test <feature> [name]");
+    const plan = await planMakeTest(repoRoot, feature, args[1]);
+    await applyArtifactPlan(plan, [`Next: bun erp test --filter ${feature}`]);
+  }),
+  defineCommand("make:notification", async (args) => {
+    await requireApps(["server"]);
+    const parsed = parseCommandOptions(args, { values: ["type"] });
+    const name = resolveRequired(parsed.positional[0], "Notification name");
+    if (!name) usage("make:notification <name> [--type <domain.event>]   (for example invoice-paid)");
+    const type = parsed.values.get("type");
+    const plan = await planMakeNotification(repoRoot, name, type ? { type } : {});
+    await applyArtifactPlan(plan, [
+      "Exported from apps/server/features/notifications/index.ts; call it from your feature.",
+    ]);
+  }),
+  defineCommand("make:mail", async (args) => {
+    await requireApps(["server"]);
+    const name = resolveRequired(args[0], "Mail name");
+    if (!name || name.startsWith("--")) usage("make:mail <name>");
+    const plan = await planMakeMail(repoRoot, name);
+    await applyArtifactPlan(plan, [
+      "Queue it with ctx.mail through the generated queue helper; keep the idempotency key stable.",
+    ]);
   }),
 ];

@@ -6,21 +6,10 @@ import { rowsOf } from "@/database/rows.ts";
 import { claimNextJob, enqueueJob, requeueDeadJob, runNextJob } from "@/infra/jobs/queue.ts";
 import { JobRegistry } from "@/infra/jobs/registry.ts";
 import { startJobWorker } from "@/infra/jobs/worker.ts";
-import type { Logger } from "@/infra/observability/logger.ts";
-import { createTestContext } from "../../support/fixtures.ts";
-
-const logger: Logger = {
-  trace: () => {},
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  fatal: () => {},
-};
+import { createJobTest, silentLogger as logger, waitFor } from "../../support/jobs.ts";
 
 test("job enqueue is idempotent and concurrent workers claim a record only once", async () => {
-  const { db } = await createTestContext();
-  const queue = `tests-${createUuid()}`;
+  const { db, queue } = await createJobTest();
   const input = { queue, name: "test.once", payload: { value: 7 }, idempotencyKey: "request-7" };
   const firstId = await enqueueJob(db, input);
   const duplicateId = await enqueueJob(db, input);
@@ -40,8 +29,7 @@ test("job enqueue is idempotent and concurrent workers claim a record only once"
 });
 
 test("registered job handlers complete claimed work exactly once", async () => {
-  const { db } = await createTestContext();
-  const queue = `tests-${createUuid()}`;
+  const { db, queue } = await createJobTest();
   const calls: string[] = [];
   const registry = new JobRegistry();
   registry.register("test.complete", async (payload, context) => {
@@ -60,13 +48,13 @@ test("registered job handlers complete claimed work exactly once", async () => {
 });
 
 test("long-lived worker processes queued work and stops gracefully", async () => {
-  const { db } = await createTestContext();
-  const id = await enqueueJob(db, { name: "test.worker_stop", payload: {} });
+  const { db, queue } = await createJobTest();
+  const id = await enqueueJob(db, { queue, name: "test.worker_stop", payload: {} });
   const registry = new JobRegistry();
   let worker: ReturnType<typeof startJobWorker> | undefined;
   registry.register("test.worker_stop", async () => worker?.stop());
 
-  worker = startJobWorker({ db, registry, logger });
+  worker = startJobWorker({ db, registry, logger, queue, pollIntervalMs: 20 });
   await worker.done;
 
   const rows = rowsOf<{ status: string; completed_at: Date | null }>(
@@ -76,9 +64,23 @@ test("long-lived worker processes queued work and stops gracefully", async () =>
   expect(rows[0]?.completed_at).toBeTruthy();
 });
 
+test("a worker bound to a queue never claims another queue's jobs", async () => {
+  const { db, queue: mine } = await createJobTest();
+  const theirs = `tests-${createUuid()}`;
+  const registry = new JobRegistry();
+  let worker: ReturnType<typeof startJobWorker> | undefined;
+  registry.register("test.mine", async () => worker?.stop());
+  const otherId = await enqueueJob(db, { queue: theirs, name: "test.theirs", payload: {} });
+  await enqueueJob(db, { queue: mine, name: "test.mine", payload: {} });
+
+  worker = startJobWorker({ db, registry, logger, queue: mine, pollIntervalMs: 20 });
+  await worker.done;
+
+  expect(await jobRow(db, otherId)).toMatchObject({ status: "pending", attempt_count: 0 });
+});
+
 test("handler failures retry with bounded delay then stop at max attempts without storing messages", async () => {
-  const { db } = await createTestContext();
-  const queue = `tests-${createUuid()}`;
+  const { db, queue } = await createJobTest();
   const registry = new JobRegistry();
   registry.register("test.retry", async () => {
     throw new Error("sensitive details must not be persisted");
@@ -100,23 +102,22 @@ test("handler failures retry with bounded delay then stop at max attempts withou
 });
 
 test("jobs scheduled in the future are not claimed early", async () => {
-  const { db } = await createTestContext();
-  const queue = `tests-${createUuid()}`;
+  const { db, queue } = await createJobTest();
   await enqueueJob(db, { queue, name: "test.future", payload: {}, runAt: new Date(Date.now() + 60_000) });
   expect(await claimNextJob(db, queue)).toBeNull();
 });
 
 test("a transient lease-renewal error does not discard a successful result", async () => {
-  const { db } = await createTestContext();
-  const queue = `tests-${createUuid()}`;
+  const { db, queue } = await createJobTest();
   const leaseMs = 3_000;
+  const flaky = flakyRenewalDatabase(db);
   const registry = new JobRegistry();
   registry.register("test.renewal", async () => {
-    // Long enough for the heartbeat (lease/3) to fire while the handler is still running.
-    await Bun.sleep(1_200);
+    // Hold the handler until the heartbeat (lease/3) has hit the injected failure: an event, not a
+    // sleep, so a loaded machine only makes the test slower, never wrong.
+    await waitFor(() => (flaky.failures() > 0 ? true : undefined), "the lease heartbeat to fail once");
   });
   const id = await enqueueJob(db, { queue, name: "test.renewal", payload: {} });
-  const flaky = flakyRenewalDatabase(db);
 
   expect(await runNextJob(flaky.db, registry, logger, { queue, leaseMs })).toBe(true);
 
@@ -128,8 +129,7 @@ test("a transient lease-renewal error does not discard a successful result", asy
 });
 
 test("a job whose handler is not registered yet retries instead of dying on first claim", async () => {
-  const { db } = await createTestContext();
-  const queue = `tests-${createUuid()}`;
+  const { db, queue } = await createJobTest();
   const id = await enqueueJob(db, { queue, name: "test.not_deployed_yet", payload: {}, maxAttempts: 2 });
   const registry = new JobRegistry();
   const options = { queue, retryBaseMs: 10, retryMaxMs: 20 };

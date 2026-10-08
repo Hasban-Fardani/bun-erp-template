@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
+import { {{camel}}Factory } from "@/database/factories/{{name}}.ts";
 import { createHttpFixture, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;
@@ -48,6 +49,12 @@ describe("{{name}}", () => {
     const hidden = await api.app.request(`/api/v1/{{name}}?perPage=10`, { headers: { cookie: api.cookie } });
     expect(((await hidden.json()) as { data: { total: number } }).data.total).toBe(0);
 {{restoreCheck}}  });
+
+  test("rows made by the factory show up in the list", async () => {
+    await {{camel}}Factory.createMany(api.ctx.db, 2);
+    const listed = await api.app.request("/api/v1/{{name}}?perPage=10", { headers: { cookie: api.cookie } });
+    expect(((await listed.json()) as { data: { total: number } }).data.total).toBe(2);
+  });
 
   test("missing id is 404, not 403", async () => {
     const res = await api.app.request("/api/v1/{{name}}/0199aaaa-0000-7000-8000-000000000000", {

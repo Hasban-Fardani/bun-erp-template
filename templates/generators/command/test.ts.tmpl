@@ -1,0 +1,13 @@
+import { expect, test } from "bun:test";
+import { commandNames } from "@cli/registry.ts";
+import { run{{pascal}} } from "../../cli/commands/{{file}}.ts";
+import { createTestContext } from "../support/fixtures.ts";
+
+test("{{command}} is discovered by the command registry", async () => {
+  expect(await commandNames()).toContain("{{command}}");
+});
+
+test("{{command}} runs against the test context", async () => {
+  const ctx = await createTestContext();
+  expect(await run{{pascal}}(ctx, ["one"])).toBe("{{command}}: 1 argument(s)");
+});

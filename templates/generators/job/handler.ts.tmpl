@@ -1,0 +1,12 @@
+import type { JobHandler } from "../infra/jobs/registry.ts";
+
+/** Stable queue name. Enqueue inside the write transaction: `enqueueJob(tx, { name: {{constant}}_JOB, ... })`. */
+export const {{constant}}_JOB = "{{jobName}}";
+
+/**
+ * Queue handlers are at-least-once: a retry or a second worker can run this again, so every side
+ * effect must be idempotent. The payload is untrusted JSON from the queue row; parse it before use.
+ */
+export const handle{{pascal}}: JobHandler = async (_payload, _context) => {
+  throw new Error("Job handler {{jobName}} is not implemented; write the failing test first");
+};
