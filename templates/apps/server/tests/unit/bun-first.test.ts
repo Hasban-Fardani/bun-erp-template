@@ -70,3 +70,15 @@ test("exempts the vendored governance validators and the Worker graph", async ()
     "bun-first-exempt-",
   );
 });
+
+test("scans the installed project server code under apps/server", async () => {
+  await withTempRoot(
+    { "apps/server/features/probe/sync.ts": `import { readFileSync } from "${nodeModule("fs")}";\n` },
+    async (root) => {
+      const report = (await checkBunFirst(root)).join("\n");
+      expect(report).toContain("apps/server/features/probe/sync.ts");
+      expect(report).toContain("readFileSync");
+    },
+    "bun-first-apps-server-",
+  );
+});
