@@ -36,7 +36,8 @@ async function inspectReact(root: string, directory: string): Promise<string[]> 
   });
   const { stdout: out, stderr: err, exitCode: code } = result;
 
-  if (code !== 0 || !out.trim()) {
+  // react-doctor exits 1 when it reports errors; only a run without a JSON report is a crash.
+  if (!out.trim().startsWith("{")) {
     return [`react-doctor failed to run (exit ${code}) — ${err.trim() || out.trim() || "no output"}`];
   }
 

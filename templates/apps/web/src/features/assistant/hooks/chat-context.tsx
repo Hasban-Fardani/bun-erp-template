@@ -1,7 +1,7 @@
 import { createUuid } from "@bun-erp/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { rpc } from "@web/lib/rpc.ts";
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { assistantKeys, fetchConversation } from "../api/queries.ts";
 import { applyChatEvent, type ChatMessage, type SkillRef } from "../lib/chat-state.ts";
 import { readChatEvents } from "../lib/chat-stream.ts";
@@ -71,7 +71,9 @@ export function AssistantChatProvider({ children }: { children: ReactNode }) {
   const abort = useRef<AbortController | null>(null);
   const conversationRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
-  messagesRef.current = messages;
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const adoptConversation = useCallback((id: string | null) => {
     conversationRef.current = id;

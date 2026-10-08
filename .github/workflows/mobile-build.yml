@@ -1,8 +1,11 @@
 name: Mobile Native Build
 on:
+  # Only when the mobile app or the shared packages it bundles change.
   push:
     branches: [master]
+    paths: ['apps/mobile/**', 'packages/**', 'bun.lock']
   pull_request:
+    paths: ['apps/mobile/**', 'packages/**', 'bun.lock']
   workflow_dispatch:
 permissions:
   contents: read

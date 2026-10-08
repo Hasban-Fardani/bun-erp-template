@@ -128,6 +128,8 @@ export function renderPlatformBlock(): string {
 /** Rewrites the generated blocks in AGENTS.md only when their content changed. */
 export async function refreshGuidelines(root: string): Promise<GuidelinesStatus> {
   const path = resolve(root, AGENTS_FILE);
+  // A container build copies only what it needs; no AGENTS.md means nothing to refresh.
+  if (!(await Bun.file(path).exists())) return "missing";
   const source = await Bun.file(path).text();
   const applied = applyGuidelinesBlock(source, await renderGuidelinesBlock(root));
   if (applied.status === "missing") return "missing";

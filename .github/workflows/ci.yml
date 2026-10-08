@@ -21,13 +21,9 @@ jobs:
   test-postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        postgres: ['16', '18']
     services:
       postgres:
-        image: postgres:${{ matrix.postgres }}
+        image: postgres:18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ci-disposable
@@ -49,40 +45,9 @@ jobs:
         run: bun erp db:migrate
       - run: bun erp db:status
       - run: bun erp test
-  build-web:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
-      - uses: ./.github/actions/setup
-      - run: bun erp build
-  mobile-detect:
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    outputs:
-      present: ${{ steps.check.outputs.present }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
-      - id: check
-        run: |
-          if [ -f apps/mobile/package.json ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
-  mobile-build:
-    needs: mobile-detect
-    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
-    if: needs.mobile-detect.outputs.present == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
-      - uses: ./.github/actions/setup
-      - run: bun erp mobile:build
-        env:
-          VITE_API_BASE_URL: https://api.example.test
+  # Heavier jobs run on demand (Actions → CI → Run workflow) until the project needs them per push.
   e2e:
+    if: github.event_name == 'workflow_dispatch'
     needs: [gates, test-postgres]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -125,6 +90,7 @@ jobs:
             .data/qa/*.png
   docker:
     name: Docker image
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -137,11 +103,18 @@ jobs:
           docker run -d --name erp-db --network erp \
             -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=ci-disposable -e POSTGRES_DB=erp_docker \
             postgres:18-alpine
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2, verified with git ls-remote
+        with:
+          bun-version: 1.4.2
+      - name: Write a disposable environment
+        # Docker keeps quotes literally, so the JSON-quoted .env values are unwrapped for --env-file.
+        run: |
+          mkdir -p .data/qa
+          DATABASE_URL=postgresql://postgres:ci-disposable@erp-db:5432/erp_docker bun cli/tasks/ci-prepare.ts
+          sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' .env | grep -Ev '^\s*(#|$)' > docker.env
       - name: Run the image against it
         run: |
-          docker run -d --name erp-app --network erp -p 3000:3000 \
-            -e DATABASE_URL=postgresql://postgres:ci-disposable@erp-db:5432/erp_docker \
-            -e BETTER_AUTH_SECRET=ci-only-secret-not-for-production \
+          docker run -d --name erp-app --network erp -p 3000:3000 --env-file docker.env \
             -e APP_DEPLOY_TARGET=bun -e APP_WEB_MODE=integrated \
             bun-erp-template
       - name: Wait for the readiness endpoint
@@ -154,12 +127,13 @@ jobs:
           exit 1
   ci-ok:
     if: always()
-    needs: [gates, test-postgres, build-web, mobile-detect, mobile-build, e2e, docker]
+    needs: [gates, test-postgres, e2e, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Require every job to succeed
+      - name: Require gates and tests; on-demand jobs may skip
         env:
           RESULTS: ${{ toJSON(needs) }}
+          OPTIONAL: ${{ github.event_name == 'workflow_dispatch' && '' || 'e2e docker' }}
         run: |
-          python3 -c 'import json,os,sys; r=json.loads(os.environ["RESULTS"]); sys.exit(any(j["result"] != "success" and not (n == "mobile-build" and j["result"] == "skipped") for n,j in r.items()))'
+          python3 -c 'import json,os,sys; r=json.loads(os.environ["RESULTS"]); o=os.environ["OPTIONAL"].split(); sys.exit(any(j["result"] != "success" and not (n in o and j["result"] == "skipped") for n,j in r.items()))'

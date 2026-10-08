@@ -3,7 +3,8 @@ if (!databaseUrl) throw new Error("DATABASE_URL is required for the isolated CI 
 const password = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
 const secret = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
 const values: Record<string, string> = {
-  APP_ENV: "production",
+  // CI talks to a TLS-less service database over plain http, which production refuses at boot.
+  APP_ENV: "test",
   APP_URL: "http://localhost:3000",
   APP_RELEASE: "ci",
   LOG_LEVEL: "info",

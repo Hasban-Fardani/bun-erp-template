@@ -37,44 +37,8 @@ export function AssistantComposer({
   autoFocus?: boolean;
 }) {
   const { t } = useI18n();
-  const menuId = useId();
-  const [active, setActive] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
-
-  const query = skill ? null : matchSkillQuery(draft);
-  const matches = query === null ? [] : filterSkills(skills, query);
-  const menuOpen = query !== null && skills.length > 0 && !dismissed;
-  const activeIndex = Math.min(active, Math.max(0, matches.length - 1));
-
-  // The menu reopens whenever the command word changes after Esc.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `query` is the trigger, not a value read here.
-  useEffect(() => {
-    setDismissed(false);
-    setActive(0);
-  }, [query]);
-
-  // Esc must close the menu, not the dialog around it. Radix listens on the document in the capture
-  // phase, so this runs earlier, at the window, only while the menu is open.
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.stopPropagation();
-      event.preventDefault();
-      setDismissed(true);
-    };
-    window.addEventListener("keydown", onEscape, { capture: true });
-    return () => window.removeEventListener("keydown", onEscape, { capture: true });
-  }, [menuOpen]);
-
-  // Browsers without `field-sizing: content` get the same auto-grow from the scroll height.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the text changes.
-  useEffect(() => {
-    const node = inputRef.current;
-    if (!node || (typeof CSS !== "undefined" && CSS.supports("field-sizing", "content"))) return;
-    node.style.height = "auto";
-    node.style.height = `${Math.min(node.scrollHeight, 160)}px`;
-  }, [draft, inputRef]);
+  const menu = useSkillMenu(draft, skill, skills);
+  useAutoGrow(inputRef, draft);
 
   const pick = (chosen: SkillSummary) => {
     onSkillChange({ key: chosen.key, title: chosen.title });
@@ -89,19 +53,7 @@ export function AssistantComposer({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (menuOpen && matches.length > 0) {
-      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-        event.preventDefault();
-        setActive(moveIndex(activeIndex, matches.length, event.key === "ArrowDown" ? "down" : "up"));
-        return;
-      }
-      if ((event.key === "Enter" || event.key === "Tab") && !event.shiftKey && !event.nativeEvent.isComposing) {
-        event.preventDefault();
-        const chosen = matches[activeIndex];
-        if (chosen) pick(chosen);
-        return;
-      }
-    }
+    if (menu.handleKey(event, pick)) return;
     // Backspace on an empty box removes the chip, like a token field.
     if (event.key === "Backspace" && draft === "" && skill) {
       onSkillChange(null);
@@ -123,8 +75,14 @@ export function AssistantComposer({
       className="relative shrink-0 border-t border-border bg-surface px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
       <div className="relative mx-auto w-full max-w-3xl">
-        {menuOpen ? (
-          <SkillMenu id={menuId} skills={matches} activeIndex={activeIndex} onPick={pick} onHover={setActive} />
+        {menu.open ? (
+          <SkillMenu
+            id={menu.id}
+            skills={menu.matches}
+            activeIndex={menu.activeIndex}
+            onPick={pick}
+            onHover={menu.setActive}
+          />
         ) : null}
         {unavailable ? (
           <p data-testid="assistant-unavailable" className="mb-2 text-[12.5px] text-ink-muted">
@@ -133,26 +91,14 @@ export function AssistantComposer({
         ) : null}
         <div className="rounded-xl border border-border bg-surface px-3 py-2 transition-shadow duration-150 ease-out focus-within:ring-2 focus-within:ring-accent motion-reduce:transition-none">
           {skill ? (
-            <span
-              data-testid="assistant-composer-chip"
-              className="mb-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-accent-soft py-0.5 pr-0.5 pl-2 text-[12px] font-medium text-accent-soft-foreground"
-            >
-              <Slash size={11} aria-hidden="true" />
-              <span className="truncate">{skill.title}</span>
-              <button
-                type="button"
-                data-testid="assistant-skill-remove"
-                onClick={() => {
-                  onSkillChange(null);
-                  inputRef.current?.focus();
-                }}
-                aria-label={t("assistant.skill.remove")}
-                title={t("assistant.skill.remove")}
-                className="inline-flex size-6 items-center justify-center rounded-full outline-none hover:bg-accent/15 focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                <X size={12} aria-hidden="true" />
-              </button>
-            </span>
+            <SkillChip
+              title={skill.title}
+              label={t("assistant.skill.remove")}
+              onRemove={() => {
+                onSkillChange(null);
+                inputRef.current?.focus();
+              }}
+            />
           ) : null}
           <div className="flex items-end gap-2">
             <textarea
@@ -168,9 +114,9 @@ export function AssistantComposer({
               placeholder={t("assistant.placeholder")}
               aria-label={t("assistant.placeholder")}
               role="combobox"
-              aria-expanded={menuOpen && matches.length > 0}
-              aria-controls={menuOpen && matches.length > 0 ? menuId : undefined}
-              aria-activedescendant={menuOpen && matches.length > 0 ? skillOptionId(menuId, activeIndex) : undefined}
+              aria-expanded={menu.listed}
+              aria-controls={menu.listed ? menu.id : undefined}
+              aria-activedescendant={menu.listed ? skillOptionId(menu.id, menu.activeIndex) : undefined}
               aria-autocomplete="list"
               maxLength={4000}
               className="field-sizing-content max-h-40 min-h-6 flex-1 resize-none bg-transparent py-1 text-[14px] text-ink outline-none placeholder:text-ink-muted"
@@ -202,4 +148,91 @@ export function AssistantComposer({
       </div>
     </form>
   );
+}
+
+function SkillChip({ title, label, onRemove }: { title: string; label: string; onRemove: () => void }) {
+  return (
+    <span
+      data-testid="assistant-composer-chip"
+      className="mb-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-accent-soft py-0.5 pr-0.5 pl-2 text-[12px] font-medium text-accent-soft-foreground"
+    >
+      <Slash size={11} aria-hidden="true" />
+      <span className="truncate">{title}</span>
+      <button
+        type="button"
+        data-testid="assistant-skill-remove"
+        onClick={onRemove}
+        aria-label={label}
+        title={label}
+        className="inline-flex size-6 items-center justify-center rounded-full outline-none hover:bg-accent/15 focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <X size={12} aria-hidden="true" />
+      </button>
+    </span>
+  );
+}
+
+/** The `/` menu's state: which skills match the typed word, which one is active, and its keys. */
+function useSkillMenu(draft: string, skill: SkillRef | null, skills: readonly SkillSummary[]) {
+  const id = useId();
+  const [active, setActive] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
+
+  const query = skill ? null : matchSkillQuery(draft);
+  const matches = query === null ? [] : filterSkills(skills, query);
+  const open = query !== null && skills.length > 0 && !dismissed;
+  const activeIndex = Math.min(active, Math.max(0, matches.length - 1));
+
+  // The menu reopens whenever the command word changes after Esc.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `query` is the trigger, not a value read here.
+  useEffect(() => {
+    setDismissed(false);
+    setActive(0);
+  }, [query]);
+
+  // Esc must close the menu, not the dialog around it. Radix listens on the document in the capture
+  // phase, so this runs earlier, at the window, only while the menu is open.
+  useEffect(() => {
+    if (!open) return;
+    const onEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      event.preventDefault();
+      setDismissed(true);
+    };
+    window.addEventListener("keydown", onEscape, { capture: true });
+    return () => window.removeEventListener("keydown", onEscape, { capture: true });
+  }, [open]);
+
+  const listed = open && matches.length > 0;
+
+  /** Arrows move, Enter/Tab picks; returns true when the key belonged to the menu. */
+  const handleKey = (event: KeyboardEvent<HTMLTextAreaElement>, pick: (chosen: SkillSummary) => void) => {
+    if (!listed) return false;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setActive(moveIndex(activeIndex, matches.length, event.key === "ArrowDown" ? "down" : "up"));
+      return true;
+    }
+    if ((event.key === "Enter" || event.key === "Tab") && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      const chosen = matches[activeIndex];
+      if (chosen) pick(chosen);
+      return true;
+    }
+    return false;
+  };
+
+  return { id, open, listed, matches, activeIndex, setActive, handleKey };
+}
+
+/** Browsers without `field-sizing: content` get the same auto-grow from the scroll height. */
+function useAutoGrow(inputRef: RefObject<HTMLTextAreaElement | null>, text: string) {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the text changes.
+  useEffect(() => {
+    const node = inputRef.current;
+    if (!node || (typeof CSS !== "undefined" && CSS.supports("field-sizing", "content"))) return;
+    node.style.height = "auto";
+    node.style.height = `${Math.min(node.scrollHeight, 160)}px`;
+  }, [text, inputRef]);
 }

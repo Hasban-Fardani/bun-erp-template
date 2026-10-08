@@ -3,10 +3,17 @@
 `apps/` is a disposable install of the catalog, so the shared setup action runs
 `bun erp init --apps server,web --yes` after the frozen install: every gate, test, build and QA job
 starts from the reference server+web combination. Change that command in
-`.github/actions/setup/action.yml` to test a different combination. The mobile build job skips
-cleanly while `apps/mobile` is absent; install the catalog app with `bun erp init` (mobile
-combination) or `bun erp apps:create <name> mobile` to enable it. `ci-ok` fails if any required job
-fails, is cancelled or is unexpectedly skipped. Actions use verified
+`.github/actions/setup/action.yml` to test a different combination.
+
+CI starts lean: every push and pull request runs only `gates` (lint + `bun erp check`) and
+`test-postgres` (migrations twice, status, `bun erp test` on PostgreSQL 18). Browser QA (`e2e`)
+and the Docker image run on demand from Actions → CI → Run workflow. To scale up, remove the
+`if: github.event_name == 'workflow_dispatch'` line from a job (and its name from `OPTIONAL` in
+`ci-ok`), or add a PostgreSQL version back as a matrix when you support more than one.
+`.github/workflows/mobile-build.yml` runs only when `apps/mobile`, `packages/` or `bun.lock`
+change. `ci-ok` fails if a required job fails, is cancelled or is unexpectedly skipped. CI writes
+`APP_ENV=test`: its service database has no TLS and its URLs are plain http, which production
+refuses at boot. Actions use verified
 commit pins. Bun is 1.4.2 and installation uses the frozen lockfile and a lock-keyed cache.
 
 Local equivalents: `bun erp check`, `bun erp test`, `bun erp build`, and `bun run qa`.
