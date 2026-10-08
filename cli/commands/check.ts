@@ -146,6 +146,10 @@ export const commands = [
     process.stdout.write("Tasks valid.\n");
   }),
 
+  defineCommand("check:task-approval", async () => {
+    await guard("task-approval", () => runGate("task-approval"));
+    process.stdout.write("Task approvals OK.\n");
+  }),
   defineCommand("check:tdd", async () => {
     await guard("tdd", () => runGate("tdd"));
     process.stdout.write("TDD OK: every server feature has a test.\n");

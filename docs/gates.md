@@ -61,13 +61,51 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 | skills | `skills:validate` | `cli/gates/skills.ts` | `SKILL.md` frontmatter, matching name, trigger description and body length | `skills/` is missing |
 | slop | `check:slop` | `cli/gates/slop.ts` | Narrative comments, oversized page components, governance AST slop | Missing scan targets; a missing bundled validator is a finding |
 | surface | `check:surface` | `cli/gates/interactive-surface.ts` | Inline alerts outside the reviewed allowlist | Missing web or mobile source |
-| task | `check:task` | `cli/gates/tasks.ts` | Task front matter, dependencies and evidence for `ready`/`done` | `docs/tasks/` is missing |
+| task | `check:task` | `cli/gates/tasks.ts` | Task front matter, dependencies, evidence for `ready`/`done`, and the red/green grammar for `tdd: required` tasks | `docs/tasks/` is missing; tasks without `tdd: required` skip the grammar |
+| task-approval | `check:task-approval` | `cli/gates/task-approval.ts` | No agent-authored commit or uncommitted change sets a task to `ready`/`done` or sets `approved_by` | Not a git repository |
 | tdd | `check:tdd` | `cli/gates/tdd.ts` | Every server feature has a test under `tests/features/<name>/` | No server features exist |
 | ui | `check:ui` | `cli/gates/ui-completeness.ts` | List states, visible focus, a working theme switch | Missing screen directories; the theme check needs `apps/web/src/config/ui.ts` |
 | ui-guide | `check:ui-guide` | `cli/gates/ui-guide.ts` | Every `packages/ui/src` module is listed in `packages/ui/llms.txt`; no guide entry names a missing file | `packages/ui/src` is missing |
 | versioning | `check:versioning` | `cli/gates/versioning.ts` | Root and workspace package versions match | Workspaces without a `package.json` |
 | worker | `check:worker` | `cli/gates/worker-gate.ts` | Worker bundle free of Bun globals, new Node built-ins, DDL paths and over-budget size | The bundle step when `apps/server` is not installed; the static scan always runs |
 | worker-boot | `check:worker-boot` | `cli/gates/worker-boot.ts` | Cloudflare boot prerequisites: `wrangler` resolves, the Hyperdrive local connection is configured and its database answers | Always unless `WORKER_BOOT=1` is set |
+
+## Task evidence grammar (`tdd: required`)
+
+`bun erp task:new` writes `tdd: required` into the front matter. Older task files without it stay
+exempt. For a required task, every ticked item `- [x] **<ID> ...**` outside code fences needs lines
+under `## Evidence`, red before green:
+
+```text
+- red: F9.1 `bun erp test --filter notes` — 1 fail: expected 200, received 404
+- green: F9.1 `bun erp test --filter notes` — 4 pass
+- red: F9.2 n/a — docs-only, nothing executable to fail
+- green: F9.2 `bun erp check` — 0 findings
+```
+
+Rules: each `red:`/`green:` line is `<ID>`, a backticked command, then an output excerpt. `red: <ID>
+n/a — <reason>` is allowed (non-empty reason) but `green:` always needs a command. A `green:` before
+its `red:`, a missing line, or a ticked item marked `NOT_RUN`/`BLOCKED` is a finding. Rejected:
+`- green: F9.1 tests passed` (no command), `- red: F9.2 n/a —` (no reason).
+
+## Task approval (`task-approval`)
+
+Only a human raises status. The gate reads `git log -p` for `docs/tasks/` and fails any commit that
+adds `status: ready|done` or an `approved_by:` value when its message has an AI `Co-Authored-By:`
+trailer (matcher list: `AI_COAUTHOR_PATTERN` in the gate) or its author email is in the optional
+comma-separated `AGENT_AUTHOR_EMAILS`. Uncommitted edits that do the same fail too, so the agent is
+caught before commit; a human sets `HUMAN_TASK_APPROVAL=1` for that one run. Range: commits since
+the merge-base with the default branch (`origin/HEAD`, `origin/master`, `origin/main`, `master`,
+`main`), or the last 50 commits when on the default branch itself, keeping the gate fast. A human
+approves in a commit without an AI trailer. It is not a security boundary: CI on the default branch
+is the final judge.
+
+## Pre-push hook
+
+`.githooks/pre-push` runs `bun run check:biome`, `bun erp check:fast`, then `bun erp test --filter
+<feature>` for each server feature changed since the upstream, when `apps/server` is installed and
+`TEST_DATABASE_URL` is set. Otherwise it prints a `NOTICE` saying the tests were not run.
+`git push --no-verify` bypasses it; CI runs every gate and is the final judge.
 
 ## Run one gate
 

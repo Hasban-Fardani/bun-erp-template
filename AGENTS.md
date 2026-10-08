@@ -134,7 +134,10 @@ Mandatory agent tools:
 - Record red→green evidence in the task file. Never claim a test passed without running it;
   unverified work is NOT_RUN or BLOCKED.
 - Never set a task to ready or done. Leave agent work `in_progress` with evidence; the human moves
-  IMPLEMENTATION_DONE → API_UNIT_TESTED → UI_TESTED → READY_FOR_USE.
+  IMPLEMENTATION_DONE → API_UNIT_TESTED → UI_TESTED → READY_FOR_USE. Agent commits (or working-tree
+  edits) that raise `status` or set `approved_by` fail the `task-approval` gate.
+- `tdd: required` tasks need, for every ticked `**<ID>**` item, ``- red: <ID> `cmd` — output`` then
+  ``- green: <ID> `cmd` — output`` (docs-only: `- red: <ID> n/a — reason`); see docs/gates.md.
 - Before handoff run `bun run lint`, `bun erp check` and `bun erp test`, and report the results.
   Biome is mandatory; `bun install` installs the tracked `.githooks/pre-push` hook that runs
   `check:biome` before every push.
