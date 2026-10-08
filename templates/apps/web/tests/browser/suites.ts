@@ -413,7 +413,9 @@ export const usersSuite: QaSuite = {
         await page.locator("[cmdk-input]").fill("owner");
         await roleItems.filter({ hasText: /owner/i }).waitFor({ state: "visible" });
         const after = await roleItems.count();
+        /** The first Escape closes only the popover; the second is swallowed until its exit animation ends. */
         await page.keyboard.press("Escape");
+        await page.locator("[cmdk-input]").waitFor({ state: "detached" });
         await page.keyboard.press("Escape");
         await page.locator('[data-testid="user-role"]').waitFor({ state: "hidden" });
         return before > 1 && after === 1 ? true : `before=${before} after=${after}`;

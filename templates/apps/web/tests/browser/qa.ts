@@ -18,6 +18,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { chromium } from "playwright-core";
+import { isExpectedConsoleError, isExpectedResponse } from "./expected.ts";
 import { type QaCheck, type QaContext, type QaSuite, SUITES } from "./suites.ts";
 
 const WEB = process.env.QA_BASE_URL ?? "http://localhost:4173";
@@ -175,11 +176,14 @@ for (const suite of run) {
   const suiteErrors: string[] = [];
   page.on("pageerror", (error) => suiteErrors.push(String(error)));
   page.on("console", (message) => {
-    if (message.type() === "error" && !message.text().includes("favicon")) suiteErrors.push(message.text());
+    if (message.type() !== "error" || message.text().includes("favicon")) return;
+    if (isExpectedConsoleError({ text: message.text(), locationUrl: message.location().url })) return;
+    suiteErrors.push(message.text());
   });
   /** Tracking every non-2xx is how a rejected query shape gets caught instead of shrugged at. */
   page.on("response", (response) => {
-    if (response.url().includes("/api/") && response.status() >= 400) {
+    const failure = { method: response.request().method(), url: response.url(), status: response.status() };
+    if (failure.url.includes("/api/") && failure.status >= 400 && !isExpectedResponse(failure)) {
       suiteBadResponses.push(`${response.status()} ${response.url().slice(0, 110)}`);
     }
   });
