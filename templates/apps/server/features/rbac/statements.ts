@@ -1,7 +1,7 @@
 /** The only source of permissions the code knows; key = `<resource>.<action>`. */
 export const statements = {
-  // create/read/update/delete are enforced by the user routes; `impersonate` follows with its feature.
-  user: ["create", "read", "update", "delete", "impersonate"],
+  // Every key must have an enforcement site (tests/features/rbac/permission-enforcement.test.ts).
+  user: ["create", "read", "update", "delete"],
   // `assign` = granting a role to a user; managing roles & their permissions is guarded by create/update/delete.
   role: ["create", "read", "update", "delete", "assign"],
   // @erp:permissions
