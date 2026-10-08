@@ -80,8 +80,17 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
     "apps/server/features/sales-orders/route.ts",
     "apps/server/features/sales-orders/feature.ts",
     "apps/server/features/sales-orders/index.ts",
+    "apps/server/database/factories/sales-orders.ts",
     "apps/server/tests/features/sales-orders/sales-orders.test.ts",
   ]);
+
+  // The factory builds rows for the new table and the generated test uses it.
+  const factory = contents.get("apps/server/database/factories/sales-orders.ts") ?? "";
+  expect(factory).toContain('import { salesOrders } from "../../features/sales-orders/schema.ts";');
+  expect(factory).toContain("export const salesOrdersFactory = defineFactory(salesOrders,");
+  const generatedTest = contents.get("apps/server/tests/features/sales-orders/sales-orders.test.ts") ?? "";
+  expect(generatedTest).toContain('import { salesOrdersFactory } from "../../../database/factories/sales-orders.ts";');
+  expect(generatedTest).toContain("salesOrdersFactory.createMany(api.ctx.db, 2)");
 
   const policy = contents.get("apps/server/features/sales-orders/policy.ts") ?? "";
   expect(policy).toContain('list: "sales-orders.read"');
@@ -194,6 +203,9 @@ test("make:feature can allocate a numbering sequence on create", () => {
   const service = contents.get("apps/server/features/sales-orders/service.ts") ?? "";
   expect(service).toContain('await nextNumber(tx, "sales-order", { prefix: "SO-", padding: 4 })');
   expect(service).toContain('from "../../database/numbering.ts"');
+  // The number column has no database default, so the factory must fill it or inserts fail.
+  const factory = contents.get("apps/server/database/factories/sales-orders.ts") ?? "";
+  expect(factory).toContain("number: `SALES-ORDERS-$" + "{n}`");
 
   const plain = renderFeatureScaffold("Sales Orders");
   const plainService = plain.files.find((file) => file.path.endsWith("service.ts"))?.contents ?? "";

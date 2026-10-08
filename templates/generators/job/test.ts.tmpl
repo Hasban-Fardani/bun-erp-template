@@ -1,0 +1,26 @@
+import { expect, test } from "bun:test";
+import { createUuid } from "@bun-erp/utils";
+import { createJobRegistry } from "../../../features/jobs.ts";
+import { enqueueJob } from "../../../infra/jobs/queue.ts";
+import { {{constant}}_JOB } from "../../../jobs/{{file}}.ts";
+import { createTestContext } from "../../support/fixtures.ts";
+
+test("{{jobName}} has a handler in the job registry", async () => {
+  const ctx = await createTestContext();
+  expect(createJobRegistry(ctx).get({{constant}}_JOB)).toBeDefined();
+});
+
+test("{{jobName}} enqueued twice with one idempotency key stores one job", async () => {
+  const { db } = await createTestContext();
+  // A queue no other test file can see keeps this assertion independent of suite order.
+  const input = {
+    queue: `tests-${createUuid()}`,
+    name: {{constant}}_JOB,
+    payload: {},
+    idempotencyKey: "{{file}}-1",
+  };
+  const first = await enqueueJob(db, input);
+  expect(await enqueueJob(db, input)).toBe(first);
+});
+
+test.todo("{{jobName}} handler is safe to run twice for the same payload");

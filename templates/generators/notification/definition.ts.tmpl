@@ -1,0 +1,29 @@
+import type { Database } from "../../../database/index.ts";
+import { notify } from "../service.ts";
+import type { NotificationChannelContext } from "../types.ts";
+
+/** Stable `domain.event` name stored in `notifications.type`. */
+export const {{constant}}_NOTIFICATION = "{{type}}";
+
+/**
+ * Inbox entry for every recipient. Pass the feature transaction as `tx` when the notification must
+ * commit or roll back together with the write that caused it.
+ */
+export async function send{{pascal}}Notification(
+  ctx: NotificationChannelContext,
+  input: { recipients: readonly string[]; body?: string; data?: Record<string, unknown> },
+  tx?: Database,
+): Promise<void> {
+  await notify(
+    ctx,
+    {
+      recipients: input.recipients,
+      type: {{constant}}_NOTIFICATION,
+      title: "{{title}}",
+      body: input.body ?? "",
+      ...(input.data ? { data: input.data } : {}),
+      via: ["database"],
+    },
+    tx,
+  );
+}

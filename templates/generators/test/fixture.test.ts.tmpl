@@ -1,0 +1,11 @@
+import { describe, expect, test } from "bun:test";
+import { createSeededContext } from "../../support/fixtures.ts";
+
+describe("{{name}}: {{title}}", () => {
+  test("starts from a clean seeded database", async () => {
+    const ctx = await createSeededContext();
+    expect(ctx.db).toBeDefined();
+  });
+
+  test.todo("describe the behaviour under test, then make it fail first");
+});

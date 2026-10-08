@@ -1,0 +1,26 @@
+import { expect, test } from "bun:test";
+import { createUuid } from "@bun-erp/utils";
+import { createMailer, createMemoryMailDriver } from "@bun-erp/mail/server";
+import { createMailEnqueue } from "../../../features/mail/wiring.ts";
+import { queue{{pascal}}Mail, render{{pascal}}Mail } from "../../../mail/{{file}}.ts";
+import { createTestContext, testEnv } from "../../support/fixtures.ts";
+
+test("the {{file}} mail escapes user input", () => {
+  const message = render{{pascal}}Mail({ to: "user@example.test", name: "<b>x</b>" });
+  expect(message.html).toContain("&lt;b&gt;x&lt;/b&gt;");
+  expect(message.html).not.toContain("<b>");
+});
+
+test("the {{file}} mail queued twice with one idempotency key is one job", async () => {
+  const ctx = await createTestContext();
+  const mailer = createMailer({
+    config: testEnv,
+    logger: ctx.logger,
+    driver: createMemoryMailDriver(),
+    enqueue: createMailEnqueue(ctx.db),
+  });
+  const input = { to: "user@example.test", name: "Ada" };
+  const key = `{{file}}-${createUuid()}`;
+  const first = await queue{{pascal}}Mail(mailer, input, key);
+  expect(await queue{{pascal}}Mail(mailer, input, key)).toBe(first);
+});

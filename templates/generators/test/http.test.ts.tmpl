@@ -1,0 +1,24 @@
+import { beforeEach, describe, expect, test } from "bun:test";
+import { createHttpFixture, createTestClient, type HttpFixture } from "../../support/fixtures.ts";
+
+let api: HttpFixture;
+
+// slop-ok: the HTTP fixture lifecycle is deliberately identical across feature tests
+beforeEach(async () => {
+  api = await createHttpFixture();
+}, 30_000);
+
+describe("{{name}}: {{title}}", () => {
+  test("anonymous caller is rejected before any business logic runs", async () => {
+    const res = await createTestClient(api.app).api.v1{{mount}}.$get({ query: {} });
+    expect(res.status).toBe(401);
+  });
+
+  test("the owner can list", async () => {
+    await api.signInAsOwner();
+    const res = await api.client.api.v1{{mount}}.$get({ query: {} });
+    expect(res.status).toBe(200);
+  });
+
+  test.todo("describe the behaviour under test, then make it fail first");
+});

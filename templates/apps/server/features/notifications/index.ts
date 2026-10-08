@@ -4,3 +4,4 @@
  */
 export { notify } from "./service.ts";
 export type { NotificationChannelFactory, NotifyInput } from "./types.ts";
+// @erp:notifications

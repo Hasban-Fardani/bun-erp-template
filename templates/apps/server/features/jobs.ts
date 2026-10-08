@@ -10,6 +10,7 @@ import type { ScheduleDefinition } from "../infra/jobs/scheduler.ts";
  */
 export function createJobRegistry(ctx: Pick<AppContext, "env" | "db" | "logger">): JobRegistry {
   const registry = new JobRegistry();
+  // @erp:jobs
   const batches = createBatchHandlers(ctx);
   registry.register(BATCH_JOB_NAME, async (payload, context) => {
     const batchId = typeof payload.batchId === "string" ? payload.batchId : "";

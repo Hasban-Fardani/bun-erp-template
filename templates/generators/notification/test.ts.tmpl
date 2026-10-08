@@ -1,0 +1,17 @@
+import { expect, test } from "bun:test";
+import { eq } from "drizzle-orm";
+import { {{constant}}_NOTIFICATION, send{{pascal}}Notification } from "../../../features/notifications/index.ts";
+import { notifications } from "../../../features/notifications/schema.ts";
+import { createHttpFixture, dataOf } from "../../support/fixtures.ts";
+
+test("{{type}} writes one inbox row per recipient", async () => {
+  const api = await createHttpFixture();
+  await api.signInAsOwner();
+  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
+
+  await send{{pascal}}Notification(api.ctx, { recipients: [me.userId] });
+
+  const rows = await api.ctx.db.select().from(notifications).where(eq(notifications.type, {{constant}}_NOTIFICATION));
+  expect(rows).toHaveLength(1);
+  expect(rows[0]?.userId).toBe(me.userId);
+});

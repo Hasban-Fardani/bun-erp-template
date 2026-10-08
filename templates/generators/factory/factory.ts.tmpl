@@ -1,0 +1,9 @@
+import { {{export}} } from "../../features/{{name}}/schema.ts";
+import { defineFactory } from "./define.ts";
+
+/**
+ * Deterministic {{name}} rows for tests and seeders. `n` counts from 1 per factory; add a value for
+ * every notNull column that has no database default, and keep the values unique where a unique
+ * index exists. Overrides always win: `{{export}}Factory.create(db, { ... })`.
+ */
+export const {{export}}Factory = defineFactory({{export}}, ({{param}}) => ({{values}}));

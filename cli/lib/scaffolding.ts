@@ -1,3 +1,4 @@
+import factoryTemplate from "../../templates/generators/factory/factory.ts.tmpl" with { type: "text" };
 import featureModuleTemplate from "../../templates/generators/feature/feature.ts.tmpl" with { type: "text" };
 import migrationDeletedAtColumnTemplate from "../../templates/generators/feature/fragments/migration-deleted-at-column.tmpl" with {
   type: "text",
@@ -296,8 +297,12 @@ export function renderFeatureScaffold(rawName: string, options: FeatureScaffoldO
       contents: renderFeatureIndex({ name, camel, pascal, softDelete }),
     },
     {
+      path: `apps/server/database/factories/${name}.ts`,
+      contents: renderFactorySource({ name, export: camel, sequenced: options.sequence !== undefined }),
+    },
+    {
       path: `apps/server/tests/features/${name}/${name}.test.ts`,
-      contents: renderFeatureTest(name, { softDelete, version }),
+      contents: renderFeatureTest(name, camel, { softDelete, version }),
     },
   ];
   return { name, resource: name, table, pascal, camel, files };
@@ -485,7 +490,25 @@ function renderFeatureIndex(input: { name: string; camel: string; pascal: string
   return renderTemplate(indexTemplate, { name, camel, pascal, serviceExports }, "feature index");
 }
 
-function renderFeatureTest(name: string, options: { softDelete: boolean; version: boolean }): string {
+/**
+ * A factory for one feature table. A sequenced table has a notNull `number` column without a
+ * database default, so the factory fills it; every other generated column has a default.
+ */
+export function renderFactorySource(input: { name: string; export: string; sequenced: boolean }): string {
+  const prefix = input.name.toUpperCase();
+  return renderTemplate(
+    factoryTemplate,
+    {
+      name: input.name,
+      export: input.export,
+      param: input.sequenced ? "n" : "_n",
+      values: input.sequenced ? `{ number: \`${prefix}-\${n}\` }` : "{}",
+    },
+    "factory",
+  );
+}
+
+function renderFeatureTest(name: string, camel: string, options: { softDelete: boolean; version: boolean }): string {
   const { softDelete, version } = options;
   const roundTripName = softDelete
     ? "create, list, update, delete, and restore round-trip"
@@ -494,6 +517,7 @@ function renderFeatureTest(name: string, options: { softDelete: boolean; version
     testTemplate,
     {
       name,
+      camel,
       roundTripName,
       dataShape: version ? testDataShapeVersionedTemplate : testDataShapePlainTemplate,
       patchBody: version ? testPatchBodyVersionedTemplate : testPatchBodyPlainTemplate,

@@ -1,0 +1,22 @@
+import { escapeHtml, type MailMessage, type Mailer } from "@bun-erp/mail/server";
+
+export type {{pascal}}MailInput = { to: string; name: string };
+
+/** Pure renderer with no I/O, so a test can assert the exact message. User input is always escaped. */
+export function render{{pascal}}Mail(input: {{pascal}}MailInput): MailMessage {
+  const greeting = `Hello ${input.name}`;
+  return {
+    to: input.to,
+    subject: "{{title}}",
+    text: greeting,
+    html: `<p>${escapeHtml(greeting)}</p>`,
+  };
+}
+
+/**
+ * Stores a `mail.send` job for the worker. The idempotencyKey must be stable for the business
+ * event (an id, never a timestamp), so a retried request sends one email.
+ */
+export function queue{{pascal}}Mail(mailer: Mailer, input: {{pascal}}MailInput, idempotencyKey: string): Promise<string> {
+  return mailer.queue(render{{pascal}}Mail(input), { idempotencyKey });
+}
