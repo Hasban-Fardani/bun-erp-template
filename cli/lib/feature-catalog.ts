@@ -31,6 +31,7 @@ export const INFRA_WIRING_OPS = [
   "cloudflare",
   "jobs",
   "notifications",
+  "auth-reset",
   "auth-plugin",
   "auth-schema",
   "session-field",

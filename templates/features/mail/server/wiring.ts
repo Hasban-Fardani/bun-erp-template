@@ -40,10 +40,11 @@ const mailPayload = z.object({
 
 /** Registered at the runtime composition root so queued mail is actually delivered by the worker. */
 export function registerMailJobs(registry: JobRegistry, mailer: Mailer): void {
-  registry.register("mail.send", async (payload) => {
+  registry.register("mail.send", async (payload, context) => {
     const message = mailPayload.safeParse(payload);
     if (!message.success) throw invalidPayload();
-    await mailer.send(message.data);
+    // The job id is stable across retries, so providers that dedupe sends never deliver twice.
+    await mailer.send({ ...message.data, idempotencyKey: `mail.send:${context.jobId}` });
   });
 }
 

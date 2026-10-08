@@ -1,4 +1,4 @@
-// @erp:mail
+// @erp:mail (installer anchor: `features:install mail` adds the Mailer import and context field)
 import type { Env } from "../config/index.ts";
 import type { Database } from "../database/index.ts";
 import type { Auth } from "../features/identity/auth.ts";
