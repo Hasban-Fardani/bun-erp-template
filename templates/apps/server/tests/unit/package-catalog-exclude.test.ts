@@ -5,15 +5,11 @@ import { join } from "node:path";
 import { copyCatalogPackage } from "@cli/lib/package-catalog.ts";
 
 async function fixture(template: boolean): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "erp-pkg-"));
+  const root = (await Bun.$`mktemp -d`.text()).trim();
   await Bun.$`git init -q ${root}`.quiet();
-  await mkdir(join(root, "templates/packages/widget"), { recursive: true });
-  await Bun.write(join(root, "templates/packages/widget/package.json"), '{"name":"@bun-erp/widget"}\n');
-  await Bun.write(join(root, "package.json"), '{"workspaces":[]}\n');
-  if (template) {
-    await mkdir(join(root, "docs/template"), { recursive: true });
-    await Bun.write(join(root, "docs/template/README.md"), "template\n");
-  }
+  await Bun.write(`${root}/templates/packages/widget/package.json`, '{"name":"@bun-erp/widget"}\n');
+  await Bun.write(`${root}/package.json`, '{"workspaces":[]}\n');
+  if (template) await Bun.write(`${root}/docs/template/README.md`, "template\n");
   return root;
 }
 
@@ -25,10 +21,10 @@ test("a catalog package installed in the template repository stays out of git st
   const root = await fixture(true);
   try {
     await copyCatalogPackage(root, "widget");
-    expect(await Bun.file(join(root, "packages/widget/package.json")).exists()).toBe(true);
+    expect(await Bun.file(`${root}/packages/widget/package.json`).exists()).toBe(true);
     expect(await untracked(root)).toBe("");
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await Bun.$`rm -rf ${root}`.quiet();
   }
 });
 
@@ -38,6 +34,6 @@ test("in a project the installed package is real source and stays visible to git
     await copyCatalogPackage(root, "widget");
     expect(await untracked(root)).toContain("packages/widget");
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await Bun.$`rm -rf ${root}`.quiet();
   }
 });

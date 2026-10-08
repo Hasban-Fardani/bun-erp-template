@@ -1,10 +1,9 @@
 import { expect, test } from "bun:test";
-import { resolve } from "node:path";
 import { repoRoot } from "@cli/lib/repo.ts";
 
 /** The scan runs in a child process: a stalled scanner is a synchronous loop no in-process timeout can break. */
 async function spans(source: string): Promise<string | undefined> {
-  const script = `import { stringLiteralSpans } from ${JSON.stringify(resolve(repoRoot, "cli/gates/architecture-guard.ts"))};
+  const script = `import { stringLiteralSpans } from ${JSON.stringify(`${repoRoot}/cli/gates/architecture-guard.ts`)};
 console.log(JSON.stringify(stringLiteralSpans(${JSON.stringify(source)}, false)));`;
   const proc = Bun.spawn(["bun", "-e", script], { stdout: "pipe", stderr: "pipe" });
   const timer = setTimeout(() => proc.kill(9), 4000);
