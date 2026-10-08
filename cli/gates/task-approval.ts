@@ -80,7 +80,7 @@ export async function checkTaskApproval(root: string, options: Options = {}): Pr
     for (const file of untracked.out.split("\n").filter(Boolean)) {
       const text = await Bun.file(`${root}/${file}`).text();
       const added = text.split("\n").map((line) => `+${line}`);
-      for (const hit of raisedLines(["+++ b/" + file, ...added].join("\n"))) {
+      for (const hit of raisedLines([`+++ b/${file}`, ...added].join("\n"))) {
         findings.push(`uncommitted change raises status/approval: ${hit} — leave it at in_progress for a human`);
       }
     }

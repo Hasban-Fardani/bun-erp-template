@@ -33,6 +33,10 @@ if [ -z "$features" ]; then
   exit 0
 fi
 for feature in $features; do
+  if [ ! -d "apps/server/tests/features/$feature" ]; then
+    echo "NOTICE: feature $feature is not installed under apps/server; its tests were not run."
+    continue
+  fi
   echo "pre-push: bun erp test --filter $feature"
   bun erp test --filter "$feature"
 done
