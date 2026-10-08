@@ -42,7 +42,7 @@ function useCopyToClipboard() {
 /** "by X as Y" while an admin impersonated; plain actor label otherwise. */
 export function actorText(
   log: Pick<AuditLog, "actorLabel" | "impersonatorLabel">,
-  t: (key: string, params?: Record<string, string>) => string,
+  t: (key: "audit.byAs", params: { impersonator: string; actor: string }) => string,
 ): string {
   return log.impersonatorLabel
     ? t("audit.byAs", { impersonator: log.impersonatorLabel, actor: log.actorLabel })
