@@ -20,7 +20,8 @@ function pathOf(url: string): string {
 export function isExpectedResponse(response: { method: string; url: string; status: number }): boolean {
   const path = pathOf(response.url);
   return EXPECTED.some(
-    (entry) => entry.method === response.method.toUpperCase() && entry.path === path && entry.status === response.status,
+    (entry) =>
+      entry.method === response.method.toUpperCase() && entry.path === path && entry.status === response.status,
   );
 }
 

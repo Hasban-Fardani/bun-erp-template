@@ -7,8 +7,10 @@
  * opt-in. Every check is isolated: a failure is recorded and the run continues, and a suite whose
  * prerequisite fails is reported as skipped instead of taking the rest of the run down with it.
  */
+
 import type { Browser, Page } from "playwright-core";
 import { STORAGE_KEYS } from "../../src/config/storage-keys.ts";
+import { paceSignIn } from "./pacing.ts";
 
 export type CheckOutcome = boolean | string | undefined;
 
@@ -43,6 +45,7 @@ export type QaSuite = {
 export const RESPONSIVE_WIDTHS = [320, 360, 390, 430, 767, 768, 1024, 1440] as const;
 
 export async function signIn(page: Page, baseUrl: string, email: string, password: string): Promise<void> {
+  await paceSignIn();
   await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
   await page.fill("#email", email);
   await page.fill("#password", password);
@@ -459,6 +462,7 @@ export const loginSuite: QaSuite = {
       name: "login: a failed sign-in is announced as a toast outside the form",
       run: async ({ page, baseUrl }) => {
         await page.setViewportSize({ width: 390, height: 844 });
+        await paceSignIn();
         await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
         await page.fill("#email", "missing-user@example.test");
         await page.fill("#password", "invalid-password-for-browser-test");
