@@ -21,7 +21,15 @@ export async function checkWorkspaceVersions(root: string): Promise<VersionFindi
 
   for (const workspace of rootManifest.workspaces ?? []) {
     const manifestPath = `${workspace}/package.json`;
-    if (!(await Bun.file(join(root, manifestPath)).exists())) continue;
+    if (!(await Bun.file(join(root, manifestPath)).exists())) {
+      findings.push({
+        packageName: workspace,
+        version: "missing",
+        expected,
+        detail: "Workspace has no package.json, so a fresh `bun install` fails; apps/ entries are added by `bun erp init`, not committed.",
+      });
+      continue;
+    }
     const manifest = (await Bun.file(join(root, manifestPath)).json()) as { name?: string; version?: string };
     if (!manifest.version || manifest.version !== expected) {
       findings.push({
