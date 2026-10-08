@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { adoptProject, projectSlug } from "@cli/commands/project.ts";
+import { adoptProject, projectDatabaseName, projectSlug } from "@cli/commands/project.ts";
 import { checkLifecycle } from "@cli/gates/lifecycle.ts";
 import { checkScope } from "@cli/gates/scope.ts";
 import { withTempRoot } from "./support/temp-root.ts";
@@ -174,6 +174,32 @@ test("project:adopt renames package, wrangler, queue, bucket and URL names deriv
     },
     "lifecycle-adopt-names-",
   );
+});
+
+test("project:adopt gives the project its own database name and leaves host and credentials alone", async () => {
+  await withTempRoot(
+    {
+      "docs/template/README.md": "# Template material\n",
+      "AGENTS.md": MARKED_AGENTS,
+      ".env.example": "A=1\nDATABASE_URL=postgresql://postgres:postgres@localhost:5432/bun_erp\nB=2\n",
+      ".env": 'DATABASE_URL="postgresql://u:p%40ss@db.internal:55418/erp_ci?sslmode=disable"\n',
+    },
+    async (root) => {
+      await adoptProject(root, { name: "Acme Ops", purpose: "ERP for Acme" });
+      expect(await Bun.file(`${root}/.env.example`).text()).toBe(
+        "A=1\nDATABASE_URL=postgresql://postgres:postgres@localhost:5432/acme_ops\nB=2\n",
+      );
+      expect(await Bun.file(`${root}/.env`).text()).toBe(
+        'DATABASE_URL="postgresql://u:p%40ss@db.internal:55418/acme_ops?sslmode=disable"\n',
+      );
+    },
+    "lifecycle-adopt-db-",
+  );
+});
+
+test("projectDatabaseName makes an identifier-safe name", () => {
+  expect(projectDatabaseName("Acme Ops")).toBe("acme_ops");
+  expect(projectDatabaseName("3d-print")).toBe("erp_3d_print");
 });
 
 test("projectSlug derives a lowercase DNS-safe name and rejects an empty result", () => {

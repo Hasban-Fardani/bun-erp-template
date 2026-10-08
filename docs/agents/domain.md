@@ -1,7 +1,8 @@
 # Domain docs
 
-Project-owned. Single-context layout for `grill-with-docs`, `domain-modeling`, `to-spec`,
-`to-tickets` and `code-review`.
+Project-owned. Single-context layout used by `grill-with-docs`, `domain-modeling`, `to-spec`,
+`to-tickets` and `code-review`. These skills look for it by convention, not through a setup step:
+never run `/setup-matt-pocock-skills`; the tracker side is `docs/agents/issue-tracker.md`.
 
 - Glossary: `GLOSSARY.md` at the repository root. Use its terms in specs, tickets, tests and code;
   add a term the moment it crystallises.
