@@ -11,6 +11,7 @@ function renderTask(id: string, title: string): string {
 id: ${id}
 title: ${title}
 status: in_progress
+tdd: required
 evidence: pending — append the commands run and their results
 ---
 
@@ -23,14 +24,21 @@ evidence: pending — append the commands run and their results
 
 ## Checkpoints
 
-- [ ] Failing test written first (red) and its output recorded
-- [ ] Implementation makes the same test pass (green)
-- [ ] \`bun erp check\` green
-- [ ] Evidence recorded below
+- [ ] **${id}.1** Replace this with one verifiable item; tick it only after its red and green lines exist
+- [ ] **${id}.2** \`bun erp check\` green
 
 ## Evidence
 
-_(append command + result)_
+\`tdd: required\` makes \`bun erp check\` enforce this grammar for every ticked \`**<ID>**\` item:
+
+\`\`\`text
+- red: ${id}.1 \`bun erp test --filter thing\` — 1 fail: expected 2, received 1
+- green: ${id}.1 \`bun erp test --filter thing\` — 1 pass
+- red: ${id}.3 n/a — docs-only, nothing executable to fail
+- green: ${id}.3 \`bun erp check\` — 0 findings
+\`\`\`
+
+Red comes before green for the same ID. \`NOT_RUN\` and \`BLOCKED\` items stay unticked.
 `;
 }
 
