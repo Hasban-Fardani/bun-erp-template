@@ -56,7 +56,7 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 | readiness | `check:prod` | `cli/gates/readiness.ts` | Root scripts, secret placeholders, migration numbering and contract docs | Missing migration or app directories |
 | rpc | `check:rpc` | `cli/gates/rpc-guard.ts` | Typed Hono client, no runtime server imports, `/api/v1` prefix | Missing web, mobile or server apps; without a server there is no typed-client rule |
 | scope | `check:scope` | `cli/gates/scope.ts` | Client names, business rules and unknown top-level directories | Project mode (`docs/template/` is missing; `template.scope.json` is deleted by `bun erp project:adopt`) |
-| lifecycle | `check:lifecycle` | `cli/gates/lifecycle.ts` | Template-only markers and the template scope file are gone once `docs/template/` is removed | Template mode (`docs/template/` exists) |
+| lifecycle | `check:lifecycle` | `cli/gates/lifecycle.ts` | Template-only markers and the template scope file are gone once `docs/template/` is removed, and no project document (outside `docs/tasks/`) uses template phrases (the list is `LEAK_PATTERNS` in the gate) | Template mode (`docs/template/` exists) |
 | shadcn | `check:shadcn` | `cli/gates/shadcn-guard.ts` | Approved registries, vendored provenance and banned native controls | Missing app source directories |
 | skills | `skills:validate` | `cli/gates/skills.ts` | `SKILL.md` frontmatter, matching name, trigger description and body length | `skills/` is missing |
 | slop | `check:slop` | `cli/gates/slop.ts` | Narrative comments, oversized page components, governance AST slop | Missing scan targets; a missing bundled validator is a finding |
