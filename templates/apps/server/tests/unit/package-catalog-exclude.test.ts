@@ -1,7 +1,4 @@
 import { expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { copyCatalogPackage } from "@cli/lib/package-catalog.ts";
 
 async function fixture(template: boolean): Promise<string> {
