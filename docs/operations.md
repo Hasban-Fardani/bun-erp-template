@@ -164,8 +164,12 @@ register its own HTTP provider without editing the package:
 
 - `log` (default) writes a structured `mail.sent` line and sends nothing — visible, never silent.
 - `smtp` sends through nodemailer using SMTP_HOST/SMTP_PORT/SMTP_SECURE/SMTP_USERNAME/SMTP_PASSWORD.
-  It needs raw sockets, so the config schema refuses it when APP_DEPLOY_TARGET=cloudflare; use `log`
-  or a custom HTTP driver there.
+  It needs raw sockets, so the config schema refuses it when APP_DEPLOY_TARGET=cloudflare; use `http`
+  or `log` there.
+- `http` posts to the Resend API over `fetch` (MAIL_HTTP_PROVIDER=resend, MAIL_API_KEY), so it works
+  on Bun and Cloudflare Workers. The sender comes from MAIL_FROM_ADDRESS and MAIL_FROM_NAME. A provider
+  error throws a coded, retryable-flagged error (`MAIL_HTTP_<status>`, `MAIL_HTTP_NETWORK`) that never
+  contains the key; the queue retries it and the idempotency key is forwarded to the provider.
 - `memory` captures messages in-process and is the seam tests assert against.
 
 Compose the body with `@bun-erp/email` components and `renderEmailDocument` (install the package with

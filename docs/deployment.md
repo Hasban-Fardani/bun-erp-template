@@ -76,7 +76,7 @@ because it starts Vite + workerd; run it whenever a change touches the Worker en
 | Rate limiting | Better Auth `storage: "database"` (shared across processes) | same table through Hyperdrive (per-isolate memory would be bypassable) |
 | Permission cache | `PERMISSION_CACHE_ENABLED=true` is safe on one process (10 s TTL, database is the source of truth); `CACHE_DRIVER=database` for replicas | set `false` in `wrangler.jsonc`, or `CACHE_DRIVER=database` to share entries across isolates |
 | Cache facade | `CACHE_DRIVER=memory` (default) or `database` | `database`, or `cloudflare-kv` with a `kv_namespaces` binding named by `CACHE_KV_BINDING` (eventually consistent; never for permissions) |
-| Mail | `log`, `memory`, or `smtp` | `log`/`memory`/HTTP driver; **`smtp` is refused** (no raw sockets) |
+| Mail | `log`, `memory`, `smtp`, or `http` (Resend; `MAIL_HTTP_PROVIDER`, `MAIL_API_KEY`) | `log`/`memory`/`http`; **`smtp` is refused** (no raw sockets) |
 | Storage | `local` (dev/test only), `s3`, `memory` | `r2` binding or `memory`; **`s3` is refused** (needs `Bun.S3Client`); `local` is refused in production |
 | Web assets | `APP_WEB_MODE=integrated` (Bun serves `apps/web/dist`) | Workers Static Assets; **non-integrated is refused** |
 | API docs | `/api/docs` + `/api/openapi.json` follow `API_DOCS_ENABLED` (off by default in production) | same routes, but the Scalar reference page is loaded on the Bun target only (the Worker serves `/api/openapi.json`) |
