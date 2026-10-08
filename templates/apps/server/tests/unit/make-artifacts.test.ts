@@ -2,8 +2,10 @@ import { expect, test } from "bun:test";
 import {
   type MakePlan,
   planMakeCommand,
+  planMakeEvent,
   planMakeFactory,
   planMakeJob,
+  planMakeListener,
   planMakeMail,
   planMakeNotification,
   planMakeTest,
@@ -28,6 +30,7 @@ async function realFile(path: string): Promise<string> {
 async function baseRoot(): Promise<Record<string, string>> {
   return {
     "apps/server/features/jobs.ts": await realFile("templates/apps/server/features/jobs.ts"),
+    "apps/server/features/events.ts": await realFile("templates/apps/server/features/events.ts"),
     "apps/server/features/notifications/index.ts": await realFile(
       "templates/apps/server/features/notifications/index.ts",
     ),
@@ -44,6 +47,12 @@ async function baseRoot(): Promise<Record<string, string>> {
 
 function assertValidTypeScript(plan: MakePlan): void {
   for (const file of plan.files) expect(() => transpiler.transformSync(file.contents)).not.toThrow();
+}
+
+/** Writes the plan, asserts it touched `path` and returns that file's new source. */
+async function applyAndRead(root: string, plan: MakePlan, path: string): Promise<string> {
+  expect(await writeMakePlan(root, plan)).toContain(path);
+  return Bun.file(`${root}/${path}`).text();
 }
 
 async function snapshot(root: string): Promise<Record<string, string>> {
@@ -266,5 +275,68 @@ test("make:mail needs the mail feature and then writes a renderer, a queue helpe
     expect(source).toContain("idempotencyKey");
     await writeMakePlan(root, plan);
     await expect(planMakeMail(root, "welcome")).rejects.toThrow(/Refusing to overwrite/);
+  });
+});
+
+test("make:event writes a typed event definition inside the feature", async () => {
+  await withTempRoot(await baseRoot(), async (root) => {
+    const plan = await planMakeEvent(root, "invoices", "invoice-paid");
+    assertValidTypeScript(plan);
+    expect(plan.files.map((file) => file.path)).toEqual(["apps/server/features/invoices/events/invoice-paid.ts"]);
+    const source = plan.files[0]?.contents ?? "";
+    expect(source).toContain('defineEvent<InvoicePaidPayload>("invoices.invoice-paid")');
+    expect(source).toContain("export const invoicePaidEvent");
+    await writeMakePlan(root, plan);
+    await expect(planMakeEvent(root, "invoices", "invoice-paid")).rejects.toThrow(/Refusing to overwrite/);
+    await expect(planMakeEvent(root, "ghosts", "x-y")).rejects.toThrow(/No server feature/);
+  });
+});
+
+test("make:listener writes a listener and its dispatch test, and registers it in features/events.ts", async () => {
+  await withTempRoot(await baseRoot(), async (root) => {
+    await writeMakePlan(root, await planMakeEvent(root, "invoices", "invoice-paid"));
+    const plan = await planMakeListener(root, "invoices", "email-customer", { event: "invoice-paid" });
+    assertValidTypeScript(plan);
+    expect(plan.files.map((file) => file.path)).toEqual([
+      "apps/server/features/invoices/listeners/email-customer.ts",
+      "apps/server/tests/features/invoices/email-customer-listener.test.ts",
+    ]);
+    const registry = await applyAndRead(root, plan, "apps/server/features/events.ts");
+    expect(registry).toContain('import { emailCustomerListener } from "./invoices/listeners/email-customer.ts";');
+    expect(registry).toContain("emailCustomerListener,");
+    expect(registry.indexOf("emailCustomerListener,")).toBeLessThan(registry.indexOf("];"));
+    expect(() => transpiler.transformSync(registry)).not.toThrow();
+
+    const listener = await Bun.file(`${root}/apps/server/features/invoices/listeners/email-customer.ts`).text();
+    expect(listener).toContain('name: "email-customer"');
+    expect(listener).toContain("event: invoicePaidEvent");
+    const test = await Bun.file(`${root}/apps/server/tests/features/invoices/email-customer-listener.test.ts`).text();
+    expect(test).toContain("dispatch");
+    expect(test).toContain("idempotencyKey");
+
+    await expect(planMakeListener(root, "invoices", "email-customer", { event: "invoice-paid" })).rejects.toThrow(
+      /Refusing to overwrite/,
+    );
+  });
+});
+
+test("make:listener refuses an unknown event and a missing registry marker before writing", async () => {
+  await withTempRoot(await baseRoot(), async (root) => {
+    await expect(planMakeListener(root, "invoices", "email-customer", { event: "nope" })).rejects.toThrow(
+      /events\/nope\.ts/,
+    );
+  });
+  const files = await baseRoot();
+  files["apps/server/features/events.ts"] = (files["apps/server/features/events.ts"] ?? "").replace(
+    "// @erp:listeners",
+    "",
+  );
+  files["apps/server/features/invoices/events/invoice-paid.ts"] = "export const invoicePaidEvent = {};";
+  await withTempRoot(files, async (root) => {
+    const before = await snapshot(root);
+    await expect(planMakeListener(root, "invoices", "email-customer", { event: "invoice-paid" })).rejects.toThrow(
+      /@erp:listeners/,
+    );
+    expect(await snapshot(root)).toEqual(before);
   });
 });

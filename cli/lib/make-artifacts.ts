@@ -1,8 +1,11 @@
 import { resolve } from "node:path";
 import commandTemplate from "../../templates/generators/command/command.ts.tmpl" with { type: "text" };
 import commandTestTemplate from "../../templates/generators/command/test.ts.tmpl" with { type: "text" };
+import eventTemplate from "../../templates/generators/event/event.ts.tmpl" with { type: "text" };
 import jobHandlerTemplate from "../../templates/generators/job/handler.ts.tmpl" with { type: "text" };
 import jobTestTemplate from "../../templates/generators/job/test.ts.tmpl" with { type: "text" };
+import listenerTemplate from "../../templates/generators/listener/listener.ts.tmpl" with { type: "text" };
+import listenerTestTemplate from "../../templates/generators/listener/test.ts.tmpl" with { type: "text" };
 import mailTemplate from "../../templates/generators/mail/mail.ts.tmpl" with { type: "text" };
 import mailTestTemplate from "../../templates/generators/mail/test.ts.tmpl" with { type: "text" };
 import notificationDefinitionTemplate from "../../templates/generators/notification/definition.ts.tmpl" with {
@@ -18,7 +21,7 @@ import type { WiringEdit } from "./wiring.ts";
 
 /**
  * Plans for the small generators: `make:factory`, `make:job`, `make:command`, `make:test`,
- * `make:notification` and `make:mail`. Like `make:feature`, every plan validates its inputs, target
+ * `make:notification`, `make:mail`, `make:event` and `make:listener`. Like `make:feature`, every plan validates its inputs, target
  * paths and wiring anchors before anything is written, so a refusal leaves the tree untouched.
  * `writeMakePlan` applies a plan; a second run of the same generator fails on the first existing
  * file instead of overwriting it.
@@ -32,6 +35,8 @@ export type MakePlan = {
 
 const JOBS_REGISTRY = "apps/server/features/jobs.ts";
 const JOBS_MARKER = "// @erp:jobs";
+const LISTENERS_REGISTRY = "apps/server/features/events.ts";
+const LISTENERS_MARKER = "// @erp:listeners";
 const NOTIFICATIONS_INDEX = "apps/server/features/notifications/index.ts";
 const NOTIFICATIONS_MARKER = "// @erp:notifications";
 const MAIL_WIRING = "apps/server/features/mail/wiring.ts";
@@ -274,4 +279,90 @@ export async function planMakeMail(root: string, rawName: string): Promise<MakeP
   ];
   await assertNoOverwrite(root, files);
   return { files, edits: [] };
+}
+
+/** `bun erp make:event` names must stay valid for `defineEvent`: `<feature>.<event>`, at most 60 characters. */
+const EVENT_NAME_MAX = 60;
+
+function toCamelName(kebab: string): string {
+  const pascal = toPascalName(kebab);
+  return `${pascal[0]?.toLowerCase() ?? ""}${pascal.slice(1)}`;
+}
+
+async function assertServerFeature(root: string, feature: string): Promise<void> {
+  const hasFeature =
+    (await exists(root, `apps/server/features/${feature}.ts`)) ||
+    (await new Bun.Glob(`apps/server/features/${feature}/*`).scan({ cwd: root }).next()).done === false;
+  if (!hasFeature) throw new Error(`No server feature at apps/server/features/${feature}.`);
+}
+
+/** `make:event <feature> <name>`: a typed `defineEvent` next to the feature that owns the fact. */
+export async function planMakeEvent(root: string, rawFeature: string, rawName: string): Promise<MakePlan> {
+  const feature = toKebabName(rawFeature, "Feature");
+  const file = toKebabName(rawName, "Event");
+  const eventName = `${feature}.${file}`;
+  if (eventName.length > EVENT_NAME_MAX) {
+    throw new Error(`Event name ${eventName} is longer than ${EVENT_NAME_MAX} characters`);
+  }
+  await assertServerFeature(root, feature);
+  const files = [
+    {
+      path: `apps/server/features/${feature}/events/${file}.ts`,
+      contents: renderTemplate(
+        eventTemplate,
+        { feature, file, eventName, pascal: toPascalName(file), camel: toCamelName(file) },
+        "event",
+      ),
+    },
+  ];
+  await assertNoOverwrite(root, files);
+  return { files, edits: [] };
+}
+
+/** `make:listener <feature> <name> --event <event>`: a listener, its dispatch test and its registration. */
+export async function planMakeListener(
+  root: string,
+  rawFeature: string,
+  rawName: string,
+  options: { event: string },
+): Promise<MakePlan> {
+  const feature = toKebabName(rawFeature, "Feature");
+  const name = toKebabName(rawName, "Listener");
+  if (name.length < 2 || name.length > 40) throw new Error("Listener name must be 2 to 40 characters long");
+  const event = toKebabName(options.event, "Event");
+  await assertServerFeature(root, feature);
+  const eventPath = `apps/server/features/${feature}/events/${event}.ts`;
+  if (!(await exists(root, eventPath))) {
+    throw new Error(`No event at ${eventPath}. Run \`bun erp make:event ${feature} ${event}\` first.`);
+  }
+  const values = {
+    feature,
+    name,
+    event,
+    eventName: `${feature}.${event}`,
+    camel: toCamelName(name),
+    eventCamel: toCamelName(event),
+  };
+  const files = [
+    {
+      path: `apps/server/features/${feature}/listeners/${name}.ts`,
+      contents: renderTemplate(listenerTemplate, values, "listener"),
+    },
+    {
+      path: `apps/server/tests/features/${feature}/${name}-listener.test.ts`,
+      contents: renderTemplate(listenerTestTemplate, values, "listener test"),
+    },
+  ];
+  await assertNoOverwrite(root, files);
+  const registry = await readOptional(root, LISTENERS_REGISTRY);
+  if (registry === undefined) throw new Error(`Cannot register the listener: ${LISTENERS_REGISTRY} is missing.`);
+  if (!registry.includes(LISTENERS_MARKER)) {
+    throw new Error(
+      `Cannot register the listener in ${LISTENERS_REGISTRY}: its ${LISTENERS_MARKER} marker is missing. Restore the marker or add the listener manually.`,
+    );
+  }
+  const importLine = `import { ${values.camel}Listener } from "./${feature}/listeners/${name}.ts";`;
+  const entry = `${values.camel}Listener,`;
+  const next = `${importLine}\n${registry.replace(LISTENERS_MARKER, () => `${entry}\n    ${LISTENERS_MARKER}`)}`;
+  return { files, edits: [{ path: LISTENERS_REGISTRY, source: next, status: "added" }] };
 }

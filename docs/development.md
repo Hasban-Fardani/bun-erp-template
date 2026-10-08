@@ -187,6 +187,8 @@ so a failed run leaves the tree untouched and a second run is a no-op error.
 | `make:seeder <name>` | `database/seeders/<name>.ts` (use a factory for rows) | picked up by `db:seed` |
 | `make:factory <feature> [--table <export>]` | `database/factories/<feature>.ts` | none; fills every notNull column without a default |
 | `make:job <name>` | `apps/server/jobs/<name>.ts` and an idempotency test | `registry.register(...)` in `features/jobs.ts` (`// @erp:jobs`) |
+| `make:event <feature> <name>` | `features/<feature>/events/<name>.ts` (`defineEvent` and its payload type) | none |
+| `make:listener <feature> <name> --event <event>` | `features/<feature>/listeners/<name>.ts` and a dispatch test (rollback, idempotency key) | `features/events.ts` (`// @erp:listeners`) |
 | `make:command <group:name>` | `cli/commands/<group>-<name>.ts` and a test | none: the registry reads the `defineCommand` literal |
 | `make:test <feature> [name]` | `tests/features/<feature>/<name>.test.ts` (typed `testClient` when the feature has routes) | none |
 | `make:notification <name> [--type domain.event]` | `features/notifications/<name>.notification.ts` and a test | export in `notifications/index.ts` (`// @erp:notifications`) |

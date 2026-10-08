@@ -54,6 +54,11 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["make:seeder <name>", "Create an idempotent feature seeder scaffold"],
       ["make:factory <feature> [--table <name>]", "Create a deterministic table factory for tests and seeders"],
       ["make:job <name>", "Create a queue job handler, register it, and write its idempotency test"],
+      ["make:event <feature> <name>", "Create a typed domain event inside a feature"],
+      [
+        "make:listener <feature> <name> --event <event>",
+        "Create an event listener, register it and write its dispatch test",
+      ],
       ["make:command <group:name>", "Create a server CLI command that the registry discovers"],
       ["make:test <feature> [name]", "Create a feature test skeleton (typed testClient when the feature has routes)"],
       ["make:notification <name> [--type <domain.event>]", "Create a database-channel notification definition"],
