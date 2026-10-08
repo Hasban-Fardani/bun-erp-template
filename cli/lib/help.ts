@@ -33,6 +33,10 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["check:prod", "Check production deployment readiness"],
       ["check:gate <name>", "Run one focused gate; use --list to see names"],
       [
+        "qa [--only=<suite,...>] [--list] [--dry-run]",
+        "Run the web app's Playwright QA suites against a running deployment (needs the web app)",
+      ],
+      [
         "test",
         "Run backend, web, and package test suites (mobile when installed); --filter <feature> runs one feature",
       ],

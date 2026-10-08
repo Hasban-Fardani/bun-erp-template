@@ -449,4 +449,28 @@ export const auditSuite: QaSuite = {
   checks: tableScreenChecks("audit", "/api/v1/audit-logs", "role"),
 };
 
-export const SUITES: readonly QaSuite[] = [coreSuite, usersSuite, rolesSuite, auditSuite];
+/** Failed sign-in feedback; needs no account, so `bun erp qa --only=login` works against any deployment. */
+export const loginSuite: QaSuite = {
+  name: "login",
+  checks: [
+    {
+      name: "login: a failed sign-in is announced as a toast outside the form",
+      run: async ({ page, baseUrl }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
+        await page.fill("#email", "missing-user@example.test");
+        await page.fill("#password", "invalid-password-for-browser-test");
+        await page.click('button[type="submit"]');
+        const toast = page.getByRole("alert");
+        await toast.waitFor({ state: "visible", timeout: 10_000 });
+        const message = (await toast.innerText()).trim();
+        const alertsInsideForm = await page.locator("form [role='alert']").count();
+        return message && alertsInsideForm === 0
+          ? true
+          : `Expected a visible toast outside the login form (message=${Boolean(message)}, inline=${alertsInsideForm})`;
+      },
+    },
+  ],
+};
+
+export const SUITES: readonly QaSuite[] = [coreSuite, loginSuite, usersSuite, rolesSuite, auditSuite];

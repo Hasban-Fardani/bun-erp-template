@@ -148,7 +148,7 @@ through the CLI with the same `.env` database configuration used by the app:
 The command prints the environment and driver used. CLI operations and the running app use the same
 PostgreSQL connection concurrently, so user and role changes are immediately shared. New passwords
 must be at least 10 characters. With the development app running,
-`bun run qa:login` uses Playwright to verify failed login feedback appears as an accessible toast
+`bun erp qa --only=login` uses Playwright to verify failed login feedback appears as an accessible toast
 outside the form.
 
 The seeded role keys are `owner` and `staff`; `admin` and `user` are not role keys. If the

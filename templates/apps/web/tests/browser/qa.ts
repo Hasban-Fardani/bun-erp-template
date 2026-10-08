@@ -2,12 +2,12 @@
  * End-to-end QA against a running deployment.
  *
  * Usage:
- *   bun run qa                        # core suite + every installed feature suite
- *   bun run qa -- --list              # show suites and why one is skipped
- *   bun run qa -- --dry-run           # print the plan (suites + checks) without a browser
- *   bun run qa -- --only=core,users   # run selected suites only
- *   QA_BASE_URL=https://erp.example bun run qa
- *   CHROME_PATH=/usr/bin/chromium bun run qa
+ *   bun erp qa                        # core suite + every installed feature suite
+ *   bun erp qa --list              # show suites and why one is skipped
+ *   bun erp qa --dry-run           # print the plan (suites + checks) without a browser
+ *   bun erp qa --only=core,users   # run selected suites only
+ *   QA_BASE_URL=https://erp.example bun erp qa
+ *   CHROME_PATH=/usr/bin/chromium bun erp qa
  *
  * The core suite only touches what a default install ships (login, Beranda, notifications,
  * sign-out, unauthenticated redirect); `users`, `roles` and `audit` run only when their catalog
@@ -91,7 +91,7 @@ function printPlan(): void {
 if (args.includes("--help") || args.includes("-h")) {
   console.log(
     [
-      "Usage: bun run qa [-- --list] [-- --dry-run] [-- --only=core,users,roles,audit]",
+      "Usage: bun erp qa [--list] [--dry-run] [--only=core,login,users,roles,audit]",
       "",
       "  --list      show suites and whether they will run",
       "  --dry-run   print the plan without launching a browser",

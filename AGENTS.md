@@ -58,7 +58,7 @@ Laravel-level productivity for agents and humans, on one codebase that runs on a
 - `bun erp make:feature` generates a server CRUD module, its test, its web screen and a create-table migration, then registers permissions, audit entity, route mount, sidebar and locale keys. Optimistic locking is on by default (`--no-version` opts out); soft delete is opt-in (`--soft-delete`) and only for master data that history references — never for append-only or high-volume tables (logs, events, jobs, notifications, sessions, join tables). `make:migration` reads Laravel-style names; `make:seeder` normalizes the `-seeder` suffix.
 - Migrations stay forward-only TypeScript; feature route mounting stays explicit for Hono RPC inference.
 - `bun erp role:list` shows role keys. The first `bun erp user:create` account defaults to owner; later accounts default to staff. Use `--role` to choose; `role:*` and `user:*` deletes require `--force`.
-- Browser QA is Playwright-only. Run `bun run qa` against local/non-production data; do not add or run Cypress.
+- Browser QA is Playwright-only. Run `bun erp qa` (web app installed) against local/non-production data; do not add or run Cypress.
 <!-- template-only -->
 - `apps/` ships empty; app catalogs live in `templates/apps/{server,web,mobile}`. Root `cli/` never imports `apps/**`, and the template must typecheck and pass `bun erp check` with `apps/` empty.
 <!-- /template-only -->
