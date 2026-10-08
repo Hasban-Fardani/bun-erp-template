@@ -101,6 +101,22 @@ backoff and become dead after the configured attempt limit. Bun uses bun erp job
 Cloudflare Worker drains a bounded batch from its scheduled handler. See docs/operations.md and
 ADR-0015.
 
+## Cache and events
+
+`apps/server/infra/cache` is the cache facade: `cache.get/set/remember/forget` and
+`cache.namespace(name).clear()` over `CACHE_DRIVER=memory|database|cloudflare-kv`. `memory` is per
+process, `database` (`cache_entries`, migration `0014_cache`, pruned by the `cache.prune` schedule)
+is shared across replicas and isolates, and `cloudflare-kv` (binding `CACHE_KV_BINDING`) is global
+but eventually consistent. A cached value is an optimisation: always recomputable from PostgreSQL,
+never a source of truth. The RBAC permission cache is built on the facade and refuses
+`cloudflare-kv`.
+
+`apps/server/infra/events` adds `defineEvent<T>(name)`, `defineListener({ name, event, handler })`
+and `dispatch(tx, event, payload)`. Dispatch enqueues one durable job per listener in the caller's
+transaction, so rollback dispatches nothing; listeners retry independently and must be idempotent
+(`idempotencyKey` dedupes repeated dispatches). A feature declares its listeners next to its events
+and adds them to `features/events.ts`. See ADR-0016.
+
 ## Web file routing and lazy loading
 
 apps/web/src/pages/__root.tsx owns the root route and Query context. The
