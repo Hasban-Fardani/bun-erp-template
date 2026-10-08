@@ -5,6 +5,7 @@ import { identityFeature } from "../features/identity/feature.ts";
 import { requireActor } from "../features/identity/policy.ts";
 import { notificationFeature } from "../features/notifications/feature.ts";
 import { rbacFeature } from "../features/rbac/feature.ts";
+import { storageFeature } from "../features/storage/feature.ts";
 import { factory } from "../http/factory.ts";
 import { doc } from "../http/helpers/api-docs.ts";
 import { ok } from "../http/helpers/errors.ts";
@@ -21,6 +22,7 @@ const FEATURES = [
   rbacFeature,
   auditFeature,
   notificationFeature,
+  storageFeature,
   // @erp:routes
 ] as const satisfies readonly FeatureDefinition[];
 
