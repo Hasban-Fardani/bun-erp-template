@@ -13,6 +13,7 @@ decision has been implemented.
 | Auth, RBAC, audit and secrets | [Security](security.md) |
 | Queue behavior, logs, health and backup | [Operations](operations.md) |
 | API rate limiting, maintenance mode, database TLS, mail and object storage settings | [Operations](operations.md) |
+| AI assistant, `ctx.ai` drivers, daily limit and moving providers | [AI](ai.md), [ADR 0017](adr/0017-ai-assistant.md) |
 | Cache facade, events and listeners | [Architecture](architecture.md), [ADR 0016](adr/0016-cache-and-events.md) |
 | Tests, factories, fixtures and generators | [Testing](testing.md), [Development](development.md) |
 | Password reset and mail-backed auth flows | [Security](security.md) |

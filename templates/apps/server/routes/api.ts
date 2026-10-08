@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { deleteCookie, getCookie } from "hono/cookie";
 import type { AppContext } from "../bootstrap/context.ts";
+import { aiFeature } from "../features/ai/feature.ts";
 import { auditFeature } from "../features/audit/feature.ts";
 import { identityFeature } from "../features/identity/feature.ts";
 import { IMPERSONATION_COOKIE, isBlockedAuthPath, stopImpersonation } from "../features/identity/impersonation.ts";
@@ -25,6 +26,7 @@ const FEATURES = [
   auditFeature,
   notificationFeature,
   storageFeature,
+  aiFeature,
   // @erp:routes
 ] as const satisfies readonly FeatureDefinition[];
 

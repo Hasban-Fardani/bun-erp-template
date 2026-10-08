@@ -14,6 +14,7 @@ const validConfig = {
   hyperdrive: [{ id: "abcdef1234567890abcdef1234567890" }],
   limits: { cpu_ms: 500 },
   r2_buckets: [{ binding: "STORAGE", bucket_name: "erp-files" }],
+  ai: { binding: "AI" },
   assets: { not_found_handling: "single-page-application", run_worker_first: ["/api", "/api/*"] },
   vars: {
     APP_ENV: "production",
@@ -115,6 +116,18 @@ describe("Cloudflare deployment preflight", () => {
       fetcher,
     );
     expect(renamed.join(" ")).toContain("FILES");
+  });
+
+  test("the default Workers AI driver needs the ai binding; other drivers do not", async () => {
+    const fetcher = async () => hyperdriveResponse();
+    const missing = await validateCloudflarePreflight(validEnvironment, { ...validConfig, ai: undefined }, fetcher);
+    expect(missing.join(" ")).toContain('"ai"');
+    const openai = await validateCloudflarePreflight(
+      validEnvironment,
+      { ...validConfig, ai: undefined, vars: { ...validConfig.vars, AI_DRIVER: "openai" } },
+      fetcher,
+    );
+    expect(openai.join(" ")).not.toContain('"ai"');
   });
 
   test("fails when the r2 public URL is outside /api, where the Worker never runs", async () => {

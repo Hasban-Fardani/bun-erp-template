@@ -5,6 +5,7 @@ import { loadEnv } from "@/config/index.ts";
 import { createAuth } from "@/features/identity/auth.ts";
 import { createApp } from "@/http/app.ts";
 import { createSeededContext, testEnv } from "../../support/fixtures.ts";
+import { RAW_ENV_BASE } from "../../support/raw-env.ts";
 
 const google = { GOOGLE_CLIENT_ID: "client-id.apps.googleusercontent.com", GOOGLE_CLIENT_SECRET: "client-secret" };
 const authUrl = (path: string) => `${testEnv.BETTER_AUTH_URL}/api/v1/auth${path}`;
@@ -24,27 +25,7 @@ beforeEach(async () => {
 });
 
 describe("Google sign-in configuration", () => {
-  const base: Record<string, string> = {
-    APP_NAME: "Bun ERP Template",
-    APP_ENV: "development",
-    APP_PORT: "3000",
-    APP_RELEASE: "test",
-    APP_TIMEZONE: "UTC",
-    LOG_DRIVER: "console",
-    LOG_LEVEL: "info",
-    LOG_PATH: "/dev/stdout",
-    LOG_RETENTION_DAYS: "14",
-    LOG_MAX_SIZE_MB: "100",
-    STORAGE_DRIVER: "memory",
-    APP_URL: "http://localhost:3000",
-    DATABASE_URL: "postgresql://user:pass@localhost:5432/erp",
-    BETTER_AUTH_URL: "http://localhost:3000",
-    BETTER_AUTH_SECRET: "x".repeat(40),
-    MAIL_FROM_ADDRESS: "no-reply@example.test",
-    MAIL_FROM_NAME: "Bun ERP Template",
-    MAIL_DRIVER: "log",
-  };
-  const raw = (overrides: Record<string, string>) => loadEnv({ ...base, ...overrides });
+  const raw = (overrides: Record<string, string>) => loadEnv({ ...RAW_ENV_BASE, ...overrides });
 
   test("Google-only needs both Google credentials", () => {
     expect(() => raw({ AUTH_PASSWORD_ENABLED: "false", GOOGLE_CLIENT_ID: "", GOOGLE_CLIENT_SECRET: "" })).toThrow(

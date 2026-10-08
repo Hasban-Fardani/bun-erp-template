@@ -21,6 +21,10 @@ type MeResponse = { data: { userId: string; name: string; email: string; permiss
 type NotificationListResponse = { data: { items: NotificationRow[] }; meta: Meta };
 type UnreadCountResponse = { data: { count: number }; meta: Meta };
 type MutationResponse = { data: { updated: number }; meta: Meta };
+type AiStatusResponse = {
+  data: { available: boolean; driver: string; dailyLimit: number; remaining: number };
+  meta: Meta;
+};
 
 function unavailable(): never {
   throw new Error(
@@ -38,5 +42,9 @@ export const rpc = {
     "unread-count": { $get: unavailable as unknown as Endpoint<UnreadCountResponse> },
     ":id": { read: { $post: unavailable as unknown as Endpoint<MutationResponse> } },
     "read-all": { $post: unavailable as unknown as Endpoint<MutationResponse> },
+  },
+  ai: {
+    status: { $get: unavailable as unknown as Endpoint<AiStatusResponse> },
+    chat: { $post: unavailable as unknown as (args?: unknown, options?: unknown) => Promise<Response> },
   },
 };

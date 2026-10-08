@@ -50,7 +50,7 @@ Laravel-level productivity for agents and humans, on one codebase that runs on a
 - Server persistence always uses PostgreSQL through postgres.js. Tests require a disposable PostgreSQL URL; mobile SQLite is a separate offline store.
 - Queue handlers are at-least-once: keep them idempotent and enqueue in the feature write transaction.
 - Server domain code lives in `apps/server/features/<feature>`; Drizzle declarations are named `schema.ts`. The tenant layer is opt-in (`bun erp features:install organizations`); the default server stays tenant-free and RBAC stays independent of organizations.
-- The default web app is login + overview (Beranda) + notifications. Admin screens are web-kind catalog features (`bun erp features:install users`, also roles, audit); their server modules (identity, rbac, audit) stay core.
+- The default web app is login + overview (Beranda) + notifications + the AI assistant panel (`ai.use`, docs/ai.md). Admin screens are web-kind catalog features (`bun erp features:install users`, also roles, audit); their server modules (identity, rbac, audit) stay core.
 - Web and mobile bind the server's typed Hono contract when a server app exists; without a server they install in detached mode and a later `bun erp init` re-fits the typed client.
 - Web URLs are TanStack file routes in `apps/web/src/pages`; route files are small wrappers and screens live in web features. Do not register pages in a second route list or add `-page` suffixes.
 - Mobile is a catalog app under `templates/apps/mobile`; once installed at `apps/mobile` it owns its screens and features and must not import web source.

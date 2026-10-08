@@ -2,6 +2,7 @@
 import type { Env } from "../config/index.ts";
 import type { Database } from "../database/index.ts";
 import type { Auth } from "../features/identity/auth.ts";
+import type { Ai } from "../infra/ai/index.ts";
 import type { Cache } from "../infra/cache/index.ts";
 import type { Logger } from "../infra/observability/logger.ts";
 import type { Storage } from "../infra/storage.ts";
@@ -16,6 +17,8 @@ export type AppContext = {
   db: Database;
   logger: Logger;
   auth: Auth;
+  /** Text generation (Workers AI or any OpenAI-compatible provider); see docs/ai.md. */
+  ai: Ai;
   storage: Storage;
   /** Cache facade; a cached value is an optimisation and never the source of truth. */
   cache: Cache;

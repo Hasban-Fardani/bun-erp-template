@@ -143,6 +143,19 @@ const rawSchema = z
     // sends a wake-up through the JOBS_QUEUE binding after each committed enqueue.
     JOBS_WAKEUP_DRIVER: z.enum(["none", "cloudflare-queue"]).default("none"),
 
+    // AI assistant (docs/ai.md). `workers-ai` uses the Worker binding on Cloudflare and the same
+    // models over REST (AI_ACCOUNT_ID + AI_API_KEY) on Bun; `openai` is any OpenAI-compatible API.
+    AI_DRIVER: z.enum(["workers-ai", "openai", "fake", "off"]).default("workers-ai"),
+    /** Empty = the driver default (`@cf/meta/llama-3.1-8b-instruct-fast` on Workers AI). */
+    AI_MODEL: z.string().trim().default(""),
+    AI_BINDING: z.string().trim().default("AI"),
+    AI_ACCOUNT_ID: z.string().trim().default(""),
+    AI_API_KEY: z.string().default(""),
+    AI_BASE_URL: z.url().default("https://api.openai.com/v1"),
+    AI_MAX_TOKENS: z.coerce.number().int().min(16).max(4096).default(768),
+    /** Questions per user per UTC day; caps provider spend (Workers Free: 10,000 Neurons a day). */
+    AI_DAILY_LIMIT: z.coerce.number().int().min(1).default(50),
+
     // Feature flags
     FEATURE_ADVANCED_REPORTS: boolOr("false"),
   })
@@ -168,6 +181,19 @@ const rawSchema = z
         code: "custom",
         path: ["AUTH_PASSWORD_ENABLED"],
         message: "false needs Google sign-in (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET), or nobody can sign in",
+      });
+    }
+    if (env.AI_DRIVER === "openai") {
+      if (env.AI_API_KEY === "")
+        ctx.addIssue({ code: "custom", path: ["AI_API_KEY"], message: "required when AI_DRIVER=openai" });
+      if (env.AI_MODEL === "")
+        ctx.addIssue({ code: "custom", path: ["AI_MODEL"], message: "required when AI_DRIVER=openai" });
+    }
+    if (env.AI_DRIVER === "workers-ai" && (env.AI_ACCOUNT_ID === "") !== (env.AI_API_KEY === "")) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["AI_API_KEY"],
+        message: "set AI_ACCOUNT_ID and AI_API_KEY together for Workers AI over REST",
       });
     }
     if (env.DATABASE_URL === "") {
@@ -276,6 +302,7 @@ export function findStrayKeys(env: Record<string, string | undefined>): string[]
     "MAIL_",
     "SMTP_",
     "JOBS_",
+    "AI_",
     "FEATURE_",
   ];
   return Object.keys(env)

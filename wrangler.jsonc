@@ -17,6 +17,9 @@
   // Private object storage for STORAGE_DRIVER=r2 (docs/deployment.md, "Object storage").
   // Create the bucket first: bun run --cwd apps/web wrangler r2 bucket create bun-erp-template-files
   "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "bun-erp-template-files" }],
+  // Workers AI for the built-in assistant (AI_DRIVER=workers-ai, docs/ai.md). Free plan: 10,000
+  // Neurons a day; AI_DAILY_LIMIT caps each user's questions.
+  "ai": { "binding": "AI" },
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",

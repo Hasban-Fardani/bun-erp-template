@@ -6,6 +6,7 @@ import { migrate } from "../database/migrate.ts";
 import { createEventListeners } from "../features/events.ts";
 import { createAuth } from "../features/identity/auth.ts";
 import { configurePermissionCache } from "../features/rbac/cache.ts";
+import { createAi } from "../infra/ai/index.ts";
 import { createCacheFromEnv } from "../infra/cache/from-env.ts";
 import { registerEventListeners } from "../infra/events/index.ts";
 import { createLogger } from "../infra/observability/logger.ts";
@@ -36,6 +37,7 @@ export async function createContext(options: BootstrapOptions = {}): Promise<App
 
   const auth = createAuth(env, db);
   const storage = createStorage({ env });
+  const ai = createAi({ env });
 
-  return { env, db, logger, auth, storage, cache, close };
+  return { env, db, logger, auth, ai, storage, cache, close };
 }

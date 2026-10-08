@@ -35,6 +35,7 @@ test("bun erp qa --list names the suites without a browser", async () => {
   expect(code).toBe(0);
   expect(out).toContain("core");
   expect(out).toContain("login");
+  expect(out).toContain("assistant");
 });
 
 test("bun erp qa --dry-run prints the plan and honours --only", async () => {

@@ -479,4 +479,73 @@ export const loginSuite: QaSuite = {
   ],
 };
 
-export const SUITES: readonly QaSuite[] = [coreSuite, loginSuite, usersSuite, rolesSuite, auditSuite];
+async function openAssistant(ctx: QaContext): Promise<void> {
+  try {
+    await signInOrStop(ctx);
+    await ctx.page.getByTestId("assistant-trigger").click();
+    await ctx.page.getByTestId("assistant-panel").waitFor({ state: "visible", timeout: 10_000 });
+  } catch (error) {
+    ctx.stopReason = "opening the assistant failed";
+    throw error;
+  }
+}
+
+/**
+ * The built-in assistant. Run it against `AI_DRIVER=fake` locally; against a real provider it spends
+ * one question of the account's daily AI limit.
+ */
+export const assistantSuite: QaSuite = {
+  name: "assistant",
+  feature: "assistant",
+  before: openAssistant,
+  checks: [
+    {
+      name: "assistant: empty panel offers suggestions",
+      run: async ({ page }) => {
+        const suggestions = await page.getByTestId("assistant-suggestion").count();
+        return suggestions > 0 ? true : "no suggestions in the empty panel";
+      },
+    },
+    {
+      name: "assistant: a question streams an answer and updates the remaining count",
+      run: async ({ page }) => {
+        const before = (await page.getByTestId("assistant-remaining").innerText()).trim();
+        await page.getByTestId("assistant-input").fill("Apa itu ERP?");
+        await page.keyboard.press("Enter");
+        const answer = page.locator('[data-role="assistant"]').last();
+        await answer.waitFor({ state: "visible", timeout: 30_000 });
+        await page.getByTestId("assistant-send").waitFor({ state: "visible", timeout: 60_000 });
+        const text = (await answer.innerText()).trim();
+        const after = (await page.getByTestId("assistant-remaining").innerText()).trim();
+        if (text === "") return "the answer is empty";
+        return after !== before ? true : `remaining count did not change (${before})`;
+      },
+    },
+    {
+      name: "assistant: Escape closes the panel and Ctrl+J reopens it",
+      run: async ({ page }) => {
+        await page.keyboard.press("Escape");
+        await page.getByTestId("assistant-panel").waitFor({ state: "hidden", timeout: 5_000 });
+        await page.keyboard.press("Control+j");
+        await page.getByTestId("assistant-panel").waitFor({ state: "visible", timeout: 5_000 });
+        const kept = await page.locator('[data-role="user"]').count();
+        return kept > 0 ? true : "the conversation was lost when the panel closed";
+      },
+    },
+    {
+      name: "assistant: mobile panel fits the screen without horizontal scroll",
+      run: async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        const box = await page.getByTestId("assistant-panel").boundingBox();
+        const widths = await page.evaluate(() => ({
+          doc: document.documentElement.scrollWidth,
+          win: window.innerWidth,
+        }));
+        if (!box || box.width > 391) return `panel width ${box?.width}`;
+        return widths.doc <= widths.win + 1 ? true : JSON.stringify(widths);
+      },
+    },
+  ],
+};
+
+export const SUITES: readonly QaSuite[] = [coreSuite, loginSuite, assistantSuite, usersSuite, rolesSuite, auditSuite];

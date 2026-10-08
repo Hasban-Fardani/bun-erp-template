@@ -13,6 +13,7 @@ type WranglerConfig = {
   vars?: Record<string, string>;
   limits?: { cpu_ms?: number };
   r2_buckets?: Array<{ binding?: string; bucket_name?: string }>;
+  ai?: { binding?: string };
   assets?: {
     not_found_handling?: string;
     run_worker_first?: string[];
@@ -61,6 +62,13 @@ export async function validateCloudflarePreflight(
     );
   }
   findings.push(...storageFindings(vars, config.r2_buckets));
+  // The assistant defaults to Workers AI; on a Worker it only reaches it through the binding.
+  const aiBinding = vars.AI_BINDING || "AI";
+  if ((vars.AI_DRIVER ?? "workers-ai") === "workers-ai" && config.ai?.binding !== aiBinding) {
+    findings.push(
+      `AI_DRIVER=workers-ai needs "ai": { "binding": "${aiBinding}" } in wrangler.jsonc, or set AI_DRIVER=openai|off.`,
+    );
+  }
   const plaintextSecrets = Object.entries(vars)
     .filter(([key, value]) => isSecretKey(key) && value !== "")
     .map(([key]) => key);
