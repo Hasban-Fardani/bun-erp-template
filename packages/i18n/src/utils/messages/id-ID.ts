@@ -123,4 +123,13 @@ export const idID = {
   "notifications.unread": "Belum dibaca",
   "notifications.unreadError": "Jumlah notifikasi belum dibaca tidak dapat dimuat.",
   "notifications.viewAll": "Lihat semua notifikasi",
+  "notifications.loading": "Memuat notifikasi…",
+  "notifications.retry": "Coba lagi",
+  "notifications.refreshing": "Memperbarui notifikasi…",
+  "notifications.error.title": "Notifikasi tidak dapat dimuat",
+  "notifications.error.detail": "Periksa koneksi lalu coba lagi.",
+  "notifications.empty.noMatch.title": "Tidak ada notifikasi yang cocok",
+  "notifications.empty.noMatch.detail": "Coba kata kunci lain.",
+  "notifications.empty.noData.title": "Belum ada notifikasi",
+  "notifications.empty.noData.detail": "Pembaruan akan muncul di sini.",
 } satisfies Record<keyof typeof enUS, string>;

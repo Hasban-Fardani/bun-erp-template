@@ -162,6 +162,7 @@ const UI_ALLOWED_STATUS: ReadonlySet<DirectionStatus> = new Set<DirectionStatus>
   "IMPLEMENTED",
 ]);
 
+// biome-ignore lint/complexity/noStaticOnlyClass: public API consumed by the design gate
 export class DesignDirectionValidator {
   static validate(spec: DesignDirectionSpec): DesignDirectionResult {
     const violations: DesignViolation[] = [];

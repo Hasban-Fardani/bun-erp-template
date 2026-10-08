@@ -1,4 +1,4 @@
-import { periksaSlop } from "./slop-validator.ts";
+import { checkSlop } from "./slop-validator.ts";
 
 /**
  * Worker entry for the vendored governance slop validator (the one file under `governance/` that
@@ -8,9 +8,9 @@ import { periksaSlop } from "./slop-validator.ts";
  * unused-export scan, and each finding prints as `RULE file:line detail`.
  */
 self.onmessage = (event: MessageEvent<{ dirs: string[] }>) => {
-  const [dir, ...pemakai] = event.data.dirs;
+  const [dir, ...consumers] = event.data.dirs;
   try {
-    const findings = periksaSlop(dir ?? ".", { pemakai });
+    const findings = checkSlop(dir ?? ".", { consumers });
     self.postMessage({ findings: findings.map((f) => `${f.rule} ${f.file}:${f.line} ${f.detail}`) });
   } catch (error) {
     self.postMessage({ error: error instanceof Error ? error.message : String(error) });

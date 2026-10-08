@@ -1,7 +1,7 @@
 import { fileIndex } from "../lib/file-index.ts";
 
 /**
- * Bun-first gate: the CLI, the server catalog and the shared packages use Bun's async APIs instead
+ * Bun-first gate: the CLI, the server catalog, an installed `apps/server` and the shared packages use Bun's async APIs instead
  * of the Node built-ins Bun replaces. The problem is sync IO and repeated tree scans, not the
  * `node:` prefix itself, so the allowlist is explicit and documented in docs/conventions.md:
  *
@@ -18,7 +18,12 @@ import { fileIndex } from "../lib/file-index.ts";
 
 export type BunFirstFinding = { file: string; line: number; rule: string; detail: string };
 
-const SCAN_GLOBS = ["cli/**/*.{ts,tsx}", "templates/apps/server/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}"] as const;
+const SCAN_GLOBS = [
+  "cli/**/*.{ts,tsx}",
+  "templates/apps/server/**/*.{ts,tsx}",
+  "apps/server/**/*.{ts,tsx}",
+  "packages/**/*.{ts,tsx}",
+] as const;
 
 const EXEMPT = [
   /^cli\/gates\/governance\//,

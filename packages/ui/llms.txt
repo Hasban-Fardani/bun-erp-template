@@ -33,7 +33,6 @@ not read routes, permissions, RPC clients, or feature state.
 | `atoms/card.tsx` | House bordered surface container (`Card`) | `card-primitives` when the card needs sections |
 | `atoms/checkbox.tsx` | Accessible Radix checkbox (`Checkbox`) | a native checkbox, banned in app source by the shadcn gate |
 | `atoms/corner-frame.tsx` | Registration-mark frame for technical dashboard panels (`CornerFrame`) | plain borders when the panel is not a dashboard artifact |
-| `atoms/dashboard-format.ts` | Metric formatting helpers (`formatNumber`, `formatDelta`, `computeDelta`, `NumberFormat`) | ad-hoc `Intl.NumberFormat` calls |
 | `atoms/delta-badge.tsx` | Up/down/flat change chip with trend icon (`DeltaBadge`, `getDeltaDirection`, `DeltaDirection`) | colouring raw numbers green or red |
 | `atoms/icon-button.tsx` | Icon-only button with a required accessible `label` (`IconButton`) | `button.tsx` with no text |
 | `atoms/input-primitives.tsx` | Upstream Input (`Input`) | `input.tsx` for house app forms |
@@ -146,6 +145,7 @@ not read routes, permissions, RPC clients, or feature state.
 | Module | Purpose (main exports) | Use instead of |
 |---|---|---|
 | `lib/cn.ts` | Class merge helper (`cn`) | string concatenation or `clsx` alone |
+| `lib/dashboard-format.ts` | Metric formatting helpers (`formatNumber`, `formatDelta`, `computeDelta`, `NumberFormat`) | ad-hoc `Intl.NumberFormat` calls |
 | `lib/use-auto-animate.ts` | Reduced-motion-aware list insert/remove motion (`useSoftAutoAnimate`) | ad-hoc CSS transitions on lists |
 | `lib/use-mobile.ts` | `max-width: 767px` media-query hook (`useIsMobile`) | duplicated `matchMedia` effects |
 | `types/list.ts` | Shared collection shapes (`ListMeta`, `Paged`, `EmptyStateConfig`) | redeclaring pagination fields per feature |

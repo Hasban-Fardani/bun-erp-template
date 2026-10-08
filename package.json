@@ -27,9 +27,6 @@
     "qa": "bun apps/web/tests/browser/admin-workflow.ts",
     "qa:login": "bun apps/web/tests/browser/login-feedback.ts"
   },
-  "dependencies": {
-    "drizzle-orm": "0.45.2"
-  },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@types/bun": "1.4.2",

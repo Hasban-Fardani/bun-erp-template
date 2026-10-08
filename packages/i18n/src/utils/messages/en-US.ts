@@ -122,4 +122,13 @@ export const enUS = {
   "notifications.unread": "Unread",
   "notifications.unreadError": "Could not load the unread count.",
   "notifications.viewAll": "View all notifications",
+  "notifications.loading": "Loading notifications…",
+  "notifications.retry": "Try again",
+  "notifications.refreshing": "Updating notifications…",
+  "notifications.error.title": "Could not load notifications",
+  "notifications.error.detail": "Check your connection and try again.",
+  "notifications.empty.noMatch.title": "No matching notifications",
+  "notifications.empty.noMatch.detail": "Try another search.",
+  "notifications.empty.noData.title": "No notifications yet",
+  "notifications.empty.noData.detail": "Updates will appear here.",
 } as const;
