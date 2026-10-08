@@ -4,8 +4,6 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "apps/web",
-    "apps/server",
     "packages/ui",
     "packages/utils",
     "packages/storage",
