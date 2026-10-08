@@ -3,8 +3,10 @@ import { requireApps } from "../lib/apps.ts";
 import {
   type MakePlan,
   planMakeCommand,
+  planMakeEvent,
   planMakeFactory,
   planMakeJob,
+  planMakeListener,
   planMakeMail,
   planMakeNotification,
   planMakeTest,
@@ -186,6 +188,32 @@ export const commands = [
     await applyArtifactPlan(plan, [
       "Registered the handler in apps/server/features/jobs.ts.",
       "Next: write the failing handler test, keep the handler idempotent, enqueue inside the write transaction.",
+    ]);
+  }),
+  defineCommand("make:event", async (args) => {
+    await requireApps(["server"]);
+    const feature = resolveRequired(args[0], "Feature name");
+    const name = resolveRequired(args[1], "Event name");
+    if (!feature || !name || feature.startsWith("--") || name.startsWith("--")) {
+      usage("make:event <feature> <name>   (for example invoices invoice-paid)");
+    }
+    const plan = await planMakeEvent(repoRoot, feature, name);
+    await applyArtifactPlan(plan, [
+      "Dispatch it inside the write transaction: dispatch(tx, event, payload, { idempotencyKey }).",
+      `Next: bun erp make:listener ${feature} <listener> --event ${name}`,
+    ]);
+  }),
+  defineCommand("make:listener", async (args) => {
+    await requireApps(["server"]);
+    const parsed = parseCommandOptions(args, { values: ["event"] });
+    const feature = resolveRequired(parsed.positional[0], "Feature name");
+    const name = resolveRequired(parsed.positional[1], "Listener name");
+    const event = parsed.values.get("event");
+    if (!feature || !name || !event) usage("make:listener <feature> <name> --event <event>");
+    const plan = await planMakeListener(repoRoot, feature, name, { event });
+    await applyArtifactPlan(plan, [
+      "Registered the listener in apps/server/features/events.ts.",
+      "Next: write the failing handler test, keep the handler idempotent (delivery is at-least-once).",
     ]);
   }),
   defineCommand("make:command", async (args) => {

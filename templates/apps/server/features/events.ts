@@ -6,5 +6,7 @@ import type { AnyEventListener } from "../infra/events/index.ts";
  * never imports a domain. The default install declares none; `bun erp make:listener` appends.
  */
 export function createEventListeners(): readonly AnyEventListener[] {
-  return [];
+  return [
+    // @erp:listeners
+  ];
 }

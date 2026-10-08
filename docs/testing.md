@@ -83,7 +83,7 @@ worker only claims that test's rows. Prefer `waitFor` over `Bun.sleep`: a loaded
 the test slower, never wrong.
 
 **Generators** emit tests that follow these rules: `make:test <feature>` writes a `testClient`
-skeleton, `make:job` an idempotency test, `make:notification` and `make:mail` a delivery test.
+skeleton, `make:job` an idempotency test, `make:listener` a dispatch/rollback test, `make:notification` and `make:mail` a delivery test.
 
 **CLI performance.** `ERP_PERF=1 bun test apps/server/tests/unit/cli-perf.test.ts` measures
 `bun erp --help` and `bun erp check:fast` on an idle machine and fails when either exceeds its
