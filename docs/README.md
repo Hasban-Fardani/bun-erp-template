@@ -25,6 +25,7 @@ decision has been implemented.
 | Shared localization and locale behavior | [Internationalization](i18n.md) |
 | Reusable package boundaries and imports | [Architecture](architecture.md), each package's package.json exports |
 | Architecture decisions | [ADR index](adr/README.md) |
+| Agent skill configuration (tickets in `docs/tasks/`, glossary, ADRs) | [Issue tracker](agents/issue-tracker.md), [Domain docs](agents/domain.md) |
 
 `docs/tasks/` records work and verification with human-owned status. It is not current
 implementation guidance; consult it only when reviewing the referenced historical change.
