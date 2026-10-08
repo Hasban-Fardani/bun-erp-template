@@ -10,6 +10,8 @@ export type JobWorkerOptions = {
   logger: Logger;
   /** Declared schedules; the worker runs one tick on its own interval before job batches. */
   schedules?: readonly ScheduleDefinition[];
+  /** Queue this worker drains; defaults to `default`. Tests bind one worker to a private queue. */
+  queue?: string;
   batchSize?: number;
   pollIntervalMs?: number;
   errorBackoffMs?: number;
@@ -53,7 +55,10 @@ export function startJobWorker(options: JobWorkerOptions): { stop: () => void; d
             options.logger.error({ event: "jobs.scheduler.tick_failed", errorCode: errorCode(error) });
           }
         }
-        const processed = await runJobBatch(options.db, options.registry, options.logger, { limit: batchSize });
+        const processed = await runJobBatch(options.db, options.registry, options.logger, {
+          limit: batchSize,
+          ...(options.queue ? { queue: options.queue } : {}),
+        });
         if (processed === 0 && !stopping) await wait(pollIntervalMs);
       } catch (error) {
         options.logger.error({ event: "jobs.worker.poll_failed", errorCode: errorCode(error) });
