@@ -35,6 +35,26 @@ export const localStorageDriver: StorageDriverFactory = ({ config }): StorageDri
     async exists(key: string): Promise<boolean> {
       return Bun.file(pathFor(storageKey(key))).exists();
     },
+    async list({ prefix = "", cursor, limit = 1000 } = {}) {
+      const keys: string[] = [];
+      try {
+        for await (const path of new Bun.Glob("**/*").scan({ cwd: root, onlyFiles: true })) {
+          if (path.startsWith(prefix)) keys.push(path);
+        }
+      } catch (error) {
+        // A root nothing was written to yet is an empty store, not a failure.
+        if ((error as { code?: string }).code !== "ENOENT") throw error;
+      }
+      keys.sort();
+      const start = cursor ? keys.findIndex((key) => key > cursor) : 0;
+      const slice = start === -1 ? [] : keys.slice(start, start + limit);
+      const last = slice.at(-1);
+      const more = last !== undefined && keys.indexOf(last) < keys.length - 1;
+      return {
+        objects: slice.map((key) => ({ key, size: Bun.file(pathFor(key)).size })),
+        cursor: more ? last : undefined,
+      };
+    },
     async url(key: string): Promise<string> {
       const safe = storageKey(key);
       return base ? `${base}/${safe}` : `/${safe}`;

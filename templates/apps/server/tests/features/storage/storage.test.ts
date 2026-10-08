@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { Env } from "@/config/index.ts";
-import { createStorage } from "@/infra/storage.ts";
+import { createStorage, storageConfigFromEnv } from "@/infra/storage.ts";
 import { testEnv } from "../../support/fixtures.ts";
 
 test("createStorage maps the environment onto the configured driver", async () => {
@@ -48,4 +48,22 @@ test("an r2 driver needs its Worker binding", async () => {
   const storage = createStorage({ env });
   expect(storage.name).toBe("r2");
   await expect(storage.exists("a.txt")).rejects.toThrow("binding");
+});
+
+test("storageConfigFromEnv reads prefixed keys and falls back to plain names for the current store", () => {
+  const source = {
+    STORAGE_DRIVER: "local",
+    STORAGE_LOCAL_ROOT: "/data/current",
+    SOURCE_STORAGE_DRIVER: "s3",
+    SOURCE_STORAGE_PUBLIC_URL: "https://old.example.test/files",
+    SOURCE_S3_BUCKET: "old-bucket",
+    SOURCE_S3_ENDPOINT: "https://acct.r2.cloudflarestorage.com",
+    SOURCE_S3_FORCE_PATH_STYLE: "true",
+  };
+  const prefixed = storageConfigFromEnv(source, "SOURCE_");
+  expect(prefixed.driver).toBe("s3");
+  expect(prefixed.s3).toMatchObject({ bucket: "old-bucket", region: "auto", forcePathStyle: true });
+  expect(prefixed.localRoot).toBe(".data/storage");
+  expect(storageConfigFromEnv(source, "").localRoot).toBe("/data/current");
+  expect(() => storageConfigFromEnv(source, "MISSING_")).toThrow("MISSING_STORAGE_DRIVER");
 });
