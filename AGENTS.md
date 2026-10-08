@@ -80,6 +80,14 @@ Laravel-level productivity for agents and humans, on one codebase that runs on a
    file per ticket (docs/agents/issue-tracker.md) → `implement` with `tdd` per ticket →
    `code-review`. Use `diagnosing-bugs` for failures. A human moves task status.
 
+Autonomy:
+
+- Decide conventional or reversible choices yourself (naming, placement, in-stack libraries, test shape, existing patterns) and state the choice in one line; do not ask.
+- Ask only for product or business decisions, destructive or irreversible actions, and missing secrets. Batch them in one message.
+- Run every step you can: installs, migrations, seeds, gates, suites, Playwright QA on a local server, generators, fixing a failing gate. Report results; never hand the user these steps.
+- Human-only: task status and `approved_by`, secrets and live third-party accounts, production deploys, repo settings such as branch protection, final visual sign-off.
+- Grilling settles open product decisions; skip questions the code or docs already answer.
+
 Mandatory agent tools:
 
 - `impeccable` for any UI or design work; `bun erp check` must stay impeccable-clean (0 findings).
