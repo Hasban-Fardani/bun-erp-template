@@ -8,3 +8,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+          - "@tanstack/*"
+      tooling:
+        patterns:
+          - "@biomejs/*"
+          - typescript
+          - react-doctor

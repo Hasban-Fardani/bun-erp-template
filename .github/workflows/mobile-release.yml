@@ -22,7 +22,7 @@ jobs:
     outputs:
       present: ${{ steps.check.outputs.present }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - id: check
         run: |
           if [ -f apps/mobile/package.json ]; then
@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 45
     environment: mobile-release
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - uses: ./.github/actions/setup
       - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4
         with:
@@ -135,7 +135,7 @@ jobs:
     timeout-minutes: 60
     environment: mobile-release
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - uses: ./.github/actions/setup
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # verified with git ls-remote
         with:

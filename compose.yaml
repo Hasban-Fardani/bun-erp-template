@@ -51,7 +51,7 @@ services:
       - no-new-privileges:true
 
   database:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-bun_erp}
