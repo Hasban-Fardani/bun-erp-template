@@ -131,9 +131,9 @@ system. Payloads must be minimal and contain no credentials or unnecessary perso
 
 Run a persistent Bun worker with bun erp jobs:work. bun erp jobs:run-once is suitable for one batch
 or an operator check. Cloudflare uses the Worker scheduled handler every five minutes and processes
-at most one job through the same database queue per tick. Add a feature handler to its jobs.ts and
+jobs through the same database queue per tick: up to 10 jobs, stopping once a 10-second wall-clock budget has passed (the job in flight finishes). Add a feature handler to its jobs.ts and
 register it in apps/server/features/jobs.ts. The template has no business-specific handlers. Keep
-Cloudflare job handlers short enough for the Free plan's 10 ms CPU budget, and split heavier work
+Cloudflare job handlers short enough for the Worker's CPU limit (10 ms on Free; the shipped `limits.cpu_ms` on Paid, see deployment.md), and split heavier work
 into follow-up jobs.
 
 Inspect queue states with bun erp jobs:status and dead rows with bun erp jobs:dead. Requeue a
