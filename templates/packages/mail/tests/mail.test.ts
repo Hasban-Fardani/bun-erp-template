@@ -14,6 +14,8 @@ const testConfig: MailConfig = {
   SMTP_SECURE: false,
   SMTP_USERNAME: "",
   SMTP_PASSWORD: "",
+  MAIL_HTTP_PROVIDER: "resend",
+  MAIL_API_KEY: "",
 };
 
 const logger: MailLogger = { info: () => {} };
@@ -148,4 +150,74 @@ test("queue forwards idempotencyKey and runAt to the transport", async () => {
   expect(enqueued[0]?.idempotencyKey).toBe("k-1");
   expect(enqueued[0]?.runAt).toBe(runAt);
   expect(enqueued[0]?.payload.subject).toBe("Nanti");
+});
+
+type FetchCall = { url: string; init: RequestInit };
+
+function mockFetch(respond: () => Response): { fetch: typeof fetch; calls: FetchCall[] } {
+  const calls: FetchCall[] = [];
+  const mock = (async (input: string | URL | Request, init?: RequestInit) => {
+    calls.push({ url: String(input), init: init ?? {} });
+    return respond();
+  }) as unknown as typeof fetch;
+  return { fetch: mock, calls };
+}
+
+const httpConfig: MailConfig = { ...testConfig, MAIL_DRIVER: "http", MAIL_API_KEY: "re_key" };
+
+test("the http driver posts a Resend payload and returns the provider id", async () => {
+  const { fetch: fetchImpl, calls } = mockFetch(() => Response.json({ id: "resend-1" }));
+  const driver = createMailRegistry().create("http", { config: httpConfig, logger, fetch: fetchImpl });
+  const result = await driver.send(
+    resolveMail(
+      {
+        to: ["a@example.test", { address: "b@example.test", name: "Bee" }],
+        cc: "c@example.test",
+        replyTo: "reply@example.test",
+        subject: "Halo",
+        html: "<p>Isi</p>",
+        text: "Isi",
+        attachments: [{ filename: "a.txt", content: "aGk=", contentType: "text/plain" }],
+      },
+      httpConfig,
+    ),
+  );
+  expect(result).toEqual({ driver: "http", messageId: "resend-1" });
+  expect(calls).toHaveLength(1);
+  expect(calls[0]?.url).toBe("https://api.resend.com/emails");
+  expect(calls[0]?.init.method).toBe("POST");
+  const headers = new Headers(calls[0]?.init.headers);
+  expect(headers.get("authorization")).toBe("Bearer re_key");
+  expect(headers.get("content-type")).toBe("application/json");
+  expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+    from: "Bun ERP Template <no-reply@example.test>",
+    to: ["a@example.test", "Bee <b@example.test>"],
+    cc: ["c@example.test"],
+    reply_to: "reply@example.test",
+    subject: "Halo",
+    html: "<p>Isi</p>",
+    text: "Isi",
+    attachments: [{ filename: "a.txt", content: "aGk=", content_type: "text/plain" }],
+  });
+});
+
+test("the http driver turns a provider error into a coded failure the queue retries", async () => {
+  const { fetch: fetchImpl } = mockFetch(() => Response.json({ message: "rate limited" }, { status: 429 }));
+  const driver = createMailRegistry().create("http", { config: httpConfig, logger, fetch: fetchImpl });
+  const message = resolveMail({ to: "a@example.test", subject: "Halo", text: "x" }, httpConfig);
+  await expect(driver.send(message)).rejects.toMatchObject({ code: "MAIL_HTTP_429", retryable: true });
+
+  const rejected = mockFetch(() => Response.json({ message: "bad" }, { status: 422 }));
+  const strict = createMailRegistry().create("http", { config: httpConfig, logger, fetch: rejected.fetch });
+  await expect(strict.send(message)).rejects.toMatchObject({ code: "MAIL_HTTP_422", retryable: false });
+});
+
+test("the http driver refuses to start without an API key or with an unknown provider", () => {
+  const registry = createMailRegistry();
+  expect(() => registry.create("http", { config: { ...httpConfig, MAIL_API_KEY: "" }, logger })).toThrow(
+    "MAIL_API_KEY",
+  );
+  expect(() => registry.create("http", { config: { ...httpConfig, MAIL_HTTP_PROVIDER: "carrier" }, logger })).toThrow(
+    "MAIL_HTTP_PROVIDER",
+  );
 });

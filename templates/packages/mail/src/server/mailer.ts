@@ -65,6 +65,7 @@ export function resolveMail(message: MailMessage, config: MailConfig): ResolvedM
     html,
     text: message.text ?? htmlToText(html),
     attachments: message.attachments ?? [],
+    idempotencyKey: message.idempotencyKey,
   };
 }
 

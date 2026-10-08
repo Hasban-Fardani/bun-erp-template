@@ -2,6 +2,8 @@ import { createUuid } from "@bun-erp/utils";
 import type { Transporter } from "nodemailer";
 import type { MailAttachment, MailDriver, MailDriverFactory, MailSendResult, ResolvedMail } from "../types.ts";
 
+const NODEMAILER: string = "nodemailer";
+
 function attachment(message: MailAttachment) {
   return {
     filename: message.filename,
@@ -21,7 +23,9 @@ export const smtpMailDriver: MailDriverFactory = ({ config }): MailDriver => {
   async function getTransport(): Promise<Transporter> {
     transport ??= (async () => {
       try {
-        const { createTransport } = await import("nodemailer");
+        // A non-literal specifier keeps nodemailer (and its node:dns/net/child_process imports) out of
+        // the Cloudflare Worker bundle; Bun resolves it at runtime like any other import.
+        const { createTransport } = (await import(NODEMAILER)) as typeof import("nodemailer");
         return createTransport({
           host: config.SMTP_HOST,
           port: config.SMTP_PORT,
@@ -31,7 +35,7 @@ export const smtpMailDriver: MailDriverFactory = ({ config }): MailDriver => {
       } catch (error) {
         throw new Error(
           `SMTP transport unavailable on this runtime (${error instanceof Error ? error.message : String(error)}). ` +
-            "Use MAIL_DRIVER=log, or register an HTTP-based mail driver.",
+            "Use MAIL_DRIVER=http (Resend over fetch) or MAIL_DRIVER=log.",
         );
       }
     })();

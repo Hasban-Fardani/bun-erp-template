@@ -16,6 +16,9 @@ import { directoryExists } from "./exists.ts";
 /** Files where a persistent error belongs next to the form or data it describes. */
 const CONTEXTUAL_ERRORS = new Set([
   "apps/web/src/features/identity/screens/login.tsx",
+  // Recovery screens keep their failure and expired-link errors beside the form that caused them.
+  "apps/web/src/features/identity/components/forgot-password-view.tsx",
+  "apps/web/src/features/identity/components/reset-password-view.tsx",
   // Installed by the roles catalog feature; reviewed when it lands in apps/web.
   "apps/web/src/features/roles/components/role-sheet.tsx",
   "apps/mobile/src/features/offline/components/offline-drafts.tsx",

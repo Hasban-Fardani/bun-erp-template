@@ -19,7 +19,8 @@ Server-only, app-agnostic mail transport for the Bun ERP workspace. Install with
 - `queue()` writes a JSON-safe `mail.send` payload through `enqueue`; without `enqueue` it sends
   inline and returns the driver message id.
 - Drivers: `log` (structured line, default), `memory` (in-process capture for tests), `smtp`
-  (lazy `nodemailer` import; unavailable on Cloudflare Workers).
+  (lazy `nodemailer` import; unavailable on Cloudflare Workers), `http` (Resend over `fetch`; works on
+  Workers; needs `MAIL_API_KEY`).
 
 ## Read first
 

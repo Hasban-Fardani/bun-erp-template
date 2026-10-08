@@ -13,9 +13,35 @@ presence only. Pino log redaction is in `infra/observability/logger.ts`; audit s
 entity allowlists plus secret filtering. Neither control replaces the other.
 
 Email/password auth uses Better Auth. Google is dormant unless both credentials are set.
-Password reset email is not implemented. Production env guards run during bootstrap.
+Production env guards run during bootstrap. Password reset is described below.
 The OpenAPI document and Scalar reference (`/api/docs`) expose the full route surface, so they
 are off in production unless `API_DOCS_ENABLED=true` opts in deliberately.
+
+## Password reset
+
+Reset exists only when the opt-in mail feature is installed (`bun erp features:install mail`). Without it,
+`sendResetPassword` stays unset, Better Auth answers `400 RESET_PASSWORD_DISABLED`, and the web
+forgot-password screen tells the person to ask an administrator (`bun erp user:create` / the users screen).
+
+With mail installed the flow is:
+
+1. `POST /api/v1/auth/request-password-reset` with `{ email, redirectTo }`. The server never sends inline:
+   the sender enqueues a durable `mail.send` job in the database (`features/mail/password-reset.ts`), and the
+   worker delivers it through the configured mail driver, retrying transient failures.
+2. The job's idempotency key is `password-reset:<sha256(token)[0..32]>`: a retried request cannot enqueue the same
+   link twice, and the token itself is never stored in the key or in logs.
+3. The link opens `/reset-password?token=...`. `POST /api/v1/auth/reset-password` with `{ token, newPassword }`
+   sets the password (minimum 10 characters) and revokes every existing session
+   (`revokeSessionsOnPasswordReset`).
+
+Token TTL is one hour (`RESET_PASSWORD_TTL_SECONDS` in `features/identity/auth.ts`). A token is single use; an
+expired, used or unknown token redirects with `error=INVALID_TOKEN` and the web screen shows the expired state.
+
+Enumeration safety: Better Auth answers an unknown address with the same `200` body as a known one and the web
+screen shows the same "if an account exists" message for both. The unknown-address path enqueues nothing and
+does no mail work, so timing differs only by one database lookup versus one insert; request rate limiting
+(`AUTH_RATE_LIMIT_ENABLED`) bounds probing. Set `APP_URL` and `AUTH_TRUSTED_ORIGINS` correctly: `redirectTo`
+must be a trusted origin or Better Auth refuses it.
 
 Authorization data is read from PostgreSQL; the optional permission cache
 (`PERMISSION_CACHE_ENABLED`, default true) is a per-process `Map` with a 10-second TTL, invalidated

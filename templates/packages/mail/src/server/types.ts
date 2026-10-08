@@ -12,6 +12,10 @@ export type MailConfig = {
   SMTP_SECURE: boolean;
   SMTP_USERNAME: string;
   SMTP_PASSWORD: string;
+  /** `http` driver: which provider adapter formats the request. Only `resend` ships. */
+  MAIL_HTTP_PROVIDER: string;
+  /** `http` driver: provider API key (secret-class). */
+  MAIL_API_KEY: string;
 };
 
 /** The one logger method the transport uses; an app's structured logger satisfies it. */
@@ -36,6 +40,8 @@ export type MailMessage = {
   attachments?: MailAttachment[];
   /** Overrides MAIL_FROM_ADDRESS/NAME for this message only. */
   from?: MailAddress;
+  /** Forwarded to providers that dedupe sends (the `http` driver's Idempotency-Key header). */
+  idempotencyKey?: string;
 };
 
 /** Everything a driver needs after defaults are applied and both bodies are present. */
@@ -49,6 +55,7 @@ export type ResolvedMail = {
   html: string;
   text: string;
   attachments: MailAttachment[];
+  idempotencyKey?: string;
 };
 
 export type MailSendResult = { driver: string; messageId: string };
@@ -59,7 +66,12 @@ export type MailDriver = {
   send(message: ResolvedMail): Promise<MailSendResult>;
 };
 
-export type MailDriverContext = { config: MailConfig; logger: MailLogger };
+export type MailDriverContext = {
+  config: MailConfig;
+  logger: MailLogger;
+  /** HTTP drivers call this instead of the global, so tests and Workers can inject it. */
+  fetch?: typeof fetch;
+};
 export type MailDriverFactory = (context: MailDriverContext) => MailDriver;
 
 export type MailQueueOptions = { idempotencyKey?: string; runAt?: Date };

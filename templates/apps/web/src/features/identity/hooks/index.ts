@@ -27,3 +27,16 @@ export function useSignOut() {
     },
   });
 }
+
+/** Asks the server to mail a reset link. The server answers the same way for unknown addresses. */
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: (input: { email: string; redirectTo: string }) => authRequest("request-password-reset", input),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (input: { token: string; newPassword: string }) => authRequest("reset-password", input),
+  });
+}

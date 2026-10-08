@@ -26,16 +26,31 @@ async function countMailJobs(db: AppContext["db"]): Promise<number> {
   return rows[0]?.count ?? 0;
 }
 
+/** A clean database with a memory driver whose messages the worker delivers from the real queue. */
+async function memoryQueue() {
+  const ctx = await createTestContext();
+  await truncateAll(ctx);
+  const driver = createMemoryMailDriver();
+  const mailer = createMailer({ config: testEnv, logger, driver, enqueue: createMailEnqueue(ctx.db) });
+  return { ctx, driver, mailer };
+}
+
+/** A signed-in owner plus a queue-backed mailer, for the notification channel tests. */
+async function ownerWithQueue() {
+  const api = await createHttpFixture();
+  await api.signInAsOwner();
+  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
+  const mailer = createMailer({ config: api.ctx.env, logger, enqueue: createMailEnqueue(api.ctx.db) });
+  return { api, me, mailer };
+}
+
 test("the composition root builds the mailer named by MAIL_DRIVER", async () => {
   const ctx = await createTestContext();
   expect(createAppMailer(ctx.env, logger, ctx.db).driver).toBe(testEnv.MAIL_DRIVER);
 });
 
 test("a queued message is delivered by the worker through the registered mail job", async () => {
-  const ctx = await createTestContext();
-  await truncateAll(ctx);
-  const driver = createMemoryMailDriver();
-  const mailer = createMailer({ config: testEnv, logger, driver, enqueue: createMailEnqueue(ctx.db) });
+  const { ctx, driver, mailer } = await memoryQueue();
 
   const jobId = await mailer.queue(
     { to: "queued@example.test", subject: "Dari queue", text: "Isi" },
@@ -74,10 +89,7 @@ test("the mail channel queues a message the worker delivers", async () => {
 });
 
 test("the mail channel enqueues inside the caller's transaction", async () => {
-  const api = await createHttpFixture();
-  await api.signInAsOwner();
-  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
-  const mailer = createMailer({ config: api.ctx.env, logger, enqueue: createMailEnqueue(api.ctx.db) });
+  const { api, me, mailer } = await ownerWithQueue();
 
   await expect(
     api.ctx.db.transaction(async (tx) => {
@@ -95,10 +107,7 @@ test("the mail channel enqueues inside the caller's transaction", async () => {
 });
 
 test("the mail channel deduplicates repeat notifications with a stable key", async () => {
-  const api = await createHttpFixture();
-  await api.signInAsOwner();
-  const me = await dataOf<{ userId: string }>(api.client.api.v1.me.$get());
-  const mailer = createMailer({ config: api.ctx.env, logger, enqueue: createMailEnqueue(api.ctx.db) });
+  const { api, me, mailer } = await ownerWithQueue();
   const base = { recipients: [me.userId], type: "user.created", via: ["mail"] as const };
 
   await notify({ ...api.ctx, mail: mailer }, { ...base, title: "Satu", idempotencyKey: "batch-1" });
@@ -115,10 +124,7 @@ test("the mail channel deduplicates repeat notifications with a stable key", asy
 });
 
 test("a malformed mail.send payload is rejected before it reaches the driver", async () => {
-  const ctx = await createTestContext();
-  await truncateAll(ctx);
-  const driver = createMemoryMailDriver();
-  const mailer = createMailer({ config: testEnv, logger, driver, enqueue: createMailEnqueue(ctx.db) });
+  const { ctx, driver, mailer } = await memoryQueue();
   const id = await enqueueJob(ctx.db, { name: "mail.send", payload: { subject: 42 }, maxAttempts: 1 });
 
   expect(await runNextJob(ctx.db, createJobRegistry({ ...ctx, mail: mailer }), logger)).toBe(true);

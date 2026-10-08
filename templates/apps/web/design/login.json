@@ -71,8 +71,8 @@
           "url": "https://dashboard.stripe.com/login",
           "observed_artifact": "/tmp/erp-web-e2e/login-desktop.png",
           "copied": "the measured form density: 44px inputs, 16px text, single action button",
-          "deviated": "no social or SSO buttons, and the recovery path opens an explanation instead of a reset flow",
-          "reason": "this deployment has no mail driver and no identity provider wired, so offering those buttons would promise something the backend cannot do"
+          "deviated": "no social or SSO buttons, and the recovery link opens the forgot-password screen, which falls back to an administrator explanation when no mail sender is wired",
+          "reason": "no identity provider is wired by default, so offering those buttons would promise something the backend cannot do"
         }
       ]
     },

@@ -2,9 +2,8 @@ import { LocaleSwitcher, useI18n } from "@bun-erp/i18n/react";
 import { Button } from "@bun-erp/ui/atoms/button.tsx";
 import { Input } from "@bun-erp/ui/atoms/input.tsx";
 import { FormErrors, FormFieldError } from "@bun-erp/ui/molecules/form-errors.tsx";
-import { Modal } from "@bun-erp/ui/organisms/modal.tsx";
 import { useForm } from "@tanstack/react-form";
-import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { shippedFeatures } from "@web/config/navigation.ts";
 import { uiConfig } from "@web/config/ui.ts";
 import { safeRedirectTarget } from "@web/lib/redirect.ts";
@@ -37,7 +36,6 @@ export function LoginScreen() {
   const navigate = useNavigate();
   const { redirect } = routeApi.useSearch();
   const [showPassword, setShowPassword] = useState(false);
-  const [recoveryOpen, setRecoveryOpen] = useState(false);
 
   const form = useForm({
     defaultValues: { email: "", password: "" },
@@ -151,14 +149,13 @@ export function LoginScreen() {
                     <label htmlFor="password" className="text-[13px] font-medium text-ink-soft">
                       {t("common.password")}
                     </label>
-                    <button
-                      type="button"
+                    <Link
+                      to="/forgot-password"
                       data-testid="login-recovery-action"
-                      onClick={() => setRecoveryOpen(true)}
                       className="rounded text-[12.5px] font-medium text-accent outline-none underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-accent"
                     >
                       {t("auth.forgotPassword")}
-                    </button>
+                    </Link>
                   </div>
                   <div className="relative mt-1.5">
                     <Input
@@ -207,14 +204,6 @@ export function LoginScreen() {
           </Button>
         </form>
       </div>
-
-      <Modal open={recoveryOpen} onOpenChange={setRecoveryOpen} title={t("auth.recovery.title")}>
-        <p>{t("auth.recovery.bodyOne")}</p>
-        <p className="mt-3">{t("auth.recovery.bodyTwo")}</p>
-        <Button className="mt-5 w-full justify-center" onClick={() => setRecoveryOpen(false)}>
-          {t("auth.recovery.close")}
-        </Button>
-      </Modal>
     </div>
   );
 }
