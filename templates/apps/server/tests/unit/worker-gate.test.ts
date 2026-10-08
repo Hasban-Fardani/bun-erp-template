@@ -2,7 +2,13 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runWorkerGate, scanWorkerGraph } from "@cli/gates/worker-gate.ts";
+import {
+  runWorkerGate,
+  scanWorkerGraph,
+  WORKER_PLATFORM_LIMIT_BYTES,
+  WORKER_RAW_BUDGET_BYTES,
+  workerSizeFindings,
+} from "@cli/gates/worker-gate.ts";
 
 const roots: string[] = [];
 
@@ -57,6 +63,12 @@ const CASES: GateCase[] = [
     expects: ["node:os"],
   },
   {
+    name: "importing the Scalar API reference into the Worker graph is a finding",
+    workerBody: 'import { Scalar } from "@scalar/hono-api-reference";\nexport default { Scalar };\n',
+    rule: "WORKER_FORBIDDEN_PACKAGE",
+    expects: ["@scalar/hono-api-reference"],
+  },
+  {
     name: "a reachable migrate or seed module is a finding",
     workerBody: 'import { migrate } from "../database/migrate.ts";\nexport default { migrate };\n',
     extra: { path: "apps/server/database/migrate.ts", source: "export async function migrate() {}\n" },
@@ -96,4 +108,24 @@ test("static mode reports the entry and skips the bundle", async () => {
   expect(result.findings).toEqual([]);
   expect(result.report.join("\n")).toContain("apps/server/bootstrap/cloudflare-entry.ts");
   expect(result.report.join("\n")).toContain("skipped");
+});
+
+test("one size cap: the gate, its message and docs/deployment.md state the same limits", async () => {
+  expect(workerSizeFindings(WORKER_RAW_BUDGET_BYTES)).toEqual([]);
+  const [finding] = workerSizeFindings(WORKER_RAW_BUDGET_BYTES + 1);
+  expect(finding).toContain("WORKER_BUNDLE_SIZE");
+  expect(finding).toContain(`${WORKER_RAW_BUDGET_BYTES} byte`);
+  expect(finding).toContain("64 MiB");
+  expect(WORKER_PLATFORM_LIMIT_BYTES).toBe(64 * 1024 * 1024);
+
+  const docs = await Bun.file(join(import.meta.dir, "../../../../docs/deployment.md")).text();
+  expect(docs).toContain("64 MiB");
+  expect(docs).toContain(`${WORKER_RAW_BUDGET_BYTES / (1024 * 1024)} MiB`);
+  expect(docs).not.toMatch(/3 MiB gzip|caps (?:a|the) script at 3 MiB/);
+});
+
+test("the real Worker graph does not contain the Scalar reference", async () => {
+  const root = join(import.meta.dir, "../../../..");
+  const { findings } = await scanWorkerGraph(root, "templates/apps/server/bootstrap/cloudflare-entry.ts");
+  expect(findings.filter((finding) => finding.includes("WORKER_FORBIDDEN_PACKAGE"))).toEqual([]);
 });
