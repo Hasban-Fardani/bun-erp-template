@@ -31,7 +31,7 @@ Run `bun erp init` from the repository root before code exploration or developme
 catalogs and the first `bun install`, it pins and syncs the local CodeGraph index at the release in
 `cli/gates/codegraph.ts`, wires the CodeGraph MCP server into every detected agent (opencode
 included, normalized to opencode's real schema), aligns an older global `codegraph` to the pinned
-release, and installs the required agent skills — Matthew Pocock, Petr Kindlmann QA, Impeccable,
+release, and installs the required agent skills — Matthew Pocock (the planning-to-delivery flow), Petr Kindlmann QA, Impeccable,
 i-have-adhd and diagram-design — when any are missing. Re-running it updates the index, repairs
 missing skills, and re-fits a detached web/mobile shell once a server app exists. CI setup runs
 `bun erp init --apps server,web --yes` on every job; `bun dev` does not. The index is local state
@@ -71,6 +71,11 @@ are not interchangeable: `skills/` holds this repository's own skills (see `skil
 `.agents/skills/` holds the externally installed skills above. `skills-lock.json` records their
 pinned sources; `.agents/skills/` itself is ignored by Git and restored by `bun erp ai:update`. The QA
 project context at `.agents/qa-project-context.md` records this repository's test stack and rules.
+
+The Matthew Pocock set is the planning-to-delivery flow: `grill-with-docs`, `domain-modeling`,
+`to-spec`, `to-tickets`, `implement`, `tdd`, `code-review`, `diagnosing-bugs` and `codebase-design`
+(plus `grill-me`, `grilling`). They are configured for `docs/tasks/` instead of GitHub Issues by
+`docs/agents/issue-tracker.md` and `docs/agents/domain.md`; the ordered flow is in `skills/README.md`.
 
 `bun erp check:impeccable` runs the pinned Impeccable design detector over every UI surface that
 exists on disk and requires 0 findings. It runs in `bun erp check` but not `bun erp check:fast`; the

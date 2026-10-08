@@ -3,10 +3,20 @@
 Load only the skill triggered by the task. Rules are implemented by source/gates where stated;
 prose alone does not prove enforcement.
 
-- `grill-me` and `grilling` (from `mattpocock/skills`): settle open design decisions before
-  nontrivial implementation. Third-party skills are installed into `.agents/skills/` by
-  `bun erp init` / `bun erp ai:update` and pinned in [skills-lock.json](../skills-lock.json);
-  they are not tracked in git.
+Planning-to-delivery flow (`mattpocock/skills`, installed into `.agents/skills/` by
+`bun erp init` / `bun erp ai:update`, pinned in [skills-lock.json](../skills-lock.json), not
+tracked in git). Tickets live in `docs/tasks/`, not GitHub Issues; the config is
+[docs/agents/issue-tracker.md](../docs/agents/issue-tracker.md) and
+[docs/agents/domain.md](../docs/agents/domain.md) (`GLOSSARY.md`, `docs/adr/`).
+
+1. `grill-with-docs` (or `grill-me` / `grilling`): settle open product decisions; it writes
+   glossary terms and ADRs through `domain-modeling`.
+2. `to-spec`: synthesize the conversation into a spec task file.
+3. `to-tickets`: split the spec into tracer-bullet tickets, one `docs/tasks/S<NN>.<n>-*.md` each,
+   `depends_on` for blockers, status `draft` or `in_progress` only.
+4. `implement` (calls `tdd`) per ticket: red, green, evidence under `## Evidence`.
+5. `code-review`: standards and spec review; then a human moves the status.
+6. `diagnosing-bugs` for failures and regressions; `codebase-design` for module seams.
 
 - [Feature development](feature-development/SKILL.md): feature boundaries and work order.
 - [Database](database-drizzle/SKILL.md): Drizzle, migrations and driver parity.
