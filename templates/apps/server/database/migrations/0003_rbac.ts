@@ -12,7 +12,7 @@ const statements = `-- RBAC: statements + roles + assignment (PRD §RBAC, spatie
 --   role_permissions which permissions a role owns
 --   user_roles       who holds which role
 --
--- The default server is single-tenant: roles and assignments are global (F3.0 Q28). Tenant
+-- The default server is single-tenant: roles and assignments are global (docs/architecture.md). Tenant
 -- scoping, if a deployment needs it, belongs to the opt-in organizations feature.
 
 create table if not exists permissions (

@@ -2,7 +2,7 @@ import { fileIndex } from "../lib/file-index.ts";
 import { directoryExists } from "./exists.ts";
 
 /**
- * Package-target gate (Q26/Q31).
+ * Package-target gate (docs/gates.md).
  *
  * A package that serves more than one runtime lays its source out under `src/<target>/`:
  * `ui` (browser and React), `server` (Bun, Hono, Postgres, Drizzle, Cloudflare), `capacitor`
@@ -35,7 +35,7 @@ function isReactSpecifier(specifier: string): boolean {
   return /^react(?:-dom)?(?:\/|$)/.test(specifier);
 }
 
-/** The path wins; otherwise the imports decide, in the Q31 order. */
+/** The path wins; otherwise the imports decide, in the documented order. */
 export function inferPackageTarget(file: string, code: string): PackageTarget {
   const dir = file.match(TARGET_DIR)?.[1];
   if (dir) return dir as PackageTarget;
