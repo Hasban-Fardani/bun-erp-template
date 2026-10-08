@@ -46,6 +46,30 @@ export function projectSlug(name: string): string {
   return slug;
 }
 
+/** Postgres-safe database name for a project: lowercase snake case, never starting with a digit. */
+export function projectDatabaseName(name: string): string {
+  const base = projectSlug(name).replaceAll("-", "_");
+  return /^[a-z]/.test(base) ? base : `erp_${base}`;
+}
+
+/** Swaps only the database name in `DATABASE_URL`, so host, port, credentials and query stay as written. */
+async function renameDatabase(root: string, database: string): Promise<string[]> {
+  const changed: string[] = [];
+  for (const file of [".env.example", ".env"]) {
+    const path = join(root, file);
+    if (!(await Bun.file(path).exists())) continue;
+    const source = await Bun.file(path).text();
+    const next = source.replace(
+      /^(DATABASE_URL=["']?[a-z]+:\/\/[^/\s"']*\/)[^?\s"']*/m,
+      `$1${database}`,
+    );
+    if (next === source) continue;
+    await Bun.write(path, next);
+    changed.push(file);
+  }
+  return changed;
+}
+
 async function renameFromTemplate(root: string, slug: string): Promise<string[]> {
   const renamed: string[] = [];
   const pkgPath = join(root, "package.json");
@@ -117,7 +141,10 @@ export async function adoptProject(root: string, options: { name: string; purpos
     }
   }
 
-  const renamed = await renameFromTemplate(root, slug);
+  const renamed = [
+    ...(await renameFromTemplate(root, slug)),
+    ...(await renameDatabase(root, projectDatabaseName(options.name))),
+  ];
 
   await rm(join(root, TEMPLATE_DIR), { recursive: true, force: true });
   await rm(join(root, SCOPE_FILE), { force: true });
