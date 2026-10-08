@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createRotatingLogStream } from "../../../infra/observability/rotating-log.ts";
+import { createRotatingLogStream } from "@/infra/observability/rotating-log.ts";
 
 let dir: string;
 let clock: Date;

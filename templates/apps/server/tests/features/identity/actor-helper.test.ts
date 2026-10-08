@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test";
-import { resolve } from "node:path";
-import { actorOf } from "../../../http/helpers/actor.ts";
+import { actorOf } from "@/http/helpers/actor.ts";
 
-const SERVER_ROOT = resolve(import.meta.dir, "../../..");
+const SERVER_ROOT = import.meta.dir.replace(/\/tests\/.*$/, "");
 
 test("actorOf keeps only the audit fields of an actor", () => {
   const actor = {

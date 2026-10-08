@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createPostgresDatabase, resolvePostgresOptions } from "../../../database/postgres.ts";
+import { createPostgresDatabase, resolvePostgresOptions } from "@/database/postgres.ts";
 
 const PLAIN = "postgresql://u:p@db.example:5432/app";
 

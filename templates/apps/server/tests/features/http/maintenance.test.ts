@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createApp } from "../../../http/app.ts";
-import { getMaintenance, setMaintenance } from "../../../http/maintenance.ts";
+import { createApp } from "@/http/app.ts";
+import { getMaintenance, setMaintenance } from "@/http/maintenance.ts";
 import { createHttpFixture, createTestClient, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;

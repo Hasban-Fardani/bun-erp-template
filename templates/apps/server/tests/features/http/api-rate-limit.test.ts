@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { sql } from "drizzle-orm";
-import { rowsOf } from "../../../database/rows.ts";
-import { createApp } from "../../../http/app.ts";
-import { hitApiRateLimit } from "../../../http/helpers/api-rate-limit.ts";
+import { rowsOf } from "@/database/rows.ts";
+import { createApp } from "@/http/app.ts";
+import { hitApiRateLimit } from "@/http/helpers/api-rate-limit.ts";
 import { createHttpFixture, createTestClient, type HttpFixture } from "../../support/fixtures.ts";
 
 let api: HttpFixture;
@@ -11,22 +11,16 @@ beforeEach(async () => {
   api = await createHttpFixture();
 });
 
-function limitedApp(max: number, windowSeconds = 60, extra: Record<string, unknown> = {}) {
-  return createApp({
-    ...api.ctx,
-    env: {
-      ...api.ctx.env,
-      API_RATE_LIMIT_ENABLED: true,
-      API_RATE_LIMIT_MAX: max,
-      API_RATE_LIMIT_WINDOW_SECONDS: windowSeconds,
-      ...extra,
-    },
-  });
+const LIMITED = { API_RATE_LIMIT_ENABLED: true, API_RATE_LIMIT_WINDOW_SECONDS: 60 };
+
+// slop-ok: the helper only exists so each test states just the limiter settings it varies.
+function appWith(overrides: Record<string, unknown>) {
+  return createApp({ ...api.ctx, env: { ...api.ctx.env, ...LIMITED, ...overrides } });
 }
 
 describe("API rate limiter", () => {
   test("request max+1 is answered 429 with Retry-After", async () => {
-    const client = createTestClient(limitedApp(3));
+    const client = createTestClient(appWith({ API_RATE_LIMIT_MAX: 3 }));
     for (let i = 0; i < 3; i++) expect((await client.api.v1.me.$get()).status).toBe(401);
 
     const blocked = await client.api.v1.me.$get();
@@ -39,7 +33,7 @@ describe("API rate limiter", () => {
   });
 
   test("the window rolls over and requests pass again", async () => {
-    const client = createTestClient(limitedApp(1, 1));
+    const client = createTestClient(appWith({ API_RATE_LIMIT_MAX: 1, API_RATE_LIMIT_WINDOW_SECONDS: 1 }));
     expect((await client.api.v1.me.$get()).status).toBe(401);
     await Bun.sleep(1100);
     expect((await client.api.v1.me.$get()).status).toBe(401);
@@ -47,7 +41,7 @@ describe("API rate limiter", () => {
 
   test("authenticated callers are keyed by user id, not by shared IP", async () => {
     const cookie = await api.signInAsOwner();
-    const app = limitedApp(2);
+    const app = appWith({ API_RATE_LIMIT_MAX: 2 });
     const anonymous = createTestClient(app);
     const owner = createTestClient(app, cookie);
 
@@ -60,7 +54,7 @@ describe("API rate limiter", () => {
   });
 
   test("health and readiness probes are never limited", async () => {
-    const client = createTestClient(limitedApp(1));
+    const client = createTestClient(appWith({ API_RATE_LIMIT_MAX: 1 }));
     for (let i = 0; i < 4; i++) {
       expect((await client.api.v1.health.$get()).status).toBe(200);
       expect((await client.api.v1.ready.$get()).status).toBe(200);
@@ -68,7 +62,9 @@ describe("API rate limiter", () => {
   });
 
   test("a disabled limiter never answers 429 and writes no rows", async () => {
-    const client = createTestClient(limitedApp(1, 60, { API_RATE_LIMIT_ENABLED: false }));
+    const client = createTestClient(
+      appWith({ API_RATE_LIMIT_MAX: 1, API_RATE_LIMIT_WINDOW_SECONDS: 60, API_RATE_LIMIT_ENABLED: false }),
+    );
     for (let i = 0; i < 4; i++) expect((await client.api.v1.me.$get()).status).toBe(401);
     const rows = rowsOf<{ n: number }>(await api.ctx.db.execute(sql`select count(*)::int as n from api_rate_limits`));
     expect(rows[0]?.n).toBe(0);
@@ -76,11 +72,13 @@ describe("API rate limiter", () => {
 
   test("x-forwarded-for picks the bucket only when TRUST_PROXY is on", async () => {
     const ip = (value: string) => ({ headers: { "x-forwarded-for": value } });
-    const untrusted = createTestClient(limitedApp(1));
+    const untrusted = createTestClient(appWith({ API_RATE_LIMIT_MAX: 1 }));
     await untrusted.api.v1.me.$get({}, ip("203.0.113.1"));
     expect((await untrusted.api.v1.me.$get({}, ip("203.0.113.2"))).status).toBe(429);
 
-    const trusted = createTestClient(limitedApp(1, 60, { TRUST_PROXY: true }));
+    const trusted = createTestClient(
+      appWith({ API_RATE_LIMIT_MAX: 1, API_RATE_LIMIT_WINDOW_SECONDS: 60, TRUST_PROXY: true }),
+    );
     await trusted.api.v1.me.$get({}, ip("203.0.113.1"));
     expect((await trusted.api.v1.me.$get({}, ip("203.0.113.2"))).status).toBe(401);
     expect((await trusted.api.v1.me.$get({}, ip("203.0.113.1"))).status).toBe(429);

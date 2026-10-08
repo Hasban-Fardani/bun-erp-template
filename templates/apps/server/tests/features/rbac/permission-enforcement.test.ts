@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
-import { dirname, resolve } from "node:path";
-import { allPermissions } from "../../../features/rbac/statements.ts";
+import { allPermissions } from "@/features/rbac/statements.ts";
 
 /**
  * Guard: a permission that exists in the catalogue but is checked nowhere is a lie in the role
@@ -10,7 +9,8 @@ import { allPermissions } from "../../../features/rbac/statements.ts";
  * with `permissions.includes`, or an `ACTION_PERMISSION` entry whose `ACTION_PERMISSION.<name>`
  * is used by an `authorize`/`requirePermission` call in the same feature directory.
  */
-const SERVER_ROOT = resolve(import.meta.dir, "../../..");
+const SERVER_ROOT = import.meta.dir.replace(/\/tests\/.*$/, "");
+const dirname = (path: string) => path.slice(0, path.lastIndexOf("/"));
 
 async function sourceFiles(): Promise<Map<string, string>> {
   const files = new Map<string, string>();

@@ -44,7 +44,7 @@ describe("CSRF on the business API", () => {
   });
 
   test("an Origin from AUTH_TRUSTED_ORIGINS is accepted", async () => {
-    const { createApp } = await import("../../../http/app.ts");
+    const { createApp } = await import("@/http/app.ts");
     const app = createApp({
       ...api.ctx,
       env: { ...api.ctx.env, trustedOrigins: ["https://web.example.test"] },

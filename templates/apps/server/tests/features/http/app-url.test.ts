@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { loadEnv } from "../../../config/index.ts";
+import { loadEnv } from "@/config/index.ts";
 
 const base: Record<string, string> = {
   APP_NAME: "Bun ERP Template",
