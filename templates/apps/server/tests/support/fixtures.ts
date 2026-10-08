@@ -59,6 +59,8 @@ export const testEnv: Env = loadEnv({
   SMTP_SECURE: "false",
   SMTP_USERNAME: "",
   SMTP_PASSWORD: "",
+  MAIL_HTTP_PROVIDER: "resend",
+  MAIL_API_KEY: "",
   FEATURE_ADVANCED_REPORTS: "false",
 });
 

@@ -88,7 +88,7 @@ const rawSchema = z
 
     // Mail: consumed by the opt-in @bun-erp/mail package (`bun erp features:install mail`).
     // The keys stay in the core schema so one validated environment serves every install.
-    MAIL_DRIVER: z.enum(["log", "smtp"]),
+    MAIL_DRIVER: z.enum(["log", "smtp", "http"]),
     MAIL_FROM_ADDRESS: z.string().trim().min(1),
     MAIL_FROM_NAME: z.string().trim().min(1),
     SMTP_HOST: z.string().trim().default(""),
@@ -96,6 +96,9 @@ const rawSchema = z
     SMTP_SECURE: boolOr("false"),
     SMTP_USERNAME: z.string().trim().default(""),
     SMTP_PASSWORD: z.string().default(""),
+    /** `http` driver adapter; only `resend` ships. Works on Bun and Cloudflare Workers. */
+    MAIL_HTTP_PROVIDER: z.enum(["resend"]).default("resend"),
+    MAIL_API_KEY: z.string().default(""),
 
     // Jobs: `none` polls the database (Bun worker and Cloudflare cron sweeper); `cloudflare-queue`
     // sends a wake-up through the JOBS_QUEUE binding after each committed enqueue.
@@ -119,11 +122,14 @@ const rawSchema = z
     if (env.MAIL_DRIVER === "smtp" && env.SMTP_HOST === "") {
       ctx.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "required when MAIL_DRIVER=smtp" });
     }
+    if (env.MAIL_DRIVER === "http" && env.MAIL_API_KEY === "") {
+      ctx.addIssue({ code: "custom", path: ["MAIL_API_KEY"], message: "required when MAIL_DRIVER=http" });
+    }
     if (env.APP_DEPLOY_TARGET === "cloudflare" && env.MAIL_DRIVER === "smtp") {
       ctx.addIssue({
         code: "custom",
         path: ["MAIL_DRIVER"],
-        message: "SMTP needs raw sockets; use log or an HTTP mail driver on Cloudflare Workers",
+        message: "SMTP needs raw sockets; use MAIL_DRIVER=http (Resend) on Cloudflare Workers",
       });
     }
     // Every target needs a real signing secret; only local development may run without one.

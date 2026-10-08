@@ -39,7 +39,12 @@ register its own HTTP provider without editing the package:
 - `log` (default) writes a structured `mail.sent` line and sends nothing — visible, never silent.
 - `smtp` sends through `nodemailer` using `SMTP_HOST`/`SMTP_PORT`/`SMTP_SECURE`/`SMTP_USERNAME`/
   `SMTP_PASSWORD`. It needs raw sockets, so the app config refuses it when
-  `APP_DEPLOY_TARGET=cloudflare`; use `log` or a custom HTTP driver there.
+  `APP_DEPLOY_TARGET=cloudflare`; use `http` there.
+- `http` posts to the Resend API over `fetch` (`MAIL_HTTP_PROVIDER=resend`, `MAIL_API_KEY`), so it works on
+  Bun and Cloudflare Workers. A provider error throws a coded error (`MAIL_HTTP_<status>`, or
+  `MAIL_HTTP_NETWORK`) with a `retryable` flag; the message never contains the key or the response body, and
+  the queue retries it with backoff. `idempotencyKey` is forwarded as the `Idempotency-Key` header (the job
+  handler sets `mail.send:<jobId>`), so a retry after a lost response is not delivered twice.
 - `memory` captures messages in-process and is the seam tests assert against.
 
 ## Tests
