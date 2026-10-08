@@ -46,6 +46,7 @@ export const enUS = {
   "impersonation.confirmBody":
     "You get this user's full access for a limited time. Everything you do is recorded under their name with yours as the impersonator. You cannot change their password, email or sessions.",
   "impersonation.confirm": "Impersonate",
+  "impersonation.cancel": "Cancel",
   "impersonation.startFailed": "Could not start impersonation.",
   "auth.formLabel": "Sign-in form",
   "auth.emailPlaceholder": "name@example.com",

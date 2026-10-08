@@ -6,10 +6,15 @@ import { type MailProbe, runMailTest } from "../lib/mail-test.ts";
 /** A variable specifier keeps the CLI core compiling in an app where the mail package is not installed. */
 const MAIL_PACKAGE: string = "@bun-erp/mail/server";
 
+/** The slice of `@bun-erp/mail/server` this command uses; typed locally so tsc never needs the package. */
+type MailModule = {
+  createMailer(options: { config: ReturnType<typeof loadEnv>; logger: { info(): void } }): MailProbe;
+};
+
 async function openMailer(): Promise<MailProbe> {
-  let mail: typeof import("@bun-erp/mail/server");
+  let mail: MailModule;
   try {
-    mail = (await import(MAIL_PACKAGE)) as typeof import("@bun-erp/mail/server");
+    mail = (await import(MAIL_PACKAGE)) as MailModule;
   } catch {
     throw new Error("The mail package is not installed. Run `bun erp features:install mail` first.");
   }

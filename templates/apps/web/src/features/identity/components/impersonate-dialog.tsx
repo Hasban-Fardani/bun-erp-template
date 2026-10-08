@@ -35,7 +35,7 @@ export function ImpersonateDialog({
           <AlertDialogDescription>{t("impersonation.confirmBody")}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+          <AlertDialogCancel>{t("impersonation.cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>{t("impersonation.confirm")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

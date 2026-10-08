@@ -48,6 +48,7 @@ export const idID = {
   "impersonation.confirmBody":
     "Anda mendapat akses penuh pengguna ini untuk waktu terbatas. Semua tindakan dicatat atas nama mereka dengan nama Anda sebagai pelaku impersonasi. Anda tidak dapat mengubah sandi, email, atau sesi mereka.",
   "impersonation.confirm": "Impersonasi",
+  "impersonation.cancel": "Batal",
   "impersonation.startFailed": "Impersonasi tidak dapat dimulai.",
   "auth.formLabel": "Form masuk",
   "auth.emailPlaceholder": "nama@organisasi.id",
