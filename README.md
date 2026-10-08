@@ -73,7 +73,7 @@ prerequisites.
   that adds the server re-fits the typed client.
 - apps/server/features contains feature-owned API, validation, services, policies and Drizzle schemas.
 - The default web app is login plus the overview (Beranda), the notifications inbox and the AI
-  assistant panel ("Ask AI", ⌘/Ctrl+J; Workers AI by default, any OpenAI-compatible API on a VPS;
+  assistant (an /assistant page with history, skills and read-only tools, plus the "Ask AI" panel, ⌘/Ctrl+J; Workers AI by default, any OpenAI-compatible API on a VPS;
   see docs/ai.md). Admin
   screens are catalog features: users, roles and audit install with `bun erp features:install
   <name>`, wiring their page, navigation row and locale keys. Their server modules (`identity`,

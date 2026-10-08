@@ -63,8 +63,8 @@ test("the transcript shows suggestions when empty and the thinking state while w
     <I18nProvider>
       <AssistantTranscript
         messages={[
-          { id: "1", role: "user", content: "Apa itu ERP?" },
-          { id: "2", role: "assistant", content: "" },
+          { id: "1", role: "user", content: "Apa itu ERP?", stored: false },
+          { id: "2", role: "assistant", content: "", stored: false },
         ]}
         status="streaming"
         onSuggestion={() => {}}

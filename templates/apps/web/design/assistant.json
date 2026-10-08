@@ -1,0 +1,119 @@
+{
+  "feature_id": "assistant",
+  "surface_class": "operational_surface",
+  "status": "IMPLEMENTED",
+  "ui_code_requested": true,
+  "approved_by": "owner",
+  "approved_at": "2026-10-08",
+  "mock_paths": ["docs/architecture.md", "docs/ui-states.md"],
+  "style": {
+    "contrast_min_ratio": 4.8,
+    "unique_font_sizes": 6,
+    "unique_weights": 2,
+    "accent_hues": 1,
+    "nested_card_depth": 0,
+    "icon_libraries": 1,
+    "radius_styles": 3,
+    "browser_surfaces_themed": true,
+    "reduced_motion_respected": true,
+    "section_scaffolds_repeated": 0,
+    "hero_cliche_stack": false,
+    "kicker_above_heading": false,
+    "gradient_multistop": false,
+    "emoji_as_icon": false,
+    "motion_unmapped": false,
+    "invented_identity_assets": [],
+    "fabricated_portrait": false,
+    "copy_forbidden_hits": []
+  },
+  "options": [
+    {
+      "option_id": "conversation-rail-with-reading-column",
+      "role": "primary",
+      "reference_refs": ["https://ui.shadcn.com/blocks", "https://ui.shadcn.com/blocks/login"],
+      "patterns": ["operational:master-detail", "operational:persistent-composer"],
+      "tradeoff": "The ERP shell stays as it is. Saved conversations sit in a secondary column (a drawer on phones) and the chat gets a reading-width column with the composer pinned below it. A chat-product look was rejected: operators switch between this page and other modules all day, so the page must read as one more module.",
+      "mock_path": "docs/ui-states.md",
+      "authored_device": "skill-chip-and-slash-menu-inside-the-composer",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/architecture.md",
+          "measured_facts": {
+            "block": "dashboard-01",
+            "composition": "sidebar-header-cards-chart-table"
+          },
+          "mechanism": "operational-shell-with-a-grid-of-entry-cards",
+          "application": "the assistant page reuses the shell's header and gives the conversation list the same quiet surface as the sidebar."
+        },
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "docs/ui-states.md",
+          "measured_facts": {
+            "two_column_variants": "2",
+            "single_card_variants": "3"
+          },
+          "mechanism": "a second surface must carry content rather than decoration",
+          "application": "the assistant page reuses the shell's header and gives the conversation list the same quiet surface as the sidebar."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/architecture.md",
+          "copied": "the shell with a secondary column and a content column",
+          "deviated": "no marketing panel, no avatars, no decorative gradients",
+          "reason": "an internal tool should look like the rest of the ERP; the assistant earns attention through tool cards and skills, not chrome."
+        },
+        {
+          "url": "https://ui.shadcn.com/blocks/login",
+          "observed_artifact": "docs/ui-states.md",
+          "copied": "the shell with a secondary column and a content column",
+          "deviated": "no marketing panel, no avatars, no decorative gradients",
+          "reason": "an internal tool should look like the rest of the ERP; the assistant earns attention through tool cards and skills, not chrome."
+        }
+      ]
+    },
+    {
+      "option_id": "floating-chat-bubble",
+      "role": "alternate",
+      "reference_refs": ["https://ui.shadcn.com/charts/"],
+      "patterns": ["operational:permission-filtered-grid"],
+      "tradeoff": "Rejected: a floating bubble hides history and cannot carry a conversation list. The quick panel stays for fast questions.",
+      "mock_path": "docs/architecture.md",
+      "authored_device": "none",
+      "reference_evidence": [
+        {
+          "url": "https://ui.shadcn.com/charts/",
+          "observed_artifact": "docs/architecture.md",
+          "measured_facts": {
+            "families": "area-bar-line-pie-radar-radial",
+            "data_source": "sample-records"
+          },
+          "mechanism": "gallery charts render sample records, not domain state",
+          "application": "would require real records; none exist in the template, so the charts stay unused here."
+        },
+        {
+          "url": "https://ui.shadcn.com/blocks",
+          "observed_artifact": "docs/architecture.md",
+          "measured_facts": {
+            "block": "dashboard-01",
+            "content": "chart-and-recent-sales-table"
+          },
+          "mechanism": "a dashboard block assumes product data",
+          "application": "the block is a reference for the shell, not for fabricated content."
+        }
+      ],
+      "reference_fidelity": [
+        {
+          "url": "https://ui.shadcn.com/charts/",
+          "observed_artifact": "docs/architecture.md",
+          "copied": "nothing",
+          "deviated": "charts are not mounted on the landing screen",
+          "reason": "the anti-slop rules ban fabricated metrics; the charts wait for a product spec that supplies real data."
+        }
+      ]
+    }
+  ],
+  "notes": "Layout: conversation list (collapsible on desktop, drawer on phones), a 48rem reading column, a bottom composer that respects the phone safe area. Streaming shows a caret, tools show status cards, errors state the cause and offer a retry only when retrying helps."
+}
