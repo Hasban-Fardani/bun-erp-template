@@ -37,8 +37,9 @@ export class MigrationLedgerMismatch extends Error {
   constructor(mismatches: readonly LedgerMismatch[]) {
     const detail = mismatches.map(({ catalog, ledger }) => `ledger "${ledger}" vs catalog "${catalog}"`).join("; ");
     super(
-      `Migration ledger mismatch: ${detail}. The database schema is out of date with the catalog. ` +
-        "Run `bun erp db:status`, then `bun erp db:reset --force` on local data.",
+      `Migration ledger mismatch: ${detail}. This database probably belongs to another project or an older catalog. ` +
+        "Point DATABASE_URL at a fresh database, or run `bun erp db:status` to compare. " +
+        "Only for local disposable data: `bun erp db:reset --force`.",
     );
     this.name = "MigrationLedgerMismatch";
   }
