@@ -59,10 +59,7 @@ async function renameDatabase(root: string, database: string): Promise<string[]>
     const path = join(root, file);
     if (!(await Bun.file(path).exists())) continue;
     const source = await Bun.file(path).text();
-    const next = source.replace(
-      /^(DATABASE_URL=["']?[a-z]+:\/\/[^/\s"']*\/)[^?\s"']*/m,
-      `$1${database}`,
-    );
+    const next = source.replace(/^(DATABASE_URL=["']?[a-z]+:\/\/[^/\s"']*\/)[^?\s"']*/m, `$1${database}`);
     if (next === source) continue;
     await Bun.write(path, next);
     changed.push(file);

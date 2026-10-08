@@ -6,7 +6,10 @@ const manifest = (workspaces: string[]) => JSON.stringify({ name: "root", versio
 
 test("a workspace entry with no package.json on disk fails the versioning gate", async () => {
   await withTempRoot(
-    { "package.json": manifest(["apps/server", "packages/ui"]), "packages/ui/package.json": '{"name":"ui","version":"0.1.0"}' },
+    {
+      "package.json": manifest(["apps/server", "packages/ui"]),
+      "packages/ui/package.json": '{"name":"ui","version":"0.1.0"}',
+    },
     async (root) => {
       const findings = await checkWorkspaceVersions(root);
       expect(findings.map((finding) => finding.packageName)).toEqual(["apps/server"]);
