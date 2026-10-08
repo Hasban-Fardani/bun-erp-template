@@ -56,6 +56,8 @@ shares one budget. A signed-in session is keyed by user id; everything else by c
 | `API_RATE_LIMIT_ENABLED` | `true` | Master switch. |
 | `API_RATE_LIMIT_MAX` | `300` | Requests allowed per caller per window. |
 | `API_RATE_LIMIT_WINDOW_SECONDS` | `60` | Window length. |
+| `IMPERSONATION_ENABLED` | `true` | `false` disables user impersonation (docs/security.md). |
+| `IMPERSONATION_TTL_MINUTES` | `60` | Maximum length of an impersonation session. |
 
 The request after the limit gets `429`, error code `RATE_LIMITED` and a `Retry-After` header in
 seconds. `/api/v1/health`, `/api/v1/ready` and `/api/v1/auth/*` are not counted here: probes must

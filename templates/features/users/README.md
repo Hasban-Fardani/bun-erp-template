@@ -18,3 +18,10 @@ What installs:
 - The `@bun-erp/data-table` package, installed from the catalog and declared in `apps/web`.
 
 Verify with `bun erp check`, then sign in as an owner and open `/users`.
+
+## Impersonation
+
+Owners (permission `user.impersonate`) get an **Impersonate** row action with a confirm dialog. While it is
+active every page shows a non-dismissible "Viewing as <name> - Stop" banner. The session lasts at most
+`IMPERSONATION_TTL_MINUTES`, cannot change the target's password, email, sessions or 2FA, and every action is
+audited as "by <admin> as <user>". Policy and how to disable it in production: `docs/security.md`.
