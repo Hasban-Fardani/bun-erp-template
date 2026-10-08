@@ -234,7 +234,7 @@ export const commands = [
     await assignRole(ctx.db, { userId: user.id, roleId: role.id });
     // assignRole cannot invalidate after an outer commit it does not own, so the direct CLI
     // caller clears this process's cache itself. The server process expires by TTL (rbac/cache.ts).
-    invalidateUser(user.id);
+    await invalidateUser(user.id);
     await recordAudit(ctx.db, {
       actorId: null,
       actorLabel: "cli",

@@ -3,8 +3,11 @@ import { loadEnv } from "../config/index.ts";
 import { createDatabase } from "../database/index.ts";
 import { migrate } from "../database/migrate.ts";
 // @erp:mail
+import { createEventListeners } from "../features/events.ts";
 import { createAuth } from "../features/identity/auth.ts";
 import { configurePermissionCache } from "../features/rbac/cache.ts";
+import { createCacheFromEnv } from "../infra/cache/from-env.ts";
+import { registerEventListeners } from "../infra/events/index.ts";
 import { createLogger } from "../infra/observability/logger.ts";
 import { createStorage } from "../infra/storage.ts";
 import type { AppContext } from "./context.ts";
@@ -22,7 +25,9 @@ export async function createContext(options: BootstrapOptions = {}): Promise<App
   const env = options.env ?? loadEnv();
   const logger = createLogger(env);
   const { db, close } = createDatabase(env, logger);
-  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED });
+  registerEventListeners(createEventListeners());
+  const cache = createCacheFromEnv({ env, db });
+  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED, cache });
 
   if (options.migrateOnStart === true) {
     const ran = await migrate(db, options.migrationsDir ?? MIGRATIONS_DIR);
@@ -32,5 +37,5 @@ export async function createContext(options: BootstrapOptions = {}): Promise<App
   const auth = createAuth(env, db);
   const storage = createStorage({ env });
 
-  return { env, db, logger, auth, storage, close };
+  return { env, db, logger, auth, storage, cache, close };
 }

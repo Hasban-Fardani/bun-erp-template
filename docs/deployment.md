@@ -74,7 +74,8 @@ because it starts Vite + workerd; run it whenever a change touches the Worker en
 | Jobs | durable `background_jobs` + the polling worker (`jobs:work`), scheduler ticks every 5 s | same table; cron `*/5` sweeps and the optional `JOBS_QUEUE` wake-up signals new work after commit |
 | Scheduler | tick inside `jobs:work` | tick inside the `scheduled` handler |
 | Rate limiting | Better Auth `storage: "database"` (shared across processes) | same table through Hyperdrive (per-isolate memory would be bypassable) |
-| Permission cache | `PERMISSION_CACHE_ENABLED=true` is safe (per-process, 10 s TTL, database is the source of truth) | set `false` in `wrangler.jsonc`; every isolate would otherwise hold its own copy |
+| Permission cache | `PERMISSION_CACHE_ENABLED=true` is safe on one process (10 s TTL, database is the source of truth); `CACHE_DRIVER=database` for replicas | set `false` in `wrangler.jsonc`, or `CACHE_DRIVER=database` to share entries across isolates |
+| Cache facade | `CACHE_DRIVER=memory` (default) or `database` | `database`, or `cloudflare-kv` with a `kv_namespaces` binding named by `CACHE_KV_BINDING` (eventually consistent; never for permissions) |
 | Mail | `log`, `memory`, or `smtp` | `log`/`memory`/HTTP driver; **`smtp` is refused** (no raw sockets) |
 | Storage | `local` (dev/test only), `s3`, `memory` | `r2` binding or `memory`; **`s3` is refused** (needs `Bun.S3Client`); `local` is refused in production |
 | Web assets | `APP_WEB_MODE=integrated` (Bun serves `apps/web/dist`) | Workers Static Assets; **non-integrated is refused** |
@@ -128,10 +129,12 @@ bundle at 1,043,345 B raw / 289,326 B gzip before and 1,040,722 B raw / 288,292 
 includes the new file route (Scalar's Hono wrapper is small because the page loads its viewer from
 a CDN). The gate now fails if any `@scalar/*` import reaches the Worker graph.
 
-The permission cache (`PERMISSION_CACHE_ENABLED`, default true) is a per-process `Map` with a
-10-second TTL; PostgreSQL is always the source of truth. On Workers every isolate has its own copy,
-so a role change handled by one isolate is invisible to the others until the TTL expires. The
-deploy config sets `PERMISSION_CACHE_ENABLED=false`; do the same for multi-replica Bun. With the
+The permission cache (`PERMISSION_CACHE_ENABLED`, default true) uses the cache facade with a
+10-second TTL; PostgreSQL is always the source of truth. With `CACHE_DRIVER=memory` every Workers
+isolate has its own copy, so a role change handled by one isolate is invisible to the others until
+the TTL expires. The deploy config sets `PERMISSION_CACHE_ENABLED=false`; do the same for
+multi-replica Bun, or set `CACHE_DRIVER=database` to share entries and invalidations (one extra
+query per authorized request instead of the join). With the
 cache off, every authorized request runs the RBAC join once (more Hyperdrive statements, no stale
 grants). See [security](security.md).
 

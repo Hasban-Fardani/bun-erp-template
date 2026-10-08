@@ -1,8 +1,11 @@
 import { loadEnv } from "../config/index.ts";
 import { createPostgresDatabase } from "../database/postgres.ts";
 // @erp:mail
+import { createEventListeners } from "../features/events.ts";
 import { createAuth } from "../features/identity/auth.ts";
 import { configurePermissionCache } from "../features/rbac/cache.ts";
+import { createCacheFromEnv } from "../infra/cache/from-env.ts";
+import { registerEventListeners } from "../infra/events/index.ts";
 import { createWorkerLogger } from "../infra/observability/worker-logger.ts";
 import { createStorage } from "../infra/storage.ts";
 import type { AppContext } from "./context.ts";
@@ -29,14 +32,16 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   source.LOG_PATH = "stdout";
 
   const env = loadEnv(source);
-  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED });
   // Hyperdrive owns pooling; clients and their sockets remain scoped to this invocation.
   // DATABASE_SSL_MODE is deliberately not applied here: Hyperdrive terminates origin TLS, so it
   // owns the TLS setting for the Worker-to-database path (docs/operations.md, "Database TLS").
   const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);
   const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false, { logger });
+  registerEventListeners(createEventListeners());
+  const cache = createCacheFromEnv({ env, db, bindings });
+  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED, cache });
   const storage = createStorage({ env, bindings });
-  return { env, db, logger, storage, close };
+  return { env, db, logger, storage, cache, close };
 }
 
 /** HTTP requests need auth; scheduled queue ticks only need the database and logger. */

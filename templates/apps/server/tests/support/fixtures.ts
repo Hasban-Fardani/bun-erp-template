@@ -143,7 +143,7 @@ export async function createSeededContext(): Promise<AppContext> {
  */
 export async function createSeededApp() {
   const ctx = await createSeededContext();
-  resetPermissionCache();
+  await resetPermissionCache();
   const app = createApp(ctx);
   return { ctx, app, client: createTestClient(app), close: async () => {} };
 }
@@ -152,7 +152,7 @@ export async function createHttpFixture() {
   const ctx = await createTestContext();
   // The permission cache is process-wide, so a fixture from a previous file could otherwise
   // hand this file a stale permission set for the same user id.
-  resetPermissionCache();
+  await resetPermissionCache();
   await truncateAll(ctx);
   await seed(ctx.db);
 

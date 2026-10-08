@@ -77,7 +77,7 @@ export async function seedRbac(db: Database): Promise<{ permissions: number; rol
 
 /** Union of permissions across all of a user's roles. Per-record filtering is the module policy's job. */
 export async function permissionsForUser(db: Database, userId: string): Promise<PermissionKey[]> {
-  const cached = readCachedPermissions(userId);
+  const cached = await readCachedPermissions(userId);
   if (cached) return [...cached];
 
   const rows = await db
@@ -88,7 +88,7 @@ export async function permissionsForUser(db: Database, userId: string): Promise<
     .where(eq(userRoles.userId, userId));
 
   const resolved = rows.map((r) => r.key) as PermissionKey[];
-  writeCachedPermissions(userId, resolved);
+  await writeCachedPermissions(userId, resolved);
   return resolved;
 }
 
@@ -244,7 +244,7 @@ export async function createRoleWithPermissions(
     return created;
   });
   // Permission edits affect an unknown set of users, so the whole cache goes — after commit.
-  invalidateAll();
+  await invalidateAll();
   return role;
 }
 
@@ -358,7 +358,7 @@ export async function setRolePermissions(
 ): Promise<{ permissions: string[] }> {
   const result = await db.transaction((tx) => setRolePermissionsInTx(tx, id, keys, actor));
   // Permission edits affect an unknown set of users, so the whole cache goes.
-  invalidateAll();
+  await invalidateAll();
   return result;
 }
 

@@ -44,11 +44,13 @@ does no mail work, so timing differs only by one database lookup versus one inse
 must be a trusted origin or Better Auth refuses it.
 
 Authorization data is read from PostgreSQL; the optional permission cache
-(`PERMISSION_CACHE_ENABLED`, default true) is a per-process `Map` with a 10-second TTL, invalidated
-explicitly when a role write goes through. It is an optimisation only: on Cloudflare Workers every
-isolate has its own copy, and on multi-replica Bun an invalidation reaches the process that handled
-the write immediately and the others at the TTL. Set `PERMISSION_CACHE_ENABLED=false` for Workers
-and multi-replica Bun when a stale grant matters more than the saved RBAC join; see
+(`PERMISSION_CACHE_ENABLED`, default true) sits on the cache facade (`CACHE_DRIVER`, ADR-0016) with a
+10-second TTL and is invalidated explicitly after a role write commits. With the default `memory`
+driver it is an optimisation only: on Cloudflare Workers every isolate has its own copy, and on
+multi-replica Bun an invalidation reaches the process that handled the write immediately and the
+others at the TTL. `CACHE_DRIVER=database` shares entries and invalidations across replicas and
+isolates. `cloudflare-kv` is eventually consistent, so the permission cache runs uncached under it.
+Set `PERMISSION_CACHE_ENABLED=false` when a stale grant matters more than the saved RBAC join; see
 [deployment](deployment.md).
 
 Better Auth rate limiting uses its database store (`rate_limit`, migration 0011), so a limit
