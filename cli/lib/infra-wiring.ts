@@ -115,7 +115,7 @@ function wireCloudflare(source: string): ApplyResult {
     (input) =>
       insertAfter(
         input,
-        '  const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);',
+        "  configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED, cache });",
         "  const mail = createAppMailer(env, logger, db);",
       ),
     (input) =>
