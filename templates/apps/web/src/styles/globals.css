@@ -1,2 +1,3 @@
 @import "@bun-erp/ui/styles.css";
 @source "../";
+@source "../../../../packages/data-table/src";
