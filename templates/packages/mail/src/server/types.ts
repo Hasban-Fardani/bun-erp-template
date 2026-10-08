@@ -64,6 +64,8 @@ export type MailSendResult = { driver: string; messageId: string };
 export type MailDriver = {
   readonly name: string;
   send(message: ResolvedMail): Promise<MailSendResult>;
+  /** Optional cheap connectivity/credential check that sends nothing (SMTP: `transporter.verify()`). */
+  verify?(): Promise<void>;
 };
 
 export type MailDriverContext = {
@@ -80,6 +82,8 @@ export type MailQueueOptions = { idempotencyKey?: string; runAt?: Date };
 export type Mailer = {
   readonly driver: string;
   send(message: MailMessage): Promise<MailSendResult>;
+  /** Checks the transport without sending; resolves for drivers that have nothing to check. */
+  verify(): Promise<void>;
   queue(message: MailMessage, options?: MailQueueOptions): Promise<string>;
 };
 

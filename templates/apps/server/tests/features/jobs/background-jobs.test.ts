@@ -47,6 +47,37 @@ test("registered job handlers complete claimed work exactly once", async () => {
   expect(calls).toEqual([`42:${id}`]);
 });
 
+test("an error marked retryable=false dead-letters on the first attempt; other errors still retry", async () => {
+  const { db, queue } = await createJobTest();
+  const registry = new JobRegistry();
+  registry.register("test.permanent", async () => {
+    throw Object.assign(new Error("auth rejected"), { code: "MAIL_SMTP_AUTH", retryable: false });
+  });
+  registry.register("test.transient", async () => {
+    throw Object.assign(new Error("timeout"), { code: "MAIL_HTTP_503", retryable: true });
+  });
+  registry.register("test.unmarked", async () => {
+    throw new Error("boom");
+  });
+  const permanent = await enqueueJob(db, { queue, name: "test.permanent", payload: {}, maxAttempts: 5 });
+  const transient = await enqueueJob(db, { queue, name: "test.transient", payload: {}, maxAttempts: 5 });
+  const unmarked = await enqueueJob(db, { queue, name: "test.unmarked", payload: {}, maxAttempts: 5 });
+
+  for (let i = 0; i < 3; i += 1) expect(await runNextJob(db, registry, logger, { queue })).toBe(true);
+
+  const statusOf = async (id: string) =>
+    rowsOf<{ status: string; attempt_count: number; last_error_code: string }>(
+      await db.execute(sql`select status, attempt_count, last_error_code from background_jobs where id = ${id}`),
+    )[0];
+  expect(await statusOf(permanent)).toMatchObject({
+    status: "dead",
+    attempt_count: 1,
+    last_error_code: "MAIL_SMTP_AUTH",
+  });
+  expect(await statusOf(transient)).toMatchObject({ status: "pending", attempt_count: 1 });
+  expect(await statusOf(unmarked)).toMatchObject({ status: "pending", attempt_count: 1 });
+});
+
 test("long-lived worker processes queued work and stops gracefully", async () => {
   const { db, queue } = await createJobTest();
   const id = await enqueueJob(db, { queue, name: "test.worker_stop", payload: {} });

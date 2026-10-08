@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { createMemoryMailDriver } from "../src/server/drivers/memory.ts";
+import { classifySmtpError, smtpMailDriver } from "../src/server/drivers/smtp.ts";
 import { createMailer, htmlToText, resolveMail } from "../src/server/mailer.ts";
 import { createMailRegistry } from "../src/server/registry.ts";
 import type { MailConfig, MailLogger } from "../src/server/types.ts";
@@ -220,4 +221,71 @@ test("the http driver refuses to start without an API key or with an unknown pro
   expect(() => registry.create("http", { config: { ...httpConfig, MAIL_HTTP_PROVIDER: "carrier" }, logger })).toThrow(
     "MAIL_HTTP_PROVIDER",
   );
+});
+
+test("classifySmtpError marks bad credentials, bad envelopes and 5xx replies as permanent", () => {
+  const auth = classifySmtpError(Object.assign(new Error("Invalid login"), { code: "EAUTH", responseCode: 535 }));
+  expect(auth).toMatchObject({ code: "MAIL_SMTP_535", retryable: false });
+  expect(classifySmtpError(Object.assign(new Error("bad rcpt"), { code: "EENVELOPE" })).retryable).toBe(false);
+  expect(classifySmtpError(Object.assign(new Error("mailbox"), { responseCode: 550 })).retryable).toBe(false);
+});
+
+test("classifySmtpError keeps connection trouble and 4xx replies retryable", () => {
+  expect(classifySmtpError(Object.assign(new Error("down"), { code: "ECONNECTION" }))).toMatchObject({
+    code: "MAIL_SMTP_ECONNECTION",
+    retryable: true,
+  });
+  expect(classifySmtpError(Object.assign(new Error("later"), { responseCode: 451 })).retryable).toBe(true);
+  expect(classifySmtpError("not an error")).toMatchObject({ code: "MAIL_SMTP_FAILED", retryable: true });
+});
+
+test("verify resolves for drivers without a check and delegates to drivers that have one", async () => {
+  await createMailer({ config: testConfig, logger }).verify();
+  let calls = 0;
+  const driver = {
+    ...createMemoryMailDriver(),
+    verify: async () => {
+      calls += 1;
+    },
+  };
+  await createMailer({ config: testConfig, logger, driver }).verify();
+  expect(calls).toBe(1);
+});
+
+/** A one-connection fake SMTP server: greets, accepts EHLO and QUIT, so `transporter.verify()` can pass. */
+function fakeSmtpServer(): { port: number; stop: () => void } {
+  const server = Bun.listen({
+    hostname: "127.0.0.1",
+    port: 0,
+    socket: {
+      open: (socket) => void socket.write("220 fake ESMTP\r\n"),
+      data: (socket, data) => {
+        for (const line of data.toString().split("\r\n")) {
+          if (/^EHLO/i.test(line)) socket.write("250 fake\r\n");
+          if (/^QUIT/i.test(line)) {
+            socket.write("221 bye\r\n");
+            socket.end();
+          }
+        }
+      },
+    },
+  });
+  return { port: server.port, stop: () => server.stop(true) };
+}
+
+test("the smtp driver verifies a reachable server and reports an unreachable one as retryable", async () => {
+  const fake = fakeSmtpServer();
+  try {
+    const driver = smtpMailDriver({ config: { ...testConfig, SMTP_HOST: "127.0.0.1", SMTP_PORT: fake.port }, logger });
+    await driver.verify?.();
+  } finally {
+    fake.stop();
+  }
+  const down = smtpMailDriver({ config: { ...testConfig, SMTP_HOST: "127.0.0.1", SMTP_PORT: fake.port }, logger });
+  const error = await down.verify?.().then(
+    () => undefined,
+    (caught: unknown) => caught as { code: string; retryable: boolean },
+  );
+  expect(error?.retryable).toBe(true);
+  expect(error?.code).toStartWith("MAIL_SMTP_");
 });

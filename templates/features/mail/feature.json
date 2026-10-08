@@ -6,6 +6,6 @@
   "wiring": ["context", "bootstrap", "cloudflare", "jobs", "notifications", "auth-reset"],
   "files": {
     "server": ["server/index.ts", "server/wiring.ts", "server/channel.ts", "server/password-reset.ts"],
-    "tests": ["tests/mail.test.ts", "tests/password-reset.test.ts"]
+    "tests": ["tests/mail.test.ts", "tests/password-reset.test.ts", "tests/mail-test-command.test.ts"]
   }
 }

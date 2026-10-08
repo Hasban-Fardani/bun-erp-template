@@ -54,7 +54,9 @@ export function registerMailJobs(registry: JobRegistry, mailer: Mailer): void {
 }
 
 function invalidPayload(): Error {
-  const error = new Error("Invalid mail.send payload") as Error & { code: string };
+  const error = new Error("Invalid mail.send payload") as Error & { code: string; retryable: boolean };
   error.code = "MAIL_PAYLOAD_INVALID";
+  // A malformed payload never heals on retry, so the runner dead-letters it on the first attempt.
+  error.retryable = false;
   return error;
 }
