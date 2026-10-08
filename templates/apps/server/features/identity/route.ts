@@ -1,5 +1,6 @@
 import type { AppContext } from "../../bootstrap/context.ts";
 import { factory } from "../../http/factory.ts";
+import { actorOf } from "../../http/helpers/actor.ts";
 import { doc } from "../../http/helpers/api-docs.ts";
 import { authorize } from "../../http/helpers/authorize.ts";
 import { ApiError, ok } from "../../http/helpers/errors.ts";
@@ -25,12 +26,6 @@ const listData = {
   type: "object",
   properties: { items: { type: "array", items: userRef }, ...listMetaSchemaProperties },
 };
-
-const actorOf = (actor: { userId: string; traceId: string; label: string }) => ({
-  userId: actor.userId,
-  traceId: actor.traceId,
-  label: actor.label,
-});
 
 /** User administration (needs RBAC). Sign-up/sign-in belongs to the Better Auth handlers. */
 export function identityRoutes(ctx: AppContext) {

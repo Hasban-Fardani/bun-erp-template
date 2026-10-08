@@ -1,11 +1,13 @@
 import { resolve } from "node:path";
+import { parseCommandOptions } from "@cli/lib/options.ts";
 import { repoRoot } from "@cli/lib/repo.ts";
 import { defineCommand } from "@cli/registry.ts";
 import { sql } from "drizzle-orm";
 import { loadEnv } from "../../config/index.ts";
 import { roles } from "../../features/rbac/schema.ts";
 import { createApp } from "../../http/app.ts";
-import { createCliContext } from "../lib/context.ts";
+import { setMaintenance } from "../../http/maintenance.ts";
+import { cliActor, createCliContext } from "../lib/context.ts";
 
 export const commands = [
   defineCommand("route:list", async () => {
@@ -19,6 +21,31 @@ export const commands = [
       .filter((r, i, all) => all.indexOf(r) === i);
     process.stdout.write(`${routes.join("\n")}\n`);
     await ctx.close();
+  }),
+
+  defineCommand("down", async (args) => {
+    const { values } = parseCommandOptions(args, { values: ["message"] });
+    const message = values.get("message")?.trim();
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      await setMaintenance(ctx.db, message ? { down: true, message } : { down: true }, cliActor());
+      process.stdout.write(
+        "Maintenance mode is ON: /api/v1/* answers 503 (health checks and bypass sessions excepted).\n",
+      );
+      process.stdout.write("Replicas pick it up within a few seconds. Run `bun erp up` to resume.\n");
+    } finally {
+      await ctx.close();
+    }
+  }),
+
+  defineCommand("up", async () => {
+    const ctx = await createCliContext({ migrateOnStart: false });
+    try {
+      await setMaintenance(ctx.db, { down: false }, cliActor());
+      process.stdout.write("Maintenance mode is OFF: the API is serving requests again.\n");
+    } finally {
+      await ctx.close();
+    }
   }),
 
   defineCommand("doctor", async () => {

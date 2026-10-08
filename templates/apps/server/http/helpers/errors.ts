@@ -9,6 +9,8 @@ export const ErrorCode = {
   notFound: "NOT_FOUND",
   forbidden: "FORBIDDEN",
   conflict: "CONFLICT",
+  rateLimited: "RATE_LIMITED",
+  unavailable: "SERVICE_UNAVAILABLE",
   internal: "INTERNAL_ERROR",
   configInvalid: "CONFIG_INVALID",
 } as const;

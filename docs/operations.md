@@ -1,6 +1,7 @@
 # Operations
 
-Structured JSON logs go to stdout with LOG_DRIVER=console. Daily file output is a bare-metal option.
+Structured JSON logs go to stdout with LOG_DRIVER=console. Daily file output with rotation is a
+bare-metal option (see "Log rotation").
 Request logs and response envelopes share a request ID. APP_RELEASE identifies the deployed build.
 Sensitive fields are redacted; see security.md and the logging section below.
 
@@ -28,6 +29,96 @@ and log an error once at the boundary that can act on it. Never log a secret to 
 Mobile code calls `createMobileLogger(area)` from `apps/mobile/src/lib/logger.ts` (install the catalog
 app with `bun erp apps:create <name> mobile` first). The mobile
 gate blocks direct `console` calls elsewhere. Debug events are disabled in production builds.
+
+## Log rotation
+
+`LOG_DRIVER=daily` (VPS only; Workers log to the platform console) writes to `LOG_PATH`, which must
+be absolute. The file name carries the UTC day: `LOG_PATH=/var/log/erp/app.log` produces
+`app-2026-10-08.log`. Two settings control it:
+
+| Variable | Effect |
+|---|---|
+| `LOG_MAX_SIZE_MB` | A file that would pass this size is renamed `app-2026-10-08.1.log`, `.2.log`, ... and a fresh `app-2026-10-08.log` starts. |
+| `LOG_RETENTION_DAYS` | Files whose day is older than this many days (today counts as day one) are deleted when a new day starts and at boot. Only files matching `<stem>-YYYY-MM-DD[.n]<ext>` are touched. |
+
+Lines are buffered for one event-loop turn and flushed on a normal exit. A failing disk never stops
+the request path; it loses log lines instead. On a host that already ships stdout (Docker,
+systemd-journald), prefer `LOG_DRIVER=console` and let the platform rotate.
+
+## API rate limiting
+
+`/api/v1/*` is limited per caller with a fixed window stored in PostgreSQL (`api_rate_limits`, one
+`INSERT ... ON CONFLICT ... RETURNING` per request), so every Bun replica and Cloudflare isolate
+shares one budget. A signed-in session is keyed by user id; everything else by client address.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `API_RATE_LIMIT_ENABLED` | `true` | Master switch. |
+| `API_RATE_LIMIT_MAX` | `300` | Requests allowed per caller per window. |
+| `API_RATE_LIMIT_WINDOW_SECONDS` | `60` | Window length. |
+
+The request after the limit gets `429`, error code `RATE_LIMITED` and a `Retry-After` header in
+seconds. `/api/v1/health`, `/api/v1/ready` and `/api/v1/auth/*` are not counted here: probes must
+never be throttled, and Better Auth applies its own stricter rules to the auth endpoints
+(`AUTH_RATE_LIMIT_ENABLED`).
+
+The client address is read from `X-Forwarded-For` only when `TRUST_PROXY=true`, the same rule Better
+Auth uses. Without it all anonymous callers share one `ip:unknown` bucket, which cannot starve
+signed-in users because they have their own user-id buckets. Set `TRUST_PROXY=true` behind a proxy
+that overwrites the header (Cloudflare, nginx, Caddy). Counter rows are one per caller and are
+overwritten in place, so the table does not grow with time.
+
+## Maintenance mode
+
+```sh
+bun erp down --message "Back at 10:00"   # API answers 503 with that message
+bun erp up                               # resume
+```
+
+The switch is a row in `app_state` (key `maintenance`), so it applies to every replica and to
+Cloudflare. Each process reads the row through a 2 second cache; a change reaches all of them within
+a few seconds. While it is on, `/api/v1/*` answers `503 SERVICE_UNAVAILABLE` with the message and a
+`Retry-After: 30` header, except:
+
+- `GET /api/v1/health` and `GET /api/v1/ready` (orchestrators must keep seeing a live process);
+- `/api/v1/auth/*`, so an operator can still sign in;
+- sessions holding `app.maintenance_bypass`, which the `owner` role has. Use it to verify a release
+  before reopening. The key is `app.maintenance_bypass` rather than `app.maintenance.bypass`
+  because permission keys are `<resource>.<action>` and split on the first dot.
+
+Both commands write an audit entry (`app.maintenance_enabled` / `app.maintenance_disabled`). The web
+app is not blocked; it receives 503 envelopes from the API.
+
+## Cross-site request protection
+
+Browser sessions use cookies, so a write must not be triggerable from another site. Unsafe methods
+(`POST`, `PUT`, `PATCH`, `DELETE`) on `/api/v1/*` that carry an `Origin` header must come from the
+request's own origin, from `APP_URL`, or from `AUTH_TRUSTED_ORIGINS` (the list CORS uses); anything
+else is `403`. A request without `Origin` is a non-browser client (CLI, server to server) and passes,
+unless the browser marked it `Sec-Fetch-Site: cross-site`. Browsers always send `Origin` on
+cross-origin writes, which is why the header check is sufficient. Mobile (Capacitor) origins must be
+in `AUTH_TRUSTED_ORIGINS`, as they already must be for CORS.
+
+`/api/v1/auth/*` is handled by Better Auth, which validates `Origin`/`Referer` and callback URLs
+against `baseURL` and `AUTH_TRUSTED_ORIGINS` itself. Better Auth skips that check when `NODE_ENV=test`, so the
+test suite cannot prove it; the business-API check is covered by `tests/features/http/csrf.test.ts`.
+
+## Database TLS
+
+`DATABASE_SSL_MODE` is passed to postgres.js as its `ssl` option:
+
+| Mode | Behaviour |
+|---|---|
+| `disable` | No TLS (`ssl: false`). Refused in production on the Bun target. |
+| `require` | TLS is mandatory; the server certificate is not verified. |
+| `verify-full` | TLS with certificate and host name verification (`rejectUnauthorized: true`). Use it for any database outside a private network. |
+
+A `sslmode=` already in `DATABASE_URL` wins over `DATABASE_SSL_MODE`; when the two disagree a
+`database.ssl_mode_mismatch` warning is logged once per process so the override is never silent.
+
+On Cloudflare the Worker connects to the Hyperdrive binding, and Hyperdrive owns TLS to the origin
+database. `DATABASE_SSL_MODE` is therefore not applied to that socket (the schema allows `disable`
+there). Configure origin TLS on the Hyperdrive configuration instead.
 
 ## Background jobs
 

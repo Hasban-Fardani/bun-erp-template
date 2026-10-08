@@ -1,6 +1,7 @@
 import { isAbsolute } from "node:path";
 import pino from "pino";
 import type { Env } from "../../config/index.ts";
+import { createRotatingLogStream } from "./rotating-log.ts";
 
 /**
  * Central redaction: secrets never reach the log (FAILURE-TRACEABILITY-GOVERNANCE §12).
@@ -29,8 +30,15 @@ function destination(env: Env): pino.DestinationStream {
   if (!isAbsolute(env.LOG_PATH)) {
     throw new Error("LOG_PATH must be absolute when LOG_DRIVER=daily");
   }
-  // pino creates the directory itself when `mkdir` is set — no filesystem call needed here.
-  return pino.destination({ dest: env.LOG_PATH, sync: false, mkdir: true });
+  // Date + size rotation and pruning (LOG_MAX_SIZE_MB, LOG_RETENTION_DAYS); the directory is
+  // created on first write. Buffered lines are flushed before the process exits normally.
+  const stream = createRotatingLogStream({
+    path: env.LOG_PATH,
+    retentionDays: env.LOG_RETENTION_DAYS,
+    maxBytes: env.LOG_MAX_SIZE_MB * 1024 * 1024,
+  });
+  process.once("beforeExit", () => void stream.flush());
+  return stream;
 }
 
 /** One logger for the API, worker, scheduler, and CLI (PRD §13). */
