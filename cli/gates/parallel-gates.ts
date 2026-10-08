@@ -132,6 +132,7 @@ const FAST_GATE_NAMES: ReadonlySet<GateName> = new Set([
   "language",
   "motion",
   "package-targets",
+  "lifecycle",
   "scope",
   "shadcn",
   "slop",

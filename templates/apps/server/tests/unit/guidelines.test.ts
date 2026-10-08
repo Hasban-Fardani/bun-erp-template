@@ -7,6 +7,7 @@ import {
   renderGuidelinesBlock,
 } from "@cli/lib/guidelines.ts";
 import { repoRoot } from "@cli/lib/repo.ts";
+import { withTempRoot } from "./support/temp-root.ts";
 
 test("the generated block lists installed apps, packages and features with guide paths", async () => {
   const block = await renderGuidelinesBlock(repoRoot);
@@ -39,10 +40,15 @@ test("applying without markers reports missing and leaves the text untouched", (
   expect(result.source).toBe(source);
 });
 
-test("refreshGuidelines keeps AGENTS.md current and settles to unchanged", async () => {
-  const status = await refreshGuidelines(repoRoot);
-  expect(["updated", "unchanged"]).toContain(status);
-  const text = await Bun.file(`${repoRoot}/AGENTS.md`).text();
-  expect(text).toContain("packages/ui/llms.txt");
-  expect(await refreshGuidelines(repoRoot)).toBe("unchanged");
+test("refreshGuidelines rewrites the block on a fixture and settles to unchanged", async () => {
+  await withTempRoot(
+    { "AGENTS.md": `before\n${GUIDELINES_START}\nstate-neutral\n${GUIDELINES_END}\nafter\n` },
+    async (root) => {
+      expect(await refreshGuidelines(root)).toBe("updated");
+      const text = await Bun.file(`${root}/AGENTS.md`).text();
+      expect(text).toContain("- Apps: none installed");
+      expect(await refreshGuidelines(root)).toBe("unchanged");
+    },
+    "guidelines-",
+  );
 });

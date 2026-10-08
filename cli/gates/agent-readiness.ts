@@ -1,6 +1,8 @@
 import { Database } from "bun:sqlite";
+import { GUIDELINES_END, GUIDELINES_START } from "../lib/guidelines.ts";
 import { REQUIRED_AGENT_SKILLS } from "./agent-skills.ts";
 import { CODEGRAPH_VERSION } from "./codegraph.ts";
+import { isTemplateRepo } from "./lifecycle.ts";
 
 export type AgentReadinessInput = {
   installedSkills: string[];
@@ -10,6 +12,12 @@ export type AgentReadinessInput = {
   indexError?: string;
   /** `indexed_with_version` from the CodeGraph index metadata; absent on an index built by an old CLI. */
   indexVersion?: string;
+  /**
+   * The template repo commits a state-neutral guidelines block, so its content is ignored there.
+   * A project must carry the block `bun erp init` / `ai:update` generates for its installed catalog.
+   */
+  templateMode?: boolean;
+  guidelinesBlock?: string;
 };
 
 const REQUIRED_INDEXED_FILES = ["apps/server/http/app.ts", "apps/web/src/main.tsx"] as const;
@@ -33,6 +41,13 @@ export function evaluateAgentReadiness(input: AgentReadinessInput): string[] {
     if (!indexedFiles.has(file)) findings.push(`CodeGraph has not indexed ${file}; run bun erp init.`);
   }
   if (input.indexedFiles.length < 30) findings.push("CodeGraph index is incomplete; run bun erp init.");
+  if (!input.templateMode) {
+    if (!input.guidelinesBlock) {
+      findings.push("AGENTS.md has no guidelines block; run bun erp ai:update.");
+    } else if (!input.guidelinesBlock.includes("- Apps:")) {
+      findings.push("AGENTS.md guidelines block is not generated for this project; run bun erp ai:update.");
+    }
+  }
   return findings;
 }
 
@@ -61,12 +76,25 @@ export async function checkAgentReadiness(root: string): Promise<string[]> {
     indexError = error instanceof Error ? error.message : String(error);
   }
 
+  const templateMode = await isTemplateRepo(root);
+  let guidelinesBlock: string | undefined;
+  try {
+    const agents = await Bun.file(`${root}/AGENTS.md`).text();
+    const start = agents.indexOf(GUIDELINES_START);
+    const end = agents.indexOf(GUIDELINES_END);
+    guidelinesBlock = start >= 0 && end > start ? agents.slice(start, end + GUIDELINES_END.length) : undefined;
+  } catch {
+    guidelinesBlock = undefined;
+  }
+
   return evaluateAgentReadiness({
     installedSkills,
     indexedFiles,
     requiredIndexedFiles,
     indexError,
     indexVersion,
+    templateMode,
+    guidelinesBlock,
   });
 }
 

@@ -84,6 +84,12 @@ export const GATE_CATALOG = [
     summary: "The template carries no client names, business rules or unknown top-level directories.",
   },
   {
+    name: "lifecycle",
+    command: "check:lifecycle",
+    file: "cli/gates/lifecycle.ts",
+    summary: "A project repository carries no template-only markers or template scope file.",
+  },
+  {
     name: "slop",
     command: "check:slop",
     file: "cli/gates/slop.ts",
@@ -239,6 +245,7 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
   rpc: async (root) => (await import("../gates/rpc-guard.ts")).checkRpc(root),
   ci: async (root) => (await import("../gates/ci-guard.ts")).checkCi(root),
   scope: async (root) => (await checkScope(root)).map((f) => `${f.rule}: ${f.path} — ${f.detail}`),
+  lifecycle: async (root) => (await import("../gates/lifecycle.ts")).checkLifecycle(root),
   slop: async (root) => (await import("../gates/slop.ts")).findCodeSlop(root),
   platform: async (root) => {
     const { checkPlatform } = await import("../gates/platform.ts");

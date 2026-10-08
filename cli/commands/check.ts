@@ -1,4 +1,5 @@
 import { directoryExists } from "../gates/exists.ts";
+import { isTemplateRepo } from "../gates/lifecycle.ts";
 import { CHECK_GATE_COMMANDS, GATE_CATALOG, runGate } from "../lib/gates.ts";
 import { GateFailure, guard, MIGRATIONS_DIR, repoRoot } from "../lib/repo.ts";
 import { defineCommand, runCommand } from "../registry.ts";
@@ -122,8 +123,17 @@ export const commands = [
   }),
 
   defineCommand("check:scope", async () => {
+    if (!(await isTemplateRepo(repoRoot))) {
+      process.stdout.write("Project mode: scope rules are skipped (template.scope.json was deleted).\n");
+      return;
+    }
     await guard("scope", () => runGate("scope"));
     process.stdout.write("Scope OK: no client name or business rule in template files.\n");
+  }),
+
+  defineCommand("check:lifecycle", async () => {
+    await guard("lifecycle", () => runGate("lifecycle"));
+    process.stdout.write("Lifecycle OK: template-only rules do not leak into a project.\n");
   }),
 
   defineCommand("check:react", async () => {

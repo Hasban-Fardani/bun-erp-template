@@ -57,13 +57,13 @@ export const commands = [
   }),
   defineCommand("apps:create", async (args) => {
     const rawName = resolveRequired(args[0], "App name");
-    const jenis = resolveRequired(args[1], "App type (server|web|mobile)");
-    if (!rawName || !jenis) {
+    const kind = resolveRequired(args[1], "App type (server|web|mobile)");
+    if (!rawName || !kind) {
       process.stderr.write("Usage: bun erp apps:create <name> <server|web|mobile>\n");
       process.exit(1);
     }
-    if (!APP_TYPES.includes(jenis)) {
-      throw new Error(`Unknown app type "${jenis}". Use one of: ${APP_TYPES.join(", ")}.`);
+    if (!APP_TYPES.includes(kind)) {
+      throw new Error(`Unknown app type "${kind}". Use one of: ${APP_TYPES.join(", ")}.`);
     }
     const name = toKebabName(rawName, "App");
     const dir = `apps/${name}`;
@@ -74,14 +74,14 @@ export const commands = [
     const rootManifest = (await Bun.file(resolve(repoRoot, "package.json")).json()) as { version?: string };
     const version = rootManifest.version ?? "0.1.0";
 
-    if (jenis === "server") {
+    if (kind === "server") {
       const scaffold = renderAppScaffold(rawName, { version });
       for (const file of scaffold.files) await writeScaffold(resolve(repoRoot, file.path), file.contents);
       await formatScaffold(scaffold.files.map((file) => file.path));
       const manifestPath = resolve(repoRoot, "package.json");
       const registered = registerWorkspace(await Bun.file(manifestPath).text(), dir);
       if (registered.status === "added") await Bun.write(manifestPath, registered.source);
-      process.stdout.write(`Created ${jenis} app: ${dir}\n`);
+      process.stdout.write(`Created ${kind} app: ${dir}\n`);
       process.stdout.write(
         registered.status === "added"
           ? `Registered workspace: ${dir}\n`
@@ -91,10 +91,10 @@ export const commands = [
       // web/mobile copy their catalog through the same helper `bun erp init` uses.
       await installCatalogApp(repoRoot, {
         name,
-        kind: jenis as "web" | "mobile",
+        kind: kind as "web" | "mobile",
         hasServer: await isAppInstalled("server"),
       });
-      process.stdout.write(`Created ${jenis} app: ${dir} from templates/apps/${jenis}\n`);
+      process.stdout.write(`Created ${kind} app: ${dir} from templates/apps/${kind}\n`);
       process.stdout.write(`Registered workspace: ${dir}\n`);
     }
     process.stdout.write(`Next: run bun install, then bun run --cwd ${dir} dev\n`);

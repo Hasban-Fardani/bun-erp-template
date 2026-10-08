@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { run } from "../lib/repo.ts";
+import { isTemplateRepo } from "./lifecycle.ts";
 
 /**
  * F1.10 — scope gate. Keeps this template repo from drifting into a client repo:
@@ -42,6 +43,9 @@ function matchesAny(path: string, globs: readonly string[]): boolean {
 }
 
 export async function checkScope(root: string): Promise<ScopeFinding[]> {
+  // Project mode: a fork that ran `project:adopt` deleted `template.scope.json` and is no longer
+  // bound by template scope rules (client names, business vocabulary).
+  if (!(await isTemplateRepo(root))) return [];
   const scope = await loadScope(root);
   const findings: ScopeFinding[] = [];
   const files = await gitFiles(root);

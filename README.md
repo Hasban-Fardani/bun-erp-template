@@ -1,9 +1,13 @@
 # Bun ERP Template
 
+<!-- project-identity:start -->
+<!-- template-only -->
 Starter for internal applications: versioned Hono RPC API, Drizzle/PostgreSQL, Better Auth,
 RBAC and append-only audit, and a file-routed React admin app. An optional React + Capacitor mobile
 app waits in the app catalog. The React apps share atomic UI, i18n and editor packages. This
 repository contains reference infrastructure, not a client's ERP workflows.
+<!-- /template-only -->
+<!-- project-identity:end -->
 
 ## First run
 
@@ -15,12 +19,8 @@ repository contains reference infrastructure, not a client's ERP workflows.
     bun erp user:create <email> <password> --role owner --name <name>
     bun dev
 
-The repository ships `apps/` empty. `bun erp init` is the single door: it asks for an app
-combination (server, web, mobile, server+web, server+mobile, web+mobile, or all three), copies the
-chosen catalogs from `templates/apps/`, registers them, runs the first `bun install`, and installs
-the agent tooling (CodeGraph index, MCP wiring, skills). In CI or a script use
-`bun erp init --apps server,web --yes`; `--no-agents` skips the agent tooling. The default
-combination is `server+web`.
+`bun erp init` installs the app combination you choose (default `server+web`) and the agent tooling.
+Full flow, flags and CI usage: [docs/development.md](docs/development.md).
 
 Open the single URL printed by Vite (by default `http://localhost:5173`). The web app and Hono API
 share that origin; `/api/*` is proxied to the internal API process. The app and CLI read the same
@@ -30,10 +30,8 @@ details.
 
 The seed creates the `owner`/`staff` role keys and the permission catalogue, but no login account.
 The first `bun erp user:create <email> <password>` account becomes the owner automatically; use
-`--role owner --name <name>` to be explicit. The app and CLI use the same database settings from
-`.env`. Create the initial account after applying migrations and seeding PostgreSQL. CLI and app
-writes use the same PostgreSQL database while the server is running. See the
-[development guide](docs/development.md) for details.
+`--role owner --name <name>` to be explicit. Create the initial account after applying migrations
+and seeding PostgreSQL. See the [development guide](docs/development.md) for details.
 
 For a local production-shaped run, set `APP_DEPLOY_TARGET=bun` and
 `APP_WEB_MODE=integrated` in `.env`, build with `bun erp build`, then run `bun start`. One Bun server
@@ -41,11 +39,6 @@ serves the built React app at `/` and the versioned Hono API at `/api/*`. Set
 `APP_WEB_MODE=separate` and use `bun erp server:api` when deploying the frontend separately. Set
 `APP_DEPLOY_TARGET=cloudflare` for `bun erp build` to produce the Cloudflare Worker and static assets;
 Cloudflare currently requires integrated hosting. These are the only runtime adapters implemented.
-
-Run `bun erp init` once after cloning or copying the template. It installs the app combination,
-runs the first `bun install`, indexes the project, and installs the required agent skills.
-Development commands do not refresh or install agent tooling. See docs/development.md and
-docs/README.md.
 
 Browser QA uses Playwright only: set `QA_EMAIL` and `QA_PASSWORD`, start `bun dev`, install the
 admin screens (`bun erp features:install users roles audit`), then run `bun run qa`. Planning,
@@ -72,9 +65,9 @@ prerequisites.
 
 ## Apps and shared packages
 
-- `apps/` ships empty; `bun erp init` installs the combination you choose from `templates/apps/`.
-  `bun erp apps:create <name> <server|web|mobile>` adds another app later (server scaffolds a minimal
-  Bun service; web and mobile copy their catalog). See [templates/apps/README.md](templates/apps/README.md).
+- `bun erp init` installs apps from the `templates/apps/` catalog; `bun erp apps:create
+  <name> <server|web|mobile>` adds another app later (server scaffolds a minimal Bun service; web
+  and mobile copy their catalog). See [templates/apps/README.md](templates/apps/README.md).
 - Web and mobile bind the server's typed Hono RPC contract when the server app is installed. Without
   a server they ship a detached shell with no `@bun-erp/server` dependency; a later `bun erp init`
   that adds the server re-fits the typed client.
