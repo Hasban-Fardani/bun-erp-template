@@ -31,11 +31,6 @@ export function isBlockedAuthPath(authPath: string): boolean {
   return BLOCKED_AUTH_PATHS.some((p) => (p.endsWith("/") ? authPath.startsWith(p) : authPath === p));
 }
 
-export type ImpersonationInfo = {
-  by: { userId: string; name: string; email: string };
-  expiresAt: Date;
-};
-
 function newToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return btoa(String.fromCharCode(...bytes))
