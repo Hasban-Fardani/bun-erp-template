@@ -111,8 +111,17 @@ function scanCode(source: string, isTsx: boolean): Token[] {
   const templateFrames: { braceDepth: number }[] = [];
 
   while (true) {
-    const kind = mode === "jsx-text" ? scanner.scanJsxToken() : scanner.scan();
+    let kind = mode === "jsx-text" ? scanner.scanJsxToken() : scanner.scan();
     if (kind === SyntaxKind.EndOfFile) break;
+    // A slash that cannot continue an expression starts a regular expression literal; without the
+    // rescan its body is scanned as code and a "#" inside it stalls the scanner.
+    if (
+      mode === "code" &&
+      (kind === SyntaxKind.SlashToken || kind === SyntaxKind.SlashEqualsToken) &&
+      !endsExpression(previous)
+    ) {
+      kind = scanner.reScanSlashToken();
+    }
 
     if (mode === "jsx-text") {
       if (kind === SyntaxKind.JsxText) continue;
@@ -207,6 +216,26 @@ function scanCode(source: string, isTsx: boolean): Token[] {
   }
 
   return tokens;
+}
+
+const EXPRESSION_END_KINDS = new Set<SyntaxKind>([
+  SyntaxKind.Identifier,
+  SyntaxKind.NumericLiteral,
+  SyntaxKind.StringLiteral,
+  SyntaxKind.RegularExpressionLiteral,
+  SyntaxKind.NoSubstitutionTemplateLiteral,
+  SyntaxKind.TemplateTail,
+  SyntaxKind.CloseParenToken,
+  SyntaxKind.CloseBracketToken,
+  SyntaxKind.CloseBraceToken,
+  SyntaxKind.ThisKeyword,
+  SyntaxKind.TrueKeyword,
+  SyntaxKind.FalseKeyword,
+  SyntaxKind.NullKeyword,
+]);
+
+function endsExpression(token: Token | undefined): boolean {
+  return token !== undefined && EXPRESSION_END_KINDS.has(token.kind);
 }
 
 function isTypeUnionValue(tokens: Token[], index: number): boolean {
