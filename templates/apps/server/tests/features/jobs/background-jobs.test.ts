@@ -63,7 +63,9 @@ test("an error marked retryable=false dead-letters on the first attempt; other e
   const transient = await enqueueJob(db, { queue, name: "test.transient", payload: {}, maxAttempts: 5 });
   const unmarked = await enqueueJob(db, { queue, name: "test.unmarked", payload: {}, maxAttempts: 5 });
 
-  for (let i = 0; i < 3; i += 1) expect(await runNextJob(db, registry, logger, { queue })).toBe(true);
+  // A long retry delay keeps the two retried jobs from being re-claimed if the machine stalls.
+  const options = { queue, retryBaseMs: 60_000, retryMaxMs: 60_000 };
+  for (let i = 0; i < 3; i += 1) expect(await runNextJob(db, registry, logger, options)).toBe(true);
 
   const statusOf = async (id: string) =>
     rowsOf<{ status: string; attempt_count: number; last_error_code: string }>(
