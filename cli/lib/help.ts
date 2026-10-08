@@ -104,6 +104,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["route:list", "List routes from the assembled Hono app"],
       ["env:list", "Show safe configuration values and warnings"],
       ["key:generate", "Generate the local authentication secret"],
+      ["tinker [--eval <expr>] [--force]", "Open a REPL with db, schema and env preloaded; --eval runs one expression"],
       ["role:list", "List available role keys"],
       ["role:show <key>", "Show one role with its permissions"],
       ["role:create <key> [--name] [--description] [--permissions a,b]", "Create a custom role"],
