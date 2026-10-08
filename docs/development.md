@@ -10,7 +10,7 @@ From a clean clone:
     bun erp user:create <email> <password> --role owner --name <name>
     bun dev
 
-The template ships `apps/` empty; `bun erp init` is the single door. It offers the seven
+`apps/` is a disposable install of the app catalog (empty on a fresh checkout); `bun erp init` is the single door. It offers the seven
 combinations (server, web, mobile, server+web, server+mobile, web+mobile, server+web+mobile) as a
 numbered choice list, copies the chosen catalogs from `templates/apps/`, registers the workspaces,
 runs the first `bun install`, and configures project-local CodeGraph and the approved agent skills
@@ -67,7 +67,7 @@ The skills are installed from [Matthew Pocock's skills repository](https://githu
 [Impeccable](https://github.com/pbakaus/impeccable),
 [i-have-adhd](https://github.com/ayghri/i-have-adhd) and
 [diagram-design](https://github.com/cathrynlavery/diagram-design). Two skill directories coexist and
-are not interchangeable: `skills/` holds this template's own skills (see `skills/README.md`), while
+are not interchangeable: `skills/` holds this repository's own skills (see `skills/README.md`), while
 `.agents/skills/` holds the externally installed skills above. `skills-lock.json` records their
 pinned sources; `.agents/skills/` itself is ignored by Git and restored by `bun erp ai:update`. The QA
 project context at `.agents/qa-project-context.md` records this repository's test stack and rules.

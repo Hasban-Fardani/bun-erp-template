@@ -1,7 +1,7 @@
-# Bun ERP Template
-
 <!-- project-identity:start -->
 <!-- template-only -->
+# Bun ERP Template
+
 Starter for internal applications: versioned Hono RPC API, Drizzle/PostgreSQL, Better Auth,
 RBAC and append-only audit, and a file-routed React admin app. An optional React + Capacitor mobile
 app waits in the app catalog. The React apps share atomic UI, i18n and editor packages. This
