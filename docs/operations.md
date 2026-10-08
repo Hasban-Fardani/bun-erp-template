@@ -179,6 +179,34 @@ Compose the body with `@bun-erp/email` components and `renderEmailDocument` (ins
 the correct transport depends on the deployment. The `MAIL_*` and `SMTP_*` config keys live in the
 core schema, so one validated environment serves both install states.
 
+### Switching mail drivers
+
+Switching is configuration only: no code change and no migration. Resend (`http`) to SMTP, and back:
+
+1. Set the env: `MAIL_DRIVER=smtp` with `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`,
+   `SMTP_PASSWORD`; or `MAIL_DRIVER=http` with `MAIL_HTTP_PROVIDER=resend` and `MAIL_API_KEY`.
+2. Restart the app and the `jobs:work` worker. Both read the driver once at startup.
+3. Run `bun erp mail:test --to <your address>`. It sends one plain message synchronously through the
+   configured driver (not the queue), prints the driver name and message id, and exits non-zero with the
+   error message on failure. For SMTP it first runs nodemailer `verify()`, which checks the connection and
+   login without sending.
+4. Queued `mail.send` jobs keep working across the switch: the payload is pre-rendered and names no
+   driver, so the worker delivers pending jobs through whichever driver is configured when it runs them.
+5. Update SPF, DKIM and DMARC for the sender domain to authorize the new provider before real traffic
+   (`MAIL_FROM_ADDRESS` must sit on a domain the new provider may send for).
+
+Caveats:
+
+- SMTP is VPS-only. Cloudflare Workers have no raw sockets, so the config schema refuses
+  `MAIL_DRIVER=smtp` when `APP_DEPLOY_TARGET=cloudflare`; use `http` there.
+- A driver error carrying `retryable: false` (SMTP 535 login, any 5xx reply or bad envelope; Resend 4xx
+  other than 408 and 429) dead-letters the job on the first attempt instead of retrying five times; fix
+  the cause, then `bun erp jobs:retry <id>`. Network errors, SMTP 4xx and Resend 5xx and 429 still retry.
+- Jobs are at-least-once. Resend deduplicates a re-send by its `Idempotency-Key`; SMTP has no such
+  header. If the worker crashes between the SMTP send and marking the job complete, the retry can deliver
+  the message twice. The SMTP driver sets a stable `Message-ID` derived from the job so the duplicate is
+  recognizable in logs and some clients, but it is not deduplicated by the server.
+
 ## Object storage
 
 Storage lives in one package, `@bun-erp/storage`, with a subpath per platform so imports stay
