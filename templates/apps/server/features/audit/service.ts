@@ -20,6 +20,8 @@ export type AuditEvent = {
   before?: Record<string, unknown> | null;
   after?: Record<string, unknown> | null;
   traceId?: string;
+  /** Set when an admin acted as `actorId`; the audit screen renders "by X as Y". */
+  impersonator?: { userId: string; label?: string } | null;
 };
 
 /** Call from the service (not the route) inside a transaction; snapshots must go through redactEntity. */
@@ -33,6 +35,8 @@ export async function recordAudit(db: Database, entry: AuditEvent): Promise<void
     before: entry.before ?? null,
     after: entry.after ?? null,
     traceId: entry.traceId ?? "",
+    impersonatorId: entry.impersonator?.userId ?? null,
+    impersonatorLabel: entry.impersonator?.label ?? "",
   });
 }
 
@@ -74,7 +78,13 @@ export async function listAuditLogs(
 export async function auditChange(
   tx: Database,
   input: {
-    actor: { userId: string | null; traceId: string; label?: string };
+    // `impersonator` rides along from `actorOf`: services pass the actor object through unchanged.
+    actor: {
+      userId: string | null;
+      traceId: string;
+      label?: string;
+      impersonator?: { userId: string; label?: string } | null;
+    };
     event: string;
     subject: { type: string; id: string };
     before?: Record<string, unknown> | null;
@@ -90,5 +100,6 @@ export async function auditChange(
     before: input.before,
     after: input.after,
     traceId: input.actor.traceId,
+    impersonator: input.actor.impersonator,
   });
 }

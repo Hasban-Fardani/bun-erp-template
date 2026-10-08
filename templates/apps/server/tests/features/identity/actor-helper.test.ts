@@ -12,7 +12,9 @@ test("actorOf keeps only the audit fields of an actor", () => {
     email: "a@example.test",
     permissions: ["user.read"],
   } as const;
-  expect(actorOf(actor)).toEqual({ userId: "u1", traceId: "t1", label: "a@example.test" });
+  expect(actorOf(actor)).toEqual({ userId: "u1", traceId: "t1", label: "a@example.test", impersonator: null });
+  const viewed = { ...actor, impersonator: { userId: "admin", label: "admin@example.test", extra: 1 } };
+  expect(actorOf(viewed).impersonator).toEqual({ userId: "admin", label: "admin@example.test" });
 });
 
 test("actorOf is defined exactly once in server code", async () => {
