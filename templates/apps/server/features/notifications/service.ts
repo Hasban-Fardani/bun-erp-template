@@ -52,6 +52,17 @@ export async function countUnread(db: Database, userId: string): Promise<number>
   return rows[0]?.total ?? 0;
 }
 
+/** Titles of the newest unread notifications; the assistant's `unread_notifications` tool reads these. */
+export async function listUnreadTitles(db: Database, userId: string, limit: number): Promise<string[]> {
+  const rows = await db
+    .select({ title: notifications.title })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit);
+  return rows.map((row) => row.title);
+}
+
 /** Idempotent: re-reading an already-read row keeps its original timestamp. */
 export async function markRead(db: Database, userId: string, id: string): Promise<boolean> {
   const rows = await db

@@ -155,6 +155,14 @@ const rawSchema = z
     AI_MAX_TOKENS: z.coerce.number().int().min(16).max(4096).default(768),
     /** Questions per user per UTC day; caps provider spend (Workers Free: 10,000 Neurons a day). */
     AI_DAILY_LIMIT: z.coerce.number().int().min(1).default(50),
+    /** What a conversation keeps: every turn, only a title + rolling summary, or nothing. */
+    AI_HISTORY: z.enum(["full", "summary", "off"]).default("full"),
+    /** Lets the assistant run read-only tools; false skips the planning step entirely. */
+    AI_TOOLS_ENABLED: boolOr("true"),
+    /** Tool calls executed per question; each is bounded work inside one Worker request. */
+    AI_MAX_TOOL_CALLS: z.coerce.number().int().min(0).max(5).default(3),
+    /** Function-calling model for the planning step only; empty = the driver default. */
+    AI_TOOL_MODEL: z.string().trim().default(""),
 
     // Feature flags
     FEATURE_ADVANCED_REPORTS: boolOr("false"),

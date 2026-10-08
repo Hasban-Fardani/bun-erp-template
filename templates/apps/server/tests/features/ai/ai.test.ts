@@ -3,6 +3,7 @@ import type { AppContext } from "@/bootstrap/context.ts";
 import { createUser } from "@/features/identity/service.ts";
 import { createApp } from "@/http/app.ts";
 import { createAi } from "@/infra/ai/index.ts";
+import { events } from "../../support/ai.ts";
 import { createSeededContext, createTestClient, dataOf, loginOwner, testEnv } from "../../support/fixtures.ts";
 
 const ask = { json: { messages: [{ role: "user" as const, content: "Apa itu ERP?" }] } };
@@ -13,22 +14,9 @@ beforeEach(async () => {
   ctx = await createSeededContext();
 });
 
-/** Splits an SSE body into `{ event, data }` records. */
-async function events(response: {
-  text(): Promise<string>;
-}): Promise<{ event: string; data: Record<string, unknown> }[]> {
-  const text = await response.text();
-  return text
-    .split("\n\n")
-    .filter((block) => block.trim() !== "")
-    .map((block) => {
-      const event = /^event: (.*)$/m.exec(block)?.[1] ?? "message";
-      const data = JSON.parse(/^data: (.*)$/m.exec(block)?.[1] ?? "{}") as Record<string, unknown>;
-      return { event, data };
-    });
-}
-
-async function ownerClient(context: AppContext) {
+/** The baseline contract: with `AI_HISTORY=off` the chat stream is just deltas and a done event. */
+async function ownerClient(base: AppContext) {
+  const context = { ...base, env: { ...base.env, AI_HISTORY: "off" as const } };
   const app = createApp(context);
   return createTestClient(app, await loginOwner(app, context.db));
 }
@@ -65,6 +53,8 @@ describe("AI assistant", () => {
       driver: "fake",
       dailyLimit: testEnv.AI_DAILY_LIMIT,
       remaining: testEnv.AI_DAILY_LIMIT,
+      history: "off",
+      toolsEnabled: true,
     });
   });
 

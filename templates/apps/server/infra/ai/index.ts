@@ -1,13 +1,32 @@
 import type { Env } from "../../config/index.ts";
-import { streamFake } from "./drivers/fake.ts";
-import { streamOpenAiCompatible } from "./drivers/openai.ts";
-import { isWorkersAiBinding, streamWorkersAiBinding, workersAiRestBaseUrl } from "./drivers/workers-ai.ts";
-import type { Ai, AiRequest, FetchLike } from "./types.ts";
+import { planFake, streamFake } from "./drivers/fake.ts";
+import { planOpenAiCompatible, streamOpenAiCompatible } from "./drivers/openai.ts";
+import {
+  isWorkersAiBinding,
+  planWorkersAiBinding,
+  streamWorkersAiBinding,
+  workersAiRestBaseUrl,
+} from "./drivers/workers-ai.ts";
+import type { Ai, AiRequest, AiToolRequest, FetchLike } from "./types.ts";
 
-export type { Ai, AiMessage, AiRequest } from "./types.ts";
+export type {
+  Ai,
+  AiMessage,
+  AiRequest,
+  AiToolCall,
+  AiToolPlan,
+  AiToolRequest,
+  AiToolSpec,
+} from "./types.ts";
 
 /** Fast, cheap Workers AI chat model; fits the Free plan's daily Neurons for a demo. */
 export const DEFAULT_WORKERS_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+
+/**
+ * Workers AI model used only for the tool-planning step: it is documented to support function calling
+ * (the default chat model is not). Override it with `AI_TOOL_MODEL`.
+ */
+export const DEFAULT_WORKERS_AI_TOOL_MODEL = "@hf/nousresearch/hermes-2-pro-mistral-7b";
 
 export type CreateAiOptions = {
   env: Env;
@@ -27,8 +46,16 @@ function build(
   model: string,
   available: boolean,
   stream: (r: AiRequest) => AsyncIterable<string>,
+  plan?: (r: AiToolRequest) => ReturnType<NonNullable<Ai["plan"]>>,
 ) {
-  return { driver, model, available, stream, complete: (request) => complete(stream(request)) } satisfies Ai;
+  return {
+    driver,
+    model,
+    available,
+    stream,
+    complete: (request) => complete(stream(request)),
+    ...(plan ? { plan } : {}),
+  } satisfies Ai;
 }
 
 function unavailable(driver: Ai["driver"], model: string): Ai {
@@ -51,7 +78,7 @@ export function createAi(options: CreateAiOptions): Ai {
     case "off":
       return unavailable("off", "");
     case "fake":
-      return build("fake", "fake", true, streamFake);
+      return build("fake", "fake", true, streamFake, async (request) => planFake(request));
     case "openai": {
       const config = {
         baseUrl: env.AI_BASE_URL,
@@ -60,14 +87,26 @@ export function createAi(options: CreateAiOptions): Ai {
         maxTokens,
         fetch: fetcher,
       };
-      return build("openai", env.AI_MODEL, true, (request) => streamOpenAiCompatible(config, request));
+      const toolConfig = { ...config, model: env.AI_TOOL_MODEL || env.AI_MODEL };
+      return build(
+        "openai",
+        env.AI_MODEL,
+        true,
+        (request) => streamOpenAiCompatible(config, request),
+        (request) => planOpenAiCompatible(toolConfig, request),
+      );
     }
     case "workers-ai": {
       const model = env.AI_MODEL || DEFAULT_WORKERS_AI_MODEL;
+      const toolModel = env.AI_TOOL_MODEL || DEFAULT_WORKERS_AI_TOOL_MODEL;
       const binding = options.bindings?.[env.AI_BINDING];
       if (isWorkersAiBinding(binding)) {
-        return build("workers-ai", model, true, (request) =>
-          streamWorkersAiBinding(binding, model, maxTokens, request),
+        return build(
+          "workers-ai",
+          model,
+          true,
+          (request) => streamWorkersAiBinding(binding, model, maxTokens, request),
+          (request) => planWorkersAiBinding(binding, toolModel, maxTokens, request),
         );
       }
       if (env.AI_ACCOUNT_ID === "" || env.AI_API_KEY === "") return unavailable("workers-ai", model);
@@ -78,7 +117,14 @@ export function createAi(options: CreateAiOptions): Ai {
         maxTokens,
         fetch: fetcher,
       };
-      return build("workers-ai", model, true, (request) => streamOpenAiCompatible(config, request));
+      const toolConfig = { ...config, model: toolModel };
+      return build(
+        "workers-ai",
+        model,
+        true,
+        (request) => streamOpenAiCompatible(config, request),
+        (request) => planOpenAiCompatible(toolConfig, request),
+      );
     }
   }
 }

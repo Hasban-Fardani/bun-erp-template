@@ -25,4 +25,16 @@ not as an opt-in package, and it must stay inside the Free plan's CPU and AI all
 - A fresh install shows the assistant; without credentials on Bun it reports "not set up" rather
   than failing boot. On Cloudflare the deploy preflight requires the `ai` binding while the driver
   is `workers-ai`.
-- Conversations are not stored. Persisted threads, tool calls and data access are later decisions.
+- Superseded in part by the extension below.
+
+## Extension: history, skills, tools
+
+- `AI_HISTORY=full|summary|off` (default `full`) with `ai_conversations`/`ai_messages` (migration 0016);
+  self-scoped like notifications.
+- `features/ai/skills` and `features/ai/tools` are registries (`defineSkill`, `defineTool`): one file plus
+  one list line. Tools are read-only, permission-checked per actor, capped by `AI_MAX_TOOL_CALLS`, results
+  truncated to 2 KB, and run in one non-streaming planning step before the streamed answer, so CPU stays
+  small on Workers Free while model latency is I/O.
+- `Ai` gained an optional `plan()`; existing drivers and test doubles stay valid.
+- Consequence: `full` history stores user content in the database; operators who must not should set
+  `summary` or `off`. Real Workers AI function calling needs a Cloudflare account to verify.

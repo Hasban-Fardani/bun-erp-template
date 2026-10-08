@@ -1,5 +1,5 @@
 import type { MessageKey } from "@bun-erp/i18n";
-import { Bell, type LucideIcon } from "lucide-react";
+import { Bell, type LucideIcon, Sparkles } from "lucide-react";
 
 export type NavItem = {
   titleKey: MessageKey;
@@ -28,6 +28,7 @@ export const navGroups: NavGroup[] = [
   {
     items: [
       // @erp:nav
+      { titleKey: "navigation.assistant", url: "/assistant", icon: Sparkles, permission: "ai.use" },
       { titleKey: "navigation.notifications", url: "/notifications", icon: Bell, alwaysVisible: true },
     ],
   },

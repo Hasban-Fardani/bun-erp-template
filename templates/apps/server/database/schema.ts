@@ -1,3 +1,4 @@
+export { aiConversations, aiMessages } from "../features/ai/schema.ts";
 export { auditLogs } from "../features/audit/schema.ts";
 // @erp:organizations
 export { accounts, sessions, users, verifications } from "../features/identity/schema.ts";

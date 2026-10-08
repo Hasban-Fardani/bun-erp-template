@@ -15,6 +15,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { type NavItem, navLocationForPath, visibleNavGroups } from "../config/navigation.ts";
 import { uiConfig } from "../config/ui.ts";
 import { AssistantPanel } from "../features/assistant/components/assistant-panel.tsx";
+import { AssistantChatProvider } from "../features/assistant/hooks/index.ts";
 import { ImpersonationBanner } from "../features/identity/components/impersonation-banner.tsx";
 import { useSession, useSignOut } from "../features/identity/hooks/index.ts";
 import type { SessionView } from "../features/identity/types/index.ts";
@@ -343,17 +344,19 @@ export function AuthenticatedLayout() {
   if (!session.data?.authenticated) return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <ImpersonationBanner />
-      <div className="flex min-h-0 flex-1">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          {t("navigation.skipToContent")}
-        </a>
-        <Topbar session={session.data} />
+    <AssistantChatProvider>
+      <div className="flex min-h-dvh flex-col bg-background">
+        <ImpersonationBanner />
+        <div className="flex min-h-0 flex-1">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            {t("navigation.skipToContent")}
+          </a>
+          <Topbar session={session.data} />
+        </div>
       </div>
-    </div>
+    </AssistantChatProvider>
   );
 }

@@ -1,37 +1,34 @@
 import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
 import { IconButton } from "@bun-erp/ui/atoms/icon-button.tsx";
 import { Kbd } from "@bun-erp/ui/atoms/kbd.tsx";
 import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
-import { ArrowUp, RotateCcw, Sparkles, Square } from "lucide-react";
-import { type FormEvent, type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { type ChatFailure, useAssistantChat, useAssistantStatus } from "../hooks/index.ts";
-import { AssistantTranscript } from "./assistant-transcript.tsx";
-
-const FAILURE_COPY = {
-  limit: "assistant.error.limit",
-  unavailable: "assistant.error.unavailable",
-  failed: "assistant.error.failed",
-} as const satisfies Record<ChatFailure, string>;
+import { Link, useLocation } from "@tanstack/react-router";
+import { Maximize2, RotateCcw, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useAssistantChat, useAssistantSkills, useAssistantStatus } from "../hooks/index.ts";
+import { AssistantComposer } from "./assistant-composer.tsx";
+import { ChatThread } from "./chat-thread.tsx";
 
 function shortcutLabel(): string {
   return typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘J" : "Ctrl+J";
 }
 
 /**
- * The built-in assistant: a topbar button (or ⌘/Ctrl+J) opens a side panel on desktop and a bottom
- * sheet on phones. Answers stream in word by word; the conversation lives only in this tab.
+ * The quick assistant: a topbar button (or ⌘/Ctrl+J) opens a side panel on desktop and a bottom
+ * sheet on phones. It shares its conversation with the full page, so "open in full view" continues
+ * exactly what was asked here.
  */
 export function AssistantPanel() {
   const { t } = useI18n();
+  const location = useLocation();
+  const onFullPage = location.pathname === "/assistant";
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [shortcut, setShortcut] = useState("Ctrl+J");
   const chat = useAssistantChat();
   const status = useAssistantStatus(open);
-  const scroller = useRef<HTMLDivElement>(null);
+  const skills = useAssistantSkills(open);
   const input = useRef<HTMLTextAreaElement>(null);
-  const streaming = chat.status === "streaming";
   const unavailable = status.data?.available === false;
   const remaining = status.data?.remaining;
 
@@ -41,50 +38,36 @@ export function AssistantPanel() {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault();
+        // The full page already is the assistant: the shortcut jumps to its message box instead.
+        if (onFullPage) {
+          document.querySelector<HTMLTextAreaElement>('[data-testid="assistant-input"]')?.focus();
+          return;
+        }
         setOpen((previous) => !previous);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  // Follow the answer as it grows, unless the reader scrolled up to re-read something.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run on every transcript change.
-  useLayoutEffect(() => {
-    const node = scroller.current;
-    if (!node) return;
-    const nearBottom = node.scrollHeight - node.scrollTop - node.clientHeight < 120;
-    if (nearBottom || streaming) node.scrollTop = node.scrollHeight;
-  }, [chat.messages, streaming]);
-
-  const submit = (event?: FormEvent) => {
-    event?.preventDefault();
-    if (draft.trim() === "" || streaming) return;
-    void chat.send(draft);
-    setDraft("");
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Enter sends, Shift+Enter breaks the line; IME composition must not send half a word.
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) submit(event);
-  };
+  }, [onFullPage]);
 
   return (
     <>
-      <button
-        type="button"
-        data-testid="assistant-trigger"
-        onClick={() => setOpen(true)}
-        aria-label={t("assistant.open")}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] font-medium text-accent-soft-foreground outline-none transition-colors duration-150 ease-out hover:bg-accent-soft focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
-      >
-        <Sparkles size={15} aria-hidden="true" />
-        <span className="hidden md:inline">{t("assistant.title")}</span>
-        <Kbd className="hidden lg:inline-flex">{shortcut}</Kbd>
-      </button>
+      {onFullPage ? null : (
+        <button
+          type="button"
+          data-testid="assistant-trigger"
+          onClick={() => setOpen(true)}
+          aria-label={t("assistant.open")}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] font-medium text-accent-soft-foreground outline-none transition-colors duration-150 ease-out hover:bg-accent-soft focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+        >
+          <Sparkles size={15} aria-hidden="true" />
+          <span className="hidden md:inline">{t("assistant.title")}</span>
+          <Kbd className="hidden lg:inline-flex">{shortcut}</Kbd>
+        </button>
+      )}
 
       <Sheet
-        open={open}
+        open={open && !onFullPage}
         onOpenChange={setOpen}
         side="right"
         title={t("assistant.title")}
@@ -115,74 +98,41 @@ export function AssistantPanel() {
                 }}
               />
             ) : null}
+            <Link
+              to="/assistant"
+              search={chat.conversationId ? { c: chat.conversationId } : {}}
+              data-testid="assistant-open-full"
+              onClick={() => setOpen(false)}
+              aria-label={t("assistant.openFull")}
+              title={t("assistant.openFull")}
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-ink-soft outline-none transition-colors hover:bg-background hover:text-ink focus-visible:ring-2 focus-visible:ring-accent sm:size-8"
+            >
+              <Maximize2 size={15} aria-hidden="true" />
+            </Link>
           </header>
 
-          <div ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-            <AssistantTranscript
-              messages={chat.messages}
-              status={chat.status}
-              onSuggestion={(text) => {
-                setDraft(text);
-                input.current?.focus();
-              }}
-            />
-            {chat.failure ? (
-              <div
-                role="alert"
-                data-testid="assistant-error"
-                className="mx-4 mb-4 rounded-lg bg-danger-soft px-3 py-2.5"
-              >
-                <p className="text-[13px] text-danger">{t(FAILURE_COPY[chat.failure])}</p>
-                {chat.failure === "failed" ? (
-                  <Button variant="ghost" className="-ml-2 mt-1 h-7" icon={RotateCcw} onClick={chat.retry}>
-                    {t("assistant.retry")}
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+          <ChatThread
+            chat={chat}
+            skills={skills.data ?? []}
+            summaryOnly={status.data?.history === "summary"}
+            onSuggestion={(text) => {
+              setDraft(text);
+              input.current?.focus();
+            }}
+          />
 
-          <form onSubmit={submit} className="shrink-0 border-t border-border p-3">
-            {unavailable ? (
-              <p data-testid="assistant-unavailable" className="mb-2 text-[12.5px] text-ink-muted">
-                {t("assistant.error.unavailable")}
-              </p>
-            ) : null}
-            <div className="flex items-end gap-2 rounded-xl border border-border bg-surface px-3 py-2 transition-shadow duration-150 ease-out focus-within:ring-2 focus-within:ring-accent motion-reduce:transition-none">
-              <textarea
-                ref={input}
-                data-testid="assistant-input"
-                rows={1}
-                value={draft}
-                disabled={unavailable}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder={t("assistant.placeholder")}
-                aria-label={t("assistant.placeholder")}
-                maxLength={4000}
-                className="field-sizing-content max-h-40 min-h-6 flex-1 resize-none bg-transparent py-1 text-[13.5px] text-ink outline-none placeholder:text-ink-muted"
-              />
-              {streaming ? (
-                <IconButton
-                  icon={Square}
-                  label={t("assistant.stop")}
-                  data-testid="assistant-stop"
-                  variant="ghost"
-                  onClick={chat.stop}
-                />
-              ) : (
-                <IconButton
-                  icon={ArrowUp}
-                  label={t("assistant.send")}
-                  data-testid="assistant-send"
-                  variant="primary"
-                  type="submit"
-                  disabled={draft.trim() === "" || unavailable}
-                />
-              )}
-            </div>
-            <p className="mt-1.5 px-1 text-[11px] text-ink-muted">{t("assistant.disclaimer")}</p>
-          </form>
+          <AssistantComposer
+            draft={draft}
+            onDraftChange={setDraft}
+            skills={skills.data ?? []}
+            skill={chat.skill}
+            onSkillChange={chat.setSkill}
+            streaming={chat.status === "streaming"}
+            unavailable={unavailable}
+            onSend={(text) => void chat.send(text)}
+            onStop={chat.stop}
+            inputRef={input}
+          />
         </div>
       </Sheet>
     </>

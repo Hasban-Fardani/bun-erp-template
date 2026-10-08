@@ -533,9 +533,199 @@ export const assistantSuite: QaSuite = {
       },
     },
     {
-      name: "assistant: mobile panel fits the screen without horizontal scroll",
+      name: "assistant: typing / opens the skill menu; arrows and Enter pick a skill shown as a chip",
+      run: async ({ page }) => {
+        await page.getByTestId("assistant-reset").click();
+        await page.getByTestId("assistant-input").fill("/");
+        await page.getByRole("listbox").waitFor({ state: "visible", timeout: 5_000 });
+        const options = await page.getByTestId("assistant-skill-option").count();
+        if (options < 3) return `expected 3 skills, saw ${options}`;
+        await page.keyboard.press("ArrowDown");
+        const active = await page.locator('[role="option"][aria-selected="true"]').innerText();
+        await page.keyboard.press("Enter");
+        const chip = page.getByTestId("assistant-composer-chip");
+        await chip.waitFor({ state: "visible", timeout: 5_000 });
+        const left = await page.getByRole("listbox").count();
+        const chipText = (await chip.innerText()).trim();
+        if (left > 0) return "the menu stayed open after choosing a skill";
+        return active.toLowerCase().includes(chipText.toLowerCase().split(" ")[0] ?? "")
+          ? true
+          : `${active} vs ${chipText}`;
+      },
+    },
+    {
+      name: "assistant: Escape closes the skill menu first and the chip can be removed",
+      run: async ({ page }) => {
+        await page.getByTestId("assistant-skill-remove").click();
+        await page.getByTestId("assistant-input").fill("/tr");
+        await page.getByRole("listbox").waitFor({ state: "visible", timeout: 5_000 });
+        await page.keyboard.press("Escape");
+        await page.getByRole("listbox").waitFor({ state: "hidden", timeout: 5_000 });
+        const stillOpen = await page.getByTestId("assistant-panel").isVisible();
+        if (!stillOpen) return "Escape closed the whole panel instead of only the menu";
+        await page.getByTestId("assistant-input").fill("");
+        return true;
+      },
+    },
+    {
+      name: "assistant: a skill question shows the chip in the transcript",
+      run: async ({ page }) => {
+        await page.getByTestId("assistant-input").fill("/");
+        await page.keyboard.press("Enter");
+        await page.getByTestId("assistant-input").fill("Terjemahkan: selamat pagi");
+        await page.keyboard.press("Enter");
+        await page.getByTestId("assistant-skill-chip").first().waitFor({ state: "visible", timeout: 10_000 });
+        await page.getByTestId("assistant-send").waitFor({ state: "visible", timeout: 60_000 });
+        return true;
+      },
+    },
+    {
+      name: "assistant: a notification question shows a tool card",
+      run: async ({ page }) => {
+        await page.getByTestId("assistant-input").fill("Berapa notifikasi saya?");
+        await page.keyboard.press("Enter");
+        await page.getByTestId("assistant-send").waitFor({ state: "visible", timeout: 60_000 });
+        const card = page.getByTestId("assistant-tool").last();
+        await card.waitFor({ state: "visible", timeout: 10_000 });
+        const status = await card.getAttribute("data-status");
+        return status === "done" ? true : `tool card status ${status}`;
+      },
+    },
+    {
+      name: "assistant: answer actions copy, regenerate and edit are available",
+      run: async ({ page }) => {
+        const answer = page.locator('[data-role="assistant"]').last();
+        await answer.hover();
+        const copy = await answer.getByTestId("assistant-copy").count();
+        const regenerate = await page.getByTestId("assistant-regenerate").count();
+        const edit = await page.getByTestId("assistant-edit").count();
+        return copy === 1 && regenerate === 1 && edit > 0
+          ? true
+          : `copy ${copy}, regenerate ${regenerate}, edit ${edit}`;
+      },
+    },
+    {
+      name: "assistant: regenerate replaces the last answer instead of adding one",
+      run: async ({ page }) => {
+        const before = await page.locator('[data-role="assistant"]').count();
+        await page.getByTestId("assistant-regenerate").click({ force: true });
+        await page.getByTestId("assistant-send").waitFor({ state: "visible", timeout: 60_000 });
+        const after = await page.locator('[data-role="assistant"]').count();
+        return after === before ? true : `answers ${before} -> ${after}`;
+      },
+    },
+    {
+      name: "assistant: edit & resend replaces the question and everything after it",
+      run: async ({ page }) => {
+        const questions = page.locator('[data-role="user"]');
+        const total = await questions.count();
+        await questions.nth(total - 1).hover();
+        await page.getByTestId("assistant-edit").last().click({ force: true });
+        await page.getByTestId("assistant-edit-input").fill("Berapa notifikasi yang belum dibaca?");
+        await page.getByTestId("assistant-edit-save").click();
+        await page.getByTestId("assistant-send").waitFor({ state: "visible", timeout: 60_000 });
+        const last = (await page.locator('[data-role="user"]').last().innerText()).trim();
+        const count = await page.locator('[data-role="user"]').count();
+        return last.includes("belum dibaca") && count === total ? true : `${count} questions, last: ${last}`;
+      },
+    },
+    {
+      name: "assistant: open in full view continues the same conversation",
+      run: async ({ page }) => {
+        const before = await page.locator('[data-role="user"]').count();
+        await page.getByTestId("assistant-open-full").click();
+        await page.getByTestId("assistant-page").waitFor({ state: "visible", timeout: 10_000 });
+        // The sheet animates out; counting turns while it is still mounted would count them twice.
+        await page.getByTestId("assistant-panel").waitFor({ state: "detached", timeout: 10_000 });
+        const url = new URL(page.url());
+        if (url.pathname !== "/assistant" || !url.searchParams.get("c")) return `unexpected URL ${page.url()}`;
+        await page.locator('[data-role="user"]').first().waitFor({ state: "visible", timeout: 10_000 });
+        const after = await page.locator('[data-role="user"]').count();
+        return after === before ? true : `questions ${before} -> ${after}`;
+      },
+    },
+    {
+      name: "assistant: the full page lists saved conversations and reloads one from the URL",
+      run: async ({ page }) => {
+        await page.getByTestId("conversation-item").first().waitFor({ state: "visible", timeout: 10_000 });
+        await page.reload({ waitUntil: "networkidle" });
+        await page.locator('[data-role="user"]').first().waitFor({ state: "visible", timeout: 15_000 });
+        const active = await page.locator('[data-testid="conversation-item"][aria-current="true"]').count();
+        return active === 1 ? true : `active conversations: ${active}`;
+      },
+    },
+    {
+      name: "assistant: a new conversation, rename and delete work from the list",
+      run: async ({ page }) => {
+        await page.getByTestId("conversation-new").click();
+        await page.getByTestId("assistant-input").fill("Percakapan kedua");
+        await page.keyboard.press("Enter");
+        await page.getByTestId("assistant-send").waitFor({ state: "visible", timeout: 60_000 });
+        await page.waitForFunction(() => document.querySelectorAll('[data-testid="conversation-item"]').length >= 2);
+        const row = page.locator('[data-testid="conversation-item"][aria-current="true"]');
+        await row.hover();
+        await page.getByTestId("conversation-rename").first().click({ force: true });
+        await page.getByTestId("conversation-rename-input").fill("Judul diganti");
+        await page.keyboard.press("Enter");
+        await page.getByText("Judul diganti").first().waitFor({ state: "visible", timeout: 10_000 });
+        await page.getByTestId("conversation-delete").first().click({ force: true });
+        await page.getByTestId("conversation-delete-confirm").click();
+        await page.getByText("Judul diganti").waitFor({ state: "hidden", timeout: 10_000 });
+        return true;
+      },
+    },
+    {
+      name: "assistant: the list collapses on desktop and the chat keeps a reading width",
+      run: async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.getByTestId("assistant-list-toggle").click();
+        await page.getByTestId("assistant-list").waitFor({ state: "hidden", timeout: 5_000 });
+        await page.getByTestId("assistant-list-toggle").click();
+        await page.getByTestId("assistant-list").waitFor({ state: "visible", timeout: 5_000 });
+        await page.getByTestId("assistant-input").fill("Tampilkan tabel kecil");
+        await page.keyboard.press("Enter");
+        await page.getByTestId("assistant-send").waitFor({ state: "visible", timeout: 60_000 });
+        const width = await page
+          .locator("ol[aria-label]")
+          .last()
+          .evaluate((node) => node.getBoundingClientRect().width);
+        return width <= 768 + 1 ? true : `transcript is ${width}px wide`;
+      },
+    },
+    {
+      name: "assistant: the full page has no horizontal scroll from 320 to 1440 px",
+      run: async ({ page }) => {
+        const bad: string[] = [];
+        for (const width of [320, 390, 768, 1024, 1440]) {
+          await page.setViewportSize({ width, height: 800 });
+          const widths = await page.evaluate(() => ({
+            doc: document.documentElement.scrollWidth,
+            win: window.innerWidth,
+          }));
+          if (widths.doc > widths.win + 1) bad.push(`${width}: ${widths.doc}`);
+        }
+        return bad.length === 0 ? true : `horizontal scroll at ${bad.join(", ")}`;
+      },
+    },
+    {
+      name: "assistant: on a phone the conversation list opens as a drawer",
       run: async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 844 });
+        await page.getByTestId("assistant-list-toggle-mobile").click();
+        await page.getByTestId("assistant-list-drawer").waitFor({ state: "visible", timeout: 5_000 });
+        await page.getByTestId("conversation-item").last().click();
+        await page.getByTestId("assistant-list-drawer").waitFor({ state: "hidden", timeout: 5_000 });
+        const inputBox = await page.getByTestId("assistant-input").boundingBox();
+        return inputBox && inputBox.y + inputBox.height <= 844 ? true : `composer at ${JSON.stringify(inputBox)}`;
+      },
+    },
+    {
+      name: "assistant: mobile panel fits the screen without horizontal scroll",
+      run: async ({ page, baseUrl }) => {
+        await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.getByTestId("assistant-trigger").click();
+        await page.getByTestId("assistant-panel").waitFor({ state: "visible", timeout: 10_000 });
         const box = await page.getByTestId("assistant-panel").boundingBox();
         const widths = await page.evaluate(() => ({
           doc: document.documentElement.scrollWidth,
