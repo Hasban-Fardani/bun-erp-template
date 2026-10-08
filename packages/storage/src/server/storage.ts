@@ -42,6 +42,17 @@ export function createObjectStorage(options: CreateObjectStorageOptions): Object
     async exists(key) {
       return driver().exists(key);
     },
+    list(listOptions) {
+      return driver().list(listOptions);
+    },
+    async *listAll(prefix) {
+      let cursor: string | undefined;
+      do {
+        const page = await driver().list({ prefix, cursor });
+        yield* page.objects;
+        cursor = page.cursor;
+      } while (cursor);
+    },
     async url(key, urlOptions) {
       return driver().url(key, urlOptions);
     },

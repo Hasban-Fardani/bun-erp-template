@@ -14,6 +14,13 @@ export type StorageObject = {
   lastModified?: Date;
 };
 
+/** One listed object: enough to copy it and to skip it when the destination already has the same size. */
+export type StorageListEntry = { key: string; size: number };
+
+export type StorageListOptions = { prefix?: string; cursor?: string; limit?: number };
+
+export type StorageListPage = { objects: StorageListEntry[]; cursor?: string };
+
 export type StorageUrlOptions = { expiresInSeconds?: number };
 
 /** One object store. `get` returns bytes so the same call works on Bun, Workers, and tests. */
@@ -23,6 +30,8 @@ export type StorageDriver = {
   get(key: string): Promise<Uint8Array | undefined>;
   delete(key: string): Promise<boolean>;
   exists(key: string): Promise<boolean>;
+  /** One page of keys under `prefix`, in key order. `cursor` is present while more pages remain. */
+  list(options?: StorageListOptions): Promise<StorageListPage>;
   /** A public or presigned URL; local returns a path under the configured public URL. */
   url(key: string, options?: StorageUrlOptions): Promise<string>;
 };
@@ -57,4 +66,6 @@ export type StorageDriverFactory = (context: StorageDriverContext) => StorageDri
 export type ObjectStorage = StorageDriver & {
   putJson<T>(key: string, value: T, options?: StoragePutOptions): Promise<StorageObject>;
   getJson<T>(key: string): Promise<T | undefined>;
+  /** Every object under `prefix`, following page cursors. */
+  listAll(prefix?: string): AsyncGenerator<StorageListEntry>;
 };
