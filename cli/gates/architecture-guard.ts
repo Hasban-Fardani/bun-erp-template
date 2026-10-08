@@ -2,6 +2,7 @@ import { dirname, join, normalize, relative, resolve } from "node:path";
 import { LanguageVariant, SyntaxKind } from "typescript/unstable/ast";
 import { createScanner } from "typescript/unstable/ast/scanner";
 import { type FileIndex, fileIndex } from "../lib/file-index.ts";
+import { rescanRegex } from "../lib/ts-scan.ts";
 import { directoryExists } from "./exists.ts";
 
 const LEVELS = ["atoms", "molecules", "organisms", "templates"];
@@ -69,12 +70,14 @@ const DEEP_RELATIVE_ANYWHERE = /\.\.\/\.\.\/\.\.\//;
 const TYPE_ONLY_IMPORT = /(?:import|export)\s+type\s+[^;]+?\s+from\s+["']([^"']+)["']/g;
 
 /** Half-open token spans of every string or template literal, so fixture text is not read as code. */
-function stringLiteralSpans(code: string, isTsx: boolean): Array<[number, number]> {
+export function stringLiteralSpans(code: string, isTsx: boolean): Array<[number, number]> {
   const scanner = createScanner(true, isTsx ? LanguageVariant.JSX : LanguageVariant.Standard, code);
   const spans: Array<[number, number]> = [];
+  let previous: SyntaxKind | undefined;
   while (true) {
-    const kind = scanner.scan();
+    const kind = rescanRegex(scanner, scanner.scan(), previous);
     if (kind === SyntaxKind.EndOfFile) break;
+    previous = kind;
     if (
       kind === SyntaxKind.StringLiteral ||
       kind === SyntaxKind.NoSubstitutionTemplateLiteral ||
