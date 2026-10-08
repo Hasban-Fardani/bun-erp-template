@@ -1,6 +1,6 @@
 import { beforeEach, expect, test } from "bun:test";
-import { defineFactory } from "../../../database/factories/define.ts";
-import { roles } from "../../../features/rbac/schema.ts";
+import { defineFactory, requiredOverride } from "@/database/factories/define.ts";
+import { roles } from "@/features/rbac/schema.ts";
 import { createSeededContext } from "../../support/fixtures.ts";
 
 const roleFactory = defineFactory(roles, (n) => ({ key: `role-${n}`, name: `Role ${n}` }));
@@ -41,4 +41,12 @@ test("createMany() rejects a negative or fractional count", async () => {
   const { db } = await createSeededContext();
   await expect(roleFactory.createMany(db, -1)).rejects.toThrow(/count/);
   await expect(roleFactory.createMany(db, 1.5)).rejects.toThrow(/count/);
+});
+
+test("a requiredOverride column must be supplied by the caller", async () => {
+  const { db } = await createSeededContext();
+  const tagged = defineFactory(roles, (n) => ({ key: `tag-${n}`, name: requiredOverride("name") }));
+  expect(() => tagged.make()).toThrow(/"name".*override/);
+  expect(tagged.make({ name: "given" }).name).toBe("given");
+  expect((await tagged.create(db, { name: "stored" })).name).toBe("stored");
 });

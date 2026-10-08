@@ -19,6 +19,25 @@ export type Factory<TTable extends PgTable> = {
   reset(): void;
 };
 
+const REQUIRED = Symbol("factory.requiredOverride");
+type Required = { [REQUIRED]: string };
+
+/**
+ * Marks a column the factory cannot invent, such as a foreign key. It type-checks as any value, and
+ * `make`/`create` throw by name when the caller did not pass an override for it.
+ */
+export function requiredOverride(column: string): never {
+  return { [REQUIRED]: column } as Required as never;
+}
+
+function assertNoRequired(values: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === "object" && value !== null && REQUIRED in value) {
+      throw new Error(`Factory column "${key}" has no generated value; pass it as an override`);
+    }
+  }
+}
+
 /**
  * Defines a table factory. `values(n)` receives a per-factory sequence starting at 1, so generated
  * data is deterministic and unique within a run without a faker dependency. Overrides always win.
@@ -30,7 +49,9 @@ export function defineFactory<TTable extends PgTable>(
   let sequence = 0;
   const make = (overrides: Partial<TTable["$inferInsert"]> = {}): TTable["$inferInsert"] => {
     sequence += 1;
-    return { ...values(sequence), ...overrides };
+    const built = { ...values(sequence), ...overrides };
+    assertNoRequired(built as Record<string, unknown>);
+    return built;
   };
   return {
     make,

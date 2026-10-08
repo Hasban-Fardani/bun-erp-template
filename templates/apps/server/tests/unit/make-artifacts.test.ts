@@ -86,6 +86,45 @@ test("make:factory fills the number column of a sequenced table and honours --ta
   });
 });
 
+test("make:factory fills every required column it can and marks foreign keys as overrides", async () => {
+  const files = {
+    ...(await baseRoot()),
+    "apps/server/features/tickets/schema.ts": [
+      "export const tickets = pgTable(",
+      '  "tickets",',
+      "  {",
+      '    id: uuid("id").primaryKey().default(sql`uuidv7()`),',
+      '    userId: uuid("user_id")',
+      "      .notNull()",
+      '      .references(() => users.id, { onDelete: "cascade" }),',
+      '    title: text("title").notNull(),',
+      '    note: text("note").notNull().default(""),',
+      '    priority: integer("priority").notNull(),',
+      '    closed: boolean("closed").notNull(),',
+      '    openedAt: timestamp("opened_at", { withTimezone: true }).notNull().defaultNow(),',
+      '    meta: jsonb("meta"),',
+      "  },",
+      '  (table) => [index("tickets_user_idx").on(table.userId)],',
+      ");",
+    ].join("\n"),
+  };
+  await withTempRoot(files, async (root) => {
+    const plan = await planMakeFactory(root, "tickets");
+    assertValidTypeScript(plan);
+    const source = plan.files[0]?.contents ?? "";
+    expect(source).toContain('import { defineFactory, requiredOverride } from "./define.ts";');
+    expect(source).toContain('userId: requiredOverride("userId")');
+    expect(source).toContain("title: `title $" + "{n}`");
+    expect(source).toContain("priority: n");
+    expect(source).toContain("closed: false");
+    // Defaulted and nullable columns are left to the database.
+    expect(source).not.toContain("note:");
+    expect(source).not.toContain("openedAt");
+    expect(source).not.toContain("meta");
+    expect(source).toContain("(n) =>");
+  });
+});
+
 test("make:factory needs an existing feature schema", async () => {
   await withTempRoot(await baseRoot(), async (root) => {
     await expect(planMakeFactory(root, "ghosts")).rejects.toThrow(/features\/ghosts\/schema\.ts/);
@@ -184,7 +223,7 @@ test("make:notification writes a database-channel definition and exports it from
     const plan = await planMakeNotification(root, "invoice-paid");
     assertValidTypeScript(plan);
     expect(plan.files.map((file) => file.path)).toEqual([
-      "apps/server/features/notifications/definitions/invoice-paid.ts",
+      "apps/server/features/notifications/invoice-paid.notification.ts",
       "apps/server/tests/features/notifications/invoice-paid.test.ts",
     ]);
     const definition = plan.files[0]?.contents ?? "";
@@ -194,7 +233,7 @@ test("make:notification writes a database-channel definition and exports it from
 
     const index = await Bun.file(`${root}/apps/server/features/notifications/index.ts`).text();
     expect(index).toContain(
-      'export { INVOICE_PAID_NOTIFICATION, sendInvoicePaidNotification } from "./definitions/invoice-paid.ts";',
+      'export { INVOICE_PAID_NOTIFICATION, sendInvoicePaidNotification } from "./invoice-paid.notification.ts";',
     );
     await expect(planMakeNotification(root, "invoice-paid")).rejects.toThrow(/Refusing to overwrite/);
   });

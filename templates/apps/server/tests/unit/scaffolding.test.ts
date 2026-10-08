@@ -89,7 +89,7 @@ test("make:feature emits a full CRUD feature, policy, and test", () => {
   expect(factory).toContain('import { salesOrders } from "../../features/sales-orders/schema.ts";');
   expect(factory).toContain("export const salesOrdersFactory = defineFactory(salesOrders,");
   const generatedTest = contents.get("apps/server/tests/features/sales-orders/sales-orders.test.ts") ?? "";
-  expect(generatedTest).toContain('import { salesOrdersFactory } from "../../../database/factories/sales-orders.ts";');
+  expect(generatedTest).toContain('import { salesOrdersFactory } from "@/database/factories/sales-orders.ts";');
   expect(generatedTest).toContain("salesOrdersFactory.createMany(api.ctx.db, 2)");
 
   const policy = contents.get("apps/server/features/sales-orders/policy.ts") ?? "";

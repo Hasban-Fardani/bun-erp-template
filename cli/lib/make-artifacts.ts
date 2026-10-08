@@ -12,7 +12,7 @@ import notificationTestTemplate from "../../templates/generators/notification/te
 import fixtureTestTemplate from "../../templates/generators/test/fixture.test.ts.tmpl" with { type: "text" };
 import httpTestTemplate from "../../templates/generators/test/http.test.ts.tmpl" with { type: "text" };
 import { writeScaffold } from "./scaffold.ts";
-import { renderFactorySource, toKebabName, toPascalName } from "./scaffolding.ts";
+import { renderFactoryForSchema, toKebabName, toPascalName } from "./scaffolding.ts";
 import { renderTemplate } from "./template.ts";
 import type { WiringEdit } from "./wiring.ts";
 
@@ -105,11 +105,7 @@ export async function planMakeFactory(
   const files = [
     {
       path: `apps/server/database/factories/${name}.ts`,
-      contents: renderFactorySource({
-        name,
-        export: table,
-        sequenced: /number:\s*text\("number"\)\.notNull\(\)/.test(schema),
-      }),
+      contents: renderFactoryForSchema({ name, export: table, schemaSource: schema }),
     },
   ];
   await assertNoOverwrite(root, files);
@@ -233,7 +229,7 @@ export async function planMakeNotification(
   const constant = toConstantName(name);
   const files = [
     {
-      path: `apps/server/features/notifications/definitions/${name}.ts`,
+      path: `apps/server/features/notifications/${name}.notification.ts`,
       contents: renderTemplate(
         notificationDefinitionTemplate,
         { constant, pascal, type, title: toTitle(name) },
@@ -254,7 +250,7 @@ export async function planMakeNotification(
       `Cannot export the notification from ${NOTIFICATIONS_INDEX}: its ${NOTIFICATIONS_MARKER} marker is missing. Restore the marker or export it manually.`,
     );
   }
-  const exportLine = `export { ${constant}_NOTIFICATION, send${pascal}Notification } from "./definitions/${name}.ts";`;
+  const exportLine = `export { ${constant}_NOTIFICATION, send${pascal}Notification } from "./${name}.notification.ts";`;
   const next = index.replace(NOTIFICATIONS_MARKER, () => `${exportLine}\n${NOTIFICATIONS_MARKER}`);
   return { files, edits: [{ path: NOTIFICATIONS_INDEX, source: next, status: "added" }] };
 }

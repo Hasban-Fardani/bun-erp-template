@@ -1,6 +1,6 @@
-import type { Database } from "../../../database/index.ts";
-import { notify } from "../service.ts";
-import type { NotificationChannelContext } from "../types.ts";
+import type { Database } from "../../database/index.ts";
+import { notify } from "./service.ts";
+import type { NotificationChannelContext } from "./types.ts";
 
 /** Stable `domain.event` name stored in `notifications.type`. */
 export const {{constant}}_NOTIFICATION = "{{type}}";
