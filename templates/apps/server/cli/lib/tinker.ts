@@ -42,5 +42,7 @@ export async function evaluateTinker(source: string, ctx: AppContext, vars: Reco
 }
 
 export function formatTinkerResult(value: unknown): string {
-  return Bun.inspect(value, { depth: 4, colors: false });
+  // postgres.js results are arrays carrying column metadata; print only the rows.
+  const printable = Array.isArray(value) ? Array.from(value) : value;
+  return Bun.inspect(printable, { depth: 4, colors: false });
 }

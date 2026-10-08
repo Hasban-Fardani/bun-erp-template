@@ -32,6 +32,8 @@ test("a thrown error reaches the caller and a syntax error is reported as one", 
 test("results print as readable text", () => {
   expect(formatTinkerResult(undefined)).toBe("undefined");
   expect(formatTinkerResult({ a: [1, 2] })).toContain("a:");
+  const result = Object.assign([{ one: 1 }], { columns: [{ name: "one" }], command: "SELECT" });
+  expect(formatTinkerResult(result)).not.toContain("columns");
 });
 
 test("production is refused without --force", () => {
