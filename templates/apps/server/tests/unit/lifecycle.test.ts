@@ -235,3 +235,16 @@ test("template mode: leak phrases are allowed", async () => {
     "lifecycle-leaks-template-",
   );
 });
+
+test("first-party documents carry no leak phrase outside template-only blocks", async () => {
+  const { fileIndex } = await import("@cli/lib/file-index.ts");
+  const { DOCUMENT_GLOBS, findLeakPhrases } = await import("@cli/gates/lifecycle.ts");
+  const root = import.meta.dir.split("/").slice(0, -4).join("/");
+  const index = fileIndex(root);
+  const leaks: string[] = [];
+  for (const file of await index.files([...DOCUMENT_GLOBS])) {
+    if (file.startsWith("docs/tasks/") || file.startsWith("docs/template/")) continue;
+    for (const label of findLeakPhrases(await index.text(file))) leaks.push(`${file}: ${label}`);
+  }
+  expect(leaks).toEqual([]);
+});

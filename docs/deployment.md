@@ -115,7 +115,7 @@ emitted source around each hit:
 
 `bun erp check:worker` (part of `bun erp check`) bundles this entry for a browser/workerd-like target
 and fails when a Bun global without a `typeof Bun` guard, a new Node built-in, a migration/seed
-module or an over-budget script reaches it. The Vite Cloudflare build of this template measured
+module or an over-budget script reaches it. The Vite Cloudflare build of this stack measured
 1,244,243 bytes raw / 321,552 bytes gzip (314 KiB) for the Worker script; the gate's own `Bun.build`
 bundle is ~1.04 MB raw / ~288 KB gzip. Cloudflare caps a Worker script at **64 MiB uncompressed**
 on both Free and Paid and has no compressed limit (only the wrangler "Total Upload" figure counts), so
@@ -198,7 +198,7 @@ Cloudflare serves those assets directly; the Worker applies Hono security header
 This keeps the single-deployment shape aligned with the Bun semi-monolith without routing web assets
 through Worker CPU or request quotas.
 
-Cloudflare Free does not provide this template's PostgreSQL database. Hyperdrive is the free
+Cloudflare Free does not provide the PostgreSQL database. Hyperdrive is the free
 connection pool/proxy; the PostgreSQL 16, 17, or 18 origin must be provisioned with a provider that
 accepts Hyperdrive connections. Provider availability, storage limits, and database charges are
 separate from Cloudflare Workers. The deploy workflow therefore requires a real Hyperdrive ID,
