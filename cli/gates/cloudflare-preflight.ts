@@ -46,10 +46,18 @@ export async function validateCloudflarePreflight(
   const findings: string[] = [];
   const vars = config.vars ?? {};
   const cpuLimit = config.limits?.cpu_ms;
-  // Email/password sign-in is always on (D1): production needs a Workers Paid CPU budget.
-  if (vars.APP_ENV === "production" && (!Number.isInteger(cpuLimit) || (cpuLimit ?? 0) < MIN_PAID_CPU_MS)) {
+  // PASSWORD_HASH defaults to pbkdf2 (fits Workers Free); only scrypt (~110 ms CPU) needs a Paid CPU budget.
+  const passwordHash = vars.PASSWORD_HASH ?? "pbkdf2";
+  if (!["pbkdf2", "scrypt"].includes(passwordHash)) {
+    findings.push(`PASSWORD_HASH must be pbkdf2 or scrypt (got ${passwordHash}).`);
+  }
+  if (
+    vars.APP_ENV === "production" &&
+    passwordHash === "scrypt" &&
+    (!Number.isInteger(cpuLimit) || (cpuLimit ?? 0) < MIN_PAID_CPU_MS)
+  ) {
     findings.push(
-      `Production on Cloudflare requires Workers Paid: set limits.cpu_ms to at least ${MIN_PAID_CPU_MS} (password hashing costs ~110 ms CPU; Workers Free allows 10 ms).`,
+      `PASSWORD_HASH=scrypt on Cloudflare requires Workers Paid: set limits.cpu_ms to at least ${MIN_PAID_CPU_MS} (scrypt costs ~110 ms CPU; Workers Free allows 10 ms), or use PASSWORD_HASH=pbkdf2.`,
     );
   }
   findings.push(...storageFindings(vars, config.r2_buckets));

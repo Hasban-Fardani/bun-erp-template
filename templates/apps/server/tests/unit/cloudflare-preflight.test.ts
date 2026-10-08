@@ -17,6 +17,7 @@ const validConfig = {
   assets: { not_found_handling: "single-page-application", run_worker_first: ["/api", "/api/*"] },
   vars: {
     APP_ENV: "production",
+    PASSWORD_HASH: "scrypt",
     STORAGE_DRIVER: "r2",
     STORAGE_PUBLIC_URL: "https://erp.example.workers.dev/api/v1/files",
     APP_URL: "https://erp.example.workers.dev",
@@ -65,6 +66,27 @@ describe("Cloudflare deployment preflight", () => {
     }
     const missing = await validateCloudflarePreflight(validEnvironment, { ...validConfig, limits: {} }, fetcher);
     expect(missing.join(" ")).toContain("Workers Paid");
+  });
+
+  test("pbkdf2 (also the default when unset) fits Workers Free: no cpu_ms floor", async () => {
+    const fetcher = async () => hyperdriveResponse();
+    for (const hash of ["pbkdf2", undefined]) {
+      const { PASSWORD_HASH: _drop, ...rest } = validConfig.vars;
+      const vars = hash ? { ...rest, PASSWORD_HASH: hash } : rest;
+      const config = { ...validConfig, limits: { cpu_ms: 10 }, vars };
+      expect(await validateCloudflarePreflight(validEnvironment, config, fetcher)).toEqual([]);
+    }
+  });
+
+  test("scrypt on production Cloudflare still requires Workers Paid", async () => {
+    const fetcher = async () => hyperdriveResponse();
+    const findings = await validateCloudflarePreflight(
+      validEnvironment,
+      { ...validConfig, limits: { cpu_ms: 10 } },
+      fetcher,
+    );
+    expect(findings.join(" ")).toContain("PASSWORD_HASH=scrypt");
+    expect(findings.join(" ")).toContain("Workers Paid");
   });
 
   test("accepts cpu_ms at the threshold and does not enforce it outside production", async () => {

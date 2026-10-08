@@ -81,13 +81,14 @@ test("template mode keeps the catalog guide for apps without their own README", 
   );
 });
 
-test("goal and platform blocks are per target: VPS default, Workers Paid for production", () => {
+test("goal and platform blocks are per target: VPS default, PBKDF2 fits Workers Free, scrypt needs Paid", () => {
   const goal = renderGoalBlock();
-  expect(goal).not.toContain("fits Cloudflare Workers Free");
   expect(goal).toContain("VPS");
-  expect(goal).toContain("Workers Paid");
+  expect(goal).toContain("PBKDF2");
+  expect(goal).toContain("PASSWORD_HASH=scrypt");
   const platform = renderPlatformBlock();
   expect(platform).toContain("APP_DEPLOY_TARGET=cloudflare");
+  expect(platform).toContain("PASSWORD_HASH=pbkdf2");
   expect(platform).toContain("Workers Paid");
   expect(platform).toContain("10 ms");
   expect(platform).toContain("VPS");
