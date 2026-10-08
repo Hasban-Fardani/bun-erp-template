@@ -7,3 +7,12 @@ export async function leaveSession(queryClient: { clear: () => void }, navigateT
   await navigateToLogin();
   queryClient.clear();
 }
+
+/**
+ * Starts or stops impersonation: every cached read belonged to the previous identity. `clear()` would
+ * orphan the mounted session observers (the banner and topbar then keep showing the old identity until
+ * a reload); `resetQueries()` drops the cached data and refetches what is mounted.
+ */
+export async function swapIdentity(queryClient: { resetQueries: () => Promise<unknown> }) {
+  await queryClient.resetQueries();
+}

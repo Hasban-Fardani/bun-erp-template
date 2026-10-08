@@ -4,7 +4,7 @@ import { authRequest } from "@web/lib/auth.ts";
 import { call, rpc } from "@web/lib/rpc.ts";
 import { identityKeys } from "../api/keys.ts";
 import { sessionQuery } from "../api/queries.ts";
-import { leaveSession } from "../lib/leave-session.ts";
+import { leaveSession, swapIdentity } from "../lib/leave-session.ts";
 
 export function useSession() {
   return useQuery(sessionQuery);
@@ -30,14 +30,14 @@ export function useSignOut() {
   });
 }
 
-/** Starts viewing the app as another user. Every cached read belonged to the admin, so all is dropped. */
+/** Starts viewing the app as another user. Every cached read belonged to the admin, so all is reset. */
 export function useStartImpersonation() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
     mutationFn: (id: string) => call(rpc.users[":id"].impersonate.$post({ param: { id } })),
     onSuccess: async () => {
-      queryClient.clear();
+      await swapIdentity(queryClient);
       await navigate({ to: "/" });
     },
   });
@@ -50,7 +50,7 @@ export function useStopImpersonation() {
   return useMutation({
     mutationFn: () => call(rpc.impersonation.stop.$post()),
     onSuccess: async () => {
-      queryClient.clear();
+      await swapIdentity(queryClient);
       await navigate({ to: "/" });
     },
   });
