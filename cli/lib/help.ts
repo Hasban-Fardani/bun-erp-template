@@ -147,6 +147,10 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     ],
   },
   {
+    title: "Mail",
+    commands: [["mail:test --to <address>", "Verify the mail driver and send one test message"]],
+  },
+  {
     title: "Cloudflare",
     commands: [
       ["cloudflare:dev", "Run the Worker locally"],
