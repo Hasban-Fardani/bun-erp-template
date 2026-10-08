@@ -23,6 +23,19 @@ const timezone = z.string().refine(
   { message: "must be a valid IANA timezone" },
 );
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** `https` anywhere, or plain `http` on a loopback hostname only (parsed, never prefix-matched). */
+function isSecurePublicUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:") return true;
+    return url.protocol === "http:" && LOOPBACK_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 const rawSchema = z
   .strictObject({
     // Application
@@ -150,7 +163,7 @@ const rawSchema = z
         message: "must be at least 32 characters in production (run: bun erp key:generate)",
       });
     }
-    if (!env.APP_URL.startsWith("https://") && !env.APP_URL.startsWith("http://localhost")) {
+    if (!isSecurePublicUrl(env.APP_URL)) {
       ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "public URL must use https in production" });
     }
     // Hyperdrive terminates TLS on Cloudflare; on Bun the database connection carries it.

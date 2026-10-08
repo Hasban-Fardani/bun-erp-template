@@ -31,8 +31,10 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   const env = loadEnv(source);
   configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED });
   // Hyperdrive owns pooling; clients and their sockets remain scoped to this invocation.
-  const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false);
+  // No `sslMode`: Hyperdrive terminates origin TLS, so DATABASE_SSL_MODE is not applied to the
+  // Worker-to-Hyperdrive socket (docs/operations.md, "Database TLS").
   const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);
+  const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false, { logger });
   const storage = createStorage({ env, bindings });
   return { env, db, logger, storage, close };
 }

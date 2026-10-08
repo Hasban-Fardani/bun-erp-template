@@ -21,7 +21,7 @@ const MIGRATIONS_DIR = `${import.meta.dir}/../database/migrations`;
 export async function createContext(options: BootstrapOptions = {}): Promise<AppContext> {
   const env = options.env ?? loadEnv();
   const logger = createLogger(env);
-  const { db, close } = createDatabase(env);
+  const { db, close } = createDatabase(env, logger);
   configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED });
 
   if (options.migrateOnStart === true) {
