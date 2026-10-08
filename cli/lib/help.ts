@@ -96,6 +96,8 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     title: "Application",
     commands: [
       ["route:list", "List routes from the assembled Hono app"],
+      ["down [--message <text>]", "Put the API in maintenance mode (503 except health and bypass sessions)"],
+      ["up", "Leave maintenance mode"],
       ["env:list", "Show safe configuration values and warnings"],
       ["key:generate", "Generate the local authentication secret"],
       ["role:list", "List available role keys"],

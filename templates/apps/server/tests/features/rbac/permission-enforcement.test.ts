@@ -24,7 +24,7 @@ async function sourceFiles(): Promise<Map<string, string>> {
 function enforcedKeys(files: Map<string, string>): Set<string> {
   const keys = new Set<string>();
   const literalCheck =
-    /(?:authorize\(\s*\w+\s*,|requirePermission\(\s*\w+\s*,\s*\w+\s*,|permissions\.includes\()\s*"([a-z.]+)"/g;
+    /(?:authorize\(\s*\w+\s*,|requirePermission\(\s*\w+\s*,\s*\w+\s*,|permissions\.includes\()\s*"([a-z._]+)"/g;
   const usedByDirectory = new Map<string, Set<string>>();
 
   for (const [path, text] of files) {
@@ -40,7 +40,7 @@ function enforcedKeys(files: Map<string, string>): Set<string> {
     const block = /ACTION_PERMISSION\s*=\s*\{([^}]*)\}/.exec(text)?.[1];
     if (!block) continue;
     const used = usedByDirectory.get(dirname(path)) ?? new Set<string>();
-    for (const entry of block.matchAll(/(\w+):\s*"([a-z.]+)"/g)) {
+    for (const entry of block.matchAll(/(\w+):\s*"([a-z._]+)"/g)) {
       if (used.has(entry[1] as string)) keys.add(entry[2] as string);
     }
   }

@@ -6,6 +6,8 @@ export const statements = {
   role: ["create", "read", "update", "delete", "assign"],
   // @erp:permissions
   audit: ["read"],
+  // `maintenance_bypass` lets a session keep using the API while `bun erp down` is active.
+  app: ["maintenance_bypass"],
 } as const;
 
 export type Statement = typeof statements;
