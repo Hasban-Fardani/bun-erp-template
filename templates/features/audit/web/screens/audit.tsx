@@ -39,13 +39,23 @@ function useCopyToClipboard() {
   );
 }
 
+/** "by X as Y" while an admin impersonated; plain actor label otherwise. */
+export function actorText(
+  log: Pick<AuditLog, "actorLabel" | "impersonatorLabel">,
+  t: (key: string, params?: Record<string, string>) => string,
+): string {
+  return log.impersonatorLabel
+    ? t("audit.byAs", { impersonator: log.impersonatorLabel, actor: log.actorLabel })
+    : log.actorLabel;
+}
+
 /** CSV export is built client-side from data already on screen — no new endpoint. */
 function toCsv(items: AuditLog[], headers: string[], formatTime: (iso: string) => string): string {
   const head = headers;
   const rows = items.map((l) => [
     formatTime(l.createdAt),
     l.event,
-    l.actorLabel,
+    l.impersonatorLabel ? `${l.impersonatorLabel} as ${l.actorLabel}` : l.actorLabel,
     `${l.subjectType}:${l.subjectId}`,
     l.traceId,
   ]);
@@ -92,7 +102,7 @@ export function AuditScreen() {
       key: "actorLabel",
       header: t("audit.column.actor"),
       sortable: true,
-      cell: (log) => <Badge>{log.actorLabel}</Badge>,
+      cell: (log) => <Badge>{actorText(log, t)}</Badge>,
     },
     {
       key: "subject",
@@ -183,7 +193,7 @@ function AuditDetail({ log, onClose }: { log: AuditLog | null; onClose: () => vo
     <Sheet open onOpenChange={(open) => (open ? undefined : onClose())} side="right" title={log.event}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge>{log.actorLabel}</Badge>
+          <Badge>{actorText(log, t)}</Badge>
           <span className="text-[12.5px] text-ink-muted">
             {log.subjectType}:{log.subjectId}
           </span>

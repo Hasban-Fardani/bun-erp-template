@@ -154,7 +154,13 @@ describe("impersonation session (I2)", () => {
 
   test("password, email, sessions and 2FA cannot be changed while impersonating", async () => {
     const started = await start(staffId);
-    for (const path of ["change-password", "change-email", "revoke-sessions", "revoke-other-sessions", "two-factor/enable"]) {
+    for (const path of [
+      "change-password",
+      "change-email",
+      "revoke-sessions",
+      "revoke-other-sessions",
+      "two-factor/enable",
+    ]) {
       const res = await api.app.request(`/api/v1/auth/${path}`, {
         method: "POST",
         headers: { "content-type": "application/json", cookie: started.cookie },
@@ -175,7 +181,9 @@ describe("impersonation audit (I3)", () => {
   });
 
   test("a mutation during impersonation records the target as actor and the impersonator", async () => {
-    const editor = (await (await api.client.api.v1.roles.$post({ json: { key: "editor", name: "Editor" } })).json()) as {
+    const editor = (await (
+      await api.client.api.v1.roles.$post({ json: { key: "editor", name: "Editor" } })
+    ).json()) as {
       data: { id: string };
     };
     await api.client.api.v1.roles[":id"].permissions.$put({

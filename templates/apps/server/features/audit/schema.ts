@@ -16,9 +16,9 @@ export const auditLogs = pgTable(
     after: jsonb("after"),
     /** requestId from the envelope — an event can be traced to the server log. */
     /** Admin who acted AS `actorId` during an impersonation; no foreign key, like `actorId`. */
-  impersonatorId: uuid("impersonator_id"),
-  impersonatorLabel: text("impersonator_label").notNull().default(""),
-  traceId: text("trace_id").notNull().default(""),
+    impersonatorId: uuid("impersonator_id"),
+    impersonatorLabel: text("impersonator_label").notNull().default(""),
+    traceId: text("trace_id").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

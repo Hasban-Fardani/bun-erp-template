@@ -80,13 +80,12 @@ export function apiRoutes(ctx: AppContext) {
     // per-route docs; the operations the app uses are documented in `http/openapi.ts`.
     // While an impersonation cookie is present, credential self-service would hit the ADMIN's own
     // Better Auth account; refuse it so the target's password, email, sessions and 2FA stay put.
-    .use(`${API_PREFIX}/auth/*`, async (c, next) => {
+    .on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => {
       if (getCookie(c, IMPERSONATION_COOKIE) && isBlockedAuthPath(c.req.path.slice(`${API_PREFIX}/auth`.length))) {
         throw ApiError.forbidden("Not allowed while impersonating");
       }
-      await next();
+      return ctx.auth.handler(c.req.raw);
     })
-    .on(["GET", "POST"], `${API_PREFIX}/auth/*`, (c) => ctx.auth.handler(c.req.raw))
 
     .get(
       `${API_PREFIX}/me`,
@@ -116,7 +115,11 @@ export function apiRoutes(ctx: AppContext) {
           permissions: actor.permissions,
           impersonation: actor.impersonator
             ? {
-                by: { userId: actor.impersonator.userId, name: actor.impersonator.name, email: actor.impersonator.email },
+                by: {
+                  userId: actor.impersonator.userId,
+                  name: actor.impersonator.name,
+                  email: actor.impersonator.email,
+                },
                 expiresAt: actor.impersonator.expiresAt,
               }
             : null,

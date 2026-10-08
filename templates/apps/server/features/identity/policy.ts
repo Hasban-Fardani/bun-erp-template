@@ -3,8 +3,8 @@ import { deleteCookie, getCookie } from "hono/cookie";
 import type { AppContext } from "../../bootstrap/context.ts";
 import { ApiError } from "../../http/helpers/errors.ts";
 import type { PermissionKey } from "../rbac/index.ts";
-import { IMPERSONATION_COOKIE, resolveImpersonation } from "./impersonation.ts";
 import { permissionsForUser } from "../rbac/index.ts";
+import { IMPERSONATION_COOKIE, resolveImpersonation } from "./impersonation.ts";
 
 /**
  * Per-request identity. Built from the Better Auth session, not from client-sent

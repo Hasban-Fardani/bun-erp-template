@@ -78,7 +78,7 @@ export async function listAuditLogs(
 export async function auditChange(
   tx: Database,
   input: {
-    // `impersonator` rides along from `actorOf`: services pass the actor object through unchanged.
+    // `impersonator` rides along with the actor, so services pass the actor object through unchanged.
     actor: {
       userId: string | null;
       traceId: string;
