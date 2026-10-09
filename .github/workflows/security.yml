@@ -1,0 +1,39 @@
+name: Security
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: '41 4 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2, verified with git ls-remote
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      # Critical advisories fail the job. High ones are printed for triage but do not block, because
+      # they currently come from transitive dev tooling (miniflare, vite) that Dependabot bumps.
+      - run: bun audit --audit-level=high || true
+      - run: bun audit --audit-level=critical
+  codeql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
+      - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3, verified with git ls-remote
+        with:
+          languages: javascript-typescript
+          build-mode: none
+      - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3, verified with git ls-remote
+        with:
+          category: /language:javascript-typescript

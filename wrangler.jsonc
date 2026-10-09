@@ -8,6 +8,8 @@
   // For PASSWORD_HASH=scrypt (~110 ms CPU) use Workers Paid and add "limits": { "cpu_ms": 500 };
   // the preflight requires at least 200 ms in that case.
   "triggers": { "crons": ["*/5 * * * *"] },
+  // Workers Logs: structured console output is searchable in the dashboard (docs/operations.md).
+  "observability": { "enabled": true },
   "assets": {
     "directory": "./apps/web/dist",
     "binding": "ASSETS",

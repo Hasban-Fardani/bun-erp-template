@@ -7,6 +7,7 @@ import { configurePermissionCache } from "../features/rbac/cache.ts";
 import { createAi } from "../infra/ai/index.ts";
 import { createCacheFromEnv } from "../infra/cache/from-env.ts";
 import { registerEventListeners } from "../infra/events/index.ts";
+import { createQueryMeter } from "../infra/observability/query-meter.ts";
 import { createWorkerLogger } from "../infra/observability/worker-logger.ts";
 import { createStorage } from "../infra/storage.ts";
 import type { AppContext } from "./context.ts";
@@ -37,13 +38,17 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   // DATABASE_SSL_MODE is deliberately not applied here: Hyperdrive terminates origin TLS, so it
   // owns the TLS setting for the Worker-to-database path (docs/operations.md, "Database TLS").
   const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);
-  const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false, { logger });
+  const queries = createQueryMeter();
+  const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false, {
+    logger,
+    onQuery: queries.record,
+  });
   registerEventListeners(createEventListeners());
   const cache = createCacheFromEnv({ env, db, bindings });
   configurePermissionCache({ enabled: env.PERMISSION_CACHE_ENABLED, cache });
   const storage = createStorage({ env, bindings });
   const ai = createAi({ env, bindings });
-  return { env, db, logger, ai, storage, cache, close };
+  return { env, db, logger, ai, storage, cache, queries, close };
 }
 
 /** HTTP requests need auth; scheduled queue ticks only need the database and logger. */

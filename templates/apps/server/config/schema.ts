@@ -164,6 +164,13 @@ const rawSchema = z
     /** Function-calling model for the planning step only; empty = the driver default. */
     AI_TOOL_MODEL: z.string().trim().default(""),
 
+    // Retention (docs/operations.md, "Data retention"): the hourly `retention.prune` schedule deletes
+    // at most RETENTION_BATCH_SIZE rows per table per run.
+    RETENTION_JOBS_DAYS: z.coerce.number().int().min(1).default(14),
+    RETENTION_NOTIFICATIONS_DAYS: z.coerce.number().int().min(1).default(90),
+    RETENTION_AI_MESSAGES_DAYS: z.coerce.number().int().min(1).default(90),
+    RETENTION_BATCH_SIZE: z.coerce.number().int().min(10).max(5000).default(500),
+
     // Feature flags
     FEATURE_ADVANCED_REPORTS: boolOr("false"),
   })

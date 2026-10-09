@@ -26,12 +26,30 @@ export type Actor = {
   impersonator?: { userId: string; name: string; email: string; label: string; token: string; expiresAt: Date };
 };
 
+type SessionResult = Awaited<ReturnType<AppContext["auth"]["api"]["getSession"]>>;
+const sessionByRequest = new WeakMap<Request, Promise<SessionResult>>();
+
+/**
+ * Looks the Better Auth session up once per request. The rate limiter, the maintenance gate and
+ * the route policy all need it, and each lookup is a database round trip; keying the promise by the
+ * raw `Request` shares one lookup without any state outliving the request.
+ */
+export function sessionOnce(c: Context, ctx: AppContext): Promise<SessionResult> {
+  const request = c.req.raw;
+  let pending = sessionByRequest.get(request);
+  if (!pending) {
+    pending = ctx.auth.api.getSession({ headers: request.headers });
+    sessionByRequest.set(request, pending);
+  }
+  return pending;
+}
+
 /**
  * Resolves the actor from the session. `null` means not logged in (401), not "not allowed"
  * (403) — the two are often swapped and that makes debugging hard.
  */
 export async function resolveActor(c: Context, ctx: AppContext): Promise<Actor | null> {
-  const session = await ctx.auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await sessionOnce(c, ctx);
   if (!session?.user) return null;
 
   const user = session.user as {

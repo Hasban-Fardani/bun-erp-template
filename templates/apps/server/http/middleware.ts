@@ -7,6 +7,7 @@ import { csrfProtection } from "./csrf.ts";
 import { type AppEnv, factory } from "./factory.ts";
 import { requestId } from "./helpers/errors.ts";
 import { maintenanceMode } from "./maintenance.ts";
+import { queryBudget } from "./query-budget.ts";
 import { apiRateLimit } from "./rate-limit.ts";
 
 export function registerMiddleware(app: Hono<AppEnv>, ctx: AppContext) {
@@ -32,6 +33,7 @@ export function registerMiddleware(app: Hono<AppEnv>, ctx: AppContext) {
     }),
   );
 
+  app.use("*", queryBudget(ctx));
   app.use("*", csrfProtection(ctx));
   app.use("*", maintenanceMode(ctx));
   app.use("*", apiRateLimit(ctx));

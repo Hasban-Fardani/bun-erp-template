@@ -6,6 +6,7 @@ import { BATCH_JOB_NAME, BatchHandlerRegistry, processJobBatch } from "../infra/
 import { JobRegistry } from "../infra/jobs/registry.ts";
 import { defineSchedule, type ScheduleDefinition } from "../infra/jobs/scheduler.ts";
 import { createEventListeners } from "./events.ts";
+import { pruneRetention, retentionOptionsFromEnv } from "./retention.ts";
 
 /**
  * Feature composition root for handlers. Add feature jobs here without coupling platform code to
@@ -37,7 +38,7 @@ export function createBatchHandlers(_ctx: Pick<AppContext, "env" | "db" | "logge
 
 /**
  * Feature composition root for schedules: each `defineSchedule` pairs a job handler with a cron
- * expression, and the tick enqueues one job per due schedule. The default install declares none; `CACHE_DRIVER=database` adds `cache.prune`.
+ * expression, and the tick enqueues one job per due schedule. `retention.prune` always runs hourly; `CACHE_DRIVER=database` adds `cache.prune`.
  */
 export function createSchedules(ctx: Pick<AppContext, "env" | "db" | "logger">): ScheduleDefinition[] {
   const schedules: ScheduleDefinition[] = [];
@@ -54,5 +55,16 @@ export function createSchedules(ctx: Pick<AppContext, "env" | "db" | "logger">):
       }),
     );
   }
+  // Hourly keeps Hyperdrive/Workers Free query use low: 7 bounded deletes per run, 24 runs a day.
+  schedules.push(
+    defineSchedule({
+      name: "retention.prune",
+      cron: "17 * * * *",
+      handler: async (_payload, context) => {
+        const removed = await pruneRetention(context.db, retentionOptionsFromEnv(ctx.env));
+        ctx.logger.info({ event: "retention.pruned", ...removed });
+      },
+    }),
+  );
   return schedules;
 }

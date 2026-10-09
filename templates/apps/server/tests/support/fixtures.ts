@@ -13,6 +13,8 @@ import { roles } from "../../features/rbac/schema.ts";
 import { assignRole } from "../../features/rbac/service.ts";
 import { createApp } from "../../http/app.ts";
 import type { AppType } from "../../http/app-type.ts";
+import { resetMaintenanceCache } from "../../http/maintenance.ts";
+import { recordQuery } from "./query-budget.ts";
 
 const MIGRATIONS_DIR = resolve(import.meta.dir, "../../database/migrations");
 const databaseUrl = testDatabaseUrl();
@@ -75,7 +77,7 @@ export const testEnv: Env = loadEnv({
 let shared: Promise<AppContext> | undefined;
 
 export async function createTestContext(): Promise<AppContext> {
-  shared ??= createContext({ env: testEnv, migrationsDir: MIGRATIONS_DIR, migrateOnStart: true });
+  shared ??= createContext({ env: testEnv, migrationsDir: MIGRATIONS_DIR, migrateOnStart: true, onQuery: recordQuery });
   return shared;
 }
 
@@ -97,6 +99,8 @@ export async function truncateAll(ctx: AppContext): Promise<void> {
     sql`select tablename from pg_tables where schemaname = 'public' and tablename <> '_migrations'`,
   );
   const tables = rowsOf<{ tablename: string }>(rows).map((r) => r.tablename);
+  resetMaintenanceCache(ctx.db);
+  resetMaintenanceCache(ctx.db);
   if (tables.length === 0) return;
   await ctx.db.execute(sql.raw(`truncate table ${tables.map((t) => `"${t}"`).join(", ")} restart identity cascade`));
 }

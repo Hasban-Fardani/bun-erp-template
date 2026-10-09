@@ -23,6 +23,8 @@ export type PostgresSettings = {
    */
   sslMode?: SslMode;
   logger?: PostgresLogger;
+  /** Called with the SQL text of every statement sent; diagnostics only (query budgets, tests). */
+  onQuery?: (sql: string) => void;
 };
 
 type SslOption = false | "require" | { rejectUnauthorized: true };
@@ -65,6 +67,8 @@ export function resolvePostgresOptions(connectionString: string, settings: Postg
     prepare: true,
     onnotice: () => {},
   };
+  const { onQuery } = settings;
+  if (onQuery) options.debug = (_connection, query) => onQuery(query);
   if (settings.sslMode === undefined) return { options };
 
   const fromUrl = urlSslMode(connectionString);

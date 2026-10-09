@@ -49,6 +49,23 @@ The sections "Password hashing and the Workers CPU budget", "Object storage on C
 "Secrets flow" below cover the rest of the production setup.
 Local emulation uses .dev.vars.example with a disposable PostgreSQL database.
 
+### Smoke test and rollback
+
+After `wrangler deploy`, the workflow curls `$CLOUDFLARE_APP_URL/api/v1/ready` up to six times, ten
+seconds apart, and fails the job unless it answers 200. Migrations are forward-only and run before
+the deploy, so keep each migration compatible with the previous Worker version. To roll back code:
+
+```
+bun run --cwd apps/web wrangler rollback --config dist/bun_erp_template/wrangler.json
+```
+
+`wrangler rollback` (optionally with a version id from `wrangler versions list`) restores the
+previous Worker version in seconds; it does not undo migrations or secret changes. Restore data
+from a backup only for data loss (docs/operations.md, "Backup and restore").
+
+Workers Free: Hyperdrive allows 100,000 queries a day. The 5-minute job sweep and the hourly
+retention prune are sized for it; do not shorten the crons without checking that budget.
+
 ### Booted Worker proof (2026-10-07)
 
 `bun erp cloudflare:dev` was run against a local PostgreSQL through Hyperdrive and the real Worker

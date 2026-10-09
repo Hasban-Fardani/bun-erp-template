@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { parseCommandOptions } from "@cli/lib/options.ts";
 import { MIGRATIONS_DIR, SEEDERS_DIR } from "@cli/lib/repo.ts";
 import { listSeederFiles } from "@cli/lib/scaffold.ts";
@@ -10,6 +10,7 @@ import type { Database } from "../../database/index.ts";
 import { listMigrationFiles, migrate, planMigrations } from "../../database/migrate.ts";
 import { rowsOf } from "../../database/rows.ts";
 import { seed } from "../../database/seed.ts";
+import { planBackup } from "../lib/backup.ts";
 import { createCliContext } from "../lib/context.ts";
 
 export const commands = [
@@ -75,6 +76,37 @@ export const commands = [
     } finally {
       await ctx.close();
     }
+  }),
+
+  defineCommand("db:backup", async (args) => {
+    const parsed = parseCommandOptions(args, { flags: ["force"], values: ["out"] });
+    const env = loadEnv();
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const output = resolve(parsed.values.get("out") ?? `.data/backups/${stamp}.dump`);
+    let plan: ReturnType<typeof planBackup>;
+    try {
+      plan = planBackup({
+        databaseUrl: env.DATABASE_URL,
+        appEnv: env.APP_ENV,
+        output,
+        exists: await Bun.file(output).exists(),
+        force: parsed.flags.has("force"),
+      });
+    } catch (error) {
+      process.stderr.write(`${error instanceof Error ? error.message : "Backup refused."}\n`);
+      process.exit(1);
+    }
+    await Bun.$`mkdir -p ${dirname(output)}`.quiet();
+    const dump = Bun.spawn(["pg_dump", ...plan.args], {
+      env: { ...process.env, ...plan.env },
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    if ((await dump.exited) !== 0) {
+      process.stderr.write("pg_dump failed (is the PostgreSQL client installed and the server reachable?).\n");
+      process.exit(1);
+    }
+    process.stdout.write(`Backup written to ${output}\n`);
   }),
 
   defineCommand("db:seed", async (args) => {

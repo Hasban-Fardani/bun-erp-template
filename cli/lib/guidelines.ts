@@ -114,6 +114,7 @@ export function renderPlatformBlock(): string {
     "- **Every target:** no module-level mutable state as a source of truth. Per-process caches are TTL",
     "  optimisations; the database is authoritative, so a replica or isolate is correct without another's",
     "  memory.",
+    "- **Every target, queries:** each route has a SQL statement budget in `http/query-budget.ts`; add one when you add a route. `bun erp test --filter http/query-budget` fails over budget and prints the statements.",
     "- **VPS/Bun (default):** no Worker CPU or bundle limit applies; the Bun API is available.",
     "- **When `APP_DEPLOY_TARGET=cloudflare`:** `check:worker` fails on unguarded Bun globals and on",
     "  migration/seed modules reachable from the Worker entry; migrations run outside the Worker. Keep",

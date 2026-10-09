@@ -1,4 +1,5 @@
 import type { AppContext } from "../bootstrap/context.ts";
+import { sessionOnce } from "../features/identity/policy.ts";
 import { factory } from "./factory.ts";
 import { hitApiRateLimit } from "./helpers/api-rate-limit.ts";
 import { type ApiErrorBody, ErrorCode, requestId } from "./helpers/errors.ts";
@@ -12,10 +13,26 @@ function isLimited(path: string): boolean {
   return !UNLIMITED.has(path) && !path.startsWith(`${API_PREFIX}/auth/`);
 }
 
-/** Same rule as Better Auth: the header is read only when a trusted proxy is declared. */
-function clientAddress(headers: Headers, trustProxy: boolean): string {
-  if (!trustProxy) return "unknown";
-  return headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+const IPV4 = /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
+/** Loose IPv6 shape (hex groups, `::`, optional embedded IPv4); runtime-neutral, no `node:net`. */
+const IPV6 = /^(?=.*:)[0-9a-f:.]+$/i;
+
+/** Accepts only well-formed IPv4/IPv6 literals so junk header values cannot mint new buckets. */
+function validIp(value: string | null | undefined): string | null {
+  const v = value?.trim();
+  if (!v || v.length > 45) return null;
+  return IPV4.test(v) || IPV6.test(v) ? v : null;
+}
+
+/**
+ * Cloudflare appends to `x-forwarded-for`, so its first entry is client-controlled; on that target
+ * only `cf-connecting-ip` is read. Elsewhere the header is read only when `TRUST_PROXY` declares a
+ * proxy (same rule as Better Auth). Anything that is not an IP shares the "unknown" bucket.
+ */
+function clientAddress(headers: Headers, env: { APP_DEPLOY_TARGET: string; TRUST_PROXY: boolean }): string {
+  if (env.APP_DEPLOY_TARGET === "cloudflare") return validIp(headers.get("cf-connecting-ip")) ?? "unknown";
+  if (!env.TRUST_PROXY) return "unknown";
+  return validIp(headers.get("x-forwarded-for")?.split(",")[0]) ?? "unknown";
 }
 
 /**
@@ -30,8 +47,8 @@ export function apiRateLimit(ctx: AppContext) {
     if (!env.API_RATE_LIMIT_ENABLED || !isLimited(c.req.path)) return next();
 
     // Only requests that carry a cookie pay for a session lookup.
-    const session = c.req.header("cookie") ? await ctx.auth.api.getSession({ headers: c.req.raw.headers }) : null;
-    const key = session?.user ? `user:${session.user.id}` : `ip:${clientAddress(c.req.raw.headers, env.TRUST_PROXY)}`;
+    const session = c.req.header("cookie") ? await sessionOnce(c, ctx) : null;
+    const key = session?.user ? `user:${session.user.id}` : `ip:${clientAddress(c.req.raw.headers, env)}`;
 
     const hit = await hitApiRateLimit(ctx.db, {
       key,

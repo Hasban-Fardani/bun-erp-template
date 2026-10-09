@@ -71,7 +71,14 @@ export function createAuth(env: Env, db: Database) {
       database: { generateId: () => uuidv7() },
       // TRUST_PROXY declares that a reverse proxy sets `x-forwarded-for`. Without it the header
       // is not read, so a client cannot pick its own rate-limit bucket by spoofing it.
-      ipAddress: env.TRUST_PROXY ? { ipAddressHeaders: ["x-forwarded-for"] } : { ipAddressHeaders: [] },
+      // On Cloudflare the edge appends to `x-forwarded-for` (client-controlled prefix), which Better
+      // Auth rejects as multi-value; `cf-connecting-ip` is set by the edge and is the only safe source.
+      ipAddress:
+        env.APP_DEPLOY_TARGET === "cloudflare"
+          ? { ipAddressHeaders: ["cf-connecting-ip"] }
+          : env.TRUST_PROXY
+            ? { ipAddressHeaders: ["x-forwarded-for"] }
+            : { ipAddressHeaders: [] },
     },
     emailAndPassword: {
       // AUTH_PASSWORD_ENABLED=false leaves Google as the only way in; the config schema refuses that

@@ -10,11 +10,39 @@ import { type ApiErrorBody, ErrorCode, requestId } from "./helpers/errors.ts";
 const API_PREFIX = "/api/v1";
 const STATE_KEY = "maintenance";
 const DEFAULT_MESSAGE = "The service is under maintenance. Please try again shortly.";
-/** Per-app read cache: an optimisation only, so a change reaches a replica within this window. */
+/** Read cache TTL: an optimisation only, so a change made elsewhere reaches a process within this window. */
 const CACHE_TTL_MS = 2000;
 const RETRY_AFTER_SECONDS = "30";
 
 export type MaintenanceState = { down: boolean; message?: string };
+
+/**
+ * Process-wide TTL cache per database handle. A Cloudflare Worker rebuilds the app on every
+ * request, so a cache held inside the app never hit; module scope survives while the isolate does.
+ * The database stays authoritative: the TTL bounds staleness and `setMaintenance` drops the entry
+ * for the process that wrote.
+ */
+const stateCache = new WeakMap<Database, { state: MaintenanceState; readAt: number }>();
+let clock: () => number = Date.now;
+
+/** Test hook: inject a clock. Pass nothing to restore `Date.now`. */
+export function setMaintenanceClock(next?: () => number): void {
+  clock = next ?? Date.now;
+}
+
+/** Drops the cached state of one database handle (tests and writers). */
+export function resetMaintenanceCache(db: Database): void {
+  stateCache.delete(db);
+}
+
+async function cachedMaintenance(db: Database): Promise<MaintenanceState> {
+  const now = clock();
+  const hit = stateCache.get(db);
+  if (hit && now - hit.readAt < CACHE_TTL_MS) return hit.state;
+  const state = await getMaintenance(db);
+  stateCache.set(db, { state, readAt: now });
+  return state;
+}
 
 export async function getMaintenance(db: Database): Promise<MaintenanceState> {
   const rows = rowsOf<{ value: { down?: boolean; message?: string } | null }>(
@@ -31,6 +59,7 @@ export async function setMaintenance(
   state: MaintenanceState,
   actor: { userId: string | null; traceId: string; label?: string },
 ): Promise<void> {
+  resetMaintenanceCache(db);
   const value = state.down ? { down: true, ...(state.message ? { message: state.message } : {}) } : { down: false };
   await db.transaction(async (tx) => {
     await tx.execute(sql`
@@ -51,16 +80,6 @@ export async function setMaintenance(
  * can still sign in) and sessions holding `app.maintenance_bypass`.
  */
 export function maintenanceMode(ctx: AppContext) {
-  let cached: { state: MaintenanceState; readAt: number } | undefined;
-
-  async function current(): Promise<MaintenanceState> {
-    const now = Date.now();
-    if (cached && now - cached.readAt < CACHE_TTL_MS) return cached.state;
-    const state = await getMaintenance(ctx.db);
-    cached = { state, readAt: now };
-    return state;
-  }
-
   return factory.createMiddleware(async (c, next) => {
     const path = c.req.path;
     const exempt =
@@ -70,7 +89,7 @@ export function maintenanceMode(ctx: AppContext) {
       path.startsWith(`${API_PREFIX}/auth/`);
     if (exempt) return next();
 
-    const state = await current();
+    const state = await cachedMaintenance(ctx.db);
     if (!state.down) return next();
 
     const actor = await resolveActor(c, ctx);

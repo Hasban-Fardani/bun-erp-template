@@ -70,6 +70,75 @@ signed-in users because they have their own user-id buckets. Set `TRUST_PROXY=tr
 that overwrites the header (Cloudflare, nginx, Caddy). Counter rows are one per caller and are
 overwritten in place, so the table does not grow with time.
 
+## Data retention
+
+The `retention.prune` schedule runs hourly (`17 * * * *`) and issues one bounded
+`DELETE ... LIMIT` per table, so a run stays far inside the cron CPU budget and a backlog drains
+over several runs. It is idempotent and safe to run on several replicas at once.
+
+| Table | Removed when | Variable (default) |
+|---|---|---|
+| `session`, `verification` | `expires_at` is past | none |
+| `rate_limit` (Better Auth) | last request older than one day | none |
+| `api_rate_limits` | window older than two days (keeps the daily AI quota) | none |
+| `background_jobs` | `completed` or `dead` and older than N days | `RETENTION_JOBS_DAYS` (14) |
+| `notifications` | read and older than N days; unread stay | `RETENTION_NOTIFICATIONS_DAYS` (90) |
+| `ai_messages` | older than N days | `RETENTION_AI_MESSAGES_DAYS` (90) |
+
+`RETENTION_BATCH_SIZE` (500, 10-5000) caps rows per table per run. Hourly rather than every few
+minutes on purpose: on Workers Free, Hyperdrive allows 100,000 queries a day, and the pruner costs
+about 7 a run (168 a day). The run logs `retention.pruned` with the counts. `cache.prune` stays
+separate and only exists with `CACHE_DRIVER=database`.
+
+## Query budget
+
+Every SQL statement costs a database round trip, and on Cloudflare Workers Free it also spends Hyperdrive's
+100,000 queries/day. A route's statement count is therefore a reviewed number, not a guess.
+
+- **Where:** `http/query-budget.ts` lists `METHOD /route` → maximum statements; routes without an entry
+  must stay under `DEFAULT_QUERY_BUDGET`. Add the entry when you add a route.
+- **In tests:** `tests/features/http/query-budget.test.ts` rebuilds the app per call (as the Worker does),
+  warms module caches, then fails with the statement text when a route exceeds its budget. Use
+  `countQueries(fn)` from `tests/support/query-budget.ts` to inspect any code path.
+- **In development:** responses carry `Server-Timing: db;desc="N queries"`; read it in the browser devtools.
+- **In production:** nothing is exposed. A request over budget logs one `http.query_budget_exceeded` warning
+  (route, count, budget; never SQL text). Search it in Workers Logs; it stays far below the 200k events/day cap.
+- **Mechanism:** `ctx.queries` (`infra/observability/query-meter.ts`) is fed by the postgres.js `debug` hook, so
+  Drizzle, Better Auth's adapter and raw `sql` are all counted. On a long-lived Bun process concurrent
+  requests share one counter, so a per-request count there is an upper bound; on Workers it is exact.
+- **Not covered:** the daily total. Read Hyperdrive usage in the Cloudflare dashboard.
+- **Do not cut:** security-relevant queries (session and user lookups) are not traded for budget; reduce
+  business queries instead.
+
+## Workers Logs
+
+`wrangler.jsonc` sets `observability.enabled`, so Worker `console` output (our structured JSON logs)
+is searchable under Workers & Pages -> the Worker -> Logs. Keep `LOG_LEVEL=info`; the platform
+retention and volume limits of your plan apply.
+
+## Backup and restore
+
+`bun erp db:backup [--out <file>] [--force]` runs `pg_dump --format=custom` against `DATABASE_URL`
+and writes `.data/backups/<timestamp>.dump` by default. It needs the PostgreSQL client (`pg_dump`,
+major version at least the server's). The connection is passed through `PG*` environment variables
+so the password is never in the process list or the output. With `APP_ENV=production` it never
+overwrites an existing file; elsewhere it refuses unless `--force`.
+
+`.github/workflows/db-backup.yml` runs daily and on demand. Secrets: `BACKUP_DATABASE_URL` (a
+read-only role pointing at the origin database, not Hyperdrive; falls back to `DATABASE_URL`).
+With the repository variable `R2_BACKUP_BUCKET` plus secrets `R2_ACCESS_KEY_ID`,
+`R2_SECRET_ACCESS_KEY` and `CLOUDFLARE_ACCOUNT_ID` the dump goes to that private R2 bucket
+(`db/`); otherwise it is kept as a 14-day workflow artifact, which anyone with repository read
+access can download, so use R2 for real data. Configure an R2 lifecycle rule for retention.
+
+Restore runbook (practice it on a scratch database before you need it):
+
+1. Create an empty database and note its URL as `RESTORE_URL`.
+2. `pg_restore --list backup.dump | head` to confirm the file is readable.
+3. `pg_restore --no-owner --no-privileges --clean --if-exists -d "$RESTORE_URL" backup.dump`.
+4. Point `DATABASE_URL` at it and run `bun erp db:status` (expect zero pending) and check `/api/v1/ready`.
+5. Cut over (Hyperdrive origin or `DATABASE_URL`) and verify sign-in. Objects in R2/S3 are not part of the dump.
+
 ## Maintenance mode
 
 ```sh

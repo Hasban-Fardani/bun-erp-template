@@ -17,10 +17,14 @@ export const notificationsQuery = (query = "") =>
     placeholderData: keepPreviousData,
   });
 
-/** The bell polls at a low rate; a focused app also refetches on window focus by default. */
+/**
+ * The bell polls slowly and only while the tab is visible: every poll is a database round trip on
+ * a metered plan. A hidden tab pauses (`refetchIntervalInBackground: false`) and catches up on focus.
+ */
 export const unreadCountQuery = queryOptions({
   queryKey: notificationKeys.unread,
   queryFn: () => call(rpc.notifications["unread-count"].$get()),
   staleTime: 30_000,
-  refetchInterval: 60_000,
+  refetchInterval: 300_000,
+  refetchIntervalInBackground: false,
 });

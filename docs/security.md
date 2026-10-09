@@ -98,3 +98,11 @@ superuser or hold TRUNCATE/DDL privileges. Keep backups and restrict database ad
 Web currently uses session cookies with credentials included and CORS origin allowlists.
 Native Capacitor login/token transport is not implemented or verified; see [mobile](mobile.md).
 Do not widen CORS or store tokens in localStorage merely to make a native login appear to work.
+
+## Supply chain and code scanning
+
+`.github/dependabot.yml` opens weekly updates for GitHub Actions and Bun dependencies (keep pins
+exact; review each PR). `.github/workflows/security.yml` runs `bun audit` (critical advisories fail,
+high ones are printed) and CodeQL for `javascript-typescript` on pushes, pull requests and weekly.
+Database backups are sensitive data: store them in a private bucket and restrict who can read the
+`BACKUP_DATABASE_URL` secret (docs/operations.md).

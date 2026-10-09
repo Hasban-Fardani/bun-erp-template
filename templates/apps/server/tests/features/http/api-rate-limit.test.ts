@@ -83,6 +83,29 @@ describe("API rate limiter", () => {
     expect((await trusted.api.v1.me.$get({}, ip("203.0.113.2"))).status).toBe(401);
     expect((await trusted.api.v1.me.$get({}, ip("203.0.113.1"))).status).toBe(429);
   });
+
+  test("cloudflare target keys by cf-connecting-ip and ignores spoofed x-forwarded-for", async () => {
+    const hdr = (cf: string, xff: string) => ({ headers: { "cf-connecting-ip": cf, "x-forwarded-for": xff } });
+    const client = createTestClient(appWith({ API_RATE_LIMIT_MAX: 1, APP_DEPLOY_TARGET: "cloudflare" }));
+    await client.api.v1.me.$get({}, hdr("203.0.113.9", "198.51.100.1"));
+    // Same real client, different spoofed XFF: still the same bucket.
+    expect((await client.api.v1.me.$get({}, hdr("203.0.113.9", "198.51.100.2"))).status).toBe(429);
+    // A different real client gets its own bucket.
+    expect((await client.api.v1.me.$get({}, hdr("203.0.113.10", "198.51.100.2"))).status).toBe(401);
+  });
+
+  test("invalid addresses share one bucket instead of inflating rows", async () => {
+    const client = createTestClient(appWith({ API_RATE_LIMIT_MAX: 100, APP_DEPLOY_TARGET: "cloudflare" }));
+    for (const junk of ["junk-1", "junk-2", "x".repeat(500)]) {
+      await client.api.v1.me.$get({}, { headers: { "cf-connecting-ip": junk } });
+    }
+    const proxied = createTestClient(appWith({ API_RATE_LIMIT_MAX: 100, TRUST_PROXY: true }));
+    for (const junk of ["not-an-ip, 1.1.1.1", "y".repeat(500)]) {
+      await proxied.api.v1.me.$get({}, { headers: { "x-forwarded-for": junk } });
+    }
+    const rows = rowsOf<{ n: number }>(await api.ctx.db.execute(sql`select count(*)::int as n from api_rate_limits`));
+    expect(rows[0]?.n).toBe(1);
+  });
 });
 
 describe("fixed-window store", () => {

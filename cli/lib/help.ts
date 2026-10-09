@@ -105,6 +105,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["db:migrate", "Apply pending TypeScript migrations"],
       ["db:status", "Show applied and pending migrations"],
       ["db:seed [seeder]", "Seed infrastructure and feature data"],
+      ["db:backup [--out <file>] [--force]", "pg_dump DATABASE_URL to a custom-format file (needs pg_dump)"],
     ],
   },
   {

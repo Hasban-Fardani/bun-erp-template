@@ -5,6 +5,7 @@ import type { Auth } from "../features/identity/auth.ts";
 import type { Ai } from "../infra/ai/index.ts";
 import type { Cache } from "../infra/cache/index.ts";
 import type { Logger } from "../infra/observability/logger.ts";
+import type { QueryMeter } from "../infra/observability/query-meter.ts";
 import type { Storage } from "../infra/storage.ts";
 
 /**
@@ -22,5 +23,7 @@ export type AppContext = {
   storage: Storage;
   /** Cache facade; a cached value is an optimisation and never the source of truth. */
   cache: Cache;
+  /** Counts SQL statements; feeds the per-request query budget (docs/operations.md). */
+  queries: QueryMeter;
   close: () => Promise<void>;
 };
