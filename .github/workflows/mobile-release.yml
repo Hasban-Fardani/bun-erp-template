@@ -121,7 +121,7 @@ jobs:
             --skip_upload_screenshots true
         env:
           MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-release-aab
           path: apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
@@ -250,7 +250,7 @@ jobs:
             --api_key_path "$RUNNER_TEMP/app-store-connect-key.json" \
             --skip_waiting_for_build_processing true \
             --distribute_external false
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ios-release-ipa
           path: ${{ steps.ipa.outputs.path }}
