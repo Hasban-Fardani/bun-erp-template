@@ -26,6 +26,12 @@ third-party accounts, production deploys, repo settings and final visual sign-of
 The grilling skills settle open product decisions; they are not for confirming defaults or
 questions the code and docs already answer.
 
+Tool skills, installed the same way: `find-docs` and `context7-mcp` (`upstash/context7`) fetch
+current library docs; `chrome-devtools`, `a11y-debugging`, `debug-optimize-lcp` and
+`memory-leak-debugging` (`ChromeDevTools/chrome-devtools-mcp`) inspect a running page through the
+Chrome DevTools MCP server that `init` wires for opencode. They debug; browser QA stays Playwright.
+`bun loom init` also builds the CodeGraph index first (`--no-agents` skips all of this).
+
 - [Feature development](feature-development/SKILL.md): feature boundaries and work order.
 - [Database](database-drizzle/SKILL.md): Drizzle, migrations and driver parity.
 - [Testing](testing/SKILL.md): shared fixtures and evidence.

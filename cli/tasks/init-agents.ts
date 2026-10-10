@@ -7,6 +7,7 @@ import { run } from "../lib/repo.ts";
 
 const root = resolve(import.meta.dir, "../..");
 const SKILLS_CLI_VERSION = "1.7.0";
+const CHROME_DEVTOOLS_MCP_VERSION = "1.10.1";
 const codegraphDatabase = resolve(root, ".codegraph/codegraph.db");
 
 type JsonObject = Record<string, unknown>;
@@ -196,6 +197,31 @@ export async function wireContext7Mcp(): Promise<"wired" | "unchanged" | "skippe
   return "wired";
 }
 
+/**
+ * Chrome DevTools MCP backs the `chrome-devtools` debugging skills. It is for inspecting a running
+ * page; browser QA stays Playwright-only. Pinned, and run under Node because it drives Puppeteer.
+ */
+export async function wireChromeDevtoolsMcp(): Promise<"wired" | "unchanged" | "skipped"> {
+  const found = await loadOpencodeConfig();
+  if (!found) return "skipped";
+  const { path, config } = found;
+  const mcp = asObject(config.mcp) ?? {};
+  const command = ["bunx", `chrome-devtools-mcp@${CHROME_DEVTOOLS_MCP_VERSION}`];
+  const current = asObject(mcp["chrome-devtools"]);
+  const currentCommand = current && Array.isArray(current.command) ? current.command : undefined;
+  const valid =
+    current?.type === "local" &&
+    current.enabled !== false &&
+    currentCommand?.length === command.length &&
+    currentCommand.every((part, index) => part === command[index]);
+  if (valid) return "unchanged";
+
+  const entry: JsonObject = { type: "local", command, enabled: true };
+  await Bun.write(path, `${JSON.stringify({ ...config, mcp: { ...mcp, "chrome-devtools": entry } }, null, 2)}\n`);
+  process.stdout.write(`Chrome DevTools MCP server wired for opencode in ${path}.\n`);
+  return "wired";
+}
+
 /** Align a developer's global `codegraph` with the pinned release so bare commands stay on 1.6.2. */
 async function alignGlobalCli(): Promise<void> {
   let version: string | undefined;
@@ -264,7 +290,7 @@ export async function installAgentSkills(): Promise<void> {
 }
 
 /**
- * The CodeGraph and Context7 MCP wiring plus the project skills — the parts `bun loom ai:update`
+ * The CodeGraph, Context7 and Chrome DevTools MCP wiring plus the project skills — the parts `bun loom ai:update`
  * re-syncs. `init` additionally builds the local index through `initializeAgentTooling`.
  */
 export async function updateAgentTooling(): Promise<void> {
@@ -277,6 +303,7 @@ export async function updateAgentTooling(): Promise<void> {
     );
     await wireOpencodeMcp();
     await wireContext7Mcp();
+    await wireChromeDevtoolsMcp();
   }
   await installAgentSkills();
 }

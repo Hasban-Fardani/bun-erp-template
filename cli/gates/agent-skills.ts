@@ -18,6 +18,11 @@ export const AGENT_SKILL_SOURCES = [
   { repository: "pbakaus/impeccable", skills: ["impeccable"] },
   { repository: "ayghri/i-have-adhd", skills: ["i-have-adhd"] },
   { repository: "cathrynlavery/diagram-design", skills: ["diagram-design"] },
+  { repository: "upstash/context7", skills: ["find-docs", "context7-mcp"] },
+  {
+    repository: "ChromeDevTools/chrome-devtools-mcp",
+    skills: ["chrome-devtools", "a11y-debugging", "debug-optimize-lcp", "memory-leak-debugging"],
+  },
   {
     repository: "petrkindlmann/qa-skills",
     skills: [
