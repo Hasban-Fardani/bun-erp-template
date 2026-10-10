@@ -69,7 +69,7 @@ test("registry contract rejects registry drift, unapproved sources and stale met
 test("vendored component catalog requires matching files, MIT notices and a pinned upstream commit", () => {
   const commit = "a".repeat(40);
   const base = {
-    packageName: "email" as const,
+    packageName: "email-templates" as const,
     upstreamCommit: commit,
     components: {
       "src/atoms/button.tsx": {
@@ -79,7 +79,7 @@ test("vendored component catalog requires matching files, MIT notices and a pinn
         adaptation: "Uses package-local imports.",
       },
     },
-    sourceFiles: ["packages/email/src/atoms/button.tsx"],
+    sourceFiles: ["packages/email-templates/src/atoms/button.tsx"],
   };
   expect(validateVendoredSourceCatalog(base)).toEqual([]);
   expect(

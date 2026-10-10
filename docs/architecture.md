@@ -32,7 +32,7 @@ app is present; without it they install in detached mode (stub `src/lib/rpc.ts`,
 | Change a quality gate | cli/gates, cli | Read-only checks and CLI orchestration |
 | Localize shared app copy and formats | packages/i18n | Typed catalogs, locale resolution and React provider |
 | Add rich text editing UI | templates/packages/editor (install with bun loom packages:install editor) | Lazy React entry, composable Lexical UI and JSON value |
-| Compose email or PDF documents | templates/packages/email, templates/packages/pdf (install on demand) | Opt-in rendering components with separate runtime boundaries |
+| Compose email or PDF documents | templates/packages/email-templates, templates/packages/pdf (install on demand) | Opt-in rendering components with separate runtime boundaries |
 | Send mail from the server | `bun loom features:install mail` (templates/packages/mail) | Opt-in transport; the default server keeps only the database notification channel |
 | Add tenant scoping | `bun loom features:install organizations` (templates/features/organizations) | Opt-in Better Auth `organization` plugin: organization/member/invitation tables and the session's active organization; no new routes or permissions |
 

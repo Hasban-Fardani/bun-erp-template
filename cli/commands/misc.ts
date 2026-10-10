@@ -16,7 +16,7 @@ const SHARED_PACKAGE_TESTS: ReadonlyArray<{ dir: string; label: string }> = [
   { dir: "packages/charts/tests", label: "bun test shared charts" },
   { dir: "packages/i18n/tests", label: "bun test i18n" },
   { dir: "packages/editor/tests", label: "bun test rich-text editor" },
-  { dir: "packages/email/tests", label: "bun test email components" },
+  { dir: "packages/email-templates/tests", label: "bun test email templates" },
   { dir: "packages/pdf/tests", label: "bun test PDF components" },
   { dir: "packages/mail/tests", label: "bun test mail transport" },
 ];

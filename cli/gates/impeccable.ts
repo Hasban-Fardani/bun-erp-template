@@ -28,7 +28,7 @@ const UI_SURFACES = [
   "templates/packages/charts/src",
   "templates/packages/data-table/src",
   "templates/packages/editor/src",
-  "templates/packages/email/src",
+  "templates/packages/email-templates/src",
   "templates/packages/pdf/src",
 ] as const;
 

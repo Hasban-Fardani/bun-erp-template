@@ -143,15 +143,15 @@ export function validateRegistryContract(input: {
 }
 
 export function validateVendoredSourceCatalog(input: {
-  packageName: "email" | "pdf";
+  packageName: "email-templates" | "pdf";
   upstreamCommit: string;
   components: Record<string, { registry: string; source: string; license: string; adaptation?: string }>;
   sourceFiles: string[];
 }): ShadcnFinding[] {
   const findings: ShadcnFinding[] = [];
   const packagePath = `packages/${input.packageName}`;
-  const registry = input.packageName === "email" ? "@emailcn" : "@pdfcn";
-  const repo = input.packageName === "email" ? "emailcn" : "pdfcn";
+  const registry = input.packageName === "email-templates" ? "@emailcn" : "@pdfcn";
+  const repo = input.packageName === "email-templates" ? "emailcn" : "pdfcn";
   const expectedSourcePrefix = `https://github.com/shadcn-labs/${repo}/blob/${input.upstreamCommit}/`;
   const files = new Set(input.sourceFiles);
 
@@ -238,7 +238,7 @@ export async function checkShadcn(root: string): Promise<ShadcnFinding[]> {
     });
   }
 
-  for (const packageName of ["email", "pdf"] as const) {
+  for (const packageName of ["email-templates", "pdf"] as const) {
     const catalogPath = join(root, `packages/${packageName}/component-sources.json`);
     // These packages are opt-in: they live in templates/packages until `bun loom packages:install`
     // copies one into the workspace. Provenance is checked once the package is actually installed.

@@ -41,7 +41,7 @@ loads on demand.
 `molecules/table` contains the shadcn Table primitive. The TanStack-backed `ResourceTable` and
 server `DataTable`, and the renderer-backed `Sparkline` and `MetricList`, moved to the dedicated
 table and chart packages; this package depends on neither. Forms use TanStack Form. Email and PDF
-components live in the opt-in `@loom/email` and `@loom/pdf` packages (`bun loom packages:install
+components live in the opt-in `@loom/email-templates` and `@loom/pdf` packages (`bun loom packages:install
 email` / `pdf`) because their renderers have different runtime and delivery constraints.
 
 The exact allowed registry URLs are in [registry-allowlist.json](registry-allowlist.json) and

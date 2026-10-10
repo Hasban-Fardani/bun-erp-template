@@ -94,7 +94,7 @@ prerequisites.
   data-table (local in-memory and controlled server table modes on TanStack Table plus the shared
   `ResourceTable`; `features:install` pulls it in automatically for the screens that need it),
   charts (separately imported chart families on Recharts plus the lazy `Sparkline` and `MetricList`),
-  editor (lazy Lexical JSON editor with accessible toolbar primitives), email, and pdf. PDF rendering
+  editor (lazy Lexical JSON editor with accessible toolbar primitives), email-templates (React Email layouts; sending is the `mail` feature), and pdf. PDF rendering
   stays in the browser so the Cloudflare Worker bundle remains small.
 
 For Cloudflare, bun loom cloudflare:build creates and preflights the Worker artifact; deployment

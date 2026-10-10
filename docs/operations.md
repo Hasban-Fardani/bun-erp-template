@@ -243,8 +243,8 @@ register its own HTTP provider without editing the package:
   contains the key; the queue retries it and the idempotency key is forwarded to the provider.
 - `memory` captures messages in-process and is the seam tests assert against.
 
-Compose the body with `@loom/email` components and `renderEmailDocument` (install the package with
-`bun loom packages:install email`), then pass the HTML to the mailer; the package stays opt-in because
+Compose the body with `@loom/email-templates` components and `renderEmailDocument` (install the package with
+`bun loom packages:install email-templates`), then pass the HTML to the mailer; the package stays opt-in because
 the correct transport depends on the deployment. The `MAIL_*` and `SMTP_*` config keys live in the
 core schema, so one validated environment serves both install states.
 
