@@ -9,7 +9,7 @@ import type { MailConfig, MailLogger } from "../src/server/types.ts";
 const testConfig: MailConfig = {
   MAIL_DRIVER: "log",
   MAIL_FROM_ADDRESS: "no-reply@example.test",
-  MAIL_FROM_NAME: "Bun ERP Template",
+  MAIL_FROM_NAME: "Loom Template",
   SMTP_HOST: "",
   SMTP_PORT: 587,
   SMTP_SECURE: false,
@@ -26,7 +26,7 @@ test("resolveMail applies the configured from-address and derives a text body", 
     { to: "user@example.test", subject: "Halo", html: "<p>Halo <b>dunia</b></p>" },
     testConfig,
   );
-  expect(resolved.from).toEqual({ address: "no-reply@example.test", name: "Bun ERP Template" });
+  expect(resolved.from).toEqual({ address: "no-reply@example.test", name: "Loom Template" });
   expect(resolved.to).toEqual([{ address: "user@example.test", name: "" }]);
   expect(resolved.text).toBe("Halo dunia");
 });
@@ -191,7 +191,7 @@ test("the http driver posts a Resend payload and returns the provider id", async
   expect(headers.get("authorization")).toBe("Bearer re_key");
   expect(headers.get("content-type")).toBe("application/json");
   expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
-    from: "Bun ERP Template <no-reply@example.test>",
+    from: "Loom Template <no-reply@example.test>",
     to: ["a@example.test", "Bee <b@example.test>"],
     cc: ["c@example.test"],
     reply_to: "reply@example.test",

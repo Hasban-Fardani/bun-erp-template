@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 import type * as React from "react";

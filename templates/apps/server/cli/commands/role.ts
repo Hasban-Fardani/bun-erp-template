@@ -22,13 +22,13 @@ export const commands = [
         .from(roleTable)
         .orderBy(roleTable.key);
       if (availableRoles.length === 0) {
-        process.stdout.write("No roles found. Run `bun erp db:seed` first.\n");
+        process.stdout.write("No roles found. Run `bun loom db:seed` first.\n");
         return;
       }
       for (const role of availableRoles) {
         process.stdout.write(`${role.key.padEnd(16)} ${role.name}${role.isSystem ? " (system)" : ""}\n`);
       }
-      process.stdout.write("Use a role key with `bun erp user:create ... --role <key>`.\n");
+      process.stdout.write("Use a role key with `bun loom user:create ... --role <key>`.\n");
     } finally {
       await ctx.close();
     }
@@ -37,7 +37,7 @@ export const commands = [
   defineCommand("role:show", async (args) => {
     const key = resolveRequired(args[0], "Role key");
     if (!key) {
-      process.stderr.write("Usage: bun erp role:show <key>\n");
+      process.stderr.write("Usage: bun loom role:show <key>\n");
       process.exit(1);
     }
     const ctx = await createCliContext({ migrateOnStart: false });
@@ -61,7 +61,7 @@ export const commands = [
     const key = resolveRequired(parsed.positional[0], "Role key");
     if (!key) {
       process.stderr.write(
-        "Usage: bun erp role:create <key> [--name <name>] [--description <text>] [--permissions a,b]\n",
+        "Usage: bun loom role:create <key> [--name <name>] [--description <text>] [--permissions a,b]\n",
       );
       process.exit(1);
     }
@@ -92,7 +92,7 @@ export const commands = [
     const key = resolveRequired(parsed.positional[0], "Role key");
     if (!key) {
       process.stderr.write(
-        "Usage: bun erp role:edit <key> [--name <name>] [--description <text>] [--permissions a,b]\n",
+        "Usage: bun loom role:edit <key> [--name <name>] [--description <text>] [--permissions a,b]\n",
       );
       process.exit(1);
     }
@@ -130,12 +130,12 @@ export const commands = [
     const parsed = parseCommandOptions(args, { flags: ["force"] });
     const key = resolveRequired(parsed.positional[0], "Role key");
     if (!key) {
-      process.stderr.write("Usage: bun erp role:delete <key> --force\n");
+      process.stderr.write("Usage: bun loom role:delete <key> --force\n");
       process.exit(1);
     }
     // slop-ok: the force-delete guard is repeated by each destructive command on purpose.
     if (!parsed.flags.has("force")) {
-      process.stderr.write(`Refusing to delete a role without --force. Run: bun erp role:delete ${key} --force\n`);
+      process.stderr.write(`Refusing to delete a role without --force. Run: bun loom role:delete ${key} --force\n`);
       process.exit(1);
     }
     const ctx = await createCliContext({ migrateOnStart: false });

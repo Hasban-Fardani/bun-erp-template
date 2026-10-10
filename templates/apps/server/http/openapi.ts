@@ -80,7 +80,7 @@ export const SCHEMAS: Record<string, Record<string, unknown>> = {
 };
 
 export const DOCUMENTATION = (env: Env) => ({
-  title: "Bun ERP Template API",
+  title: "Loom Template API",
   version: "1.0.0",
   description: [
     "REST API ERP (Hono). Setiap respons dibungkus `{data, meta.requestId}`.",

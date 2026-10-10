@@ -454,7 +454,7 @@ export const auditSuite: QaSuite = {
   checks: tableScreenChecks("audit", "/api/v1/audit-logs", "role"),
 };
 
-/** Failed sign-in feedback; needs no account, so `bun erp qa --only=login` works against any deployment. */
+/** Failed sign-in feedback; needs no account, so `bun loom qa --only=login` works against any deployment. */
 export const loginSuite: QaSuite = {
   name: "login",
   checks: [

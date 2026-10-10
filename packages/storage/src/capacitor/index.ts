@@ -8,12 +8,12 @@ export type CapacitorSqliteOptions = {
 
 /**
  * Encrypted SQLite for native Capacitor builds. The driver is loaded from `@capacitor-community/sqlite`
- * only when this function runs, so a web bundle that never imports `@bun-erp/storage/capacitor`
+ * only when this function runs, so a web bundle that never imports `@loom/storage/capacitor`
  * stays free of the native plugin.
  */
 export async function createCapacitorSqliteAdapter(options: CapacitorSqliteOptions = {}): Promise<KeyValueAdapter> {
   const { CapacitorSQLite, SQLiteConnection } = await import("@capacitor-community/sqlite");
-  const databaseName = options.databaseName ?? "bun_erp_offline";
+  const databaseName = options.databaseName ?? "loom_offline";
   const databaseVersion = options.databaseVersion ?? 1;
   const table = options.table ?? "records";
   const sqlite = new SQLiteConnection(CapacitorSQLite);

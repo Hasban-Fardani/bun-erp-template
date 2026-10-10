@@ -1,14 +1,14 @@
-import { LocaleSwitcher, useI18n } from "@bun-erp/i18n/react";
+import { LocaleSwitcher, useI18n } from "@loom/i18n/react";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@bun-erp/ui/molecules/breadcrumb.tsx";
-import { Tooltip } from "@bun-erp/ui/molecules/tooltip.tsx";
-import * as UserMenu from "@bun-erp/ui/organisms/dropdown-menu.tsx";
-import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
+} from "@loom/ui/molecules/breadcrumb.tsx";
+import { Tooltip } from "@loom/ui/molecules/tooltip.tsx";
+import * as UserMenu from "@loom/ui/organisms/dropdown-menu.tsx";
+import { Sheet } from "@loom/ui/organisms/sheet.tsx";
 import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { Menu, PanelLeftClose, PanelLeftOpen, Users as UsersIcon } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";

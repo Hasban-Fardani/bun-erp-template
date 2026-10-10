@@ -5,11 +5,11 @@
 Mobile is not part of the default workspace, which is `apps/server` + `apps/web`; the
 React + Capacitor app waits in `templates/apps/mobile/` and is installed on demand:
 
-    bun erp apps:create mobile mobile
+    bun loom apps:create mobile mobile
     bun install
 
 The commands below assume the created app is `apps/mobile`. With another name, replace `apps/mobile`
-with `apps/<name>`. `bun erp mobile:*` prints this instruction when `apps/mobile` is absent, and
+with `apps/<name>`. `bun loom mobile:*` prints this instruction when `apps/mobile` is absent, and
 every gate and CI job skips the mobile contract instead of failing.
 
 ## Status
@@ -50,11 +50,11 @@ does not prove device-level key handling or a successful release build.
 
 ## Develop and build
 
-Run bun erp mobile:dev for the separate mobile app on port 5174. Set VITE_API_BASE_URL to an HTTPS
-API origin with no path, then run bun erp mobile:build. Output is apps/mobile/www. Ordinary
-bun erp build creates only apps/web/dist.
+Run bun loom mobile:dev for the separate mobile app on port 5174. Set VITE_API_BASE_URL to an HTTPS
+API origin with no path, then run bun loom mobile:build. Output is apps/mobile/www. Ordinary
+bun loom build creates only apps/web/dist.
 
-`bun erp mobile:package <android|ios>` builds the native package and defaults to
+`bun loom mobile:package <android|ios>` builds the native package and defaults to
 `--mode production`, which is the signed release path used by the store workflows. Pass
 `--mode debug` for an unsigned development build: Android writes
 `apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk` and iOS writes a simulator app under
@@ -72,11 +72,11 @@ This app contains no production identity, signing key or store secret.
 Use createMobileLogger(area) from apps/mobile/src/lib/logger.ts. It writes structured events,
 redacts credentials and personal fields, and disables debug events in release builds. Keep
 Capacitor core, platform packages and CLI on the same exact version. Workspace release versions
-are checked by bun erp check:versioning.
+are checked by bun loom check:versioning.
 
 ## Motion
 
-Use `useSoftAutoAnimate` from `@bun-erp/ui/lib/use-auto-animate.ts` for short lists whose rows are
+Use `useSoftAutoAnimate` from `@loom/ui/lib/use-auto-animate.ts` for short lists whose rows are
 added, removed or reordered. It uses the same reduced-motion-aware preset as web. Stable keys are
 required; keep the native screen responsive and avoid animating whole page transitions.
 
@@ -88,5 +88,5 @@ on a simulator with `xcrun simctl install booted App.app`.
 .github/workflows/mobile-release.yml uploads signed Android builds to Google Play internal testing
 and iOS builds to TestFlight when the copied project supplies signing/store credentials. It does not
 promote a public production release. Both mobile workflows skip cleanly while `apps/mobile` is
-absent; `bun erp apps:create <name> mobile` installs the app and enables them. Native CI artifacts
+absent; `bun loom apps:create <name> mobile` installs the app and enables them. Native CI artifacts
 are not proof of device QA or store approval.

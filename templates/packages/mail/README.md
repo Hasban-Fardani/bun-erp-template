@@ -1,20 +1,20 @@
-# `@bun-erp/mail`
+# `@loom/mail`
 
 Server-only mail transport for the Bun ERP workspace. The package is app-agnostic: `createMailer`
 receives its configuration, logger and queue writer, so it never imports an app module. The default
 server ships no mail; install this package through its catalog feature:
 
 ```
-bun erp features:install mail
+bun loom features:install mail
 ```
 
-That single command copies `packages/mail`, declares the `@bun-erp/mail` workspace dependency on
+That single command copies `packages/mail`, declares the `@loom/mail` workspace dependency on
 `apps/server`, copies the app-side wiring (`apps/server/features/mail/`), and wires `ctx.mail`, the
-`mail.send` job and the notifications `mail` channel. `bun erp packages:install mail` alone only
+`mail.send` job and the notifications `mail` channel. `bun loom packages:install mail` alone only
 copies the package; use the feature install to land a working setup.
 
 ```ts
-import { createMailer } from "@bun-erp/mail/server";
+import { createMailer } from "@loom/mail/server";
 
 const mail = createMailer({ config: env, logger, enqueue: writeMailJob });
 await mail.send({ to: "user@example.test", subject: "Halo", html: "<p>Halo</p>" });
@@ -27,9 +27,9 @@ and a plain-text body is derived from the HTML otherwise. `queue` stores the ren
 
 ## Exports
 
-- `@bun-erp/mail/server`: `createMailer`, `createMailRegistry`, `MailDriverRegistry`, `resolveMail`,
+- `@loom/mail/server`: `createMailer`, `createMailRegistry`, `MailDriverRegistry`, `resolveMail`,
   `htmlToText`, `escapeHtml`, and the `Mailer`/`MailMessage`/`MailConfig` types.
-- `@bun-erp/mail/llms.txt`: concise model-oriented package map.
+- `@loom/mail/llms.txt`: concise model-oriented package map.
 
 ## Drivers
 

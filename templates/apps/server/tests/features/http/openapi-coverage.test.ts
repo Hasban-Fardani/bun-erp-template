@@ -115,7 +115,7 @@ test("Scalar reference remains at /api/docs and points to the OpenAPI document",
   expect(response.headers.get("content-type")).toContain("text/html");
 
   const html = await response.text();
-  expect(html).toContain("Bun ERP Template API");
+  expect(html).toContain("Loom Template API");
   expect(html).toContain("/api/openapi.json");
 });
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, buttonVariants } from "@bun-erp/ui/atoms/button-primitives";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { Button, buttonVariants } from "@loom/ui/atoms/button-primitives";
+import { cn } from "@loom/ui/lib/cn.ts";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
 import { type DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";

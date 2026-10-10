@@ -1,4 +1,4 @@
-import { LocaleSwitcher } from "@bun-erp/i18n/react";
+import { LocaleSwitcher } from "@loom/i18n/react";
 import { OfflineBanner } from "../features/offline/components/offline-banner.tsx";
 import { OfflineDrafts } from "../features/offline/components/offline-drafts.tsx";
 

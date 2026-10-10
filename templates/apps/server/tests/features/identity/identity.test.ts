@@ -21,7 +21,7 @@ const json = (body: unknown, method = "POST"): RequestInit => ({
 });
 
 /**
- * Creates a user through the same service `bun erp user:create` uses. Public self sign-up is
+ * Creates a user through the same service `bun loom user:create` uses. Public self sign-up is
  * disabled by default; the Better Auth sign-up path itself is covered in auth-hardening.test.ts.
  */
 async function signUp(email: string, password = "sandi-yang-panjang") {

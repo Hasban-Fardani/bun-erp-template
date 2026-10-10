@@ -1,4 +1,4 @@
-import type { AppType } from "@bun-erp/server/app-type";
+import type { AppType } from "@loom/server/app-type";
 import { hc, type InferResponseType } from "hono/client";
 
 const client = hc<AppType>("http://localhost:3000");

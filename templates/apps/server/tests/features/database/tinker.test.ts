@@ -57,7 +57,7 @@ function childEnv(extra: Record<string, string>): Record<string, string> {
 
 async function runTinker(args: string[], extra: Record<string, string> = {}) {
   await createTestContext();
-  const proc = Bun.spawn(["bun", "erp", "tinker", ...args], {
+  const proc = Bun.spawn(["bun", "loom", "tinker", ...args], {
     cwd: `${import.meta.dir}/../../../../..`,
     env: childEnv(extra),
     stdout: "pipe",
@@ -71,13 +71,13 @@ async function runTinker(args: string[], extra: Record<string, string> = {}) {
   return { stdout, stderr, code };
 }
 
-test("bun erp tinker --eval prints the result and exits 0", async () => {
+test("bun loom tinker --eval prints the result and exits 0", async () => {
   const result = await runTinker(["--eval", "env.APP_ENV"]);
   expect(result.code).toBe(0);
   expect(result.stdout).toContain('"test"');
 });
 
-test("bun erp tinker refuses NODE_ENV=production without --force", async () => {
+test("bun loom tinker refuses NODE_ENV=production without --force", async () => {
   const result = await runTinker(["--eval", "1"], { NODE_ENV: "production" });
   expect(result.code).not.toBe(0);
   expect(result.stderr).toContain("--force");

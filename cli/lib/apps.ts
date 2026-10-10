@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { repoRoot } from "./repo.ts";
 import { listWorkspaceApps, type WorkspaceApp } from "./workspace-apps.ts";
 
-/** `apps/` ships empty: every command that touches an app checks first and points at `bun erp init`. */
+/** `apps/` ships empty: every command that touches an app checks first and points at `bun loom init`. */
 export async function isAppInstalled(name: string): Promise<boolean> {
   return Bun.file(resolve(repoRoot, "apps", name, "package.json")).exists();
 }
@@ -14,7 +14,7 @@ export async function requireApps(names: readonly string[]): Promise<void> {
   }
   if (missing.length === 0) return;
   throw new Error(
-    `${missing.join(", ")} not installed. Run \`bun erp init\` (or \`bun erp apps:create <name> <server|web|mobile>\`) first.`,
+    `${missing.join(", ")} not installed. Run \`bun loom init\` (or \`bun loom apps:create <name> <server|web|mobile>\`) first.`,
   );
 }
 
@@ -40,7 +40,7 @@ function printAppTable(apps: WorkspaceApp[]): void {
 export async function showApps(): Promise<void> {
   const apps = await listWorkspaceApps(repoRoot);
   if (apps.length === 0) {
-    process.stdout.write("No workspace apps found. Create one with bun erp apps:create <name>.\n");
+    process.stdout.write("No workspace apps found. Create one with bun loom apps:create <name>.\n");
     return;
   }
   printAppTable(apps);

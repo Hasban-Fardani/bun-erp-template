@@ -31,7 +31,7 @@ export async function checkReadiness(root: string): Promise<ReadinessFinding[]> 
 async function checkScripts(root: string): Promise<Check> {
   const pkg = (await Bun.file(`${root}/package.json`).json()) as { scripts?: Record<string, string> };
   const scripts = pkg.scripts ?? {};
-  const required = ["erp", "build", "check:prod", "lint", "check:biome", "format", "format:check", "prepare"];
+  const required = ["loom", "build", "check:prod", "lint", "check:biome", "format", "format:check", "prepare"];
   const missing = required.filter((name) => !(name in scripts));
   const missingWorkspaceScripts: string[] = [];
   for (const directory of ["apps/web", "apps/server", "apps/mobile"]) {

@@ -1,4 +1,4 @@
-# @bun-erp/data-table
+# @loom/data-table
 
 Composable React table primitives for the Bun ERP workspace, built on TanStack Table v9.2.4.
 
@@ -9,13 +9,13 @@ Composable React table primitives for the Bun ERP workspace, built on TanStack T
 
 ## Public exports
 
-- `@bun-erp/data-table`: `DataTable`, `useLocalDataTable`, `Column<T>()`, `createColumnHelper<T>()`, `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `Filter`, `Pagination`.
-- `@bun-erp/data-table/local`: local `DataTable`, hook, and column helper only.
-- `@bun-erp/data-table/primitives`: semantic table/filter/pagination UI without the TanStack adapter import.
-- `@bun-erp/data-table/server`: `useServerDataTable`, `ServerDataTableOptions<T>`, `ServerTableState`, `ServerColumn<T>`, `createServerColumnHelper<T>()`.
-- `@bun-erp/data-table/resource-table`: app-facing `ResourceTable` server-paged list frame (search, sorting, pagination, list states) that composes `@bun-erp/ui`.
-- `@bun-erp/data-table/server-table`: app-facing server `DataTable`, `Column<T>`, `DataTableLabels`, and `Pagination` for screens that own the toolbar; composes `@bun-erp/ui`.
-- `@bun-erp/data-table/styles.css`: optional neutral styles.
+- `@loom/data-table`: `DataTable`, `useLocalDataTable`, `Column<T>()`, `createColumnHelper<T>()`, `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `Filter`, `Pagination`.
+- `@loom/data-table/local`: local `DataTable`, hook, and column helper only.
+- `@loom/data-table/primitives`: semantic table/filter/pagination UI without the TanStack adapter import.
+- `@loom/data-table/server`: `useServerDataTable`, `ServerDataTableOptions<T>`, `ServerTableState`, `ServerColumn<T>`, `createServerColumnHelper<T>()`.
+- `@loom/data-table/resource-table`: app-facing `ResourceTable` server-paged list frame (search, sorting, pagination, list states) that composes `@loom/ui`.
+- `@loom/data-table/server-table`: app-facing server `DataTable`, `Column<T>`, `DataTableLabels`, and `Pagination` for screens that own the toolbar; composes `@loom/ui`.
+- `@loom/data-table/styles.css`: optional neutral styles.
 
 ## Data modes
 

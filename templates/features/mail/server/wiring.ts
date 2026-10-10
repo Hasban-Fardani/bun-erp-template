@@ -1,4 +1,4 @@
-import { createMailer, type MailEnqueue, type Mailer } from "@bun-erp/mail/server";
+import { createMailer, type MailEnqueue, type Mailer } from "@loom/mail/server";
 import * as z from "zod";
 import type { Env } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";

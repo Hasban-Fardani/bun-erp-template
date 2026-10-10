@@ -7,7 +7,7 @@ import { runDev } from "../../cli/tasks/dev.ts";
  * The API fixture prints the same structured event `bootstrap/server.ts` emits, then keeps
  * running the way `bun --watch` does after a boot crash. Readiness must never become true.
  */
-const CRASHING_API_ENTRY = `process.stderr.write('{"event":"boot.failed","error":"migration ledger mismatch","pgCode":"42P10","hint":"database schema is out of date with the catalog; run \`bun erp db:status\`"}\\n');\nawait new Promise(() => {});\n`;
+const CRASHING_API_ENTRY = `process.stderr.write('{"event":"boot.failed","error":"migration ledger mismatch","pgCode":"42P10","hint":"database schema is out of date with the catalog; run \`bun loom db:status\`"}\\n');\nawait new Promise(() => {});\n`;
 
 test("an API that fails at boot stops the stack before Vite is spawned", async () => {
   const root = `${repoRoot}/.data/dev-orchestration-${crypto.randomUUID()}`;

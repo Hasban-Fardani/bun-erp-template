@@ -1,13 +1,13 @@
 {
-  "name": "@bun-erp/mobile",
+  "name": "@loom/mobile",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@bun-erp/ui": "workspace:*",
-    "@bun-erp/utils": "workspace:*",
-    "@bun-erp/storage": "workspace:*",
-    "@bun-erp/i18n": "workspace:*",
+    "@loom/ui": "workspace:*",
+    "@loom/utils": "workspace:*",
+    "@loom/storage": "workspace:*",
+    "@loom/i18n": "workspace:*",
     "@capacitor-community/sqlite": "8.1.1",
     "@capacitor/android": "8.5.2",
     "@capacitor/core": "8.5.2",
@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.2",
-    "@bun-erp/server": "workspace:*",
+    "@loom/server": "workspace:*",
     "@vitejs/plugin-react": "6.1.1",
     "@tailwindcss/vite": "4.3.3",
     "tailwindcss": "4.3.3",

@@ -1,6 +1,6 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Skeleton } from "@bun-erp/ui/atoms/skeleton.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Skeleton } from "@loom/ui/atoms/skeleton.tsx";
 import { ArrowDown, RotateCcw } from "lucide-react";
 import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { AssistantChat, ChatFailure } from "../hooks/index.ts";

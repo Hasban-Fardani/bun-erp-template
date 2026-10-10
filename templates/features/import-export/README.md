@@ -4,14 +4,14 @@ Opt-in feature: a column-mapped import pipeline with a dry-run report, batch pro
 plus server-driven CSV/XLSX export through the same list contract the resource's screen uses.
 
 ```
-bun erp features:install import-export
+bun loom features:install import-export
 ```
 
 The installer copies the server module and the web screen, wires the `import-export` permission
 resource, the audit entity, the `/api/v1/import-export` route mount, the sidebar entry, the
 `en-US`/`id-ID` keys and the design spec. It installs the `spreadsheet` and `data-table` catalog
 packages and declares them on `apps/web`: the browser parses the uploaded file and writes the
-exported file through `@bun-erp/spreadsheet`, so the server never handles raw file bytes and the
+exported file through `@loom/spreadsheet`, so the server never handles raw file bytes and the
 format engines stay in the web bundle behind that one package boundary.
 
 ## What you must add after install
@@ -65,6 +65,6 @@ Permissions: `import-export.read` (list/progress/export), `import-export.create`
 
 ## Limits
 
-- CSV and XLSX only; parsing happens in the browser through `@bun-erp/spreadsheet`.
+- CSV and XLSX only; parsing happens in the browser through `@loom/spreadsheet`.
 - At most 50,000 rows per import; the dry-run report keeps the first 200 errors.
 - Item handlers run at-least-once; `importRow` must be idempotent.

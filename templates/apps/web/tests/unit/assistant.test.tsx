@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { I18nProvider } from "@bun-erp/i18n/react";
+import { I18nProvider } from "@loom/i18n/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AssistantTranscript } from "../../src/features/assistant/components/assistant-transcript.tsx";
 import { readChatEvents } from "../../src/features/assistant/lib/chat-stream.ts";

@@ -1,1 +1,1 @@
-export { cn } from "@bun-erp/ui/lib/cn.ts";
+export { cn } from "@loom/ui/lib/cn.ts";

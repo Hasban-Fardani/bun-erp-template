@@ -1,11 +1,11 @@
-# @bun-erp/charts
+# @loom/charts
 
 > Small, browser-only React chart components. Import a family subpath only where its screen is needed; never import this package from the server or Cloudflare Worker entry.
 
 ## Quick use
 
 ```tsx
-import { AreaChart } from "@bun-erp/charts/area";
+import { AreaChart } from "@loom/charts/area";
 
 const rows = [
   { period: "Jan", actual: 18, target: 20 },
@@ -26,16 +26,16 @@ const rows = [
 
 ## Entry points
 
-- `@bun-erp/charts/area` — `AreaChart`; patterns: default, linear, step, legend, stacked, stacked-expand, icons, gradient, axes, interactive.
-- `@bun-erp/charts/bar` — `BarChart`; patterns: default, horizontal, multiple, stacked, label, label-custom, mixed, active, negative, interactive.
-- `@bun-erp/charts/line` — `LineChart`; patterns: default, linear, step, multiple, dots, dots-custom, dots-colors, label, label-custom, interactive.
-- `@bun-erp/charts/pie` — `PieChart`; patterns: simple, separator-none, label, label-custom, label-list, legend, donut, donut-active, donut-text, stacked, interactive.
-- `@bun-erp/charts/radar` — `RadarChart`; patterns: default, dots, lines-only, label-custom, grid-custom, grid-none, grid-circle, grid-circle-no-lines, grid-circle-fill, grid-fill, multiple, legend.
-- `@bun-erp/charts/radial` — `RadialChart`; patterns: simple, label, grid, text, shape, stacked.
-- `@bun-erp/charts/atoms/chart-frame` — accessible responsive chart boundary and palette.
-- `@bun-erp/charts/sparkline` — `Sparkline`; area/line micro-charts with a lazy Recharts renderer and dimension-preserving accessible skeleton.
-- `@bun-erp/charts/metric-list` — `MetricList`; compact label, sparkline, value, and delta rows.
-- `@bun-erp/charts/primitives` — selected Recharts primitives for custom compositions.
+- `@loom/charts/area` — `AreaChart`; patterns: default, linear, step, legend, stacked, stacked-expand, icons, gradient, axes, interactive.
+- `@loom/charts/bar` — `BarChart`; patterns: default, horizontal, multiple, stacked, label, label-custom, mixed, active, negative, interactive.
+- `@loom/charts/line` — `LineChart`; patterns: default, linear, step, multiple, dots, dots-custom, dots-colors, label, label-custom, interactive.
+- `@loom/charts/pie` — `PieChart`; patterns: simple, separator-none, label, label-custom, label-list, legend, donut, donut-active, donut-text, stacked, interactive.
+- `@loom/charts/radar` — `RadarChart`; patterns: default, dots, lines-only, label-custom, grid-custom, grid-none, grid-circle, grid-circle-no-lines, grid-circle-fill, grid-fill, multiple, legend.
+- `@loom/charts/radial` — `RadialChart`; patterns: simple, label, grid, text, shape, stacked.
+- `@loom/charts/atoms/chart-frame` — accessible responsive chart boundary and palette.
+- `@loom/charts/sparkline` — `Sparkline`; area/line micro-charts with a lazy Recharts renderer and dimension-preserving accessible skeleton.
+- `@loom/charts/metric-list` — `MetricList`; compact label, sparkline, value, and delta rows.
+- `@loom/charts/primitives` — selected Recharts primitives for custom compositions.
 
 All chart data, axis keys, labels, formatting, and selection callbacks are supplied by the consuming feature. These components do not include demo business data or fetch from an API.
 

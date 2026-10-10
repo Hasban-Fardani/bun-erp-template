@@ -1,10 +1,10 @@
 # Testing
 
-bun erp check launches Biome, TypeScript and read-only gates concurrently. All results are collected,
+bun loom check launches Biome, TypeScript and read-only gates concurrently. All results are collected,
 including failures; checks do not build or rewrite files.
 
-bun erp test runs the server, web and shared package suites in sequence, plus the mobile suite when
-the catalog app is installed. `bun erp test --filter <feature>` runs only that feature's server tests
+bun loom test runs the server, web and shared package suites in sequence, plus the mobile suite when
+the catalog app is installed. `bun loom test --filter <feature>` runs only that feature's server tests
 under `apps/server/tests/features/<feature>`. Server tests use `hono/testing` `testClient(app)` without a listening
 port and run in one worker with a 30-second test timeout (the same budget as `bunfig.toml`; set
 `TEST_TIMEOUT_MS` to change it for one run): their shared database fixture is truncated
@@ -14,7 +14,7 @@ timeout covers real migration, seed and auth setup; timeout errors still fail th
 `TEST_DATABASE_URL` is required and must point to a disposable PostgreSQL server with CREATEDB
 permission; the runner creates and drops a uniquely named `erp_test_*` database. Never use
 `DATABASE_URL` or production credentials as a test target.
-`bun erp check` remains parallel because its checks are read-only and independent.
+`bun loom check` remains parallel because its checks are read-only and independent.
 
 `tests/support/fixtures.ts` owns the typed client: `createHttpFixture()` exposes `client` (the
 session cookie is applied through the client's request options, so every call after sign-in is
@@ -32,7 +32,7 @@ isolation and deletion through a fake adapter; they do not replace native SQLCip
 Web tests cover routes, form feedback and RPC behavior; the opt-in data-table package carries its
 own table state tests and runs them once installed. TypeScript checks the generated TanStack route
 tree. The web build verifies that file routes split into lazy chunks.
-Browser QA is `bun erp qa [--only=<suite,...>] [--list] [--dry-run]` (listed once the web app is
+Browser QA is `bun loom qa [--only=<suite,...>] [--list] [--dry-run]` (listed once the web app is
 installed; runner `apps/web/tests/browser/qa.ts`, suites in `suites.ts`). It needs a running API, built
 web preview and local test credentials. Artifacts live in ignored .data/qa.
 
@@ -72,8 +72,8 @@ const rows = await invoicesFactory.createMany(api.ctx.db, 3);
 const owned = await notificationsFactory.create(api.ctx.db, { userId: me.userId });
 ```
 
-`bun erp make:feature` writes a factory for the new table and its generated test uses it;
-`bun erp make:factory <feature>` adds one for an existing schema, filling every notNull column that
+`bun loom make:feature` writes a factory for the new table and its generated test uses it;
+`bun loom make:factory <feature>` adds one for an existing schema, filling every notNull column that
 has no database default. A factory takes a `Database` or a transaction, so it also works inside
 `db.transaction`.
 
@@ -87,7 +87,7 @@ the test slower, never wrong.
 skeleton, `make:job` an idempotency test, `make:listener` a dispatch/rollback test, `make:notification` and `make:mail` a delivery test.
 
 **CLI performance.** `ERP_PERF=1 bun test apps/server/tests/unit/cli-perf.test.ts` measures
-`bun erp --help` and `bun erp check:fast` on an idle machine and fails when either exceeds its
+`bun loom --help` and `bun loom check:fast` on an idle machine and fails when either exceeds its
 budget. Budgets are three times the recorded baseline (see the test header for the numbers and the
 date); the test is skipped in the normal suite because wall-clock budgets are meaningless on a busy
 machine.

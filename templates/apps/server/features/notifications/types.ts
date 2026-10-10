@@ -1,6 +1,6 @@
 import type { AppContext } from "../../bootstrap/context.ts";
 
-// @erp:mail
+// @loom:mail
 export const NOTIFICATION_CHANNELS = ["database"] as const;
 export type NotificationChannelName = (typeof NOTIFICATION_CHANNELS)[number];
 

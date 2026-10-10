@@ -167,10 +167,13 @@ test("make:job writes a handler, an idempotency test and registers it in feature
 
 test("make:job refuses before writing when the registry marker is missing", async () => {
   const files = await baseRoot();
-  files["apps/server/features/jobs.ts"] = (files["apps/server/features/jobs.ts"] ?? "").replace("  // @erp:jobs\n", "");
+  files["apps/server/features/jobs.ts"] = (files["apps/server/features/jobs.ts"] ?? "").replace(
+    "  // @loom:jobs\n",
+    "",
+  );
   await withTempRoot(files, async (root) => {
     const before = await snapshot(root);
-    await expect(planMakeJob(root, "send-invoice")).rejects.toThrow(/@erp:jobs/);
+    await expect(planMakeJob(root, "send-invoice")).rejects.toThrow(/@loom:jobs/);
     expect(await snapshot(root)).toEqual(before);
   });
 });
@@ -328,14 +331,14 @@ test("make:listener refuses an unknown event and a missing registry marker befor
   });
   const files = await baseRoot();
   files["apps/server/features/events.ts"] = (files["apps/server/features/events.ts"] ?? "").replace(
-    "// @erp:listeners",
+    "// @loom:listeners",
     "",
   );
   files["apps/server/features/invoices/events/invoice-paid.ts"] = "export const invoicePaidEvent = {};";
   await withTempRoot(files, async (root) => {
     const before = await snapshot(root);
     await expect(planMakeListener(root, "invoices", "email-customer", { event: "invoice-paid" })).rejects.toThrow(
-      /@erp:listeners/,
+      /@loom:listeners/,
     );
     expect(await snapshot(root)).toEqual(before);
   });

@@ -24,11 +24,11 @@ export const commands = [
     const parsed = parseCommandOptions(args, {});
     const name = resolveRequired(parsed.positional[0], "App name");
     if (!name) {
-      process.stderr.write("Usage: bun erp apps:status <name>\n");
+      process.stderr.write("Usage: bun loom apps:status <name>\n");
       process.exit(1);
     }
     const app = await readWorkspaceApp(repoRoot, name);
-    if (!app) throw new Error(`Unknown app "${name}". Run bun erp apps to list workspace apps.`);
+    if (!app) throw new Error(`Unknown app "${name}". Run bun loom apps to list workspace apps.`);
     process.stdout.write(`app:        ${app.name}\n`);
     process.stdout.write(`path:       ${app.dir}\n`);
     process.stdout.write(`package:    ${app.packageName}\n`);
@@ -59,7 +59,7 @@ export const commands = [
     const rawName = resolveRequired(args[0], "App name");
     const kind = resolveRequired(args[1], "App type (server|web|mobile)");
     if (!rawName || !kind) {
-      process.stderr.write("Usage: bun erp apps:create <name> <server|web|mobile>\n");
+      process.stderr.write("Usage: bun loom apps:create <name> <server|web|mobile>\n");
       process.exit(1);
     }
     if (!APP_TYPES.includes(kind)) {
@@ -88,7 +88,7 @@ export const commands = [
           : `Add "${dir}" to the workspaces array in package.json\n`,
       );
     } else {
-      // web/mobile copy their catalog through the same helper `bun erp init` uses.
+      // web/mobile copy their catalog through the same helper `bun loom init` uses.
       await installCatalogApp(repoRoot, {
         name,
         kind: kind as "web" | "mobile",

@@ -2,20 +2,20 @@ import { ensureDirectory, withTempRoot } from "./temp-root.ts";
 
 /**
  * Minimal but marker-complete copies of the six core files `make:feature` wires. The catalog
- * files carry explicit `// @erp:` markers at the insertion points; a missing marker here means
+ * files carry explicit `// @loom:` markers at the insertion points; a missing marker here means
  * the generator must refuse before it writes anything.
  */
 export const CORE_FILES: Record<string, string> = {
   "apps/server/features/rbac/statements.ts": [
     "export const statements = {",
-    "  // @erp:permissions",
+    "  // @loom:permissions",
     '  audit: ["read"],',
     "} as const;",
   ].join("\n"),
   "apps/server/features/audit/redact.ts": [
     "export const AUDIT_FIELDS = {",
     '  role: ["id", "key"],',
-    "  // @erp:audit",
+    "  // @loom:audit",
     "} as const satisfies Record<string, readonly string[]>;",
   ].join("\n"),
   "apps/server/routes/api.ts": [
@@ -23,7 +23,7 @@ export const CORE_FILES: Record<string, string> = {
     "",
     "const FEATURES = [",
     "  auditFeature,",
-    "  // @erp:routes",
+    "  // @loom:routes",
     "] as const satisfies readonly FeatureDefinition[];",
     "",
     'export const API_PREFIX = "/api/v1";',
@@ -35,7 +35,7 @@ export const CORE_FILES: Record<string, string> = {
     "export const navGroups = [",
     "  {",
     "    items: [",
-    "      // @erp:nav",
+    "      // @loom:nav",
     '      { titleKey: "navigation.users", url: "/users", icon: Users, permission: "user.read" },',
     "    ],",
     "  },",

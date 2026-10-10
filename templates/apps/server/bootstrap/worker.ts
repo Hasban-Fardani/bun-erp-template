@@ -1,4 +1,4 @@
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import { createJobRegistry, createSchedules } from "../features/jobs.ts";
 import { buildApp } from "../http/build-app.ts";
 import { isApiPath } from "../http/routing.ts";

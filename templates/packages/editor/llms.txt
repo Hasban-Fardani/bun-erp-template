@@ -1,4 +1,4 @@
-# @bun-erp/editor
+# @loom/editor
 
 > Shared, accessible rich-text editing components for React apps. Persist editor values as Lexical JSON.
 

@@ -7,7 +7,7 @@ const GOOD = [
   "- red: T1 `bun test a.test.ts` — 1 fail: expected 2, received 1",
   "- green: T1 `bun test a.test.ts` — 1 pass",
   "- red: T2 n/a — docs only, nothing executable",
-  "- green: T2 `bun erp check:docs` — Docs OK",
+  "- green: T2 `bun loom check:docs` — Docs OK",
 ].join("\n");
 
 const items = (...ids: string[]) => ids.map((id) => `- [x] **${id}** work`).join("\n");

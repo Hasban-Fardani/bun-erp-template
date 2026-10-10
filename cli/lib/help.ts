@@ -91,7 +91,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
     title: "Apps",
     commands: [
       ["apps", "List workspace apps with build, port, and test status"],
-      ["apps:list", "List workspace apps (same as bun erp apps)"],
+      ["apps:list", "List workspace apps (same as bun loom apps)"],
       ["apps:status <name>", "Show build, port, script, and environment info for one app"],
       [
         "apps:create <name> <server|web|mobile>",

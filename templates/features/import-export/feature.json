@@ -1,5 +1,5 @@
 {
-  "$comment": "Feature catalog manifest. Read by `bun erp features:install`; paths are relative to this directory.",
+  "$comment": "Feature catalog manifest. Read by `bun loom features:install`; paths are relative to this directory.",
   "name": "import-export",
   "kind": "server",
   "requires": ["spreadsheet", "data-table"],

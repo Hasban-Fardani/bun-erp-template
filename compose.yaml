@@ -17,7 +17,7 @@ services:
       LOG_RETENTION_DAYS: "14"
       LOG_MAX_SIZE_MB: "100"
       TRUST_PROXY: "false"
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Copy .env.docker.example to .env.docker and set BETTER_AUTH_SECRET (bun erp env:key:generate)}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Copy .env.docker.example to .env.docker and set BETTER_AUTH_SECRET (bun loom env:key:generate)}
       DATABASE_DRIVER: postgres
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
       DATABASE_POOL_MAX: "10"
@@ -26,7 +26,7 @@ services:
       STORAGE_LOCAL_ROOT: /app/.data/storage
       MAIL_DRIVER: log
       MAIL_FROM_ADDRESS: no-reply@example.test
-      MAIL_FROM_NAME: Bun ERP Template
+      MAIL_FROM_NAME: Loom Template
       SMTP_PORT: "587"
       SMTP_SECURE: "false"
       FEATURE_ADVANCED_REPORTS: "false"
@@ -54,8 +54,8 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-bun_erp}
-      POSTGRES_USER: ${POSTGRES_USER:-bun_erp}
+      POSTGRES_DB: ${POSTGRES_DB:-loom}
+      POSTGRES_USER: ${POSTGRES_USER:-loom}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.docker.example to .env.docker and set POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data

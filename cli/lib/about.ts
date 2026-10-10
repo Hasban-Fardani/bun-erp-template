@@ -8,7 +8,7 @@ import { installedPackageNames } from "./package-catalog.ts";
 import { collectRoutes } from "./route-table.ts";
 
 /**
- * Project introspection behind `bun erp about` and the MCP `app-info` tool. Every field is read
+ * Project introspection behind `bun loom about` and the MCP `app-info` tool. Every field is read
  * from the working tree, the installed catalog or a bounded local probe; nothing is written and no
  * app server is started.
  */
@@ -94,7 +94,7 @@ async function probeDatabase(url: string | undefined): Promise<AboutReport["data
 async function codegraphState(root: string): Promise<AboutReport["codegraph"]> {
   const indexPath = resolve(root, ".codegraph/codegraph.db");
   if (!(await Bun.file(indexPath).exists())) {
-    return { indexed: false, files: 0, detail: "missing .codegraph/codegraph.db; run bun erp init" };
+    return { indexed: false, files: 0, detail: "missing .codegraph/codegraph.db; run bun loom init" };
   }
   try {
     const database = new Database(indexPath);
@@ -147,7 +147,7 @@ export function formatAbout(report: AboutReport): string {
   const list = (values: readonly string[]) => (values.length > 0 ? values.join(", ") : "none");
   const apps = report.apps.map((app) => `${app.name} (${app.packageName} ${app.version})`);
   const lines = [
-    "bun-erp project overview",
+    "loom project overview",
     "",
     `  Runtime      Bun ${report.bun.version} (pinned ${report.bun.pinned}) · TypeScript ${report.typescriptVersion}`,
     `  Apps         ${list(apps)}`,

@@ -16,7 +16,7 @@ test("the generated block lists installed apps, packages and features with guide
   expect(block.startsWith(GUIDELINES_START)).toBe(true);
   expect(block.endsWith(GUIDELINES_END)).toBe(true);
   expect(block).toContain("`server`");
-  expect(block).toContain("@bun-erp/server");
+  expect(block).toContain("@loom/server");
   expect(block).toContain("packages/ui/llms.txt");
   // The catalog guide appears only while no feature is installed; an installed feature lists its
   // own README instead, so either form is a correct block.

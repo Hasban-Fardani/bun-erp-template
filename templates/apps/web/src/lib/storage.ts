@@ -1,9 +1,4 @@
-import {
-  createKeyValueStore,
-  getDefaultKeyValueStore,
-  type KeyValueAdapter,
-  type KeyValueStore,
-} from "@bun-erp/storage";
+import { createKeyValueStore, getDefaultKeyValueStore, type KeyValueAdapter, type KeyValueStore } from "@loom/storage";
 
 let store: Promise<KeyValueStore> | undefined;
 

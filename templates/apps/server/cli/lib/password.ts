@@ -1,5 +1,5 @@
 /**
- * One-time password for `bun erp user:passwd` when no value is supplied.
+ * One-time password for `bun loom user:passwd` when no value is supplied.
  * 16 bytes from the platform CSPRNG → 22 base64url characters (~128 bits of entropy).
  * `Math.random()` is never acceptable for a credential.
  */

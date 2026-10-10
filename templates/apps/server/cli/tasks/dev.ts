@@ -312,7 +312,7 @@ function printEndpoints(hasWeb: boolean, development: DevelopmentEnvironment): v
     );
   } else {
     process.stdout.write(
-      "apps/web is not installed; serving the API only. Run `bun erp init --apps server,web --yes` to add it.\n",
+      "apps/web is not installed; serving the API only. Run `bun loom init --apps server,web --yes` to add it.\n",
     );
   }
   process.stdout.write(`Internal API listener: http://localhost:${development.apiPort}\n`);

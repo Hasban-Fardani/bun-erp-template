@@ -1,6 +1,6 @@
-import { copyObjects, createObjectStorage } from "@bun-erp/storage/server";
 import { parseCommandOptions } from "@cli/lib/options.ts";
 import { defineCommand } from "@cli/registry.ts";
+import { copyObjects, createObjectStorage } from "@loom/storage/server";
 import { storageConfigFromEnv } from "../../infra/storage.ts";
 
 /** `current` names the live STORAGE_* keys; any other value is a variable prefix such as `SOURCE_`. */
@@ -25,9 +25,9 @@ export const commands = [
     const to = options.values.get("to");
     if (from === undefined || to === undefined) {
       process.stderr.write(
-        "Usage: bun erp storage:copy --from <env-prefix|current> --to <env-prefix|current> [--key-prefix <path/>] [--dry-run]\n" +
+        "Usage: bun loom storage:copy --from <env-prefix|current> --to <env-prefix|current> [--key-prefix <path/>] [--dry-run]\n" +
           "  Example: SOURCE_STORAGE_DRIVER=local SOURCE_STORAGE_LOCAL_ROOT=.data/storage \\\n" +
-          "           STORAGE_DRIVER=s3 S3_BUCKET=... bun erp storage:copy --from SOURCE_ --to current\n",
+          "           STORAGE_DRIVER=s3 S3_BUCKET=... bun loom storage:copy --from SOURCE_ --to current\n",
       );
       process.exit(2);
     }

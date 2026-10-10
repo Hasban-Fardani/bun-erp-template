@@ -1,7 +1,7 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Checkbox } from "@bun-erp/ui/atoms/checkbox.tsx";
-import { SimpleSelect } from "@bun-erp/ui/molecules/select.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Checkbox } from "@loom/ui/atoms/checkbox.tsx";
+import { SimpleSelect } from "@loom/ui/molecules/select.tsx";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bun-erp/ui/organisms/dialog.tsx";
-import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
+} from "@loom/ui/organisms/dialog.tsx";
+import { useToast } from "@loom/ui/organisms/toast.tsx";
 import { call, rpc } from "@web/lib/rpc.ts";
 import { Download } from "lucide-react";
 import { useState } from "react";
@@ -19,7 +19,7 @@ import type { ExportData, ImportExportFormat, ImportExportResource } from "../ty
 /**
  * Export dialog for the history table's header action. The server returns the rows through the
  * resource's list contract; the browser writes the file so the format engines stay in the web
- * bundle, behind `@bun-erp/spreadsheet`.
+ * bundle, behind `@loom/spreadsheet`.
  */
 export function ExportAction({
   resources,
@@ -133,14 +133,14 @@ export function ExportAction({
 
 async function buildFile(data: ExportData, format: ImportExportFormat): Promise<Blob> {
   if (format === "csv") {
-    const { stringifyCsv } = await import("@bun-erp/spreadsheet/csv");
+    const { stringifyCsv } = await import("@loom/spreadsheet/csv");
     const text = stringifyCsv(
       { headers: data.columns.map((column) => column.header), rows: data.rows },
       { includeBom: true },
     );
     return new Blob([text], { type: "text/csv;charset=utf-8" });
   }
-  const { writeXlsx } = await import("@bun-erp/spreadsheet/xlsx");
+  const { writeXlsx } = await import("@loom/spreadsheet/xlsx");
   const bytes = await writeXlsx({
     sheetName: data.label.slice(0, 31),
     columns: data.columns.map((column) => ({

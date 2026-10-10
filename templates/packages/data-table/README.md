@@ -1,11 +1,11 @@
-# `@bun-erp/data-table`
+# `@loom/data-table`
 
 Typed React table primitives built on TanStack Table v9. The default `DataTable` is local-first: it receives a complete in-memory array and applies filtering, sorting, and pagination in the browser. “Local-first” here describes where table operations run; it does not add persistence, offline storage, or synchronization.
 
 Source splits by runtime target: React and browser code lives in `src/ui/`, and the manual/server adapter in `src/server/`.
 
 ```tsx
-import { Column, DataTable } from "@bun-erp/data-table";
+import { Column, DataTable } from "@loom/data-table";
 
 type Person = { id: string; name: string; email: string };
 
@@ -24,20 +24,20 @@ const columns = column.columns([
 />
 ```
 
-For manually loaded rows, import `useServerDataTable` and `createServerColumnHelper` from `@bun-erp/data-table/server`. The adapter accepts controlled table state, callbacks, the loaded rows, and the total matching `rowCount`. It does not fetch data or depend on Hono or TanStack Query. See [the usage guide](./docs/usage.md) for a complete query integration recipe.
+For manually loaded rows, import `useServerDataTable` and `createServerColumnHelper` from `@loom/data-table/server`. The adapter accepts controlled table state, callbacks, the loaded rows, and the total matching `rowCount`. It does not fetch data or depend on Hono or TanStack Query. See [the usage guide](./docs/usage.md) for a complete query integration recipe.
 
-The semantic primitives `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `Filter`, and `Pagination` can be composed independently. Import `@bun-erp/data-table/styles.css` for a small neutral baseline; styling is otherwise opt-in.
+The semantic primitives `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `Filter`, and `Pagination` can be composed independently. Import `@loom/data-table/styles.css` for a small neutral baseline; styling is otherwise opt-in.
 
 ## Exports
 
-- `@bun-erp/data-table`: local feature preset, typed `Column` helper, `DataTable`, local table hook, and semantic primitives.
-- `@bun-erp/data-table/local`: only the local hook, renderer, and column helper.
-- `@bun-erp/data-table/primitives`: semantic table, filter, and pagination primitives without the TanStack adapter import.
-- `@bun-erp/data-table/server`: manual/server feature preset, typed server column helper, state type, and `useServerDataTable` contract.
-- `@bun-erp/data-table/server-table`: app-facing server `DataTable`, `Column<T>`, `DataTableLabels`, and `Pagination` for screens that own the toolbar. Composes `@bun-erp/ui` atoms and molecules.
-- `@bun-erp/data-table/resource-table`: shared `ResourceTable` list frame (search, sortable server paging, pagination footer, list states). Composes `@bun-erp/ui` and `server-table`.
-- `@bun-erp/data-table/styles.css`: opt-in neutral styles.
-- `@bun-erp/data-table/llms.txt`: concise model-oriented package map.
+- `@loom/data-table`: local feature preset, typed `Column` helper, `DataTable`, local table hook, and semantic primitives.
+- `@loom/data-table/local`: only the local hook, renderer, and column helper.
+- `@loom/data-table/primitives`: semantic table, filter, and pagination primitives without the TanStack adapter import.
+- `@loom/data-table/server`: manual/server feature preset, typed server column helper, state type, and `useServerDataTable` contract.
+- `@loom/data-table/server-table`: app-facing server `DataTable`, `Column<T>`, `DataTableLabels`, and `Pagination` for screens that own the toolbar. Composes `@loom/ui` atoms and molecules.
+- `@loom/data-table/resource-table`: shared `ResourceTable` list frame (search, sortable server paging, pagination footer, list states). Composes `@loom/ui` and `server-table`.
+- `@loom/data-table/styles.css`: opt-in neutral styles.
+- `@loom/data-table/llms.txt`: concise model-oriented package map.
 
 ## Limits
 

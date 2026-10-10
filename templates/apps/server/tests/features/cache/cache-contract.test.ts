@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import { sql } from "drizzle-orm";
 import { rowsOf } from "@/database/rows.ts";
 import { type Cache, type CacheDriverName, createCache, type KvNamespaceLike } from "@/infra/cache/index.ts";

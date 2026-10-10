@@ -21,7 +21,7 @@ const url = new URL(target);
 url.pathname = `/${name}`;
 let code = 1;
 try {
-  // `bun erp test --filter <feature>` passes the feature's test path; no path means the whole suite.
+  // `bun loom test --filter <feature>` passes the feature's test path; no path means the whole suite.
   const roots = process.argv.slice(2);
   const child = Bun.spawn(
     ["bun", "test", "--parallel=1", `--timeout=${timeout}`, ...(roots.length > 0 ? roots : ["apps/server"])],

@@ -39,7 +39,7 @@ export function buildApp(ctx: AppContext, docsUi?: DocsUiFactory) {
         },
       }),
     );
-    if (docsUi) app.get("/api/docs", docsUi("/api/openapi.json", "Bun ERP Template API"));
+    if (docsUi) app.get("/api/docs", docsUi("/api/openapi.json", "Loom Template API"));
   }
 
   const routes = app.route("/", apiRoutes(ctx));

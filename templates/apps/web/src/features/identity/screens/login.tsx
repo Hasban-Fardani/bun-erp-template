@@ -1,7 +1,7 @@
-import { LocaleSwitcher, useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Input } from "@bun-erp/ui/atoms/input.tsx";
-import { FormErrors, FormFieldError } from "@bun-erp/ui/molecules/form-errors.tsx";
+import { LocaleSwitcher, useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Input } from "@loom/ui/atoms/input.tsx";
+import { FormErrors, FormFieldError } from "@loom/ui/molecules/form-errors.tsx";
 import { useForm } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";

@@ -1,15 +1,15 @@
-# `@bun-erp/storage`
+# `@loom/storage`
 
 One storage package for every platform, with a subpath per runtime so a bundler only sees the code
 it needs. The package root is a runtime-neutral key/value store for the web and mobile apps; the
 server object store lives on its own subpath.
 
 ```ts
-import { getDefaultKeyValueStore } from "@bun-erp/storage";
-import { createCapacitorSqliteAdapter } from "@bun-erp/storage/capacitor";
+import { getDefaultKeyValueStore } from "@loom/storage";
+import { createCapacitorSqliteAdapter } from "@loom/storage/capacitor";
 
 const store = await getDefaultKeyValueStore({
-  native: () => createCapacitorSqliteAdapter({ databaseName: "bun_erp_offline" }),
+  native: () => createCapacitorSqliteAdapter({ databaseName: "loom_offline" }),
 });
 await store.put("drafts", "draft-1", { title: "Untitled" });
 const draft = await store.get<{ title: string }>("drafts", "draft-1");
@@ -21,7 +21,7 @@ namespace. `getDefaultKeyValueStore()` resolves the backend in order: injected n
 Capacitor platform, IndexedDB, Web Storage, then memory. Feature code never picks a backend itself.
 
 ```ts
-import { createObjectStorage } from "@bun-erp/storage/server";
+import { createObjectStorage } from "@loom/storage/server";
 
 const storage = createObjectStorage({
   config: { driver: "s3", s3: { bucket: "uploads", region: "auto" } },
@@ -38,15 +38,15 @@ traversal before any driver touches a path or bucket. `put`/`get`/`delete`/`exis
 
 ## Exports
 
-- `@bun-erp/storage`: `createKeyValueStore`, `getDefaultKeyValueStore`, `createMemoryAdapter`,
+- `@loom/storage`: `createKeyValueStore`, `getDefaultKeyValueStore`, `createMemoryAdapter`,
   `createIndexedDbAdapter`, `createLocalStorageAdapter`, and the `KeyValueStore`/`KeyValueAdapter`/
   `StoredRecord`/`StringStorage`/`DefaultStoreOptions` types.
-- `@bun-erp/storage/ui`: IndexedDB and Web Storage adapters, plus the default browser resolver.
-- `@bun-erp/storage/capacitor`: `createCapacitorSqliteAdapter` for encrypted SQLite; the native plugin
+- `@loom/storage/ui`: IndexedDB and Web Storage adapters, plus the default browser resolver.
+- `@loom/storage/capacitor`: `createCapacitorSqliteAdapter` for encrypted SQLite; the native plugin
   is imported lazily, so a web bundle that skips this subpath stays free of it.
-- `@bun-erp/storage/server`: `createObjectStorage`, `createStorageRegistry`, key helpers, and the
+- `@loom/storage/server`: `createObjectStorage`, `createStorageRegistry`, key helpers, and the
   server storage types.
-- `@bun-erp/storage/llms.txt`: concise model-oriented package map.
+- `@loom/storage/llms.txt`: concise model-oriented package map.
 
 ## Limits
 

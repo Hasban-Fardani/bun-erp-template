@@ -8,7 +8,7 @@ their history stays in `docs/tasks/`.
 |---|---|
 | [0001 TanStack file routing](0001-web-router.md) | Generated file routes, authenticated layout and per-route chunks |
 | [0003 UUIDv7](0003-primary-key-uuidv7.md) | PostgreSQL defaults plus UUIDv7 support for PG16/17 |
-| [0005 Spreadsheets](0005-spreadsheet-exceljs.md) | `@bun-erp/spreadsheet` (ExcelJS + papaparse) and the `import-export` catalog feature; opt-in |
+| [0005 Spreadsheets](0005-spreadsheet-exceljs.md) | `@loom/spreadsheet` (ExcelJS + papaparse) and the `import-export` catalog feature; opt-in |
 | [0007 Audit redaction](0007-audit-redaction.md) | Present in audit writes and logging safeguards |
 | [0009 Authentication](0009-auth-google-dormant.md) | Email/password; Google activates only with credentials |
 | [0010 Database dialect](0010-database-driver.md) | PostgreSQL through postgres.js everywhere; mobile SQLite is separate |
@@ -20,7 +20,7 @@ their history stays in `docs/tasks/`.
 | [0017 AI assistant](0017-ai-assistant.md) | Core `ctx.ai` (Workers AI binding/REST, OpenAI-compatible, fake) and the streaming assistant panel |
 
 <!-- template-only -->
-Template-lifecycle decisions live in `docs/template/` and are deleted by `bun erp project:adopt`:
+Template-lifecycle decisions live in `docs/template/` and are deleted by `bun loom project:adopt`:
 
 | Decision | Current implementation |
 |---|---|

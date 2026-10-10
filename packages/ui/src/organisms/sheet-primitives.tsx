@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 import { XIcon } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
 import type * as React from "react";

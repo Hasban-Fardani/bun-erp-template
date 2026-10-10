@@ -1,4 +1,4 @@
-import { createUuid, retryDelayMs } from "@bun-erp/utils";
+import { createUuid, retryDelayMs } from "@loom/utils";
 import { type SQL, sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
 import { rowsOf } from "../../database/rows.ts";

@@ -74,7 +74,7 @@ export async function validateCloudflarePreflight(
     .map(([key]) => key);
   if (plaintextSecrets.length > 0) {
     findings.push(
-      `Secret-class keys must not sit in wrangler.jsonc vars: ${plaintextSecrets.join(", ")}. Push them with wrangler secret bulk (bun erp env:cloudflare).`,
+      `Secret-class keys must not sit in wrangler.jsonc vars: ${plaintextSecrets.join(", ")}. Push them with wrangler secret bulk (bun loom env:cloudflare).`,
     );
   }
   if (config.assets?.not_found_handling !== "single-page-application") {

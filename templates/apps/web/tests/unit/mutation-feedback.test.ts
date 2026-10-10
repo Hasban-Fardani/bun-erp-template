@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Translate } from "@bun-erp/i18n";
+import type { Translate } from "@loom/i18n";
 import { ApiError } from "../../src/lib/api.ts";
 import { mutationErrorMessage } from "../../src/lib/mutation-feedback.ts";
 

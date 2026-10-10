@@ -41,7 +41,7 @@ export const commands = [
       if (plan.mismatches.length > 0) {
         process.stdout.write(
           "This database probably belongs to another project or an older catalog; point DATABASE_URL at a fresh database. " +
-            "Only for local disposable data: `bun erp db:reset --force`.\n",
+            "Only for local disposable data: `bun loom db:reset --force`.\n",
         );
       }
       if (plan.pending.length + plan.mismatches.length + plan.duplicates.length > 0) process.exitCode = 1;
@@ -56,12 +56,14 @@ export const commands = [
     const env = loadEnv();
     if (env.APP_ENV === "production") {
       process.stderr.write(
-        "Refusing to reset the schema with APP_ENV=production. `bun erp db:reset` is for local and test databases.\n",
+        "Refusing to reset the schema with APP_ENV=production. `bun loom db:reset` is for local and test databases.\n",
       );
       process.exit(1);
     }
     if (!parsed.flags.has("force")) {
-      process.stderr.write("Refusing to drop and recreate the schema without --force. Run: bun erp db:reset --force\n");
+      process.stderr.write(
+        "Refusing to drop and recreate the schema without --force. Run: bun loom db:reset --force\n",
+      );
       process.exit(1);
     }
     const ctx = await createCliContext({ env, migrateOnStart: false });
@@ -112,7 +114,7 @@ export const commands = [
   defineCommand("db:seed", async (args) => {
     const requestedSeeder = args[0] ? toSeederName(args[0]) : undefined;
     if (args.length > 1) {
-      process.stderr.write("Usage: bun erp db:seed [seeder]\n");
+      process.stderr.write("Usage: bun loom db:seed [seeder]\n");
       process.exit(1);
     }
     const seederFiles = listSeederFiles();

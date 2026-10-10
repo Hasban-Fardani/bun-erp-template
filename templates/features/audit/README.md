@@ -6,7 +6,7 @@ the append-only trail already ship in the default install; this feature adds the
 its navigation entry.
 
 ```
-bun erp features:install audit
+bun loom features:install audit
 ```
 
 What installs:
@@ -16,6 +16,6 @@ What installs:
 - `apps/web/src/lib/use-table-state.ts` and `apps/web/src/lib/resource-table-labels.ts` (shared
   helpers, copied once and reused by every table feature).
 - The `navigation.audit` sidebar entry and the `audit.*` locale keys.
-- The `@bun-erp/data-table` package, installed from the catalog and declared in `apps/web`.
+- The `@loom/data-table` package, installed from the catalog and declared in `apps/web`.
 
-Verify with `bun erp check`, then sign in as an owner and open `/audit`.
+Verify with `bun loom check`, then sign in as an owner and open `/audit`.

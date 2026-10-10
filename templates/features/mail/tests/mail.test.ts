@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { createMailer, createMemoryMailDriver } from "@bun-erp/mail/server";
-import { createUuid } from "@bun-erp/utils";
+import { createMailer, createMemoryMailDriver } from "@loom/mail/server";
+import { createUuid } from "@loom/utils";
 import { sql } from "drizzle-orm";
 import type { AppContext } from "@/bootstrap/context.ts";
 import { rowsOf } from "@/database/rows.ts";

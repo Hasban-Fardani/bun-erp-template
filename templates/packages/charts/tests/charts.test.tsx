@@ -34,6 +34,6 @@ test("each chart family renders its accessible name and isolated color palette",
     const html = renderToStaticMarkup(chart);
     expect(html).toContain('data-slot="chart"');
     expect(html).toContain("aria-label=");
-    expect(html).toContain("--bun-erp-chart-1");
+    expect(html).toContain("--loom-chart-1");
   }
 });

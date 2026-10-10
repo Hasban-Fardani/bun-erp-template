@@ -13,7 +13,7 @@ const BASE: AgentReadinessInput = {
   ],
   indexVersion: CODEGRAPH_VERSION,
   templateMode: false,
-  guidelinesBlock: "<!-- guidelines:start -->\n- Apps: `server` (`@bun-erp/server`)\n<!-- guidelines:end -->",
+  guidelinesBlock: "<!-- guidelines:start -->\n- Apps: `server` (`@loom/server`)\n<!-- guidelines:end -->",
 };
 
 test("agent readiness accepts installed startup skills, a complete index, and the pinned version", () => {
@@ -31,21 +31,21 @@ test("agent readiness reports missing prerequisites with an actionable setup com
   ).toEqual([
     ...REQUIRED_AGENT_SKILLS.map((skill) => `Install the project skill .agents/skills/${skill}.`),
     "CodeGraph index is unavailable: missing database",
-    "CodeGraph has not indexed apps/server/http/app.ts; run bun erp init.",
-    "CodeGraph has not indexed apps/web/src/main.tsx; run bun erp init.",
-    "CodeGraph index is incomplete; run bun erp init.",
+    "CodeGraph has not indexed apps/server/http/app.ts; run bun loom init.",
+    "CodeGraph has not indexed apps/web/src/main.tsx; run bun loom init.",
+    "CodeGraph index is incomplete; run bun loom init.",
   ]);
 });
 
 test("agent readiness flags an index built by a CLI that drifts from the pinned version", () => {
   expect(evaluateAgentReadiness({ ...BASE, indexVersion: "1.5.0" })).toEqual([
-    `CodeGraph indexed this project with 1.5.0; the project pins ${CODEGRAPH_VERSION}. Run bun erp init.`,
+    `CodeGraph indexed this project with 1.5.0; the project pins ${CODEGRAPH_VERSION}. Run bun loom init.`,
   ]);
 });
 
 test("agent readiness flags an index that records no CLI version", () => {
   expect(evaluateAgentReadiness({ ...BASE, indexVersion: undefined })).toEqual([
-    "CodeGraph index does not record its version; run bun erp init.",
+    "CodeGraph index does not record its version; run bun loom init.",
   ]);
 });
 
@@ -56,14 +56,14 @@ test("template mode ignores the state-neutral guidelines block", () => {
 
 test("project mode requires the guidelines block generated for the installed catalog", () => {
   expect(evaluateAgentReadiness({ ...BASE, guidelinesBlock: undefined })).toEqual([
-    "AGENTS.md has no guidelines block; run bun erp ai:update.",
+    "AGENTS.md has no guidelines block; run bun loom ai:update.",
   ]);
   expect(
     evaluateAgentReadiness({
       ...BASE,
       guidelinesBlock: "<!-- guidelines:start -->\nstate-neutral\n<!-- guidelines:end -->",
     }),
-  ).toEqual(["AGENTS.md guidelines block is not generated for this project; run bun erp ai:update."]);
+  ).toEqual(["AGENTS.md guidelines block is not generated for this project; run bun loom ai:update."]);
 });
 
 const FLOW_SKILLS = [
@@ -87,7 +87,7 @@ test("the issue tracker config sends tickets to docs/tasks, not GitHub Issues or
   const root = `${repoRoot}/`;
   const tracker = await Bun.file(`${root}docs/agents/issue-tracker.md`).text();
   expect(tracker).toContain("docs/tasks/");
-  expect(tracker).toContain("bun erp task:new");
+  expect(tracker).toContain("bun loom task:new");
   expect(tracker).toContain("depends_on");
   expect(tracker).not.toMatch(/gh issue create/);
   const agents = await Bun.file(`${root}AGENTS.md`).text();

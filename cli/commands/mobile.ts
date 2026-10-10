@@ -6,7 +6,7 @@ import { defineCommand } from "../registry.ts";
 async function requireMobileApp(): Promise<void> {
   if (await isAppInstalled("mobile")) return;
   process.stderr.write(
-    "apps/mobile is not installed. Run `bun erp init` (choose a combination with mobile) or `bun erp apps:create mobile mobile`.\n",
+    "apps/mobile is not installed. Run `bun loom init` (choose a combination with mobile) or `bun loom apps:create mobile mobile`.\n",
   );
   process.exit(1);
 }

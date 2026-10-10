@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
-import { Input } from "@bun-erp/ui/atoms/input-primitives";
-import { Textarea } from "@bun-erp/ui/atoms/textarea-primitives";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { Button } from "@loom/ui/atoms/button-primitives";
+import { Input } from "@loom/ui/atoms/input-primitives";
+import { Textarea } from "@loom/ui/atoms/textarea-primitives";
+import { cn } from "@loom/ui/lib/cn.ts";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 

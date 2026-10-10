@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import * as editorTypes from "@bun-erp/editor";
+import * as editorTypes from "@loom/editor";
 
 describe("package root entry", () => {
   test("has no runtime exports for server and Worker consumers", () => {

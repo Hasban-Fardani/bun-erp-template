@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
-import { Command } from "@bun-erp/ui/molecules/command.tsx";
+import { Button } from "@loom/ui/atoms/button-primitives";
+import { cn } from "@loom/ui/lib/cn.ts";
+import { Command } from "@loom/ui/molecules/command.tsx";
 import { XIcon } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import type * as React from "react";

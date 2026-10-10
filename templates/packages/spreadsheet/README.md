@@ -1,11 +1,11 @@
-# `@bun-erp/spreadsheet`
+# `@loom/spreadsheet`
 
 CSV and XLSX read/write behind one dependency boundary. Features build a shared row/column model
 and never import `papaparse` or `exceljs` themselves, so a future format change touches this
 package only. ExcelJS is the XLSX engine per ADR-0005.
 
 ```ts
-import { parseCsv, stringifyCsv, readXlsx, writeXlsx, type SpreadsheetTable } from "@bun-erp/spreadsheet";
+import { parseCsv, stringifyCsv, readXlsx, writeXlsx, type SpreadsheetTable } from "@loom/spreadsheet";
 
 const table: SpreadsheetTable = {
   sheetName: "Departemen",
@@ -36,10 +36,10 @@ const fromCsv = parseCsv(csv);
 
 ## Exports
 
-- `@bun-erp/spreadsheet`: shared types plus the CSV and XLSX functions.
-- `@bun-erp/spreadsheet/csv`: `parseCsv`, `parseCsvStream`, `stringifyCsv` and their options.
-- `@bun-erp/spreadsheet/xlsx`: `readXlsx`, `readXlsxStream`, `writeXlsx` and their options.
-- `@bun-erp/spreadsheet/llms.txt`: concise model-oriented package map.
+- `@loom/spreadsheet`: shared types plus the CSV and XLSX functions.
+- `@loom/spreadsheet/csv`: `parseCsv`, `parseCsvStream`, `stringifyCsv` and their options.
+- `@loom/spreadsheet/xlsx`: `readXlsx`, `readXlsxStream`, `writeXlsx` and their options.
+- `@loom/spreadsheet/llms.txt`: concise model-oriented package map.
 
 ## Limits
 

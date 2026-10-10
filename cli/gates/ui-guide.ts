@@ -3,7 +3,7 @@
  * absent from the guide is one agents improvise around. The gate keeps the index and the source
  * tree in sync in both directions — every `src/**` module must be listed, and every `layer/module.ext`
  * reference in the guide must still resolve. Removed modules are mentioned by package export name
- * (for example `@bun-erp/data-table/server-table`), never as a `src` path, so history does not read
+ * (for example `@loom/data-table/server-table`), never as a `src` path, so history does not read
  * as drift.
  */
 import { directoryExists } from "./exists.ts";

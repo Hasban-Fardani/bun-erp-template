@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - uses: ./.github/actions/setup
       - run: bun run lint
-      - run: bun erp check
+      - run: bun loom check
   test-postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -38,13 +38,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - uses: ./.github/actions/setup
-      - run: bun erp ci:prepare
-      - run: bun erp db:migrate
+      - run: bun loom ci:prepare
+      - run: bun loom db:migrate
       # Second run proves the ledger is idempotent (nothing is applied twice).
       - name: Migrations are idempotent
-        run: bun erp db:migrate
-      - run: bun erp db:status
-      - run: bun erp test
+        run: bun loom db:migrate
+      - run: bun loom db:status
+      - run: bun loom test
   # Heavier jobs run on demand (Actions → CI → Run workflow) until the project needs them per push.
   e2e:
     if: github.event_name == 'workflow_dispatch'
@@ -68,17 +68,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - uses: ./.github/actions/setup
       - run: bunx --bun playwright-core install --with-deps chromium
-      - run: bun erp ci:prepare
-      - run: bun erp db:migrate
-      - run: bun erp db:seed
-      - run: bun erp ci:owner
-      - run: bun erp build
+      - run: bun loom ci:prepare
+      - run: bun loom db:migrate
+      - run: bun loom db:seed
+      - run: bun loom ci:owner
+      - run: bun loom build
       - name: Start API and built web
         run: |
           bun start > .data/qa/server.log 2>&1 &
-          bun erp preview > .data/qa/preview.log 2>&1 &
-          bun erp wait:http http://localhost:3000/api/v1/ready
-          bun erp wait:http http://localhost:4173/login
+          bun loom preview > .data/qa/preview.log 2>&1 &
+          bun loom wait:http http://localhost:3000/api/v1/ready
+          bun loom wait:http http://localhost:4173/login
       - run: bun run qa
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, verified
         if: always()
@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - name: Build the image
-        run: docker build -t bun-erp-template .
+        run: docker build -t loom-template .
       - name: Start a disposable PostgreSQL
         run: |
           docker network create erp
@@ -116,7 +116,7 @@ jobs:
         run: |
           docker run -d --name erp-app --network erp -p 3000:3000 --env-file docker.env \
             -e APP_DEPLOY_TARGET=bun -e APP_WEB_MODE=integrated \
-            bun-erp-template
+            loom-template
       - name: Wait for the readiness endpoint
         run: |
           for attempt in $(seq 1 30); do

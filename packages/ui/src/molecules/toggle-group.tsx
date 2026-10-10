@@ -1,7 +1,7 @@
 "use client";
 
-import { toggleVariants } from "@bun-erp/ui/atoms/toggle";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { toggleVariants } from "@loom/ui/atoms/toggle";
+import { cn } from "@loom/ui/lib/cn.ts";
 import type { VariantProps } from "class-variance-authority";
 import { ToggleGroup as ToggleGroupPrimitive } from "radix-ui";
 import * as React from "react";

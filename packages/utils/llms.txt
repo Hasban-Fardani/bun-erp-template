@@ -1,4 +1,4 @@
-# @bun-erp/utils
+# @loom/utils
 
 > Small cross-platform utilities shared by apps and packages.
 

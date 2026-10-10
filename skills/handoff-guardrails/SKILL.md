@@ -6,7 +6,7 @@ description: Use when verifying work or reporting a completed change in this rep
 # Handoff guardrails
 
 - Open source before claiming a capability exists. ADR decisions and old task results are not implementation evidence.
-- Check actual `bun erp --help`; do not copy commands/counts from historical reports.
+- Check actual `bun loom --help`; do not copy commands/counts from historical reports.
 - When a gate fails, inspect its cause. Fix implementation first; do not weaken the rule.
 - Prove a new gate fails with an intentional fixture, then passes restored source.
 - Preserve original failing output alongside successful verification; do not claim retries erase a flake.

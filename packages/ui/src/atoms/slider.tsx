@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 import { Slider as SliderPrimitive } from "radix-ui";
 import * as React from "react";
 

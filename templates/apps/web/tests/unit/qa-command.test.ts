@@ -30,7 +30,7 @@ test("qa is owned by the web app, so it exists only while the web app is install
   expect(helpSections(new Set()).flatMap(({ commands }) => commands.map(([name]) => name))).not.toContain("qa");
 });
 
-test("bun erp qa --list names the suites without a browser", async () => {
+test("bun loom qa --list names the suites without a browser", async () => {
   const { code, out } = await erp("qa", "--list");
   expect(code).toBe(0);
   expect(out).toContain("core");
@@ -38,14 +38,14 @@ test("bun erp qa --list names the suites without a browser", async () => {
   expect(out).toContain("assistant");
 });
 
-test("bun erp qa --dry-run prints the plan and honours --only", async () => {
+test("bun loom qa --dry-run prints the plan and honours --only", async () => {
   const { code, out } = await erp("qa", "--dry-run", "--only=login");
   expect(code).toBe(0);
   expect(out).toContain("login (");
   expect(out).toContain("core (skip");
 });
 
-test("bun erp qa rejects an unknown suite and an unknown option", async () => {
+test("bun loom qa rejects an unknown suite and an unknown option", async () => {
   expect((await erp("qa", "--only=nope")).code).toBe(1);
   expect((await erp("qa", "--bogus")).code).toBe(1);
 });

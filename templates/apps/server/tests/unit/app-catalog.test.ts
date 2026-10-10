@@ -21,11 +21,11 @@ async function seedCatalog(root: string, kind: "web" | "mobile"): Promise<void> 
   const catalog = `${root}/templates/apps/${kind}`;
   await Bun.write(
     `${catalog}/package.json`,
-    `${JSON.stringify({ name: `@bun-erp/${kind}`, version: "0.1.0", private: true, devDependencies: { "@bun-erp/server": "workspace:*" } }, null, 2)}\n`,
+    `${JSON.stringify({ name: `@loom/${kind}`, version: "0.1.0", private: true, devDependencies: { "@loom/server": "workspace:*" } }, null, 2)}\n`,
   );
   await Bun.write(
     `${catalog}/src/lib/rpc.ts`,
-    'import type { AppType } from "@bun-erp/server/app-type";\nexport const rpc = undefined as unknown as AppType;\n',
+    'import type { AppType } from "@loom/server/app-type";\nexport const rpc = undefined as unknown as AppType;\n',
   );
   await Bun.write(
     `${catalog}/src/lib/rpc-detached.ts`,
@@ -54,19 +54,19 @@ test("a web app without a server detaches the RPC contract and re-fits when the 
   const detachedManifest = (await Bun.file(`${root}/apps/web/package.json`).json()) as {
     devDependencies?: Record<string, string>;
   };
-  expect(detachedManifest.devDependencies?.["@bun-erp/server"]).toBeUndefined();
+  expect(detachedManifest.devDependencies?.["@loom/server"]).toBeUndefined();
   const registered = (await Bun.file(`${root}/package.json`).json()) as { workspaces: string[] };
   expect(registered.workspaces).toContain("apps/web");
 
   const refit = await installCatalogApp(root, { name: "web", kind: "web", hasServer: true });
   expect(refit.created).toBe(false);
-  expect(await Bun.file(`${root}/apps/web/src/lib/rpc.ts`).text()).toContain("@bun-erp/server/app-type");
+  expect(await Bun.file(`${root}/apps/web/src/lib/rpc.ts`).text()).toContain("@loom/server/app-type");
   expect(await Bun.file(`${root}/apps/web/tests/rpc-types.ts`).exists()).toBe(true);
   expect(await Bun.file(`${root}/apps/web/tests/unit/identity-validation.test.ts`).exists()).toBe(true);
   const refitManifest = (await Bun.file(`${root}/apps/web/package.json`).json()) as {
     devDependencies?: Record<string, string>;
   };
-  expect(refitManifest.devDependencies?.["@bun-erp/server"]).toBe("workspace:*");
+  expect(refitManifest.devDependencies?.["@loom/server"]).toBe("workspace:*");
 });
 
 test("mobile detaches its unused RPC client without server-coupled tests", async () => {
@@ -82,5 +82,5 @@ test("mobile detaches its unused RPC client without server-coupled tests", async
   const manifest = (await Bun.file(`${root}/apps/mobile/package.json`).json()) as {
     devDependencies?: Record<string, string>;
   };
-  expect(manifest.devDependencies?.["@bun-erp/server"]).toBeUndefined();
+  expect(manifest.devDependencies?.["@loom/server"]).toBeUndefined();
 });

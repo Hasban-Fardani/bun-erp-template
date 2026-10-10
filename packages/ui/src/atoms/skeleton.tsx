@@ -1,4 +1,4 @@
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="skeleton" className={cn("animate-pulse rounded-md bg-accent", className)} {...props} />;

@@ -1,14 +1,14 @@
-# @bun-erp/mail
+# @loom/mail
 
 Server-only, app-agnostic mail transport for the Bun ERP workspace. Install with
-`bun erp features:install mail`; the package alone is not wired into the app.
+`bun loom features:install mail`; the package alone is not wired into the app.
 
 ## Public exports
 
-- `@bun-erp/mail` (alias of `/server`, the package is server-only): `createMailer(options)`,
+- `@loom/mail` (alias of `/server`, the package is server-only): `createMailer(options)`,
   `createMailRegistry()`, `MailDriverRegistry`, `resolveMail(message, config)`, `htmlToText(html)`,
   `escapeHtml(value)`.
-- `@bun-erp/mail/server`: the same surface when the server subpath reads better.
+- `@loom/mail/server`: the same surface when the server subpath reads better.
 - Types: `Mailer`, `MailMessage`, `MailAddress`, `MailAttachment`, `MailConfig`, `MailLogger`,
   `MailEnqueue`, `MailDriver`, `MailDriverContext`, `ResolvedMail`, `MailPayload`.
 

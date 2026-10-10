@@ -1,6 +1,6 @@
-// @erp:mail
+// @loom:mail
 import { betterAuth } from "better-auth";
-// @erp:organizations
+// @loom:organizations
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../../config/index.ts";
 import type { Database } from "../../database/index.ts";
@@ -11,7 +11,7 @@ import { passwordHasherFor } from "./password.ts";
 import { accounts, sessions, users, verifications } from "./schema.ts";
 
 /**
- * Core Better Auth tables. The organizations installer is anchored on the `// @erp:organizations`
+ * Core Better Auth tables. The organizations installer is anchored on the `// @loom:organizations`
  * marker above and on the literal `schema:` line below, so that line stays intact; the adapter
  * call merges the rate-limit store into this map instead of editing the anchor.
  */
@@ -84,7 +84,7 @@ export function createAuth(env: Env, db: Database) {
       // AUTH_PASSWORD_ENABLED=false leaves Google as the only way in; the config schema refuses that
       // combination without Google credentials.
       enabled: env.AUTH_PASSWORD_ENABLED,
-      // Public self sign-up is opt-in; accounts normally come from `bun erp user:create`.
+      // Public self sign-up is opt-in; accounts normally come from `bun loom user:create`.
       disableSignUp: !env.AUTH_SIGNUP_ENABLED,
       minPasswordLength: 10,
       // PASSWORD_HASH picks the algorithm for new hashes; verify reads the stored format, so a switch
@@ -98,7 +98,7 @@ export function createAuth(env: Env, db: Database) {
       sendResetPassword: undefined,
     },
     // Google registers only when both of its env vars are set. Accounts still come from
-    // `bun erp user:create` unless self sign-up is on: an unknown Google account is refused, and a
+    // `bun loom user:create` unless self sign-up is on: an unknown Google account is refused, and a
     // known email links to its existing user because Google verifies the address.
     ...(googleEnabled
       ? {

@@ -15,10 +15,10 @@ async function printHelp(): Promise<void> {
     const lines = commands.map(([name, description]) => `  ${name.padEnd(width)}  ${description}`).join("\n");
     return `${title}\n${lines}`;
   });
-  process.stdout.write(`bun erp <command> [args]\n\n${sections.join("\n\n")}\n`);
+  process.stdout.write(`bun loom <command> [args]\n\n${sections.join("\n\n")}\n`);
   if (!available.has("db:migrate")) {
     process.stdout.write(
-      "\nThe server app is not installed, so its commands are hidden. Run `bun erp init` to choose an app combination.\n",
+      "\nThe server app is not installed, so its commands are hidden. Run `bun loom init` to choose an app combination.\n",
     );
   }
 }
@@ -31,7 +31,7 @@ if (!command || command === "--help" || command === "-h" || command === "help") 
 try {
   const handled = await runCommand(command, args);
   if (!handled) {
-    process.stderr.write(`Unknown command: ${command}. Run: bun erp --help\n`);
+    process.stderr.write(`Unknown command: ${command}. Run: bun loom --help\n`);
     process.exit(1);
   }
 } catch (err) {

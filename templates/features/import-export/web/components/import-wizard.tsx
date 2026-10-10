@@ -1,11 +1,11 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Badge } from "@bun-erp/ui/atoms/badge.tsx";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Input } from "@bun-erp/ui/atoms/input.tsx";
-import { Progress } from "@bun-erp/ui/atoms/progress.tsx";
-import { SimpleSelect } from "@bun-erp/ui/molecules/select.tsx";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@bun-erp/ui/molecules/table.tsx";
-import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Badge } from "@loom/ui/atoms/badge.tsx";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Input } from "@loom/ui/atoms/input.tsx";
+import { Progress } from "@loom/ui/atoms/progress.tsx";
+import { SimpleSelect } from "@loom/ui/molecules/select.tsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@loom/ui/molecules/table.tsx";
+import { useToast } from "@loom/ui/organisms/toast.tsx";
 import { CheckCircle2, FileUp, Play, RotateCcw, Square } from "lucide-react";
 import { useState } from "react";
 import {

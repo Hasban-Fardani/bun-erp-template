@@ -1,4 +1,4 @@
-import { LocaleSwitcher } from "@bun-erp/i18n/react";
+import { LocaleSwitcher } from "@loom/i18n/react";
 import { uiConfig } from "@web/config/ui.ts";
 import { Users as UsersIcon } from "lucide-react";
 import type { ReactNode } from "react";

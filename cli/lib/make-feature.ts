@@ -108,7 +108,7 @@ export async function ensureFeatureWebDependencies(root: string): Promise<Featur
     await copyCatalogPackage(root, "data-table");
     changed = true;
   }
-  if (await ensureWorkspaceDependency(root, WEB_MANIFEST, "@bun-erp/data-table")) changed = true;
+  if (await ensureWorkspaceDependency(root, WEB_MANIFEST, "@loom/data-table")) changed = true;
   for (const helper of SHARED_WEB_HELPERS) {
     const destination = `apps/web/src/lib/${helper}`;
     if (await Bun.file(resolve(root, destination)).exists()) continue;

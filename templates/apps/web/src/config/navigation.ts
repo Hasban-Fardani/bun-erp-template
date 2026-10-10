@@ -1,4 +1,4 @@
-import type { MessageKey } from "@bun-erp/i18n";
+import type { MessageKey } from "@loom/i18n";
 import { Bell, type LucideIcon, Sparkles } from "lucide-react";
 
 export type NavItem = {
@@ -22,12 +22,12 @@ type NavGroup = {
 
 /**
  * Single source of navigation — a new page adds a row here, not a sidebar edit. Catalog features
- * install their own row with `bun erp features:install`; the default app ships the inbox only.
+ * install their own row with `bun loom features:install`; the default app ships the inbox only.
  */
 export const navGroups: NavGroup[] = [
   {
     items: [
-      // @erp:nav
+      // @loom:nav
       { titleKey: "navigation.assistant", url: "/assistant", icon: Sparkles, permission: "ai.use" },
       { titleKey: "navigation.notifications", url: "/notifications", icon: Bell, alwaysVisible: true },
     ],

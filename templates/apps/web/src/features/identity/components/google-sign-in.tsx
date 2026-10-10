@@ -1,5 +1,5 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
 import { Loader2 } from "lucide-react";
 import { useGoogleLogin } from "../hooks/index.ts";
 

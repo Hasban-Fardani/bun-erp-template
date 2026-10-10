@@ -1,4 +1,4 @@
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 import type * as React from "react";
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {

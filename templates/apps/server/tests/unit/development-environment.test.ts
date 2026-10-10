@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createDevelopmentEnvironment } from "../../cli/lib/development-environment.ts";
 
 const baseConfig = {
-  APP_NAME: "Bun ERP Template",
+  APP_NAME: "Loom Template",
   APP_ENV: "development",
   APP_URL: "http://localhost:3000",
   APP_PORT: "3000",
@@ -14,7 +14,7 @@ const baseConfig = {
   LOG_RETENTION_DAYS: "7",
   LOG_MAX_SIZE_MB: "10",
   DATABASE_DRIVER: "postgres",
-  DATABASE_URL: "postgresql://local.test/bun-erp",
+  DATABASE_URL: "postgresql://local.test/loom",
   DATABASE_POOL_MAX: "10",
   DATABASE_SSL_MODE: "disable",
   BETTER_AUTH_URL: "http://localhost:3000",
@@ -23,7 +23,7 @@ const baseConfig = {
   STORAGE_DRIVER: "local",
   MAIL_DRIVER: "log",
   MAIL_FROM_ADDRESS: "no-reply@example.test",
-  MAIL_FROM_NAME: "Bun ERP Template",
+  MAIL_FROM_NAME: "Loom Template",
 };
 
 const createEnvironment = (overrides: Record<string, string> = {}) =>
@@ -36,7 +36,7 @@ describe("local development environment", () => {
       DEV_API_PORT: "3011",
       DEV_WEB_PORT: "5174",
       DATABASE_DRIVER: "postgres",
-      DATABASE_URL: "postgresql://local.test/bun-erp",
+      DATABASE_URL: "postgresql://local.test/loom",
     });
 
     expect(environment.apiPort).toBe(3011);
@@ -44,7 +44,7 @@ describe("local development environment", () => {
     expect(environment.server.APP_ENV).toBe("development");
     expect(environment.server.APP_PORT).toBe("3011");
     expect(environment.server.DATABASE_DRIVER).toBe("postgres");
-    expect(environment.server.DATABASE_URL).toBe("postgresql://local.test/bun-erp");
+    expect(environment.server.DATABASE_URL).toBe("postgresql://local.test/loom");
     expect(environment.server.BETTER_AUTH_URL).toBe(environment.webUrl);
     expect(environment.web.API_PORT).toBe("3011");
   });

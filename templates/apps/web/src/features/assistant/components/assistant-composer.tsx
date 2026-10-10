@@ -1,5 +1,5 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { IconButton } from "@bun-erp/ui/atoms/icon-button.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { IconButton } from "@loom/ui/atoms/icon-button.tsx";
 import { ArrowUp, Slash, Square, X } from "lucide-react";
 import { type KeyboardEvent, type RefObject, useEffect, useId, useState } from "react";
 import type { SkillRef } from "../lib/chat-state.ts";

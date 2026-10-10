@@ -52,7 +52,7 @@ export function PieChart<Row extends object>({
   const selectedRow = useMemo(() => data[selectedIndex ?? 0], [data, selectedIndex]);
   return (
     <ChartFrame label={label} height={height} colors={colors} className={className}>
-      <div className="bun-erp-chart-content">
+      <div className="loom-chart-content">
         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <RechartsPieChart accessibilityLayer>
             <Pie
@@ -92,7 +92,7 @@ export function PieChart<Row extends object>({
           </RechartsPieChart>
         </ResponsiveContainer>
         {variant === "donut-text" ? (
-          <div className="bun-erp-chart-overlay">
+          <div className="loom-chart-overlay">
             {centerValue ? (
               <strong>{centerValue}</strong>
             ) : selectedRow ? (

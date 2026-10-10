@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { RichTextEditor } from "@bun-erp/editor/react";
+import { RichTextEditor } from "@loom/editor/react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 

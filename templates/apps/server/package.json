@@ -1,5 +1,5 @@
 {
-  "name": "@bun-erp/server",
+  "name": "@loom/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
     "format": "bunx --bun biome format --write ."
   },
   "dependencies": {
-    "@bun-erp/storage": "workspace:*",
-    "@bun-erp/utils": "workspace:*",
+    "@loom/storage": "workspace:*",
+    "@loom/utils": "workspace:*",
     "@scalar/hono-api-reference": "0.12.3",
     "better-auth": "1.7.5",
     "drizzle-orm": "0.45.2",

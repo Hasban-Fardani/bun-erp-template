@@ -6,10 +6,10 @@ export async function checkCi(root: string): Promise<string[]> {
   const setup = await Bun.file(`${root}/.github/actions/setup/action.yml`)
     .text()
     .catch(() => "");
-  const required = ["bun erp check", "bun erp test", "bun run qa", "test-postgres:", "postgres:", "ci-ok:"];
+  const required = ["bun loom check", "bun loom test", "bun run qa", "test-postgres:", "postgres:", "ci-ok:"];
   const findings = required.filter((item) => !body.includes(item)).map((item) => `CI is missing ${item}`);
   // The template ships apps/ empty, so CI must install a combination before lint/check/test.
-  const initCommand = "bun erp init --apps server,web --yes";
+  const initCommand = "bun loom init --apps server,web --yes";
   if (!body.includes(initCommand) && !setup.includes(initCommand)) {
     findings.push(`CI setup is missing ${initCommand}`);
   }

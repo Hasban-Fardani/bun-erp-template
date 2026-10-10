@@ -22,14 +22,14 @@ const TEMPLATE_TASK_GLOB = "docs/tasks/F3.*.md";
 
 export type AdoptResult = { stripped: string[]; tasks: string[]; renamed: string[] };
 
-const TEMPLATE_SLUG = "bun-erp-template";
+const TEMPLATE_SLUG = "loom-template";
 /** Files that carry names derived from the template slug (worker, queue, bucket, image, URLs). */
 const RENAME_FILES = ["wrangler.jsonc", ".github/workflows/ci.yml", "docs/deployment.md"] as const;
 
 const TASKS_README = `# Tasks
 
-Work records for this project. Create one with \`bun erp task:new <id> "<title>"\`; each file carries
-front matter (\`id\`, \`title\`, \`status\`, \`evidence\`) that \`bun erp check\` validates. Status moves are
+Work records for this project. Create one with \`bun loom task:new <id> "<title>"\`; each file carries
+front matter (\`id\`, \`title\`, \`status\`, \`evidence\`) that \`bun loom check\` validates. Status moves are
 human-owned: agents leave work \`in_progress\` with evidence. Tasks record history, not current
 implementation guidance; the canonical documents are listed in \`docs/README.md\`.
 `;
@@ -72,7 +72,7 @@ async function renameFromTemplate(root: string, slug: string): Promise<string[]>
   const pkgPath = join(root, "package.json");
   if (await Bun.file(pkgPath).exists()) {
     const source = await Bun.file(pkgPath).text();
-    const next = source.replace(/("name"\s*:\s*)"bun-erp-template"/, `$1"${slug}"`);
+    const next = source.replace(/("name"\s*:\s*)"loom-template"/, `$1"${slug}"`);
     if (next !== source) {
       await Bun.write(pkgPath, next);
       renamed.push("package.json");
@@ -105,7 +105,7 @@ export async function adoptProject(root: string, options: { name: string; purpos
   const slug = projectSlug(options.name);
   if (!(await isTemplateRepo(root))) {
     throw new Error(
-      "This repository is already a project: docs/template/ is missing. bun erp project:adopt refuses to run twice.",
+      "This repository is already a project: docs/template/ is missing. bun loom project:adopt refuses to run twice.",
     );
   }
 
@@ -133,7 +133,7 @@ export async function adoptProject(root: string, options: { name: string; purpos
     if (!(await Bun.file(path).exists())) continue;
     const filled = fillIdentityBlock(await Bun.file(path).text(), identityContent(file, options.name, options.purpose));
     if (filled !== undefined) {
-      const titled = file === "README.md" ? filled.replace(/^# Bun ERP Template[ \t]*$/m, `# ${options.name}`) : filled;
+      const titled = file === "README.md" ? filled.replace(/^# Loom Template[ \t]*$/m, `# ${options.name}`) : filled;
       await Bun.write(path, titled);
     }
   }
@@ -163,7 +163,7 @@ export const commands = [
 
     const name = resolveRequired(parsed.values.get("name"), "Project name");
     const purpose = resolveRequired(parsed.values.get("purpose"), "Project purpose (one line)");
-    if (!name || !purpose) throw new Error('Usage: bun erp project:adopt --name <name> --purpose "<one line>"');
+    if (!name || !purpose) throw new Error('Usage: bun loom project:adopt --name <name> --purpose "<one line>"');
 
     const result = await adoptProject(repoRoot, { name, purpose });
     process.stdout.write(

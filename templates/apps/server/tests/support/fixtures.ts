@@ -26,7 +26,7 @@ if (!databaseUrl) {
 
 /** Tests use the runner's isolated, disposable PostgreSQL database. */
 export const testEnv: Env = loadEnv({
-  APP_NAME: "Bun ERP Template",
+  APP_NAME: "Loom Template",
   APP_ENV: "test",
   APP_URL: "http://localhost:3000",
   APP_PORT: "3000",
@@ -55,7 +55,7 @@ export const testEnv: Env = loadEnv({
   STORAGE_LOCAL_ROOT: ".data/storage",
   MAIL_DRIVER: "log",
   MAIL_FROM_ADDRESS: "no-reply@example.test",
-  MAIL_FROM_NAME: "Bun ERP Template",
+  MAIL_FROM_NAME: "Loom Template",
   SMTP_HOST: "",
   SMTP_PORT: "587",
   SMTP_SECURE: "false",
@@ -191,7 +191,7 @@ export async function createHttpFixture() {
 
 /**
  * Logs in a full-scope admin through the real Better Auth sign-in path, then returns its cookie.
- * The account is created through the same service `bun erp user:create` uses, so the fixture keeps
+ * The account is created through the same service `bun loom user:create` uses, so the fixture keeps
  * working while public self sign-up is disabled (AUTH_SIGNUP_ENABLED=false).
  */
 export async function loginOwner(app: ReturnType<typeof createApp>, db: AppContext["db"]): Promise<string> {

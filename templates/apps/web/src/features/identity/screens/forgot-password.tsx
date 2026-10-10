@@ -1,4 +1,4 @@
-import { useI18n } from "@bun-erp/i18n/react";
+import { useI18n } from "@loom/i18n/react";
 import { Link } from "@tanstack/react-router";
 import { ApiError } from "@web/lib/api.ts";
 import { type ForgotPasswordState, ForgotPasswordView } from "../components/forgot-password-view.tsx";

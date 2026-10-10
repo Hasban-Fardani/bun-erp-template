@@ -1,7 +1,7 @@
-import { createKeyValueStore, getDefaultKeyValueStore, type KeyValueAdapter } from "@bun-erp/storage";
-import { createCapacitorSqliteAdapter } from "@bun-erp/storage/capacitor";
+import { createKeyValueStore, getDefaultKeyValueStore, type KeyValueAdapter } from "@loom/storage";
+import { createCapacitorSqliteAdapter } from "@loom/storage/capacitor";
 
-const DATABASE_NAME = "bun_erp_offline";
+const DATABASE_NAME = "loom_offline";
 
 export type OfflineAdapter = KeyValueAdapter;
 

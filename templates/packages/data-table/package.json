@@ -1,5 +1,5 @@
 {
-  "name": "@bun-erp/data-table",
+  "name": "@loom/data-table",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -46,7 +46,7 @@
     "test": "bun test tests"
   },
   "dependencies": {
-    "@bun-erp/ui": "workspace:*",
+    "@loom/ui": "workspace:*",
     "@tanstack/react-table": "9.2.4",
     "lucide-react": "0.544.0"
   },

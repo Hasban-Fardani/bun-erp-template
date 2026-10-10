@@ -7,7 +7,7 @@ repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
 bun run check:biome
-bun erp check:fast
+bun loom check:fast
 
 if [ ! -d apps/server ]; then
   echo "NOTICE: apps/server is not installed; feature tests were not run before this push."
@@ -37,6 +37,6 @@ for feature in $features; do
     echo "NOTICE: feature $feature is not installed under apps/server; its tests were not run."
     continue
   fi
-  echo "pre-push: bun erp test --filter $feature"
-  bun erp test --filter "$feature"
+  echo "pre-push: bun loom test --filter $feature"
+  bun loom test --filter "$feature"
 done

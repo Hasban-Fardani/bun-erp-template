@@ -1,4 +1,4 @@
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import type { MailDriver, MailDriverFactory, MailSendResult, ResolvedMail } from "../types.ts";
 
 function recipients(message: ResolvedMail): string[] {

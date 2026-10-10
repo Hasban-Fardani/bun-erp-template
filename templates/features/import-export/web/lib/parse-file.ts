@@ -1,23 +1,23 @@
-import type { SpreadsheetCell } from "@bun-erp/spreadsheet";
+import type { SpreadsheetCell } from "@loom/spreadsheet";
 
 /** The server's import contract: parsed headers plus string rows, never the raw file. */
 export type ParsedUpload = { headers: string[]; rows: string[][] };
 
 /**
- * Parses an uploaded CSV or XLSX in the browser through `@bun-erp/spreadsheet`. The heavy XLSX
+ * Parses an uploaded CSV or XLSX in the browser through `@loom/spreadsheet`. The heavy XLSX
  * engine is imported only when an .xlsx file is actually chosen, so the wizard's chunk stays small.
  */
 export async function parseUpload(file: File): Promise<ParsedUpload> {
   const name = file.name.toLowerCase();
   if (name.endsWith(".xlsx")) {
-    const { readXlsx } = await import("@bun-erp/spreadsheet/xlsx");
+    const { readXlsx } = await import("@loom/spreadsheet/xlsx");
     const table = await readXlsx(await file.arrayBuffer());
     return {
       headers: table.columns.map((column) => column.header.trim()),
       rows: table.rows.map((row) => table.columns.map((column) => cellText(row[column.key] ?? null))),
     };
   }
-  const { parseCsvStream } = await import("@bun-erp/spreadsheet/csv");
+  const { parseCsvStream } = await import("@loom/spreadsheet/csv");
   const table = await parseCsvStream(streamOf(file), name.endsWith(".tsv") ? { delimiter: "\t" } : {});
   return {
     headers: table.headers.map((header) => header.trim()),

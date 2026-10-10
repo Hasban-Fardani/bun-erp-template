@@ -20,7 +20,7 @@ export async function requireRoleByKey(db: Database, key: string) {
   if (role) return role;
   const available = await db.select({ key: roleTable.key }).from(roleTable).orderBy(roleTable.key);
   throw new Error(
-    `No role "${key}". Available: ${available.map((row) => row.key).join(", ") || "none"}. Run bun erp role:list.`,
+    `No role "${key}". Available: ${available.map((row) => row.key).join(", ") || "none"}. Run bun loom role:list.`,
   );
 }
 
@@ -28,6 +28,6 @@ export async function requireUserByEmail(db: Database, email: string) {
   // Email is case-insensitive (RFC 5321); the column stores lowercase, but CLI input is free text.
   const rows = await db.select().from(users).where(sql`lower(${users.email}) = lower(${email})`).limit(1);
   const user = rows[0];
-  if (!user) throw new Error(`No user with email ${email}. Run bun erp user:list.`);
+  if (!user) throw new Error(`No user with email ${email}. Run bun loom user:list.`);
   return user;
 }

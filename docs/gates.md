@@ -1,11 +1,11 @@
 # Gates
 
 A gate is a read-only check under `cli/gates/`. It inspects repo files and returns findings; it never
-writes to the repo, runs tests, or builds anything. `bun erp check` runs Biome, TypeScript and every
+writes to the repo, runs tests, or builds anything. `bun loom check` runs Biome, TypeScript and every
 gate and fails when any returns a finding. A gate can also run alone.
 
 `cli/lib/gates.ts` holds `GATE_CATALOG`, the single source of truth: each entry has a name, a
-standalone command, the implementing file, and a one-sentence summary. `bun erp check:gate --list`
+standalone command, the implementing file, and a one-sentence summary. `bun loom check:gate --list`
 prints that catalog as a table.
 
 ## How the chain works
@@ -20,15 +20,15 @@ prints that catalog as a table.
    process. `check:fast` runs the file-level subset named in `FAST_GATE_NAMES`.
 4. `cli/commands/check.ts` registers the `check:*` commands and `check:gate`; `check:gate <name>`
    looks the command up in the catalog and forwards any extra arguments.
-5. `bun erp check` runs Biome, `tsc` and every gate in `GATE_CATALOG` (up to eight at a time;
-   `bun erp check:gate --list` prints the authoritative list and count); `bun erp check:fast`
+5. `bun loom check` runs Biome, `tsc` and every gate in `GATE_CATALOG` (up to eight at a time;
+   `bun loom check:gate --list` prints the authoritative list and count); `bun loom check:fast`
    skips Biome, the typecheck, the React audit and the slower gates for the inner loop (Biome stays
-   in `check` and the pre-push `check:biome` hook). Neither runs tests or builds — use `bun erp test`
+   in `check` and the pre-push `check:biome` hook). Neither runs tests or builds — use `bun loom test`
    and the app build for those.
 
 ## Gate catalog
 
-`bun erp check:gate --list` is authoritative; this table explains the same entries.
+`bun loom check:gate --list` is authoritative; this table explains the same entries.
 
 Because `apps/` can be empty or partial, the UI gates (`design`, `copy`, `motion`, `ui`, and the contrast half of
 `design`) also scan the catalog copies under `templates/apps/web`, `templates/apps/mobile`,
@@ -54,8 +54,8 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 | platform | `check:platform` | `cli/gates/platform.ts` | Node built-ins need a per-file exemption; Bun-first runtime | Web Vite tooling and vendored `cli/gates/governance/` are excluded |
 | react | `check:react` | `cli/gates/react-doctor.ts` | React Doctor errors and high-complexity components | Missing `package.json` in web, mobile or UI |
 | readiness | `check:prod` | `cli/gates/readiness.ts` | Root scripts, secret placeholders, migration numbering and contract docs | Missing migration or app directories |
-| rpc | `check:rpc` | `cli/gates/rpc-guard.ts` | Typed Hono client, no runtime server imports, `/api/v1` prefix | Missing web, mobile or server apps; without a server there is no typed-client rule |
-| scope | `check:scope` | `cli/gates/scope.ts` | Client names, business rules and unknown top-level directories | Project mode (`docs/template/` is missing; `template.scope.json` is deleted by `bun erp project:adopt`) |
+| rpc | `check:rpc` | `cli/gates/rpc-guard.ts` | Typed Hono client, no runtime server imports, `/api/v1` prefix; server features use `factory.createApp()`, `validate()`, `doc()` and `ok()` instead of `new Hono()`, `zValidator`, `describeRoute` and raw `c.json()` | Missing web, mobile or server apps; without a server there is no typed-client rule |
+| scope | `check:scope` | `cli/gates/scope.ts` | Client names, business rules and unknown top-level directories | Project mode (`docs/template/` is missing; `template.scope.json` is deleted by `bun loom project:adopt`) |
 | lifecycle | `check:lifecycle` | `cli/gates/lifecycle.ts` | Template-only markers and the template scope file are gone once `docs/template/` is removed, and no project document (outside `docs/tasks/`) uses template phrases (the list is `LEAK_PATTERNS` in the gate) | Template mode (`docs/template/` exists) |
 | shadcn | `check:shadcn` | `cli/gates/shadcn-guard.ts` | Approved registries, vendored provenance and banned native controls | Missing app source directories |
 | skills | `skills:validate` | `cli/gates/skills.ts` | `SKILL.md` frontmatter, matching name, trigger description and body length | `skills/` is missing |
@@ -72,15 +72,15 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 
 ## Task evidence grammar (`tdd: required`)
 
-`bun erp task:new` writes `tdd: required` into the front matter. Older task files without it stay
+`bun loom task:new` writes `tdd: required` into the front matter. Older task files without it stay
 exempt. For a required task, every ticked item `- [x] **<ID> ...**` outside code fences needs lines
 under `## Evidence`, red before green:
 
 ```text
-- red: F9.1 `bun erp test --filter notes` — 1 fail: expected 200, received 404
-- green: F9.1 `bun erp test --filter notes` — 4 pass
+- red: F9.1 `bun loom test --filter notes` — 1 fail: expected 200, received 404
+- green: F9.1 `bun loom test --filter notes` — 4 pass
 - red: F9.2 n/a — docs-only, nothing executable to fail
-- green: F9.2 `bun erp check` — 0 findings
+- green: F9.2 `bun loom check` — 0 findings
 ```
 
 Rules: each `red:`/`green:` line is `<ID>`, a backticked command, then an output excerpt. `red: <ID>
@@ -102,7 +102,7 @@ is the final judge.
 
 ## Pre-push hook
 
-`.githooks/pre-push` runs `bun run check:biome`, `bun erp check:fast`, then `bun erp test --filter
+`.githooks/pre-push` runs `bun run check:biome`, `bun loom check:fast`, then `bun loom test --filter
 <feature>` for each server feature changed since the upstream, when `apps/server` is installed and
 `TEST_DATABASE_URL` is set. Otherwise it prints a `NOTICE` saying the tests were not run.
 `git push --no-verify` bypasses it; CI runs every gate and is the final judge.
@@ -110,9 +110,9 @@ is the final judge.
 ## Run one gate
 
 ```sh
-bun erp check:gate --list      # the catalog table
-bun erp check:gate tdd         # forwards to check:tdd
-bun erp check:tdd              # the standalone command, same gate
+bun loom check:gate --list      # the catalog table
+bun loom check:gate tdd         # forwards to check:tdd
+bun loom check:tdd              # the standalone command, same gate
 ```
 
 Arguments after the gate name are forwarded to the underlying command; no current gate consumes
@@ -124,7 +124,7 @@ them.
    and report paths relative to the repo root; it must not import `cli/tasks/` or `apps/**`.
 2. Add an entry to `GATE_CATALOG` in `cli/lib/gates.ts` (`name`, `command`, `file`, `summary`) and
    its implementation to `GATE_IMPLEMENTATIONS`; TypeScript fails the build until both exist.
-   `bun erp check` picks it up automatically in catalog order.
+   `bun loom check` picks it up automatically in catalog order.
 3. Register the standalone command in `cli/commands/check.ts` with `guard(...)` and
    `runGate("<name>")`, or forward an existing command.
 4. Add the name to `FAST_GATE_NAMES` in `cli/gates/parallel-gates.ts` only when the check is
@@ -132,5 +132,5 @@ them.
 5. Add the table row above. If the rule is enforceable, state it in `AGENTS.md` or
    `docs/conventions.md` as well.
 6. Test it: a unit test under `apps/server/tests/unit/` (or the catalog copy
-   `templates/apps/server/tests/unit/`), then run `bun erp check:gate <name>`, `bun erp check:fast`
-   and `bun erp check`.
+   `templates/apps/server/tests/unit/`), then run `bun loom check:gate <name>`, `bun loom check:fast`
+   and `bun loom check`.

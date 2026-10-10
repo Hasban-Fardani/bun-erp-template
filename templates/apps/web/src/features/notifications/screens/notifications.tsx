@@ -1,8 +1,8 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Card } from "@bun-erp/ui/atoms/card.tsx";
-import { PageLoading, TableEmpty } from "@bun-erp/ui/molecules/table-states.tsx";
-import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Card } from "@loom/ui/atoms/card.tsx";
+import { PageLoading, TableEmpty } from "@loom/ui/molecules/table-states.tsx";
+import { PageShell } from "@loom/ui/templates/page-shell.tsx";
 import { Loader2 } from "lucide-react";
 import { NotificationFeed } from "../components/notification-feed.tsx";
 import {

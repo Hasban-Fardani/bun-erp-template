@@ -146,9 +146,9 @@ async function resolveRelative(root: string, fromFile: string, specifier: string
   return undefined;
 }
 
-/** Resolves `@bun-erp/<package>[/<subpath>]` through the package's `exports` map, without node_modules. */
+/** Resolves `@loom/<package>[/<subpath>]` through the package's `exports` map, without node_modules. */
 async function resolveWorkspacePackage(root: string, specifier: string): Promise<string | undefined> {
-  const match = /^@bun-erp\/([^/]+)(?:\/(.+))?$/.exec(specifier);
+  const match = /^@loom\/([^/]+)(?:\/(.+))?$/.exec(specifier);
   if (!match) return undefined;
   const [, name, subpath] = match;
   const manifestPath = join(root, "packages", name ?? "", "package.json");
@@ -310,7 +310,7 @@ export async function runWorkerGate(root: string, options: WorkerGateOptions = {
   return { findings: [...new Set(findings)], report };
 }
 
-/** Catalog entrypoint used by `bun erp check` and `check:gate worker`. */
+/** Catalog entrypoint used by `bun loom check` and `check:gate worker`. */
 export async function checkWorker(root: string): Promise<string[]> {
   return (await runWorkerGate(root)).findings;
 }

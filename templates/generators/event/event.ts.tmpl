@@ -8,6 +8,6 @@ export type {{pascal}}Payload = {
 /**
  * Domain event `{{eventName}}`. Dispatch it inside the write transaction that causes it:
  * `await dispatch(tx, {{camel}}Event, payload, { idempotencyKey })`. Listeners live in
- * `../listeners/` (`bun erp make:listener {{feature}} <name> --event {{file}}`).
+ * `../listeners/` (`bun loom make:listener {{feature}} <name> --event {{file}}`).
  */
 export const {{camel}}Event = defineEvent<{{pascal}}Payload>("{{eventName}}");

@@ -1,4 +1,4 @@
-import { useI18n } from "@bun-erp/i18n/react";
+import { useI18n } from "@loom/i18n/react";
 import { cn } from "@web/lib/cn.ts";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

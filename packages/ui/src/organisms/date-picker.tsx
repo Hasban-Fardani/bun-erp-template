@@ -1,6 +1,6 @@
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
-import { Calendar } from "@bun-erp/ui/molecules/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@bun-erp/ui/molecules/popover-primitives";
+import { Button } from "@loom/ui/atoms/button-primitives";
+import { Calendar } from "@loom/ui/molecules/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@loom/ui/molecules/popover-primitives";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
 

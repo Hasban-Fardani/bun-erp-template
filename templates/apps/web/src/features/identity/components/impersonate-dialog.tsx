@@ -1,5 +1,5 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { IconButton } from "@bun-erp/ui/atoms/icon-button.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { IconButton } from "@loom/ui/atoms/icon-button.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@bun-erp/ui/organisms/alert-dialog.tsx";
+} from "@loom/ui/organisms/alert-dialog.tsx";
 import { Eye } from "lucide-react";
 
 /** Row action + confirm dialog: impersonating gives full access as the user, so it is never one click. */

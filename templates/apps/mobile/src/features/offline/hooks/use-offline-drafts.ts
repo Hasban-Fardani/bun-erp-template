@@ -1,4 +1,4 @@
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import { createMobileLogger } from "@mobile/lib/logger.ts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getOfflineStore } from "../stores/offline-store.ts";

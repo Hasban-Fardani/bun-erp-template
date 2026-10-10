@@ -2,7 +2,7 @@ import type { Env } from "../config/index.ts";
 import { loadEnv } from "../config/index.ts";
 import { createDatabase } from "../database/index.ts";
 import { migrate } from "../database/migrate.ts";
-// @erp:mail
+// @loom:mail
 import { createEventListeners } from "../features/events.ts";
 import { createAuth } from "../features/identity/auth.ts";
 import { configurePermissionCache } from "../features/rbac/cache.ts";

@@ -27,7 +27,7 @@ const FEATURES = [
   notificationFeature,
   storageFeature,
   aiFeature,
-  // @erp:routes
+  // @loom:routes
 ] as const satisfies readonly FeatureDefinition[];
 
 /** `routes/api.ts` only registers routes — it holds no business logic (PRD §6). */

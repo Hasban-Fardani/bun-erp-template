@@ -1,4 +1,4 @@
-# `@bun-erp/editor`
+# `@loom/editor`
 
 An independently authored React rich text editor package for web and Capacitor mobile applications. It uses [Lexical](https://github.com/facebook/lexical), which publishes its [MIT license](https://github.com/facebook/lexical/blob/main/LICENSE). The checked `htmujahid/shadcn-editor` repository root and package metadata did not identify a license, so that project informed the requested composable API and toolbar direction only; no source from it is included here.
 
@@ -6,7 +6,7 @@ The persisted value is canonical Lexical JSON (`EditorJSON`). The package does n
 
 ## Root integration
 
-Install the package with `bun erp packages:install editor`; it copies the package into `packages/editor`, registers the workspace, and runs `bun install` so the lockfile records these exact dependencies:
+Install the package with `bun loom packages:install editor`; it copies the package into `packages/editor`, registers the workspace, and runs `bun install` so the lockfile records these exact dependencies:
 
 ```json
 {
@@ -19,17 +19,17 @@ Install the package with `bun erp packages:install editor`; it copies the packag
 }
 ```
 
-The package peers on the repository's exact React versions, `react@19.3.0` and `react-dom@19.3.0`. Add `@bun-erp/editor: "workspace:*"` only to browser application workspaces that use the editor. Keep it out of server and Worker dependency graphs.
+The package peers on the repository's exact React versions, `react@19.3.0` and `react-dom@19.3.0`. Add `@loom/editor: "workspace:*"` only to browser application workspaces that use the editor. Keep it out of server and Worker dependency graphs.
 
 Package development and type checks use the exact type-only dev dependencies `@types/react@19.1.8` and `@types/react-dom@19.1.7`.
 
 ## Usage
 
-The root `@bun-erp/editor` entry exports types only, so importing the JSON contract does not execute React or Lexical code. For a standard editor, use the lazy browser entrypoint:
+The root `@loom/editor` entry exports types only, so importing the JSON contract does not execute React or Lexical code. For a standard editor, use the lazy browser entrypoint:
 
 ```tsx
-import { RichTextEditor } from "@bun-erp/editor/react";
-import type { EditorJSON } from "@bun-erp/editor";
+import { RichTextEditor } from "@loom/editor/react";
+import type { EditorJSON } from "@loom/editor";
 
 function NotesEditor({ value, save }: { value?: EditorJSON; save: (value: EditorJSON) => void }) {
   return (
@@ -44,7 +44,7 @@ function NotesEditor({ value, save }: { value?: EditorJSON; save: (value: Editor
 }
 ```
 
-The lazy component returns `serverFallback` (or `null`) during server rendering and imports Lexical after the browser component mounts. `loadingFallback` can provide an app-specific loading state. Browser applications may import `@bun-erp/editor/styles.css` globally when their bundler does not preserve CSS from a dynamic import.
+The lazy component returns `serverFallback` (or `null`) during server rendering and imports Lexical after the browser component mounts. `loadingFallback` can provide an app-specific loading state. Browser applications may import `@loom/editor/styles.css` globally when their bundler does not preserve CSS from a dynamic import.
 
 For a custom toolbar, load the client primitives behind a client-only boundary, then compose them inside `EditorProvider`:
 
@@ -58,7 +58,7 @@ import {
   EditorListButton,
   EditorProvider,
   EditorToolbar,
-} from "@bun-erp/editor/client";
+} from "@loom/editor/client";
 
 function CustomEditor() {
   return (
@@ -81,7 +81,7 @@ function CustomEditor() {
 }
 ```
 
-`@bun-erp/editor/client` is browser-only and should be imported lazily by route/component boundaries. Never import it from Hono, server, or Cloudflare Worker code. `loadEditorComponents()` from the `/react` entrypoint can be used to load the same composable exports from an effect or client-only route.
+`@loom/editor/client` is browser-only and should be imported lazily by route/component boundaries. Never import it from Hono, server, or Cloudflare Worker code. `loadEditorComponents()` from the `/react` entrypoint can be used to load the same composable exports from an effect or client-only route.
 
 `initialValue` is read only when an editor mounts. Remount with a new React `key` when switching documents; subsequent edits are reported through `onChange` as JSON. Links accept HTTP(S), `mailto:`, `tel:`, fragments, and relative URLs. Script and data protocols are rejected.
 

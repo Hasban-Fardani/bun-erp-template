@@ -25,11 +25,11 @@ Motion and reduced motion:
 - A global `@media (prefers-reduced-motion: reduce)` block disables every animation used by a
   `[data-slot]` surface and the named entrance classes.
 - Looping utilities (`animate-spin|ping|pulse|bounce`) use `motion-safe:` or pair with
-  `motion-reduce:animate-none`; `bun erp check:gate motion` enforces both.
+  `motion-reduce:animate-none`; `bun loom check:gate motion` enforces both.
 - Overlays animate on open and close rather than appearing abruptly, and the same reduced-motion
   guard covers them.
 
-`bun erp check:gate ui` enforces the list feedback (`TABLE_FEEDBACK_MISSING`): the shared table
+`bun loom check:gate ui` enforces the list feedback (`TABLE_FEEDBACK_MISSING`): the shared table
 declares refetch, clear-search and retry, and every feature screen mounts them. These are
 requirements for changes, not a claim every existing screen satisfies them.
 

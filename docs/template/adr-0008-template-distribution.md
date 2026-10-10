@@ -4,6 +4,6 @@
 
 Applications copy/fork a clean template. Client names, product data and business rules belong in
 those applications, not here. `template.scope.json` owns allowed directories and apps, and
-`check:scope` enforces it while `docs/template/` exists. `bun erp project:adopt` deletes both, so a
+`check:scope` enforces it while `docs/template/` exists. `bun loom project:adopt` deletes both, so a
 project is free to carry its own domain vocabulary. A shared multi-client application inside this
 template was rejected.

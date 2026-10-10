@@ -2,7 +2,7 @@ import type { AppContext } from "../bootstrap/context.ts";
 import { createCache } from "../infra/cache/index.ts";
 import { createEventBus } from "../infra/events/index.ts";
 import { BATCH_JOB_NAME, BatchHandlerRegistry, processJobBatch } from "../infra/jobs/batch.ts";
-// @erp:mail
+// @loom:mail
 import { JobRegistry } from "../infra/jobs/registry.ts";
 import { defineSchedule, type ScheduleDefinition } from "../infra/jobs/scheduler.ts";
 import { createEventListeners } from "./events.ts";
@@ -10,11 +10,11 @@ import { pruneRetention, retentionOptionsFromEnv } from "./retention.ts";
 
 /**
  * Feature composition root for handlers. Add feature jobs here without coupling platform code to
- * domains; `bun erp features:install mail` adds the `mail.send` handler.
+ * domains; `bun loom features:install mail` adds the `mail.send` handler.
  */
 export function createJobRegistry(ctx: Pick<AppContext, "env" | "db" | "logger">): JobRegistry {
   const registry = new JobRegistry();
-  // @erp:jobs
+  // @loom:jobs
   const batches = createBatchHandlers(ctx);
   registry.register(BATCH_JOB_NAME, async (payload, context) => {
     const batchId = typeof payload.batchId === "string" ? payload.batchId : "";
@@ -29,7 +29,7 @@ export function createJobRegistry(ctx: Pick<AppContext, "env" | "db" | "logger">
 /**
  * Feature composition root for batches: a feature that imports or bulk-processes rows registers
  * its handler here, and `batch.process` resolves it by the name stored on the batch row.
- * `bun erp features:install import-export` adds `registerImportExportBatchHandlers(batches, ctx)`.
+ * `bun loom features:install import-export` adds `registerImportExportBatchHandlers(batches, ctx)`.
  */
 export function createBatchHandlers(_ctx: Pick<AppContext, "env" | "db" | "logger">): BatchHandlerRegistry {
   const handlers = new BatchHandlerRegistry();

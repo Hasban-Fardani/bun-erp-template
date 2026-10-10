@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { Button } from "@loom/ui/atoms/button-primitives";
+import { cn } from "@loom/ui/lib/cn.ts";
 import {
   MessageScroller as MessageScrollerPrimitive,
   useMessageScroller,

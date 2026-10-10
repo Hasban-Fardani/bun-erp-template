@@ -1,4 +1,4 @@
-# @bun-erp/pdf
+# @loom/pdf
 
 > Optional, composable React PDF primitives and themes for client-side document generation.
 

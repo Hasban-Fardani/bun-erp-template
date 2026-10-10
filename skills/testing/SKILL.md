@@ -17,5 +17,5 @@ HEAD, the OpenAPI document, query values outside the validated allowlist, bodyle
 with a one-line comment saying why. Use actual database behavior, not heavy mocks.
 Add a failing regression case before fixing a defect; keep assertions meaningful.
 Compiled Zod schema changes require raw/compiled parity coverage.
-Run `bun erp test` and checks; record actual output. Browser/native claims require execution
+Run `bun loom test` and checks; record actual output. Browser/native claims require execution
 on those surfaces, rather than inferring success from an HTTP 200.

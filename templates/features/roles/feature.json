@@ -1,5 +1,5 @@
 {
-  "$comment": "Web-kind catalog feature. Read by `bun erp features:install`; paths are relative to this directory.",
+  "$comment": "Web-kind catalog feature. Read by `bun loom features:install`; paths are relative to this directory.",
   "name": "roles",
   "kind": "web",
   "requires": ["data-table"],

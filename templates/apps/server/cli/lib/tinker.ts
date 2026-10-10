@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import type { AppContext } from "../../bootstrap/context.ts";
 import * as schema from "../../database/schema.ts";
 
-/** Everything `bun erp tinker` preloads. The names are the contract documented in docs/development.md. */
+/** Everything `bun loom tinker` preloads. The names are the contract documented in docs/development.md. */
 const SCOPE_NAMES = ["db", "schema", "env", "sql", "orm", "ctx", "vars"] as const;
 
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor as new (

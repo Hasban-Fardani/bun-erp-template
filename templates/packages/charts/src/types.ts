@@ -31,5 +31,5 @@ export function getSeriesColor<Row extends object>(
   index: number,
   colors: readonly string[] | undefined,
 ): string {
-  return series.color ?? colors?.[index] ?? `var(--bun-erp-chart-${(index % 8) + 1}, #2563eb)`;
+  return series.color ?? colors?.[index] ?? `var(--loom-chart-${(index % 8) + 1}, #2563eb)`;
 }

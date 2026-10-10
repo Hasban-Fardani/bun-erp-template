@@ -71,7 +71,7 @@ async function governanceFindings(root: string): Promise<string[]> {
 
   // Explicit source paths, not `apps`: a built `apps/web/dist` is output, and scanning it
   // produced hundreds of nonsense findings about minified bundles. The app paths are optional:
-  // apps/* only exists after `bun erp init`, and the catalog copies are scanned while they wait
+  // apps/* only exists after `bun loom init`, and the catalog copies are scanned while they wait
   // under templates/apps.
   const targetDirs = [
     "apps/server",

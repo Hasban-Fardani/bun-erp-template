@@ -38,8 +38,8 @@ export class MigrationLedgerMismatch extends Error {
     const detail = mismatches.map(({ catalog, ledger }) => `ledger "${ledger}" vs catalog "${catalog}"`).join("; ");
     super(
       `Migration ledger mismatch: ${detail}. This database probably belongs to another project or an older catalog. ` +
-        "Point DATABASE_URL at a fresh database, or run `bun erp db:status` to compare. " +
-        "Only for local disposable data: `bun erp db:reset --force`.",
+        "Point DATABASE_URL at a fresh database, or run `bun loom db:status` to compare. " +
+        "Only for local disposable data: `bun loom db:reset --force`.",
     );
     this.name = "MigrationLedgerMismatch";
   }

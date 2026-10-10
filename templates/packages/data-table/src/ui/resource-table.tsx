@@ -1,6 +1,6 @@
-import { Input } from "@bun-erp/ui/atoms/input.tsx";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
-import type { Paged } from "@bun-erp/ui/types/list.ts";
+import { Input } from "@loom/ui/atoms/input.tsx";
+import { cn } from "@loom/ui/lib/cn.ts";
+import type { Paged } from "@loom/ui/types/list.ts";
 import { Loader2, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { type Column, DataTable, type DataTableLabels, DEFAULT_DATA_TABLE_LABELS, Pagination } from "./server-table";

@@ -25,7 +25,7 @@ test("workspace apps are discovered from the root manifest and report status", a
   await Bun.write(
     `${root}/apps/alpha/package.json`,
     JSON.stringify({
-      name: "@bun-erp/alpha",
+      name: "@loom/alpha",
       version: "0.1.0",
       private: true,
       scripts: { dev: "vite", build: "vite build" },
@@ -40,7 +40,7 @@ test("workspace apps are discovered from the root manifest and report status", a
   expect(apps.map((app) => app.name)).toEqual(["alpha"]);
 
   const alpha = await readWorkspaceApp(root, "alpha");
-  expect(alpha?.packageName).toBe("@bun-erp/alpha");
+  expect(alpha?.packageName).toBe("@loom/alpha");
   expect(alpha?.version).toBe("0.1.0");
   expect(alpha?.entry).toBe("src/main.tsx");
   expect(alpha?.port).toBe(5173);
@@ -54,10 +54,10 @@ test("workspace apps are discovered from the root manifest and report status", a
 test("apps:create scaffold is runnable, version-aligned, and testable", () => {
   const scaffold = renderAppScaffold("Night Shift", { version: "0.1.0", port: 4100 });
   expect(scaffold.dir).toBe("apps/night-shift");
-  expect(scaffold.packageName).toBe("@bun-erp/night-shift");
+  expect(scaffold.packageName).toBe("@loom/night-shift");
 
   const manifest = scaffold.files.find((file) => file.path.endsWith("package.json"))?.contents ?? "";
-  expect(JSON.parse(manifest)).toMatchObject({ name: "@bun-erp/night-shift", version: "0.1.0" });
+  expect(JSON.parse(manifest)).toMatchObject({ name: "@loom/night-shift", version: "0.1.0" });
   expect(scaffold.files.some((file) => file.path.endsWith("tests/night-shift.test.ts"))).toBe(true);
 
   const index = scaffold.files.find((file) => file.path.endsWith("src/index.ts"))?.contents ?? "";

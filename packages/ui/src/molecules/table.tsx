@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 import type * as React from "react";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {

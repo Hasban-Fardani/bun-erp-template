@@ -1,5 +1,5 @@
 import { beforeEach, expect, test } from "bun:test";
-import { createMemoryAdapter } from "@bun-erp/storage";
+import { createMemoryAdapter } from "@loom/storage";
 import { createOfflineStore, type OfflineAdapter } from "../../src/features/offline/stores/offline-store.ts";
 
 let store: ReturnType<typeof createOfflineStore>;

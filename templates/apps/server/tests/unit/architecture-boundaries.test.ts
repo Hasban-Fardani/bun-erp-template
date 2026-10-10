@@ -15,9 +15,9 @@ test("atomic and application boundaries reject forbidden imports and permit shar
     await Bun.write(`${root}/packages/ui/src/misc/button.tsx`, "export const Button = () => null;");
     await Bun.write(
       `${root}/apps/mobile/src/main.tsx`,
-      'import "@bun-erp/utils"; const page = import("../../web/src/main.tsx");',
+      'import "@loom/utils"; const page = import("../../web/src/main.tsx");',
     );
-    await Bun.write(`${root}/apps/web/src/main.tsx`, 'import "@bun-erp/utils";');
+    await Bun.write(`${root}/apps/web/src/main.tsx`, 'import "@loom/utils";');
     const red = await checkArchitecture(root);
     expect(red.some((finding) => finding.includes("ATOMIC_UPWARD_IMPORT"))).toBe(true);
     expect(red.some((finding) => finding.includes("UI_ATOMIC_LAYER"))).toBe(true);
@@ -31,7 +31,7 @@ test("atomic and application boundaries reject forbidden imports and permit shar
     await Bun.$`rm ${root}/packages/ui/src/misc/button.tsx`.quiet();
     await Bun.write(
       `${root}/apps/mobile/src/main.tsx`,
-      'import "@bun-erp/utils"; import { Button } from "@bun-erp/ui/atoms/button.tsx";',
+      'import "@loom/utils"; import { Button } from "@loom/ui/atoms/button.tsx";',
     );
     clearFileIndexes();
     expect(await checkArchitecture(root)).toEqual([]);

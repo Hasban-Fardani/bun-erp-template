@@ -12,7 +12,7 @@ import { sessions, users } from "./schema.ts";
  * isolate answers the same way. Better Auth's admin plugin was not used (see the F3.4 evidence):
  * it requires a `role` column and its own role model, which would replace this repo's RBAC.
  */
-export const IMPERSONATION_COOKIE = "erp_impersonation";
+export const IMPERSONATION_COOKIE = "loom_impersonation";
 
 /** Self-service credential changes Better Auth would otherwise apply to the admin's own account. */
 export const BLOCKED_AUTH_PATHS = [

@@ -45,7 +45,7 @@ async function applyArtifactPlan(plan: MakePlan, next: readonly string[]): Promi
 }
 
 function usage(text: string): never {
-  process.stderr.write(`Usage: bun erp ${text}\n`);
+  process.stderr.write(`Usage: bun loom ${text}\n`);
   process.exit(1);
 }
 
@@ -59,7 +59,7 @@ export const commands = [
     const rawName = resolveRequired(parsed.positional[0], "Feature name");
     if (!rawName) {
       process.stderr.write(
-        "Usage: bun erp make:feature <name> [--sequence <key>] [--prefix <prefix>] [--padding <digits>] [--soft-delete] [--no-version]\n",
+        "Usage: bun loom make:feature <name> [--sequence <key>] [--prefix <prefix>] [--padding <digits>] [--soft-delete] [--no-version]\n",
       );
       process.exit(1);
     }
@@ -127,15 +127,15 @@ export const commands = [
     }
     process.stdout.write("Regenerated apps/web/src/routeTree.gen.ts\n");
     process.stdout.write("Next: add the domain fields, then run:\n");
-    process.stdout.write("  bun erp db:migrate\n");
-    process.stdout.write(`  bun erp test --filter ${plan.scaffold.name}\n`);
+    process.stdout.write("  bun loom db:migrate\n");
+    process.stdout.write(`  bun loom test --filter ${plan.scaffold.name}\n`);
   }),
   defineCommand("make:migration", async (args) => {
     await requireApps(["server"]);
     const parsed = parseCommandOptions(args, { values: ["create", "table"] });
     const rawName = resolveRequired(parsed.positional[0], "Migration name");
     if (!rawName) {
-      process.stderr.write("Usage: bun erp make:migration <name> [--create <table>] [--table <table>]\n");
+      process.stderr.write("Usage: bun loom make:migration <name> [--create <table>] [--table <table>]\n");
       process.exit(1);
     }
     if (parsed.values.has("create") && parsed.values.has("table")) {
@@ -152,22 +152,22 @@ export const commands = [
     process.stdout.write(`Created migration scaffold: apps/server/database/migrations/${file}\n`);
     process.stdout.write(
       intent.mode === "stub"
-        ? "Implement its forward-only schema change before running bun erp db:migrate.\n"
-        : "Fill in the domain columns and indexes, then run bun erp db:migrate.\n",
+        ? "Implement its forward-only schema change before running bun loom db:migrate.\n"
+        : "Fill in the domain columns and indexes, then run bun loom db:migrate.\n",
     );
   }),
   defineCommand("make:seeder", async (args) => {
     await requireApps(["server"]);
     const rawName = resolveRequired(args[0], "Seeder name");
     if (!rawName || rawName.startsWith("--")) {
-      process.stderr.write("Usage: bun erp make:seeder <name>\n");
+      process.stderr.write("Usage: bun loom make:seeder <name>\n");
       process.exit(1);
     }
     const name = toSeederName(rawName);
     const target = resolve(SEEDERS_DIR, `${name}.ts`);
     await writeScaffold(target, renderSeederSource(name));
     process.stdout.write(`Created seeder scaffold: apps/server/database/seeders/${name}.ts\n`);
-    process.stdout.write("`bun erp db:seed` runs all feature seeders; add deterministic, idempotent data first.\n");
+    process.stdout.write("`bun loom db:seed` runs all feature seeders; add deterministic, idempotent data first.\n");
   }),
   defineCommand("make:factory", async (args) => {
     await requireApps(["server"]);
@@ -200,7 +200,7 @@ export const commands = [
     const plan = await planMakeEvent(repoRoot, feature, name);
     await applyArtifactPlan(plan, [
       "Dispatch it inside the write transaction: dispatch(tx, event, payload, { idempotencyKey }).",
-      `Next: bun erp make:listener ${feature} <listener> --event ${name}`,
+      `Next: bun loom make:listener ${feature} <listener> --event ${name}`,
     ]);
   }),
   defineCommand("make:listener", async (args) => {
@@ -230,7 +230,7 @@ export const commands = [
     const feature = resolveRequired(args[0], "Feature name");
     if (!feature || feature.startsWith("--")) usage("make:test <feature> [name]");
     const plan = await planMakeTest(repoRoot, feature, args[1]);
-    await applyArtifactPlan(plan, [`Next: bun erp test --filter ${feature}`]);
+    await applyArtifactPlan(plan, [`Next: bun loom test --filter ${feature}`]);
   }),
   defineCommand("make:notification", async (args) => {
     await requireApps(["server"]);

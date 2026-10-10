@@ -1,6 +1,6 @@
 # Factories
 
-A factory builds deterministic rows for tests and seeders. `bun erp make:factory <feature>` writes
+A factory builds deterministic rows for tests and seeders. `bun loom make:factory <feature>` writes
 `database/factories/<feature>.ts`; `make:feature` emits one for every new table.
 
 ```ts

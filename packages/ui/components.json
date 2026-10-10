@@ -10,11 +10,11 @@
     "cssVariables": true
   },
   "aliases": {
-    "components": "@bun-erp/ui",
-    "utils": "@bun-erp/ui/lib/cn",
-    "ui": "@bun-erp/ui/atoms",
-    "lib": "@bun-erp/ui/lib",
-    "hooks": "@bun-erp/ui/lib"
+    "components": "@loom/ui",
+    "utils": "@loom/ui/lib/cn",
+    "ui": "@loom/ui/atoms",
+    "lib": "@loom/ui/lib",
+    "hooks": "@loom/ui/lib"
   },
   "registries": {
     "@shadcn": "https://ui.shadcn.com/r/styles/new-york-v4/{name}.json",

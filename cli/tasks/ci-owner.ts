@@ -13,7 +13,7 @@ import { runCommand } from "../registry.ts";
 const credentialsPath = resolve(repoRoot, ".data/qa/credentials.json");
 const file = Bun.file(credentialsPath);
 if (!(await file.exists())) {
-  throw new Error(`${credentialsPath} is missing; run \`bun erp ci:prepare\` first`);
+  throw new Error(`${credentialsPath} is missing; run \`bun loom ci:prepare\` first`);
 }
 const credentials = parseQaCredentials(await file.json().catch(() => undefined));
 
@@ -26,5 +26,5 @@ const handled = await runCommand("user:create", [
   "Admin",
 ]);
 if (!handled) {
-  throw new Error("user:create is unavailable; install the server app with `bun erp init` first");
+  throw new Error("user:create is unavailable; install the server app with `bun loom init` first");
 }

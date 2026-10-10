@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import { eq, sql } from "drizzle-orm";
 import type { AppContext } from "@/bootstrap/context.ts";
 import { rowsOf } from "@/database/rows.ts";

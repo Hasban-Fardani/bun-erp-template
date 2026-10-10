@@ -8,7 +8,7 @@ export async function run{{pascal}}(_ctx: Pick<AppContext, "db" | "logger">, arg
   return `{{command}}: ${args.length} argument(s)`;
 }
 
-// `bun erp --help` lists this command under "Other" until you add a summary in cli/lib/help.ts.
+// `bun loom --help` lists this command under "Other" until you add a summary in cli/lib/help.ts.
 export const commands = [
   defineCommand("{{command}}", async (args) => {
     const ctx = await createCliContext({ migrateOnStart: false });

@@ -1,5 +1,5 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Kbd } from "@bun-erp/ui/atoms/kbd.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Kbd } from "@loom/ui/atoms/kbd.tsx";
 import {
   Command,
   CommandEmpty,
@@ -7,8 +7,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@bun-erp/ui/molecules/command.tsx";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@bun-erp/ui/organisms/dialog.tsx";
+} from "@loom/ui/molecules/command.tsx";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@loom/ui/organisms/dialog.tsx";
 import { useNavigate } from "@tanstack/react-router";
 import { Check, LogOut, Monitor, Moon, Search, Sun } from "lucide-react";
 import { useEffect, useState } from "react";

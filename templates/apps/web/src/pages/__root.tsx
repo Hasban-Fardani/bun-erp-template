@@ -1,8 +1,8 @@
-import { LocaleSwitcher, useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
-import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
-import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
+import { LocaleSwitcher, useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { EmptyState } from "@loom/ui/molecules/empty-state.tsx";
+import { PageLoading } from "@loom/ui/molecules/table-states.tsx";
+import { PageShell } from "@loom/ui/templates/page-shell.tsx";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, type ErrorComponentProps, Link, Outlet, useRouter } from "@tanstack/react-router";
 

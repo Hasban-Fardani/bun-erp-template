@@ -1,4 +1,4 @@
-import { createObjectStorage, type ObjectStorage, type ServerStorageConfig } from "@bun-erp/storage/server";
+import { createObjectStorage, type ObjectStorage, type ServerStorageConfig } from "@loom/storage/server";
 import type { Env } from "../config/index.ts";
 
 /** Server object store, aliased so features and the composition root share one name. */
@@ -56,4 +56,4 @@ export function storageConfigFromEnv(source: Record<string, string | undefined>,
   };
 }
 
-export type { ObjectStorage } from "@bun-erp/storage/server";
+export type { ObjectStorage } from "@loom/storage/server";

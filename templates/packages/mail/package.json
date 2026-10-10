@@ -1,5 +1,5 @@
 {
-  "name": "@bun-erp/mail",
+  "name": "@loom/mail",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "./llms.txt": "./llms.txt"
   },
   "dependencies": {
-    "@bun-erp/utils": "workspace:*",
+    "@loom/utils": "workspace:*",
     "nodemailer": "10.0.15"
   },
   "devDependencies": {

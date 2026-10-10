@@ -1,7 +1,7 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Alert, AlertDescription } from "@bun-erp/ui/molecules/alert.tsx";
-import { NotificationBell, NotificationsHeader } from "@bun-erp/ui/organisms/notification-bell.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Alert, AlertDescription } from "@loom/ui/molecules/alert.tsx";
+import { NotificationBell, NotificationsHeader } from "@loom/ui/organisms/notification-bell.tsx";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {

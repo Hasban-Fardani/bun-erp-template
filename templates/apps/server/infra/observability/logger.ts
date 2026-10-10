@@ -46,7 +46,7 @@ export function createLogger(env: Env): Logger {
   return pino(
     {
       level: env.LOG_LEVEL,
-      base: { service: "bun-erp", environment: env.APP_ENV, release: env.APP_RELEASE },
+      base: { service: "loom", environment: env.APP_ENV, release: env.APP_RELEASE },
       timestamp: pino.stdTimeFunctions.isoTime,
       redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
     },

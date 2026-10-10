@@ -1,4 +1,4 @@
-# @bun-erp/spreadsheet
+# @loom/spreadsheet
 
 Tabular formats behind one dependency boundary: papaparse for CSV, ExcelJS for XLSX (ADR-0005).
 Features import these helpers and never the underlying libraries.
@@ -10,10 +10,10 @@ Features import these helpers and never the underlying libraries.
 
 ## Public exports
 
-- `@bun-erp/spreadsheet`: shared types plus every function below.
-- `@bun-erp/spreadsheet/csv`: `parseCsv(text, options)`, `parseCsvStream(asyncIterable, options)`,
+- `@loom/spreadsheet`: shared types plus every function below.
+- `@loom/spreadsheet/csv`: `parseCsv(text, options)`, `parseCsvStream(asyncIterable, options)`,
   `stringifyCsv(table, options)`, `CsvParseOptions`, `CsvWriteOptions`.
-- `@bun-erp/spreadsheet/xlsx`: `readXlsx(data, options)`, `readXlsxStream(path, options)`,
+- `@loom/spreadsheet/xlsx`: `readXlsx(data, options)`, `readXlsxStream(path, options)`,
   `writeXlsx(table, options)`, `XlsxReadOptions`, `XlsxWriteOptions`.
 
 ## Contracts

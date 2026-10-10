@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { createUuid } from "@bun-erp/utils";
-import { createMailer, createMemoryMailDriver } from "@bun-erp/mail/server";
+import { createUuid } from "@loom/utils";
+import { createMailer, createMemoryMailDriver } from "@loom/mail/server";
 import { createMailEnqueue } from "@/features/mail/wiring.ts";
 import { queue{{pascal}}Mail, render{{pascal}}Mail } from "@/mail/{{file}}.ts";
 import { createTestContext, testEnv } from "../../support/fixtures.ts";

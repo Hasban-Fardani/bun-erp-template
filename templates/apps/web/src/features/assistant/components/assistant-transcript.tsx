@@ -1,6 +1,6 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Bubble, BubbleContent } from "@bun-erp/ui/molecules/bubble.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Bubble, BubbleContent } from "@loom/ui/molecules/bubble.tsx";
 import { cn } from "@web/lib/cn.ts";
 import { AlertCircle, Check, Loader2, Pencil, RefreshCw, Slash, Sparkles } from "lucide-react";
 import { useState } from "react";

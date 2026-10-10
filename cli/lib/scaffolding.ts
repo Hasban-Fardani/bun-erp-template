@@ -178,7 +178,7 @@ export function nextMigrationFile(existingFiles: readonly string[], rawName: str
     .sort((a, b) => a - b);
 
   const hasGap = numbers.some((number, index) => number !== index + 1);
-  if (hasGap) throw new Error("Existing migrations are not contiguous; run `bun erp check:gate migrations` first");
+  if (hasGap) throw new Error("Existing migrations are not contiguous; run `bun loom check:gate migrations` first");
 
   const next = (numbers.at(-1) ?? 0) + 1;
   if (next > 9999) throw new Error("Migration sequence is full (maximum 9999)");

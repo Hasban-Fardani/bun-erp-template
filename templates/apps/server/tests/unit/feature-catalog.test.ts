@@ -99,7 +99,7 @@ test("wiring helpers honor the manifest instead of regenerating defaults", () =>
     "export const navGroups = [",
     "  {",
     "    items: [",
-    "      // @erp:nav",
+    "      // @loom:nav",
     "    ],",
     "  },",
     "];",
@@ -123,7 +123,7 @@ test("wiring helpers honor the manifest instead of regenerating defaults", () =>
   const audit = [
     "export const AUDIT_FIELDS = {",
     '  user: ["id"],',
-    "  // @erp:audit",
+    "  // @loom:audit",
     "} as const satisfies Record<string, readonly string[]>;",
   ].join("\n");
   const wiredAudit = addAuditEntity(audit, "department", ["id", "name", "code", "isActive"]);
@@ -305,7 +305,7 @@ test("infra wiring edits the composition root and is idempotent", async () => {
   }
 
   const context = edits.find((entry) => entry.path === "apps/server/bootstrap/context.ts");
-  expect(context?.source).toContain('import type { Mailer } from "@bun-erp/mail/server";');
+  expect(context?.source).toContain('import type { Mailer } from "@loom/mail/server";');
   expect(context?.source).toContain("mail: Mailer;");
   const registry = edits.find((entry) => entry.path === "apps/server/features/notifications/channels/registry.ts");
   expect(registry?.source).toContain("mailChannel");

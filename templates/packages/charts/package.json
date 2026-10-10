@@ -1,5 +1,5 @@
 {
-  "name": "@bun-erp/charts",
+  "name": "@loom/charts",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -28,7 +28,7 @@
     "react-dom": "19.3.0"
   },
   "dependencies": {
-    "@bun-erp/ui": "workspace:*",
+    "@loom/ui": "workspace:*",
     "recharts": "3.10.1"
   },
   "devDependencies": {

@@ -1,11 +1,11 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { Card } from "@bun-erp/ui/atoms/card.tsx";
-import { Textarea } from "@bun-erp/ui/atoms/textarea.tsx";
-import { useSoftAutoAnimate } from "@bun-erp/ui/lib/use-auto-animate.ts";
-import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
-import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
-import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { Card } from "@loom/ui/atoms/card.tsx";
+import { Textarea } from "@loom/ui/atoms/textarea.tsx";
+import { useSoftAutoAnimate } from "@loom/ui/lib/use-auto-animate.ts";
+import { EmptyState } from "@loom/ui/molecules/empty-state.tsx";
+import { PageLoading } from "@loom/ui/molecules/table-states.tsx";
+import { PageShell } from "@loom/ui/templates/page-shell.tsx";
 import { useState } from "react";
 import { useOfflineDrafts } from "../hooks/use-offline-drafts.ts";
 

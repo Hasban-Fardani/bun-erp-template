@@ -2,7 +2,7 @@
 
 Sources: `http/helpers/errors.ts`, `routes/api.ts`, module routes and `http/helpers/list-query.ts`.
 `openapi-coverage.test.ts` checks coverage; `check:prod` checks this document's presence and
-required terms, not the full behavior. `bun erp --help` owns command names.
+required terms, not the full behavior. `bun loom --help` owns command names.
 
 Business success: `{ data, meta: { requestId } }`.
 Application error: `{ error: { code, message, fields?, details? }, meta: { requestId } }`.
@@ -51,7 +51,7 @@ client at a time, then remove v1 only after a published deprecation window and a
 Do not silently change `API_PREFIX` or reuse a v1 path for a new meaning.
 
 Every version keeps the same outer response envelope and 401/403/404 distinction. Contract
-tests exercise the prefix and representative response shapes; `bun erp check:rpc` blocks a
+tests exercise the prefix and representative response shapes; `bun loom check:rpc` blocks a
 missing v1 prefix or a client that stops consuming the typed route contract.
 
 Mobile and web use the same `/api/v1` origin. Native login remains unimplemented until a

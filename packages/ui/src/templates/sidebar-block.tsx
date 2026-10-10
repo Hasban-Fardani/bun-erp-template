@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@bun-erp/ui/organisms/sidebar";
+} from "@loom/ui/organisms/sidebar";
 import type { ReactNode } from "react";
 
 export type SidebarBlockLink = {

@@ -32,7 +32,7 @@ jobs:
           fi
   android-play-internal:
     needs: detect
-    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
+    # Mobile waits in templates/apps/mobile until `bun loom apps:create <name> mobile` installs it.
     if: needs.detect.outputs.present == 'true' && (github.event_name == 'push' || inputs.platform == 'both' || inputs.platform == 'android')
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -68,11 +68,11 @@ jobs:
           test -n "$ANDROID_KEY_PASSWORD"
           test -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"
       - name: Build web assets
-        run: bun erp mobile:build
+        run: bun loom mobile:build
         env:
           VITE_API_BASE_URL: ${{ vars.MOBILE_API_URL }}
       - name: Generate Android project
-        run: bun erp mobile:add android
+        run: bun loom mobile:add android
         env:
           MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
           MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
@@ -80,11 +80,11 @@ jobs:
         id: android-version
         run: echo "value=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))" >> "$GITHUB_OUTPUT"
       - name: Stamp Android release version
-        run: bun erp mobile:version android
+        run: bun loom mobile:version android
         env:
           MOBILE_BUILD_NUMBER: ${{ steps.android-version.outputs.value }}
       - name: Sync Android assets
-        run: bun erp mobile:sync android
+        run: bun loom mobile:sync android
         env:
           MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
           MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
@@ -97,7 +97,7 @@ jobs:
           printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/google-play.json"
       - name: Build signed Android App Bundle
         run: >-
-          bun erp mobile:package android
+          bun loom mobile:package android
           --androidreleasetype AAB
           --keystorepath "$RUNNER_TEMP/release.keystore"
           --keystorepass "$ANDROID_KEYSTORE_PASSWORD"
@@ -167,11 +167,11 @@ jobs:
           test -n "$APP_STORE_CONNECT_PRIVATE_KEY_BASE64"
           test -n "$IOS_KEYCHAIN_PASSWORD"
       - name: Build web assets
-        run: bun erp mobile:build
+        run: bun loom mobile:build
         env:
           VITE_API_BASE_URL: ${{ vars.MOBILE_API_URL }}
       - name: Generate iOS project
-        run: bun erp mobile:add ios
+        run: bun loom mobile:add ios
         env:
           MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
           MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
@@ -179,11 +179,11 @@ jobs:
         id: ios-version
         run: echo "value=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))" >> "$GITHUB_OUTPUT"
       - name: Stamp iOS release version
-        run: bun erp mobile:version ios
+        run: bun loom mobile:version ios
         env:
           MOBILE_BUILD_NUMBER: ${{ steps.ios-version.outputs.value }}
       - name: Sync iOS assets
-        run: bun erp mobile:sync ios
+        run: bun loom mobile:sync ios
         env:
           MOBILE_APP_ID: ${{ vars.MOBILE_APP_ID }}
           MOBILE_APP_NAME: ${{ vars.MOBILE_APP_NAME }}
@@ -213,7 +213,7 @@ jobs:
           echo "profile_uuid=$PROFILE_UUID" >> "$GITHUB_OUTPUT"
       - name: Build signed iOS app
         run: >-
-          bun erp mobile:package ios
+          bun loom mobile:package ios
           --configuration Release
           --xcode-team-id "$IOS_TEAM_ID"
           --xcode-export-method app-store-connect

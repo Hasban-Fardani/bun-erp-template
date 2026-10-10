@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "bun-erp-template",
+  "name": "loom-template",
   "main": "apps/server/bootstrap/cloudflare-entry.ts",
   "compatibility_date": "2026-10-04",
   "compatibility_flags": ["nodejs_compat"],
@@ -17,8 +17,8 @@
     "run_worker_first": ["/api", "/api/*"]
   },
   // Private object storage for STORAGE_DRIVER=r2 (docs/deployment.md, "Object storage").
-  // Create the bucket first: bun run --cwd apps/web wrangler r2 bucket create bun-erp-template-files
-  "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "bun-erp-template-files" }],
+  // Create the bucket first: bun run --cwd apps/web wrangler r2 bucket create loom-template-files
+  "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "loom-template-files" }],
   // Workers AI for the built-in assistant (AI_DRIVER=workers-ai, docs/ai.md). Free plan: 10,000
   // Neurons a day; AI_DAILY_LIMIT caps each user's questions.
   "ai": { "binding": "AI" },
@@ -31,15 +31,15 @@
   // Queue wake-up for Workers (docs/deployment.md, "Jobs on Workers"). The database stays the
   // outbox: these signals only reduce latency, and a lost message delays a job to the next sweep.
   // To enable on a Queues-enabled account:
-  //   1. bun run --cwd apps/web wrangler queues create bun-erp-template-jobs
+  //   1. bun run --cwd apps/web wrangler queues create loom-template-jobs
   //   2. set "JOBS_WAKEUP_DRIVER": "cloudflare-queue" in vars below
-  //   3. uncomment this block, then run bun erp cloudflare:build
+  //   3. uncomment this block, then run bun loom cloudflare:build
   // Accounts without Queues keep working on the cron sweeper alone (driver "none").
   // "queues": {
-  //   "producers": [{ "binding": "JOBS_QUEUE", "queue": "bun-erp-template-jobs" }],
+  //   "producers": [{ "binding": "JOBS_QUEUE", "queue": "loom-template-jobs" }],
   //   "consumers": [
   //     {
-  //       "queue": "bun-erp-template-jobs",
+  //       "queue": "loom-template-jobs",
   //       "max_batch_size": 10,
   //       "max_batch_timeout": 5,
   //       "max_retries": 5
@@ -47,9 +47,9 @@
   //   ]
   // },
   "vars": {
-    "APP_NAME": "Bun ERP Template",
+    "APP_NAME": "Loom Template",
     "APP_ENV": "production",
-    "APP_URL": "https://bun-erp-template.example.workers.dev",
+    "APP_URL": "https://loom-template.example.workers.dev",
     "APP_PORT": "8787",
     "APP_RELEASE": "0.1.0",
     "APP_TIMEZONE": "UTC",
@@ -64,18 +64,18 @@
     "DATABASE_DRIVER": "postgres",
     "DATABASE_POOL_MAX": "5",
     "DATABASE_SSL_MODE": "require",
-    "BETTER_AUTH_URL": "https://bun-erp-template.example.workers.dev",
-    "AUTH_TRUSTED_ORIGINS": "https://bun-erp-template.example.workers.dev",
+    "BETTER_AUTH_URL": "https://loom-template.example.workers.dev",
+    "AUTH_TRUSTED_ORIGINS": "https://loom-template.example.workers.dev",
     "PERMISSION_CACHE_ENABLED": "false",
     "PASSWORD_HASH": "pbkdf2",
     "PASSWORD_HASH_ITERATIONS": "30000",
     "STORAGE_DRIVER": "r2",
     "STORAGE_LOCAL_ROOT": ".data/storage",
-    "STORAGE_PUBLIC_URL": "https://bun-erp-template.example.workers.dev/api/v1/files",
+    "STORAGE_PUBLIC_URL": "https://loom-template.example.workers.dev/api/v1/files",
     "STORAGE_R2_BINDING": "STORAGE",
     "MAIL_DRIVER": "log",
     "MAIL_FROM_ADDRESS": "no-reply@example.test",
-    "MAIL_FROM_NAME": "Bun ERP Template",
+    "MAIL_FROM_NAME": "Loom Template",
     "JOBS_WAKEUP_DRIVER": "none",
     "SMTP_HOST": "",
     "SMTP_PORT": "587",

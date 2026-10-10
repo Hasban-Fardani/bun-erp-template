@@ -82,7 +82,7 @@ async function installFeature(manifest: FeatureManifest): Promise<void> {
       await copyCatalogPackage(repoRoot, pkg);
       installedPackages.push(pkg);
     }
-    if (await ensureWorkspaceDependency(repoRoot, requiresManifest, `@bun-erp/${pkg}`)) dependencyAdded = true;
+    if (await ensureWorkspaceDependency(repoRoot, requiresManifest, `@loom/${pkg}`)) dependencyAdded = true;
   }
   if (installedPackages.length > 0 || dependencyAdded) await Bun.$`bun install`.quiet();
 
@@ -148,7 +148,7 @@ async function installFeature(manifest: FeatureManifest): Promise<void> {
   if ((await refreshGuidelines(repoRoot)) === "updated") {
     process.stdout.write("Updated AGENTS.md guidelines block.\n");
   }
-  process.stdout.write("Next: run bun erp check before using it.\n");
+  process.stdout.write("Next: run bun loom check before using it.\n");
 }
 
 export const commands = [
@@ -165,7 +165,7 @@ export const commands = [
     const asked = parsed.positional.length > 0 ? parsed.positional : [resolveRequired(undefined, "Feature name")];
     const names = [...new Set(asked.filter((name): name is string => Boolean(name)))];
     if (names.length === 0) {
-      process.stderr.write("Usage: bun erp features:install <name> [<name>...]\n");
+      process.stderr.write("Usage: bun loom features:install <name> [<name>...]\n");
       process.exit(1);
     }
 

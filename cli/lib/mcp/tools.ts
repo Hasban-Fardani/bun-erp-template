@@ -160,7 +160,7 @@ async function guidelinesText(root: string): Promise<string> {
   const source = await Bun.file(resolve(root, "AGENTS.md")).text();
   const start = source.indexOf(GUIDELINES_START);
   const end = source.indexOf(GUIDELINES_END);
-  if (start < 0 || end < start) return "The AGENTS.md guidelines block is missing. Run bun erp ai:update.";
+  if (start < 0 || end < start) return "The AGENTS.md guidelines block is missing. Run bun loom ai:update.";
   return source.slice(start, end + GUIDELINES_END.length);
 }
 

@@ -32,7 +32,7 @@ export const commands = [
       process.stdout.write(
         "Maintenance mode is ON: /api/v1/* answers 503 (health checks and bypass sessions excepted).\n",
       );
-      process.stdout.write("Replicas pick it up within a few seconds. Run `bun erp up` to resume.\n");
+      process.stdout.write("Replicas pick it up within a few seconds. Run `bun loom up` to resume.\n");
     } finally {
       await ctx.close();
     }
@@ -58,7 +58,7 @@ export const commands = [
       await ctx.db.execute(sql`select 1`);
       checks.push(["database reachable", true, loadEnv().DATABASE_DRIVER]);
       const roleRows = await ctx.db.select({ id: roles.id }).from(roles).limit(1);
-      checks.push(["RBAC seeded", roleRows.length > 0, roleRows.length > 0 ? "ok" : "run: bun erp db:seed"]);
+      checks.push(["RBAC seeded", roleRows.length > 0, roleRows.length > 0 ? "ok" : "run: bun loom db:seed"]);
       await ctx.close();
     } catch (err) {
       checks.push(["database reachable", false, err instanceof Error ? err.message : String(err)]);

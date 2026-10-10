@@ -1,6 +1,6 @@
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
-import { Input } from "@bun-erp/ui/atoms/input-primitives";
-import { Label } from "@bun-erp/ui/atoms/label";
+import { Button } from "@loom/ui/atoms/button-primitives";
+import { Input } from "@loom/ui/atoms/input-primitives";
+import { Label } from "@loom/ui/atoms/label";
 import type { FormEvent, ReactNode } from "react";
 
 export function SignupBlock({

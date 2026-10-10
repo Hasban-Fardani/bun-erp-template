@@ -2,7 +2,7 @@
 # Default is 5s. These are integration tests: each file runs the real migrations against a
 # disposable PostgreSQL database, so a cold run on a small VPS can exceed 5s and fail for no real reason.
 timeout = 30000
-# Catalog sources wait under templates/ until `bun erp packages:install` or `bun erp apps:create`
+# Catalog sources wait under templates/ until `bun loom packages:install` or `bun loom apps:create`
 # copies them into packages/ or apps/. Their tests need the installed workspace dependencies, so
 # root test discovery must not pick them up while they sit in the catalog.
 pathIgnorePatterns = ["templates/**"]

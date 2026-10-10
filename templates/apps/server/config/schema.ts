@@ -125,7 +125,7 @@ const rawSchema = z
     S3_SECRET_ACCESS_KEY: z.string().default(""),
     S3_FORCE_PATH_STYLE: boolOr("false"),
 
-    // Mail: consumed by the opt-in @bun-erp/mail package (`bun erp features:install mail`).
+    // Mail: consumed by the opt-in @loom/mail package (`bun loom features:install mail`).
     // The keys stay in the core schema so one validated environment serves every install.
     MAIL_DRIVER: z.enum(["log", "smtp", "http"]),
     MAIL_FROM_ADDRESS: z.string().trim().min(1),
@@ -239,7 +239,7 @@ const rawSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["BETTER_AUTH_SECRET"],
-        message: "must not be empty outside development (run: bun erp key:generate)",
+        message: "must not be empty outside development (run: bun loom key:generate)",
       });
     }
     if (env.APP_ENV !== "production") return;
@@ -255,7 +255,7 @@ const rawSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["BETTER_AUTH_SECRET"],
-        message: "must be at least 32 characters in production (run: bun erp key:generate)",
+        message: "must be at least 32 characters in production (run: bun loom key:generate)",
       });
     }
     if (!isSecurePublicUrl(env.APP_URL)) {

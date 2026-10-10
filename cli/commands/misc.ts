@@ -7,7 +7,7 @@ import { defineCommand } from "../registry.ts";
 
 /**
  * Shared-package suites, including opt-in packages. An opt-in package only exists in `packages/`
- * after `bun erp packages:install`, so its suite is skipped while it waits in the catalog.
+ * after `bun loom packages:install`, so its suite is skipped while it waits in the catalog.
  */
 const SHARED_PACKAGE_TESTS: ReadonlyArray<{ dir: string; label: string }> = [
   { dir: "packages/utils/tests", label: "bun test shared utilities" },
@@ -29,7 +29,7 @@ export const commands = [
     // A filtered run targets one generated feature's server test; the other suites cannot match it.
     if (filter) {
       if (!(await isAppInstalled("server"))) {
-        throw new Error("The server app is not installed; run `bun erp init` first.");
+        throw new Error("The server app is not installed; run `bun loom init` first.");
       }
       const path = `apps/server/tests/features/${filter}`;
       process.stdout.write(`Running server feature tests only: ${path}\n`);
@@ -52,7 +52,7 @@ export const commands = [
       await run([...argv], label);
     }
     if (skipped.length === 3) {
-      process.stdout.write("No apps installed (run `bun erp init`); running shared package suites only.\n");
+      process.stdout.write("No apps installed (run `bun loom init`); running shared package suites only.\n");
     } else if (skipped.length > 0) {
       process.stdout.write(`Skipped apps not installed: ${skipped.join(", ")}.\n`);
     }

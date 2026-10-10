@@ -1,4 +1,4 @@
-import { I18nProvider } from "@bun-erp/i18n/react";
+import { I18nProvider } from "@loom/i18n/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { applyInitialTheme, ThemeProvider } from "./lib/theme.tsx";

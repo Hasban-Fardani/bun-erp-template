@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { I18nProvider } from "@bun-erp/i18n/react";
+import { I18nProvider } from "@loom/i18n/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ImpersonationBannerView } from "../../src/features/identity/components/impersonation-banner.tsx";
 import { canImpersonate } from "../../src/features/identity/lib/impersonation.ts";

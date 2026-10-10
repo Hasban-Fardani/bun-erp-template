@@ -2,7 +2,7 @@
  * Template-development helper (not a user command).
  *
  * The app catalogs under `templates/apps/` are the source of truth; `apps/*` is generated.
- * `bun erp init` and `bun erp apps:create` keep an existing app, so after editing a catalog
+ * `bun loom init` and `bun loom apps:create` keep an existing app, so after editing a catalog
  * this refreshes the installed copy:
  *
  *   bun cli/tasks/sync-apps.ts
@@ -33,4 +33,4 @@ for (const app of installed) {
   console.log(`synced apps/${app.name} from templates/apps/${app.kind}`);
 }
 
-if (installed.length === 0) console.log("No installed apps to sync; run `bun erp init --apps server,web --yes`.");
+if (installed.length === 0) console.log("No installed apps to sync; run `bun loom init --apps server,web --yes`.");

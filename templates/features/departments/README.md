@@ -4,8 +4,8 @@ The smallest complete feature in the catalog: a server module, a web screen, and
 Install it into a deployment with:
 
 ```
-bun erp features:list
-bun erp features:install departments
+bun loom features:list
+bun loom features:install departments
 ```
 
 ## What lands where

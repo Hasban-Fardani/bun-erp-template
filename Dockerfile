@@ -11,11 +11,11 @@ RUN bun install --frozen-lockfile
 
 # The template ships apps/ empty; the image installs the reference combination without agent wiring.
 COPY templates ./templates
-RUN bun erp init --apps server,web --yes --no-agents
+RUN bun loom init --apps server,web --yes --no-agents
 
 # The remaining sources come last, keeping the install and catalog layers cached.
 COPY . .
-RUN APP_DEPLOY_TARGET=bun APP_WEB_MODE=integrated bun erp build
+RUN APP_DEPLOY_TARGET=bun APP_WEB_MODE=integrated bun loom build
 RUN bun install --production --frozen-lockfile
 # Development-only files never run in the container.
 RUN rm -rf apps/server/tests apps/server/cli packages/*/tests

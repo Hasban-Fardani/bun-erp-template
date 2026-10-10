@@ -142,7 +142,7 @@ export function renderAppScaffold(rawName: string, options: { version: string; p
   const dir = `apps/${name}`;
   const port = options.port ?? DEFAULT_APP_PORT;
   const manifest = {
-    name: `@bun-erp/${name}`,
+    name: `@loom/${name}`,
     version: options.version,
     private: true,
     type: "module",
@@ -204,7 +204,7 @@ test("resolvePort reads valid ports and rejects nonsense", () => {
       path: `${dir}/README.md`,
       contents: `# ${name} app
 
-Minimal Bun workspace app created by \`bun erp apps:create\`. See the
+Minimal Bun workspace app created by \`bun loom apps:create\`. See the
 [development guide](../../docs/development.md) for the shared workflow.
 
     bun install

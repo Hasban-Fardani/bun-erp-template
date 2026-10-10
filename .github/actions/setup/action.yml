@@ -14,4 +14,4 @@ runs:
       run: bun install --frozen-lockfile
     - shell: bash
       # The template ships apps/ empty; every job installs the reference combination first.
-      run: bun erp init --apps server,web --yes
+      run: bun loom init --apps server,web --yes

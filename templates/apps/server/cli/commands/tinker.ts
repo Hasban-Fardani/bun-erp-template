@@ -26,7 +26,7 @@ export const commands = [
       }
 
       process.stdout.write(`${HELP}\n`);
-      process.stdout.write("erp> ");
+      process.stdout.write("loom> ");
       for await (const line of console) {
         const input = line.trim();
         if (input === ".exit" || input === ".quit") break;
@@ -38,7 +38,7 @@ export const commands = [
             process.stdout.write(`${error instanceof Error ? error.message : String(error)}\n`);
           }
         }
-        process.stdout.write("erp> ");
+        process.stdout.write("loom> ");
       }
     } finally {
       await ctx.close();

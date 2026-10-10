@@ -1,4 +1,4 @@
-import { contentTypeFor, storageKey } from "@bun-erp/storage/server";
+import { contentTypeFor, storageKey } from "@loom/storage/server";
 import type { AppContext } from "../../bootstrap/context.ts";
 import { factory } from "../../http/factory.ts";
 import { doc } from "../../http/helpers/api-docs.ts";

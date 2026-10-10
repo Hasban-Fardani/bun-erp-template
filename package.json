@@ -1,5 +1,5 @@
 {
-  "name": "bun-erp-template",
+  "name": "loom-template",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,21 +10,21 @@
     "packages/i18n"
   ],
   "scripts": {
-    "erp": "bun cli/index.ts",
+    "loom": "bun cli/index.ts",
     "prepare": "bun cli/tasks/install-git-hooks.ts",
-    "dev": "bun erp dev",
-    "build": "bun erp build",
+    "dev": "bun loom dev",
+    "build": "bun loom build",
     "start": "bun apps/server/bootstrap/server.ts",
     "lint": "bunx --bun biome check .",
     "check:biome": "bunx --bun biome check .",
     "format": "bunx --bun biome format --write .",
     "format:check": "bunx --bun biome format .",
-    "check": "bun erp check",
-    "check:fast": "bun erp check:fast",
-    "check:prod": "bun erp check:prod",
+    "check": "bun loom check",
+    "check:fast": "bun loom check:fast",
+    "check:prod": "bun loom check:prod",
     "install:prod": "bun install --production",
-    "test": "bun erp test",
-    "qa": "bun erp qa"
+    "test": "bun loom test",
+    "qa": "bun loom qa"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

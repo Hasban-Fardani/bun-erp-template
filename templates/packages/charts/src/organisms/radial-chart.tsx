@@ -34,7 +34,7 @@ export function RadialChart<Row extends object>({
   const stacked = variant === "stacked";
   return (
     <ChartFrame label={label} height={height} colors={colors} className={className}>
-      <div className="bun-erp-chart-content">
+      <div className="loom-chart-content">
         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <RechartsRadialBarChart
             accessibilityLayer
@@ -49,7 +49,7 @@ export function RadialChart<Row extends object>({
                 if (!active || !payload?.[0]) return null;
                 const row = payload[0].payload as Row;
                 return (
-                  <div className="bun-erp-chart-tooltip">
+                  <div className="loom-chart-tooltip">
                     <span>{String(row[nameKey])}</span>
                     <strong>{String(row[valueKey])}</strong>
                   </div>
@@ -71,7 +71,7 @@ export function RadialChart<Row extends object>({
           </RechartsRadialBarChart>
         </ResponsiveContainer>
         {variant === "text" ? (
-          <div className="bun-erp-chart-overlay">
+          <div className="loom-chart-overlay">
             {centerValue ? <strong>{centerValue}</strong> : null}
             {centerLabel ? <span>{centerLabel}</span> : null}
           </div>

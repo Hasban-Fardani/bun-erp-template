@@ -39,13 +39,13 @@ async function offerProjectAdoption(): Promise<void> {
     : false;
   if (!adoptNow) {
     process.stdout.write(
-      'Still the template repository. Run `bun erp project:adopt --name <name> --purpose "<one line>"` to configure this fork as a project.\n',
+      'Still the template repository. Run `bun loom project:adopt --name <name> --purpose "<one line>"` to configure this fork as a project.\n',
     );
     return;
   }
   const name = resolveRequired(undefined, "Project name");
   const purpose = resolveRequired(undefined, "Project purpose (one line)");
-  if (!name || !purpose) throw new Error('Usage: bun erp project:adopt --name <name> --purpose "<one line>"');
+  if (!name || !purpose) throw new Error('Usage: bun loom project:adopt --name <name> --purpose "<one line>"');
   await adoptProject(repoRoot, { name, purpose });
   process.stdout.write(`Adopted "${name}" as a project.\n`);
 }
@@ -85,7 +85,7 @@ export const commands = [
         DEFAULT_APPS,
       );
     } else {
-      throw new Error("Usage: bun erp init --apps server,web [--yes]");
+      throw new Error("Usage: bun loom init --apps server,web [--yes]");
     }
 
     const installed: string[] = [];
@@ -100,7 +100,7 @@ export const commands = [
     else process.stdout.write("Apps already installed; nothing to copy.\n");
     if (!hasServer && ordered.some((kind) => kind !== "server")) {
       process.stdout.write(
-        "No server app selected: web/mobile ship a detached RPC shell. Run `bun erp init --apps server,... --yes` later to re-fit the typed API client.\n",
+        "No server app selected: web/mobile ship a detached RPC shell. Run `bun loom init --apps server,... --yes` later to re-fit the typed API client.\n",
       );
     }
     await run(["bun", "install"], "install workspace dependencies");
@@ -109,7 +109,7 @@ export const commands = [
     await refreshGuidelines(repoRoot);
 
     if (parsed.flags.has("no-agents")) {
-      process.stdout.write("Skipped agent tooling (--no-agents). Run `bun erp init` again to install it.\n");
+      process.stdout.write("Skipped agent tooling (--no-agents). Run `bun loom init` again to install it.\n");
       await offerProjectAdoption();
       return;
     }

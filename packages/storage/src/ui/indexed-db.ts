@@ -1,7 +1,7 @@
 import type { KeyValueAdapter } from "../utils/key-value.ts";
 
 const OBJECT_STORE = "records";
-const DEFAULT_DATABASE = "bun-erp-storage";
+const DEFAULT_DATABASE = "loom-storage";
 
 function key(namespace: string, recordKey: string): string {
   return `${encodeURIComponent(namespace)}\u001f${encodeURIComponent(recordKey)}`;

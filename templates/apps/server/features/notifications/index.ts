@@ -4,4 +4,4 @@
  */
 export { countUnread, listUnreadTitles, notify } from "./service.ts";
 export type { NotificationChannelFactory, NotifyInput } from "./types.ts";
-// @erp:notifications
+// @loom:notifications

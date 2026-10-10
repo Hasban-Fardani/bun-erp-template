@@ -1,4 +1,4 @@
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { rpc } from "@web/lib/rpc.ts";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";

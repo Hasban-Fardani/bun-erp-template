@@ -4,17 +4,17 @@ Start at the owner of the change below. Feature internals are optional: add api,
 providers, stores or types only when that feature needs them. Do not create empty folders to satisfy
 a convention.
 
-`bun erp init` installs the chosen combination (server, web, mobile, or a mix) from
+`bun loom init` installs the chosen combination (server, web, mobile, or a mix) from
 `templates/apps/{server,web,mobile}` and registers the workspaces, so every `apps/...` path below
 describes an installed app. Web and mobile bind the server's typed Hono contract when the server
 app is present; without it they install in detached mode (stub `src/lib/rpc.ts`, no
-`@bun-erp/server` dependency) and a later `init` re-fits the real client. Full flow:
+`@loom/server` dependency) and a later `init` re-fits the real client. Full flow:
 [development](development.md). Server-owned CLI commands live in `apps/server/cli/` and appear in
-`bun erp --help` only once the server app is installed; the root `cli/` never imports `apps/**`.
+`bun loom --help` only once the server app is installed; the root `cli/` never imports `apps/**`.
 
 | Change | Start here | Ownership |
 |---|---|---|
-| Choose or add an app | templates/apps/<server\|web\|mobile>, cli/lib/app-catalog.ts | Catalog copy shared by `bun erp init` and `bun erp apps:create`; registers the workspace and binds/detaches the server contract |
+| Choose or add an app | templates/apps/<server\|web\|mobile>, cli/lib/app-catalog.ts | Catalog copy shared by `bun loom init` and `bun loom apps:create`; registers the workspace and binds/detaches the server contract |
 | Run web + API on Bun | apps/server/bootstrap/server.ts | Production listener and request dispatch |
 | Build application dependencies | apps/server/bootstrap/bootstrap.ts | Environment, database, migrations, logger and auth |
 | Compose HTTP behavior | apps/server/http/app.ts, apps/server/routes/api.ts | Middleware, docs and error envelope; version prefix and feature route mounts |
@@ -22,19 +22,19 @@ app is present; without it they install in detached mode (stub `src/lib/rpc.ts`,
 | Add a migration | apps/server/database/migrations/NNNN_name.ts | Forward-only TypeScript migration exporting up(database) |
 | Add shared runtime services | apps/server/infra | Config, database, logging, durable jobs, cache facade and transactional events |
 | Cache a computed value or react to a domain event | apps/server/infra/cache, apps/server/infra/events | `cache.remember(...)`; `defineEvent`/`defineListener` dispatched in the write transaction (see Cache and events below) |
-| Throttle, pause or harden the HTTP surface | apps/server/http, apps/server/cli/commands/app.ts | Database-backed rate limiter, `bun erp down`/`up` maintenance mode, cross-site request guard (see operations.md) |
+| Throttle, pause or harden the HTTP surface | apps/server/http, apps/server/cli/commands/app.ts | Database-backed rate limiter, `bun loom down`/`up` maintenance mode, cross-site request guard (see operations.md) |
 | Add a web URL | apps/web/src/pages | Small TanStack file route wrappers; route tree is generated |
 | Implement a web screen | apps/web/src/features/<name>/screens | Screen composition; feature API, hooks, components and types stay nearby |
-| Start or add mobile screens | apps/mobile/src/main.tsx, apps/mobile/src/screens (install with `bun erp init` or bun erp apps:create <name> mobile) | Separate React entry and mobile-only composition |
+| Start or add mobile screens | apps/mobile/src/main.tsx, apps/mobile/src/screens (install with `bun loom init` or bun loom apps:create <name> mobile) | Separate React entry and mobile-only composition |
 | Store offline mobile data | apps/mobile/src/features/offline/stores/offline-store.ts | Encrypted native SQLite / browser IndexedDB adapter |
 | Change shared presentation | packages/ui/src | Atomic layers, tokens and approved upstream component references |
 | Add cross-app pure logic | packages/utils/src | Runtime-neutral code used by at least two app workspaces |
 | Change a quality gate | cli/gates, cli | Read-only checks and CLI orchestration |
 | Localize shared app copy and formats | packages/i18n | Typed catalogs, locale resolution and React provider |
-| Add rich text editing UI | templates/packages/editor (install with bun erp packages:install editor) | Lazy React entry, composable Lexical UI and JSON value |
+| Add rich text editing UI | templates/packages/editor (install with bun loom packages:install editor) | Lazy React entry, composable Lexical UI and JSON value |
 | Compose email or PDF documents | templates/packages/email, templates/packages/pdf (install on demand) | Opt-in rendering components with separate runtime boundaries |
-| Send mail from the server | `bun erp features:install mail` (templates/packages/mail) | Opt-in transport; the default server keeps only the database notification channel |
-| Add tenant scoping | `bun erp features:install organizations` (templates/features/organizations) | Opt-in Better Auth `organization` plugin: organization/member/invitation tables and the session's active organization; no new routes or permissions |
+| Send mail from the server | `bun loom features:install mail` (templates/packages/mail) | Opt-in transport; the default server keeps only the database notification channel |
+| Add tenant scoping | `bun loom features:install organizations` (templates/features/organizations) | Opt-in Better Auth `organization` plugin: organization/member/invitation tables and the session's active organization; no new routes or permissions |
 
 ## Runtime modes
 
@@ -48,9 +48,9 @@ build/deploy flow and CI coverage before it can be advertised as supported.
 
 `bun dev` starts Vite with HMR and an internal API-only Bun process. Vite provides the browser
 origin and proxies `/api/*` to Hono. That API process also polls the durable queue using the same
-database connection. Production Bun uses `bun erp build` followed by `bun start`: one Hono listener
+database connection. Production Bun uses `bun loom build` followed by `bun start`: one Hono listener
 dispatches `/api/*` to the API and serves `apps/web/dist` for web routes. Startup checks the web
-build before opening the database. `bun erp server:api` preserves API-only hosting for a separately
+build before opening the database. `bun loom server:api` preserves API-only hosting for a separately
 deployed frontend or an upstream reverse proxy.
 
 Cloudflare uses the same API path boundary in one Worker deployment. Workers Static Assets serves
@@ -58,7 +58,7 @@ the Vite build directly; only `/api` and `/api/*` invoke Worker code. This keeps
 outside the Worker request quota. See [deployment](deployment.md) for host and asset details.
 
 `APP_DEPLOY_TARGET` selects an implemented build profile (`bun` or `cloudflare`), and `APP_WEB_MODE`
-selects `integrated` or `separate` hosting. `bun erp build` dispatches to the selected target; the
+selects `integrated` or `separate` hosting. `bun loom build` dispatches to the selected target; the
 explicit `cloudflare:*` commands remain available. Bun can run API-only for a separately hosted web
 build; Cloudflare currently requires integrated Workers Static Assets. Invalid target/mode pairs
 fail validation. These settings select existing adapters; they do not turn Bun-specific imports
@@ -99,7 +99,7 @@ mobile-only local store.
 enqueueJob() writes to background_jobs; call it inside the same DB transaction as the feature
 write when both must commit together. Workers claim rows with FOR UPDATE SKIP LOCKED and a lease.
 Execution is at-least-once: handlers must be idempotent. Failures retry with bounded exponential
-backoff and become dead after the configured attempt limit. Bun uses bun erp jobs:work; the
+backoff and become dead after the configured attempt limit. Bun uses bun loom jobs:work; the
 Cloudflare Worker drains a bounded batch from its scheduled handler. See docs/operations.md and
 ADR-0015.
 
@@ -124,7 +124,7 @@ and adds them to `features/events.ts`. See ADR-0016.
 apps/web/src/pages/__root.tsx owns the root route and Query context. The
 _authenticated/route.tsx file defines the pathless authenticated layout; the default install ships
 index.tsx (overview) and notifications.tsx beside it, and login.tsx creates /login. Admin screens
-are catalog features: `bun erp features:install users` (also roles, audit) copies users.tsx,
+are catalog features: `bun loom features:install users` (also roles, audit) copies users.tsx,
 roles.tsx, or audit.tsx here and regenerates the route tree.
 
 Each discovered route file needs one typed createFileRoute() declaration for TanStack's generated
@@ -191,9 +191,9 @@ extracted service or a replica is correct without another process's memory.
 | templates | Reusable page/layout composition | Lower UI layers |
 | app screens | Feature behavior, data and navigation | UI package and owning app/feature |
 
-@bun-erp/ui contains no app data, RPC, router, auth or feature rules. New components must cite an
+@loom/ui contains no app data, RPC, router, auth or feature rules. New components must cite an
 approved shadcn reference or an official reference plus a concrete custom-composition rationale in
-packages/ui/component-sources.json. bun erp check:shadcn enforces the single-registry allowlist.
+packages/ui/component-sources.json. bun loom check:shadcn enforces the single-registry allowlist.
 See skills/ui-registry/SKILL.md.
 
 packages/i18n is runtime-neutral at its core; React consumers import its provider from the /react
@@ -207,4 +207,4 @@ rendering must not enter the Worker graph, and the default server carries no mai
 Packages split by runtime target only when they serve more than one: `storage` is `src/ui`,
 `src/capacitor`, `src/server` and `src/utils`; `i18n` is `src/utils` plus `src/ui`; `data-table` is
 `src/ui` plus `src/server`. A single-target package stays flat, with `src/index.ts` and
-`src/styles.css` at the root. `bun erp check:package-targets` enforces the layout.
+`src/styles.css` at the root. `bun loom check:package-targets` enforces the layout.

@@ -3,7 +3,7 @@ import { runSqlMigration } from "../sql-migration.ts";
 
 /**
  * Small key/value table for process-wide switches that every replica or isolate must agree on.
- * The first key is `maintenance` (`bun erp down` / `bun erp up`). The table is authoritative;
+ * The first key is `maintenance` (`bun loom down` / `bun loom up`). The table is authoritative;
  * readers may cache a value for a few seconds, never longer.
  */
 const statements = `

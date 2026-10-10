@@ -213,7 +213,7 @@ test("make:feature can allocate a numbering sequence on create", () => {
 });
 
 test("make:feature wires permissions and routes without touching duplicates", () => {
-  const statements = `export const statements = {\n  user: ["create"],\n  // @erp:permissions\n  audit: ["read"],\n} as const;`;
+  const statements = `export const statements = {\n  user: ["create"],\n  // @loom:permissions\n  audit: ["read"],\n} as const;`;
   const wired = addStatementResource(statements, "sales-orders");
   expect(wired.status).toBe("added");
   expect(wired.source).toContain('"sales-orders": ["create", "read", "update", "delete"]');
@@ -233,7 +233,7 @@ test("make:feature wires permissions and routes without touching duplicates", ()
   const auditFields = [
     "export const AUDIT_FIELDS = {",
     '  role: ["id", "key", "name", "isSystem"],',
-    "  // @erp:audit",
+    "  // @loom:audit",
     "} as const satisfies Record<string, readonly string[]>;",
   ].join("\n");
   const audited = addAuditEntity(auditFields, "sales-orders");
@@ -251,7 +251,7 @@ test("make:feature wires permissions and routes without touching duplicates", ()
     "",
     "const FEATURES = [",
     "  rbacFeature,",
-    "  // @erp:routes",
+    "  // @loom:routes",
     "] as const satisfies readonly FeatureDefinition[];",
     "",
     "export function registerRoutes() {",
@@ -261,7 +261,7 @@ test("make:feature wires permissions and routes without touching duplicates", ()
   const mounted = addRouteMount(routes, { name: "sales-orders", camel: "salesOrders" });
   expect(mounted.status).toBe("added");
   expect(mounted.source).toContain('import { salesOrdersFeature } from "../features/sales-orders/feature.ts";');
-  expect(mounted.source).toContain("  // @erp:routes\n  salesOrdersFeature,");
+  expect(mounted.source).toContain("  // @loom:routes\n  salesOrdersFeature,");
   expect(addRouteMount(mounted.source, { name: "sales-orders", camel: "salesOrders" })).toEqual({
     source: mounted.source,
     status: "present",
@@ -271,7 +271,7 @@ test("make:feature wires permissions and routes without touching duplicates", ()
   const importOnly = mounted.source.replace("  salesOrdersFeature,\n", "");
   expect(addRouteMount(importOnly, { name: "sales-orders", camel: "salesOrders" }).status).toBe("partial");
   // Both generated lines without the marker: partial, so a lost marker cannot read as wired.
-  const markerless = mounted.source.replace("  // @erp:routes\n", "");
+  const markerless = mounted.source.replace("  // @loom:routes\n", "");
   expect(addRouteMount(markerless, { name: "sales-orders", camel: "salesOrders" }).status).toBe("partial");
 });
 
@@ -319,7 +319,7 @@ test("web wiring adds the sidebar entry and both locale catalogs once", () => {
     "export const navGroups = [",
     "  {",
     "    items: [",
-    "      // @erp:nav",
+    "      // @loom:nav",
     '      { titleKey: "navigation.users", url: "/users", icon: Users, permission: "user.read" },',
     "    ],",
     "  },",
@@ -333,7 +333,7 @@ test("web wiring adds the sidebar entry and both locale catalogs once", () => {
   expect(addNavItem(wiredNav.source, { name: "sales-orders" }).status).toBe("present");
   expect(addNavItem("export const x = 1;", { name: "sales-orders" }).status).toBe("skipped");
   // A nav row without the marker is half-wired, not present.
-  expect(addNavItem(nav.replace("      // @erp:nav\n", ""), { name: "sales-orders" }).status).toBe("skipped");
+  expect(addNavItem(nav.replace("      // @loom:nav\n", ""), { name: "sales-orders" }).status).toBe("skipped");
   expect(
     addNavItem(
       'import { Bell } from "lucide-react";\nexport const navGroups = [\n  {\n    items: [\n      { titleKey: "navigation.sales-orders" },\n    ],\n  },\n];',
@@ -347,7 +347,7 @@ test("web wiring adds the sidebar entry and both locale catalogs once", () => {
     "export const navGroups = [",
     "  {",
     "    items: [",
-    "      // @erp:nav",
+    "      // @loom:nav",
     "    ],",
     "  },",
     "];",

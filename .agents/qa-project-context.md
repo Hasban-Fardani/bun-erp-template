@@ -25,7 +25,7 @@ is an admin console for authentication, users, roles, audit records, and platfor
 - Local URL defaults to `http://localhost:5173`; `/api/*` is proxied to the API listener.
 - Use an isolated local development database and disposable QA accounts only.
 - The development seed creates the permission catalogue and the `owner`/`staff` role keys. It does
-  not create a user or an organization; `bun erp user:create` creates the first account for the
+  not create a user or an organization; `bun loom user:create` creates the first account for the
   configured database.
 - Browser QA credentials come from `QA_EMAIL` and `QA_PASSWORD`. Never write credentials, cookies,
   tokens, or personal data into test reports or screenshots.

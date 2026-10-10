@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
-import { Input } from "@bun-erp/ui/atoms/input-primitives";
-import { Separator } from "@bun-erp/ui/atoms/separator";
-import { Skeleton } from "@bun-erp/ui/atoms/skeleton";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { Button } from "@loom/ui/atoms/button-primitives";
+import { Input } from "@loom/ui/atoms/input-primitives";
+import { Separator } from "@loom/ui/atoms/separator";
+import { Skeleton } from "@loom/ui/atoms/skeleton";
+import { cn } from "@loom/ui/lib/cn.ts";
 
-import { useIsMobile } from "@bun-erp/ui/lib/use-mobile.ts";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@bun-erp/ui/molecules/tooltip-primitives";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@bun-erp/ui/organisms/sheet-primitives";
+import { useIsMobile } from "@loom/ui/lib/use-mobile.ts";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@loom/ui/molecules/tooltip-primitives";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@loom/ui/organisms/sheet-primitives";
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 import { Slot } from "radix-ui";

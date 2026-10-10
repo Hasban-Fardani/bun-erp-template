@@ -35,7 +35,7 @@ export async function checkUiCompleteness(root: string): Promise<UiFinding[]> {
 
   for (const dir of SCREEN_DIRS) {
     const base = join(root, dir);
-    // apps/mobile/src/screens only exists after `bun erp apps:create <name> mobile`.
+    // apps/mobile/src/screens only exists after `bun loom apps:create <name> mobile`.
     if (!(await directoryExists(base))) continue;
     for (const file of await index.files(`${dir}/**/*.tsx`)) {
       const code = await index.text(file);

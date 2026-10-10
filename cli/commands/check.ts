@@ -30,7 +30,7 @@ export const commands = [
       return;
     }
     if (!name) {
-      throw new Error("Usage: bun erp check:gate <name>\nRun `bun erp check:gate --list` to list available gates.");
+      throw new Error("Usage: bun loom check:gate <name>\nRun `bun loom check:gate --list` to list available gates.");
     }
     const legacyCommand = CHECK_GATE_COMMANDS[name];
     if (!legacyCommand) {

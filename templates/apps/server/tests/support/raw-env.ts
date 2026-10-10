@@ -1,6 +1,6 @@
 /** Minimal valid raw `.env` map for config tests: strings in, as `loadEnv` reads them from disk. */
 export const RAW_ENV_BASE: Readonly<Record<string, string>> = {
-  APP_NAME: "Bun ERP Template",
+  APP_NAME: "Loom Template",
   APP_ENV: "development",
   APP_PORT: "3000",
   APP_RELEASE: "test",
@@ -16,6 +16,6 @@ export const RAW_ENV_BASE: Readonly<Record<string, string>> = {
   BETTER_AUTH_URL: "http://localhost:3000",
   BETTER_AUTH_SECRET: "x".repeat(40),
   MAIL_FROM_ADDRESS: "no-reply@example.test",
-  MAIL_FROM_NAME: "Bun ERP Template",
+  MAIL_FROM_NAME: "Loom Template",
   MAIL_DRIVER: "log",
 };

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { I18nProvider } from "@bun-erp/i18n/react";
-import { NotificationBell, NotificationItem, NotificationList } from "@bun-erp/ui/organisms/notification-bell.tsx";
+import { I18nProvider } from "@loom/i18n/react";
+import { NotificationBell, NotificationItem, NotificationList } from "@loom/ui/organisms/notification-bell.tsx";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NotificationFeed } from "../../src/features/notifications/components/notification-feed.tsx";
 import type { AppNotification } from "../../src/features/notifications/types/index.ts";

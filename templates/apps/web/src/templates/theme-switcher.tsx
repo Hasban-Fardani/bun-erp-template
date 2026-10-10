@@ -1,5 +1,5 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { SimpleSelect } from "@bun-erp/ui/molecules/select.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { SimpleSelect } from "@loom/ui/molecules/select.tsx";
 import { cn } from "../lib/cn.ts";
 import { isThemePreference } from "../lib/theme.ts";
 import { useTheme } from "../lib/theme.tsx";

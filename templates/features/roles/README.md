@@ -5,7 +5,7 @@ the core `rbac` module. The `role.*` permissions and `/api/v1/roles` routes alre
 default install; this feature adds the presentation and its navigation entry.
 
 ```
-bun erp features:install roles
+bun loom features:install roles
 ```
 
 What installs:
@@ -15,9 +15,9 @@ What installs:
 - `apps/web/src/lib/use-table-state.ts` and `apps/web/src/lib/resource-table-labels.ts` (shared
   helpers, copied once and reused by every table feature).
 - The `navigation.roles` sidebar entry and the `roles.*` locale keys.
-- The `@bun-erp/data-table` package, installed from the catalog and declared in `apps/web`.
+- The `@loom/data-table` package, installed from the catalog and declared in `apps/web`.
 
 The users screen (`features:install users`) also reads the role catalog for its role picker; roles
 works on its own but the picker is most useful with both installed.
 
-Verify with `bun erp check`, then sign in as an owner and open `/roles`.
+Verify with `bun loom check`, then sign in as an owner and open `/roles`.

@@ -1,5 +1,5 @@
-import type { AppType } from "@bun-erp/server/app-type";
-import { createUuid } from "@bun-erp/utils";
+import type { AppType } from "@loom/server/app-type";
+import { createUuid } from "@loom/utils";
 import { hc } from "hono/client";
 import { API_BASE } from "../config/env.ts";
 

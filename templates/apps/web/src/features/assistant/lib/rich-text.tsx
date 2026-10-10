@@ -1,4 +1,4 @@
-import { useI18n } from "@bun-erp/i18n/react";
+import { useI18n } from "@loom/i18n/react";
 import type { ReactNode } from "react";
 import { CopyButton } from "../components/copy-button.tsx";
 

@@ -4,7 +4,7 @@ import { fileIndex } from "./file-index.ts";
 /**
  * Route introspection without starting the server. The route table source is the assembled app:
  * `apps/server/routes/api.ts` plus each feature's `route.ts` and `feature.ts` mount declaration.
- * Parsing those files keeps `bun erp mcp routes` honest (it reads the same source `route:list`
+ * Parsing those files keeps `bun loom mcp routes` honest (it reads the same source `route:list`
  * mounts) while staying read-only and dependency-free.
  */
 

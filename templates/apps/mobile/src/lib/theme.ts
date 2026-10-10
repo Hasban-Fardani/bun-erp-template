@@ -3,7 +3,7 @@
  * It mirrors the web app's rule: a stored preference (or the device setting) picks one palette,
  * applied through `data-theme` on `<html>`.
  */
-const THEME_STORAGE_KEY = "erp.theme";
+const THEME_STORAGE_KEY = "loom.theme";
 
 export type ThemePreference = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";

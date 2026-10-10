@@ -1,6 +1,6 @@
 import { loadEnv } from "../config/index.ts";
 import { createPostgresDatabase } from "../database/postgres.ts";
-// @erp:mail
+// @loom:mail
 import { createEventListeners } from "../features/events.ts";
 import { createAuth } from "../features/identity/auth.ts";
 import { configurePermissionCache } from "../features/rbac/cache.ts";
@@ -37,7 +37,7 @@ export function createCloudflareInfrastructure(bindings: WorkerBindings): Cloudf
   // Hyperdrive owns pooling; clients and their sockets remain scoped to this invocation.
   // DATABASE_SSL_MODE is deliberately not applied here: Hyperdrive terminates origin TLS, so it
   // owns the TLS setting for the Worker-to-database path (docs/operations.md, "Database TLS").
-  const logger = createWorkerLogger("bun-erp", env.APP_ENV, env.APP_RELEASE);
+  const logger = createWorkerLogger("loom", env.APP_ENV, env.APP_RELEASE);
   const queries = createQueryMeter();
   const { db, close } = createPostgresDatabase(env.DATABASE_URL, Math.min(env.DATABASE_POOL_MAX, 5), false, {
     logger,

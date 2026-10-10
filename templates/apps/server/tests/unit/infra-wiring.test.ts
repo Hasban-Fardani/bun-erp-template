@@ -14,7 +14,7 @@ const contextManifest: InfraFeatureManifest = {
 
 const PRISTINE = [
   'import type { Auth } from "../identity/auth.ts";',
-  "// @erp:mail",
+  "// @loom:mail",
   'import type { Env } from "../config/index.ts";',
   "",
   "export type AppContext = {",
@@ -26,8 +26,8 @@ const PRISTINE = [
 ].join("\n");
 
 const WIRED = PRISTINE.replace(
-  "// @erp:mail\n",
-  '// @erp:mail\nimport type { Mailer } from "@bun-erp/mail/server";\n',
+  "// @loom:mail\n",
+  '// @loom:mail\nimport type { Mailer } from "@loom/mail/server";\n',
 ).replace("  auth: Auth;", "  auth: Auth;\n  mail: Mailer;");
 
 function withContext(source: string, run: (root: string) => Promise<void>): Promise<void> {
@@ -39,7 +39,7 @@ test("an untouched core file is wired at its marker", async () => {
     const edits = await planInfraWiring(root, contextManifest);
     expect(edits).toHaveLength(1);
     expect(edits[0]?.status).toBe("added");
-    expect(edits[0]?.source).toContain('import type { Mailer } from "@bun-erp/mail/server";');
+    expect(edits[0]?.source).toContain('import type { Mailer } from "@loom/mail/server";');
     expect(edits[0]?.source).toContain("  mail: Mailer;");
   });
 });
@@ -64,10 +64,7 @@ test("a half-wired core file reports partial instead of present", async () => {
 });
 
 test("the other half-wired direction also reports partial", async () => {
-  const half = PRISTINE.replace(
-    "// @erp:mail\n",
-    '// @erp:mail\nimport type { Mailer } from "@bun-erp/mail/server";\n',
-  );
+  const half = PRISTINE.replace("// @loom:mail\n", '// @loom:mail\nimport type { Mailer } from "@loom/mail/server";\n');
   await withContext(half, async (root) => {
     const edits = await planInfraWiring(root, contextManifest);
     expect(edits[0]?.status).toBe("partial");
@@ -76,27 +73,27 @@ test("the other half-wired direction also reports partial", async () => {
 });
 
 test("a wired file without its marker reports partial, not present", async () => {
-  const markerless = WIRED.replace("// @erp:mail\n", "");
+  const markerless = WIRED.replace("// @loom:mail\n", "");
   await withContext(markerless, async (root) => {
     const edits = await planInfraWiring(root, contextManifest);
     expect(edits[0]?.status).toBe("partial");
-    expect(edits[0]?.reason).toMatch(/@erp:mail/);
+    expect(edits[0]?.reason).toMatch(/@loom:mail/);
   });
 });
 
 test("a markerless, unwired file is skipped with the marker in the reason", async () => {
-  const markerless = PRISTINE.replace("// @erp:mail\n", "");
+  const markerless = PRISTINE.replace("// @loom:mail\n", "");
   await withContext(markerless, async (root) => {
     const edits = await planInfraWiring(root, contextManifest);
     expect(edits[0]?.status).toBe("skipped");
-    expect(edits[0]?.reason).toMatch(/@erp:mail/);
+    expect(edits[0]?.reason).toMatch(/@loom:mail/);
   });
 });
 
 test("auth-reset wires the mail-backed sender; before the install password reset stays off", async () => {
   const manifest: InfraFeatureManifest = { ...contextManifest, wiring: ["auth-reset"] };
   const pristine = [
-    "// @erp:mail",
+    "// @loom:mail",
     'import { betterAuth } from "better-auth";',
     "export const options = {",
     "  sendResetPassword: undefined,",

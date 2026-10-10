@@ -51,9 +51,9 @@ export async function handleMessage(root: string, raw: string): Promise<void> {
       result: {
         protocolVersion: negotiateProtocolVersion(params?.protocolVersion),
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: "bun-erp-mcp", version: "0.1.0" },
+        serverInfo: { name: "loom-mcp", version: "0.1.0" },
         instructions:
-          "Read-only project introspection for the bun-erp template. Tools never write, start an app server or use the network.",
+          "Read-only project introspection for the loom template. Tools never write, start an app server or use the network.",
       },
     });
     return;

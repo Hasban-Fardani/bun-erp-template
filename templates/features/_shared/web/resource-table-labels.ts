@@ -1,5 +1,5 @@
-import type { DataTableLabels } from "@bun-erp/data-table/server-table";
-import { useI18n } from "@bun-erp/i18n/react";
+import type { DataTableLabels } from "@loom/data-table/server-table";
+import { useI18n } from "@loom/i18n/react";
 
 export function useResourceTableLabels(): DataTableLabels {
   const { t, formatNumber } = useI18n();

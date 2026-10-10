@@ -10,7 +10,7 @@ export function isCatalogAppKind(value: string): value is CatalogAppKind {
   return (CATALOG_APP_KINDS as readonly string[]).includes(value);
 }
 
-const SERVER_DEPENDENCY = "@bun-erp/server";
+const SERVER_DEPENDENCY = "@loom/server";
 /** Detached rpc variants carry this marker; a re-fit only overwrites a marked file. */
 const DETACHED_MARKER = "detached-shell";
 /** Web tests that compile or run against the server app; they only exist in attached mode. */
@@ -18,7 +18,7 @@ const SERVER_COUPLED_TESTS = ["tests/rpc-types.ts", "tests/unit/identity-validat
 
 /**
  * Detached mode (templates/apps/README.md): web/mobile bind the server's typed Hono contract when a server app exists, and ship a
- * detached stub with no `@bun-erp/server` dependency when it does not. A later `bun erp init`
+ * detached stub with no `@loom/server` dependency when it does not. A later `bun loom init`
  * that adds the server re-fits the real client.
  */
 async function synchronizeServerContract(
@@ -71,7 +71,7 @@ async function synchronizeServerContract(
 
 /**
  * Copies `templates/apps/<kind>` into `apps/<name>`, renames the package, registers the workspace,
- * and binds or detaches the server contract. `bun erp init` and `bun erp apps:create` share this
+ * and binds or detaches the server contract. `bun loom init` and `bun loom apps:create` share this
  * path; an existing app is kept and only its server contract is synchronized.
  */
 export async function installCatalogApp(
@@ -98,7 +98,7 @@ export async function installCatalogApp(
 
   const rootManifest = (await Bun.file(resolve(root, "package.json")).json()) as { version?: string };
   const appManifest = (await Bun.file(appManifestPath).json()) as { name?: string; version?: string };
-  appManifest.name = `@bun-erp/${name}`;
+  appManifest.name = `@loom/${name}`;
   appManifest.version = rootManifest.version ?? "0.1.0";
   await Bun.write(appManifestPath, `${JSON.stringify(appManifest, null, 2)}\n`);
 

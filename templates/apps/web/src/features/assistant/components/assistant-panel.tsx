@@ -1,7 +1,7 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { IconButton } from "@bun-erp/ui/atoms/icon-button.tsx";
-import { Kbd } from "@bun-erp/ui/atoms/kbd.tsx";
-import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { IconButton } from "@loom/ui/atoms/icon-button.tsx";
+import { Kbd } from "@loom/ui/atoms/kbd.tsx";
+import { Sheet } from "@loom/ui/organisms/sheet.tsx";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Maximize2, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

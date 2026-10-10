@@ -1,6 +1,6 @@
 // Adapted from dashboardcn (MIT); see THIRD_PARTY_NOTICES-dashboard.md.
 
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 import * as React from "react";
 import {
   Area,

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createMemoryAdapter } from "@bun-erp/storage";
+import { createMemoryAdapter } from "@loom/storage";
 import { webStore } from "../../src/lib/storage.ts";
 
 test("webStore persists namespaced records through an injected adapter", async () => {

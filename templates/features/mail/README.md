@@ -1,16 +1,16 @@
 # Mail
 
 Opt-in server infrastructure. The default server ships no mail at all: only the database
-notification channel exists. This feature installs the `@bun-erp/mail` catalog package and wires it
+notification channel exists. This feature installs the `@loom/mail` catalog package and wires it
 into the composition root:
 
 ```
-bun erp features:install mail
+bun loom features:install mail
 ```
 
 What installs:
 
-- `packages/mail` (`@bun-erp/mail`) — app-agnostic transport: driver registry, `log`/`memory`/`smtp`
+- `packages/mail` (`@loom/mail`) — app-agnostic transport: driver registry, `log`/`memory`/`smtp`
   drivers, `resolveMail`/`htmlToText`/`escapeHtml`. `nodemailer` is its dependency.
 - `apps/server/features/mail/index.ts` — the public surface other features import (feature-boundary rule).
 - `apps/server/features/mail/wiring.ts` — app adapter: `createMailEnqueue(db)`, `createAppMailer`,
@@ -22,7 +22,7 @@ What installs:
 
 Wiring edits (all deterministic, all fail the install when an anchor is missing):
 
-- `apps/server/package.json` gains the `@bun-erp/mail` workspace dependency.
+- `apps/server/package.json` gains the `@loom/mail` workspace dependency.
 - `apps/server/bootstrap/context.ts` gains `mail: Mailer`.
 - `apps/server/bootstrap/bootstrap.ts` and `cloudflare-context.ts` build it through
   `createAppMailer`.
@@ -50,13 +50,13 @@ log of the worker, so nobody receives it.
 ## Switching drivers
 
 Set `MAIL_DRIVER` (`smtp` or `http`) plus its keys, restart the app and worker, then run
-`bun erp mail:test --to <address>`; queued jobs keep working. Steps and caveats (SPF/DKIM/DMARC, SMTP is
+`bun loom mail:test --to <address>`; queued jobs keep working. Steps and caveats (SPF/DKIM/DMARC, SMTP is
 VPS-only, non-retryable errors, SMTP duplicate-on-crash): docs/operations.md, "Switching mail drivers".
 
 ## Verify
 
 ```
-bun erp check
+bun loom check
 bun test apps/server/tests/features/mail
 ```
 

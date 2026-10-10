@@ -6,9 +6,9 @@ modules only (`identity`, `rbac`, `audit`, `notifications`) and a web app of log
 itself in, the way `packages:install` lands a package in `packages/`.
 
 ```
-bun erp features:list
-bun erp features:install users
-bun erp features:install departments
+bun loom features:list
+bun loom features:install users
+bun loom features:install departments
 ```
 
 ## Kinds
@@ -24,7 +24,7 @@ A manifest declares `kind`; an absent `kind` means `server`.
 - **`infra`** — server infrastructure: copies app-side wiring files and applies the composition-root
   operations named in `wiring`; it may also install catalog packages from `requires` and ship a
   forward-only migration. No routes, permissions, audit, navigation or i18n. `mail` is the reference
-  package-installing infra feature: it brings back the `@bun-erp/mail` transport and the
+  package-installing infra feature: it brings back the `@loom/mail` transport and the
   notifications mail channel that the default server intentionally omits. `organizations` is the
   reference Better Auth infra feature: it registers the `organization` plugin, its tables and the
   session's active organization without adding a package.
@@ -61,7 +61,7 @@ installed features share a single copy. `use-table-state.ts` is self-contained;
 | `permissionResource` | Server kind: key added to `apps/server/features/rbac/statements.ts` as `<resource>: [create, read, update, delete]`. |
 | `auditEntity` | Server kind: key added to `AUDIT_FIELDS` in `apps/server/features/audit/redact.ts`. |
 | `auditFields` | Server kind: optional snapshot allowlist for that key; defaults to `id, createdAt, updatedAt`. |
-| `requires` | Catalog packages (`templates/packages/<name>`); the installer installs them and adds `@bun-erp/<name>` to `apps/web` (or `apps/server` for infra) before writing files. An infra feature may leave it empty when it only wires core files. |
+| `requires` | Catalog packages (`templates/packages/<name>`); the installer installs them and adds `@loom/<name>` to `apps/web` (or `apps/server` for infra) before writing files. An infra feature may leave it empty when it only wires core files. |
 | `nav` | Sidebar entry: `titleKey`, `url`, lucide `icon`, `permission`. |
 | `i18nKeys` | `en-US` and `id-ID` message keys the screen needs; keys already present are left alone. |
 | `files.web` | Web feature files, relative to the catalog directory. |

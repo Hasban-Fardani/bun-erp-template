@@ -7,7 +7,7 @@ export type DefaultStoreOptions = {
   databaseName?: string;
   /**
    * Native adapter factory. The app injects it because encrypted SQLite lives in the app's
-   * Capacitor dependency (imported from `@bun-erp/storage/capacitor`), not in the core.
+   * Capacitor dependency (imported from `@loom/storage/capacitor`), not in the core.
    */
   native?: () => Promise<KeyValueAdapter>;
 };
@@ -30,7 +30,7 @@ export async function getDefaultKeyValueStore(options: DefaultStoreOptions = {})
   }
   const localStorage = (globalThis as { localStorage?: StringStorage }).localStorage;
   if (localStorage) {
-    return createKeyValueStore(createLocalStorageAdapter(localStorage, options.databaseName ?? "bun-erp"));
+    return createKeyValueStore(createLocalStorageAdapter(localStorage, options.databaseName ?? "loom"));
   }
   return createKeyValueStore(createMemoryAdapter());
 }

@@ -25,17 +25,17 @@ evidence: pending — append the commands run and their results
 ## Checkpoints
 
 - [ ] **${id}.1** Replace this with one verifiable item; tick it only after its red and green lines exist
-- [ ] **${id}.2** \`bun erp check\` green
+- [ ] **${id}.2** \`bun loom check\` green
 
 ## Evidence
 
-\`tdd: required\` makes \`bun erp check\` enforce this grammar for every ticked \`**<ID>**\` item:
+\`tdd: required\` makes \`bun loom check\` enforce this grammar for every ticked \`**<ID>**\` item:
 
 \`\`\`text
-- red: ${id}.1 \`bun erp test --filter thing\` — 1 fail: expected 2, received 1
-- green: ${id}.1 \`bun erp test --filter thing\` — 1 pass
+- red: ${id}.1 \`bun loom test --filter thing\` — 1 fail: expected 2, received 1
+- green: ${id}.1 \`bun loom test --filter thing\` — 1 pass
 - red: ${id}.3 n/a — docs-only, nothing executable to fail
-- green: ${id}.3 \`bun erp check\` — 0 findings
+- green: ${id}.3 \`bun loom check\` — 0 findings
 \`\`\`
 
 Red comes before green for the same ID. \`NOT_RUN\` and \`BLOCKED\` items stay unticked.
@@ -47,7 +47,7 @@ export const commands = [
     const id = resolveRequired(args[0], "Task id");
     const title = resolveRequired(args[1], "Task title");
     if (!id || !title) {
-      process.stderr.write("Usage: bun erp task:new <id> <title>\n");
+      process.stderr.write("Usage: bun loom task:new <id> <title>\n");
       process.exit(1);
     }
     const slug = toKebabName(title, "Task").slice(0, 48);

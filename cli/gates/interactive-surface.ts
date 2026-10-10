@@ -48,7 +48,7 @@ export async function checkInteractiveSurface(root: string): Promise<SurfaceFind
   const index = fileIndex(root);
   const files: string[] = [];
   for (const dir of ["apps/web/src", "apps/mobile/src", "packages/ui/src"]) {
-    // apps/mobile/src only exists after `bun erp apps:create <name> mobile`.
+    // apps/mobile/src only exists after `bun loom apps:create <name> mobile`.
     if (!(await directoryExists(join(root, dir)))) continue;
     files.push(...(await index.files(`${dir}/**/*.tsx`)));
   }

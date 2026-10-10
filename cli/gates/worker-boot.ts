@@ -9,7 +9,7 @@
  * The full boot is a manual, documented step because it starts Vite + workerd (about 30 s):
  *
  *   export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgresql://…
- *   bun erp cloudflare:dev
+ *   bun loom cloudflare:dev
  *   curl -s http://127.0.0.1:<workerd-port>/api/v1/health   # {"status":"ok"}
  *   curl -s http://127.0.0.1:<workerd-port>/api/v1/ready    # {"status":"ready",…}
  *
@@ -90,7 +90,7 @@ export async function checkWorkerBoot(root: string): Promise<string[]> {
 
   if (findings.length === 0) {
     process.stdout.write(
-      "worker-boot: prerequisites OK — boot it with `bun erp cloudflare:dev` and probe /api/v1/health + /api/v1/ready.\n",
+      "worker-boot: prerequisites OK — boot it with `bun loom cloudflare:dev` and probe /api/v1/health + /api/v1/ready.\n",
     );
   }
   return findings;

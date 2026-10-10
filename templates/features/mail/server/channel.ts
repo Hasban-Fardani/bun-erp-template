@@ -1,4 +1,4 @@
-import { escapeHtml } from "@bun-erp/mail/server";
+import { escapeHtml } from "@loom/mail/server";
 import { inArray } from "drizzle-orm";
 import { users } from "../identity/index.ts";
 import type { NotificationChannelFactory, NotifyInput } from "../notifications/index.ts";

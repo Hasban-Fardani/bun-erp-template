@@ -8,7 +8,7 @@ export async function checkMobile(root: string): Promise<MobileFinding[]> {
   const findings: MobileFinding[] = [];
   const packagePath = join(root, "apps/mobile/package.json");
   // Mobile is a catalog app: the default template ships server + web only. The contract applies
-  // once `bun erp apps:create <name> mobile` restores the app at apps/mobile.
+  // once `bun loom apps:create <name> mobile` restores the app at apps/mobile.
   if (!(await Bun.file(packagePath).exists())) return findings;
   const manifest = (await Bun.file(packagePath).json()) as {
     dependencies?: Record<string, string>;

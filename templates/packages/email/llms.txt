@@ -1,4 +1,4 @@
-# @bun-erp/email
+# @loom/email
 
 > Reusable React Email components and templates, organized as atomic parts.
 

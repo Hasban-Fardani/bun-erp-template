@@ -1,14 +1,14 @@
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { IconButton } from "@bun-erp/ui/atoms/icon-button.tsx";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
-import { useSoftAutoAnimate } from "@bun-erp/ui/lib/use-auto-animate.ts";
-import { SimpleSelect } from "@bun-erp/ui/molecules/select.tsx";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { IconButton } from "@loom/ui/atoms/icon-button.tsx";
+import { cn } from "@loom/ui/lib/cn.ts";
+import { useSoftAutoAnimate } from "@loom/ui/lib/use-auto-animate.ts";
+import { SimpleSelect } from "@loom/ui/molecules/select.tsx";
 import {
   DEFAULT_TABLE_EMPTY_LABELS,
   TableEmpty,
   type TableEmptyLabels,
   TableSkeleton,
-} from "@bun-erp/ui/molecules/table-states.tsx";
+} from "@loom/ui/molecules/table-states.tsx";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { createServerColumnHelper, type ServerColumn, useServerDataTable } from "../server/index";

@@ -7,7 +7,7 @@ import { defineConfig, type Plugin } from "vite";
 
 const API_PORT = process.env.API_PORT ?? "3000";
 const workerExportGuard: Plugin = {
-  name: "bun-erp-worker-export-guard",
+  name: "loom-worker-export-guard",
   generateBundle: {
     order: "post",
     handler(_options, bundle) {
@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
     ...(cloudflareMode
       ? {
           environments: {
-            bun_erp_template: {
+            loom_template: {
               build: {
                 rolldownOptions: {
                   preserveEntrySignatures: "strict",

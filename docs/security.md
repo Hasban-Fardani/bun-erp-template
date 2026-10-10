@@ -2,7 +2,7 @@
 
 Private routes authorize before parsing input. RBAC grants are server-enforced, including
 distinctions between 401, 403 and 404. The default server is tenant-free: no table carries an
-organization id. `bun erp features:install organizations` installs the Better Auth `organization`
+organization id. `bun loom features:install organizations` installs the Better Auth `organization`
 plugin as the opt-in tenant layer — organization/member/invitation tables, invitations, and
 `activeOrganizationId` on the session — together with its forward-only migration. The plugin serves
 its own endpoints under `/api/v1/auth/*`; RBAC stays global and independent of organizations, and
@@ -34,7 +34,7 @@ Owners can view the app as another user to reproduce an error (decision D6: full
   starting a second impersonation while one is active. An unknown user is 404; no session is 401.
 - **Session.** The start creates a normal `session` row for the target with `impersonated_by` set and
   `expires_at` at `IMPERSONATION_TTL_MINUTES` (default 60). Its token travels in a separate
-  `erp_impersonation` cookie, so the admin's own session is never replaced. `POST /api/v1/impersonation/stop`
+  `loom_impersonation` cookie, so the admin's own session is never replaced. `POST /api/v1/impersonation/stop`
   deletes the row and clears the cookie; the admin is back at once. The cookie only works together with the
   admin's own live session. After the TTL the next request answers 401 and clears the cookie, and the
   admin's original session is still valid. State is DB-only, so it behaves the same on a VPS and on Workers.
@@ -53,9 +53,9 @@ this repository's RBAC.
 
 ## Password reset
 
-Reset exists only when the opt-in mail feature is installed (`bun erp features:install mail`). Without it,
+Reset exists only when the opt-in mail feature is installed (`bun loom features:install mail`). Without it,
 `sendResetPassword` stays unset, Better Auth answers `400 RESET_PASSWORD_DISABLED`, and the web
-forgot-password screen tells the person to ask an administrator (`bun erp user:create` / the users screen).
+forgot-password screen tells the person to ask an administrator (`bun loom user:create` / the users screen).
 
 With mail installed the flow is:
 

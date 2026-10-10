@@ -1,4 +1,4 @@
-import { useI18n } from "@bun-erp/i18n/react";
+import { useI18n } from "@loom/i18n/react";
 import { useSyncExternalStore } from "react";
 import { readOnlineStatus, subscribeOnlineStatus } from "../stores/online-status.ts";
 

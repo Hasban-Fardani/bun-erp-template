@@ -1,5 +1,5 @@
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { Button } from "@loom/ui/atoms/button-primitives";
+import { cn } from "@loom/ui/lib/cn.ts";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type * as React from "react";

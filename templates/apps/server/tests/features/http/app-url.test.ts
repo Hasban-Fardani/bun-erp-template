@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { loadEnv } from "@/config/index.ts";
 
 const base: Record<string, string> = {
-  APP_NAME: "Bun ERP Template",
+  APP_NAME: "Loom Template",
   APP_ENV: "production",
   APP_URL: "https://erp.example.test",
   APP_PORT: "3000",
@@ -21,7 +21,7 @@ const base: Record<string, string> = {
   STORAGE_DRIVER: "s3",
   MAIL_DRIVER: "log",
   MAIL_FROM_ADDRESS: "no-reply@example.test",
-  MAIL_FROM_NAME: "Bun ERP Template",
+  MAIL_FROM_NAME: "Loom Template",
 };
 
 const withAppUrl = (APP_URL: string) => () => loadEnv({ ...base, APP_URL });

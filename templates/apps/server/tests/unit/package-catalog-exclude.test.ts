@@ -4,7 +4,7 @@ import { copyCatalogPackage } from "@cli/lib/package-catalog.ts";
 async function fixture(template: boolean): Promise<string> {
   const root = (await Bun.$`mktemp -d`.text()).trim();
   await Bun.$`git init -q ${root}`.quiet();
-  await Bun.write(`${root}/templates/packages/widget/package.json`, '{"name":"@bun-erp/widget"}\n');
+  await Bun.write(`${root}/templates/packages/widget/package.json`, '{"name":"@loom/widget"}\n');
   await Bun.write(`${root}/package.json`, '{"workspaces":[]}\n');
   if (template) await Bun.write(`${root}/docs/template/README.md`, "template\n");
   return root;

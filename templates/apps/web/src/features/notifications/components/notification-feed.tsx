@@ -1,11 +1,11 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import type { ActivityTone } from "@bun-erp/ui/molecules/activity-feed.tsx";
-import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
+import { useI18n } from "@loom/i18n/react";
+import type { ActivityTone } from "@loom/ui/molecules/activity-feed.tsx";
+import { EmptyState } from "@loom/ui/molecules/empty-state.tsx";
 import {
   NotificationItem,
   NotificationList,
   type AppNotification as UiNotification,
-} from "@bun-erp/ui/organisms/notification-bell.tsx";
+} from "@loom/ui/organisms/notification-bell.tsx";
 import { Bell, CircleCheck, CircleX, Info } from "lucide-react";
 import type { AppNotification } from "../types/index.ts";
 

@@ -4,9 +4,9 @@ import { loadEnv } from "../../config/index.ts";
 import { type MailProbe, runMailTest } from "../lib/mail-test.ts";
 
 /** A variable specifier keeps the CLI core compiling in an app where the mail package is not installed. */
-const MAIL_PACKAGE: string = "@bun-erp/mail/server";
+const MAIL_PACKAGE: string = "@loom/mail/server";
 
-/** The slice of `@bun-erp/mail/server` this command uses; typed locally so tsc never needs the package. */
+/** The slice of `@loom/mail/server` this command uses; typed locally so tsc never needs the package. */
 type MailModule = {
   createMailer(options: { config: ReturnType<typeof loadEnv>; logger: { info(): void } }): MailProbe;
 };
@@ -16,7 +16,7 @@ async function openMailer(): Promise<MailProbe> {
   try {
     mail = (await import(MAIL_PACKAGE)) as MailModule;
   } catch {
-    throw new Error("The mail package is not installed. Run `bun erp features:install mail` first.");
+    throw new Error("The mail package is not installed. Run `bun loom features:install mail` first.");
   }
   return mail.createMailer({ config: loadEnv(), logger: { info: () => {} } });
 }
@@ -25,7 +25,7 @@ export const commands = [
   defineCommand("mail:test", async (args) => {
     const to = parseCommandOptions(args, { values: ["to"] }).values.get("to");
     if (to === undefined) {
-      process.stderr.write("Usage: bun erp mail:test --to <address>\n");
+      process.stderr.write("Usage: bun loom mail:test --to <address>\n");
       process.exit(2);
     }
 

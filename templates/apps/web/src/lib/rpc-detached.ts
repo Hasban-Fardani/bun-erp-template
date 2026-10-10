@@ -1,6 +1,6 @@
 /**
  * Detached web shell (docs/api-contract.md, detached mode): the server app is not installed, so there is no typed RPC contract to
- * bind. `bun erp init --apps server,web --yes` re-fits the real `hc<AppType>` client and removes
+ * bind. `bun loom init --apps server,web --yes` re-fits the real `hc<AppType>` client and removes
  * the detached marker. Re-fit marker: detached-shell.
  */
 import type { ClientResponse } from "hono/client";
@@ -28,7 +28,7 @@ type AiStatusResponse = {
 
 function unavailable(): never {
   throw new Error(
-    `The server app is not installed; run \`bun erp init --apps server,web --yes\` to enable ${API_BASE}/api/v1.`,
+    `The server app is not installed; run \`bun loom init --apps server,web --yes\` to enable ${API_BASE}/api/v1.`,
   );
 }
 

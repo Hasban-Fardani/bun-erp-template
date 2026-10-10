@@ -1,4 +1,4 @@
-import { DriverRegistry } from "@bun-erp/utils";
+import { DriverRegistry } from "@loom/utils";
 import type { Database } from "../../database/index.ts";
 import type { Logger } from "../observability/logger.ts";
 import { trackWakeUpSignals } from "./queue.ts";

@@ -5,7 +5,7 @@ import { repoRoot } from "./lib/repo.ts";
  * Command registry. A module declares its commands with `defineCommand("<name>", handler)`;
  * discovery reads those name literals straight from the file, so the registry can map a command
  * to its module without importing it. Only the module that owns the running command is imported,
- * which keeps `bun erp --help` and single commands off the server runtime.
+ * which keeps `bun loom --help` and single commands off the server runtime.
  *
  * The discovery result is cached in `cli/.command-index.json`, keyed by file mtime: `--help` and
  * `runCommand` only re-read a command file when its mtime changed, so a normal run does one async

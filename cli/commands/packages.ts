@@ -26,7 +26,7 @@ export const commands = [
     const asked = parsed.positional.length > 0 ? parsed.positional : [resolveRequired(undefined, "Package name")];
     const names = [...new Set(asked.filter((name): name is string => Boolean(name)))];
     if (names.length === 0) {
-      process.stderr.write("Usage: bun erp packages:install <name> [<name>...] [--from <path|git-url>]\n");
+      process.stderr.write("Usage: bun loom packages:install <name> [<name>...] [--from <path|git-url>]\n");
       process.exit(1);
     }
     const from = parsed.values.get("from");
@@ -61,7 +61,7 @@ export const commands = [
     for (const name of installed) {
       process.stdout.write(
         `Installed packages/${name}.\n` +
-          `Next: add "@bun-erp/${name}": "workspace:*" to the app that needs it, then import from "@bun-erp/${name}".\n`,
+          `Next: add "@loom/${name}": "workspace:*" to the app that needs it, then import from "@loom/${name}".\n`,
       );
     }
   }),

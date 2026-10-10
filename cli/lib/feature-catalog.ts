@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { fileIndex } from "./file-index.ts";
 
 /**
- * Feature catalog: `templates/features/<name>/` holds everything `bun erp features:install`
+ * Feature catalog: `templates/features/<name>/` holds everything `bun loom features:install`
  * copies into `apps/*`. The manifest is the single source of truth for wiring, so the command
  * never guesses a permission key or an i18n label.
  *

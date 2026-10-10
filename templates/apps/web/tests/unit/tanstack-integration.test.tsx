@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { FormErrors } from "@bun-erp/ui/molecules/form-errors.tsx";
+import { FormErrors } from "@loom/ui/molecules/form-errors.tsx";
 import { FormApi } from "@tanstack/react-form";
 import { renderToStaticMarkup } from "react-dom/server";
 

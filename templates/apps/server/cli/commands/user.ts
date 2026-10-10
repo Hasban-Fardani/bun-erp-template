@@ -40,9 +40,9 @@ export const commands = [
     const email = resolveRequired(emailArg, "Email");
     const password = skipPassword ? generatePassword() : resolveRequired(passwordArg, "Password");
     if (!email || !password) {
-      process.stderr.write("Usage: bun erp user:create <email> <password> [--role <key>] [--name <name>]\n");
+      process.stderr.write("Usage: bun loom user:create <email> <password> [--role <key>] [--name <name>]\n");
       process.stderr.write(
-        "Run `bun erp role:list` to see available roles. The first user defaults to owner; later users default to staff.\n",
+        "Run `bun loom role:list` to see available roles. The first user defaults to owner; later users default to staff.\n",
       );
       process.exit(1);
     }
@@ -93,7 +93,7 @@ export const commands = [
       const roleKeys = availableRoles.map(({ key }) => key);
       if (!roleKeys.includes(roleKey)) {
         throw new Error(
-          `Unknown role "${roleKey}". Available: ${roleKeys.join(", ") || "none"}. Run bun erp role:list.`,
+          `Unknown role "${roleKey}". Available: ${roleKeys.join(", ") || "none"}. Run bun loom role:list.`,
         );
       }
 
@@ -133,7 +133,7 @@ export const commands = [
     const parsed = parseCommandOptions(args, {});
     const email = resolveRequired(parsed.positional[0], "Email");
     if (!email) {
-      process.stderr.write("Usage: bun erp user:show <email>\n");
+      process.stderr.write("Usage: bun loom user:show <email>\n");
       process.exit(1);
     }
     const ctx = await createCliContext({ migrateOnStart: false });
@@ -156,7 +156,7 @@ export const commands = [
     const email = resolveRequired(parsed.positional[0], "Email");
     if (!email) {
       process.stderr.write(
-        "Usage: bun erp user:edit <email> [--name <name>] [--verified|--unverified] [--roles a,b]\n",
+        "Usage: bun loom user:edit <email> [--name <name>] [--verified|--unverified] [--roles a,b]\n",
       );
       process.exit(1);
     }
@@ -196,11 +196,11 @@ export const commands = [
     const parsed = parseCommandOptions(args, { flags: ["force"] });
     const email = resolveRequired(parsed.positional[0], "Email");
     if (!email) {
-      process.stderr.write("Usage: bun erp user:delete <email> --force\n");
+      process.stderr.write("Usage: bun loom user:delete <email> --force\n");
       process.exit(1);
     }
     if (!parsed.flags.has("force")) {
-      process.stderr.write(`Refusing to delete a user without --force. Run: bun erp user:delete ${email} --force\n`);
+      process.stderr.write(`Refusing to delete a user without --force. Run: bun loom user:delete ${email} --force\n`);
       process.exit(1);
     }
     const ctx = await createCliContext({ migrateOnStart: false });
@@ -217,7 +217,7 @@ export const commands = [
     const [emailArg, roleKey = "owner"] = args;
     const email = resolveRequired(emailArg, "Email");
     if (!email) {
-      process.stderr.write("Usage: bun erp user:grant <email> [roleKey]\n");
+      process.stderr.write("Usage: bun loom user:grant <email> [roleKey]\n");
       process.exit(1);
     }
     // slop-ok: user lookups repeat the same not-found guard per command on purpose.
@@ -233,7 +233,7 @@ export const commands = [
     if (!role) {
       const available = await ctx.db.select({ key: roleTable.key }).from(roleTable).orderBy(roleTable.key);
       process.stderr.write(
-        `No role "${roleKey}". Available: ${available.map(({ key }) => key).join(", ") || "none"}. Run: bun erp role:list\n`,
+        `No role "${roleKey}". Available: ${available.map(({ key }) => key).join(", ") || "none"}. Run: bun loom role:list\n`,
       );
       await ctx.close();
       process.exit(1);
@@ -261,7 +261,7 @@ export const commands = [
     const email = resolveRequired(emailArg, "Email");
     const roleKey = resolveRequired(roleKeyArg, "Role key");
     if (!email || !roleKey) {
-      process.stderr.write("Usage: bun erp user:revoke <email> <roleKey>\n");
+      process.stderr.write("Usage: bun loom user:revoke <email> <roleKey>\n");
       process.exit(1);
     }
     const ctx = await createCliContext({ migrateOnStart: false });
@@ -281,7 +281,7 @@ export const commands = [
     const [emailArg, newPassword] = args;
     const email = resolveRequired(emailArg, "Email");
     if (!email) {
-      process.stderr.write("Usage: bun erp user:passwd <email> [sandi-baru]\n");
+      process.stderr.write("Usage: bun loom user:passwd <email> [sandi-baru]\n");
       process.exit(1);
     }
     // Math.random() must never produce a credential; the generator uses the platform CSPRNG.

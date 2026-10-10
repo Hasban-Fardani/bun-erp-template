@@ -15,7 +15,7 @@ type Entry = { value: string; updatedAt: string };
  * localStorage stores strings only, so records are JSON-packaged. Small data only: the whole
  * namespace is rewritten on `clear`, and the browser quota is a few megabytes.
  */
-export function createLocalStorageAdapter(backend: StringStorage, prefix = "bun-erp"): KeyValueAdapter {
+export function createLocalStorageAdapter(backend: StringStorage, prefix = "loom"): KeyValueAdapter {
   const id = (namespace: string, key: string) =>
     `${prefix}:${encodeURIComponent(namespace)}:${encodeURIComponent(key)}`;
   const read = (storageKey: string): Entry | undefined => {

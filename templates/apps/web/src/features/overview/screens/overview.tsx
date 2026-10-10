@@ -1,8 +1,8 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Card } from "@bun-erp/ui/atoms/card.tsx";
-import { EmptyState } from "@bun-erp/ui/molecules/empty-state.tsx";
-import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
-import { PageShell } from "@bun-erp/ui/templates/page-shell.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Card } from "@loom/ui/atoms/card.tsx";
+import { EmptyState } from "@loom/ui/molecules/empty-state.tsx";
+import { PageLoading } from "@loom/ui/molecules/table-states.tsx";
+import { PageShell } from "@loom/ui/templates/page-shell.tsx";
 import { Link } from "@tanstack/react-router";
 import { visibleNavGroups } from "@web/config/navigation.ts";
 import { Compass } from "lucide-react";

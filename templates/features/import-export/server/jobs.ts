@@ -6,7 +6,7 @@ import { IMPORT_BATCH_NAME } from "./service.ts";
 
 /**
  * Registers the import batch handler. `apps/server/features/jobs.ts` owns the composition root, so
- * `bun erp features:install import-export` documents adding
+ * `bun loom features:install import-export` documents adding
  * `registerImportExportBatchHandlers(batches, ctx)` there. The handler is idempotent by contract:
  * a resumed batch can deliver the same row again, so a resource's `importRow` must upsert.
  */

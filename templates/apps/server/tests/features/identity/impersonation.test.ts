@@ -18,7 +18,7 @@ afterAll(async () => {
   await api?.close();
 });
 
-const IMPERSONATION_COOKIE = "erp_impersonation";
+const IMPERSONATION_COOKIE = "loom_impersonation";
 
 type Me = { data: { userId: string; email: string; impersonation: null | { by: { email: string } } } };
 

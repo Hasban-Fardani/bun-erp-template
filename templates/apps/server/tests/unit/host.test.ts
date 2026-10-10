@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { createHostFetch } from "../../http/host.ts";
 import { createWebAssetsApp } from "../../http/web-assets.ts";
 
-const webRoot = `${Bun.env.TMPDIR ?? "/tmp"}/bun-erp-web-assets-${crypto.randomUUID()}`;
+const webRoot = `${Bun.env.TMPDIR ?? "/tmp"}/loom-web-assets-${crypto.randomUUID()}`;
 const web = createWebAssetsApp(webRoot);
 const apiPaths: string[] = [];
 const fetch = createHostFetch((request) => {

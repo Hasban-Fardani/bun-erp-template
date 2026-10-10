@@ -1,4 +1,4 @@
-import { emailAddressSchema } from "@bun-erp/utils/email";
+import { emailAddressSchema } from "@loom/utils/email";
 import * as z from "zod";
 import { listQueryParts } from "../../http/helpers/list-query.ts";
 

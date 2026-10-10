@@ -15,7 +15,7 @@ export async function buildCloudflare(): Promise<void> {
     throw new Error("Cloudflare currently requires APP_WEB_MODE=integrated.");
   }
 
-  const generatedLocalBindings = resolve(repoRoot, "apps/web/dist/bun_erp_template/.dev.vars");
+  const generatedLocalBindings = resolve(repoRoot, "apps/web/dist/loom_template/.dev.vars");
   try {
     await run(["bun", "run", "--cwd", "apps/web", "build:cloudflare"], "Cloudflare Worker build");
   } finally {

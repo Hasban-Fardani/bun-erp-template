@@ -1,9 +1,9 @@
 // Adapted from dashboardcn (MIT); see THIRD_PARTY_NOTICES-dashboard.md.
 
-import { DeltaBadge, getDeltaDirection } from "@bun-erp/ui/atoms/delta-badge.tsx";
-import { cn } from "@bun-erp/ui/lib/cn.ts";
-import type { NumberFormat } from "@bun-erp/ui/lib/dashboard-format.ts";
-import { MetricValue } from "@bun-erp/ui/molecules/metric-value.tsx";
+import { DeltaBadge, getDeltaDirection } from "@loom/ui/atoms/delta-badge.tsx";
+import { cn } from "@loom/ui/lib/cn.ts";
+import type { NumberFormat } from "@loom/ui/lib/dashboard-format.ts";
+import { MetricValue } from "@loom/ui/molecules/metric-value.tsx";
 import type * as React from "react";
 import { Sparkline } from "./sparkline.tsx";
 

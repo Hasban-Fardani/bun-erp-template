@@ -1,6 +1,6 @@
-import { I18nProvider, useI18n } from "@bun-erp/i18n/react";
-import { PageLoading } from "@bun-erp/ui/molecules/table-states.tsx";
-import { ToastProvider } from "@bun-erp/ui/organisms/toast.tsx";
+import { I18nProvider, useI18n } from "@loom/i18n/react";
+import { PageLoading } from "@loom/ui/molecules/table-states.tsx";
+import { ToastProvider } from "@loom/ui/organisms/toast.tsx";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";

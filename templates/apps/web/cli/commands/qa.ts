@@ -3,7 +3,7 @@ import { repoRoot } from "@cli/lib/repo.ts";
 import { defineCommand } from "@cli/registry.ts";
 
 /**
- * `bun erp qa` lives in the web app so the registry lists it only while `apps/web` is installed.
+ * `bun loom qa` lives in the web app so the registry lists it only while `apps/web` is installed.
  * The root CLI never imports app code: the runner is spawned as a subprocess and owns its flags.
  */
 export const commands = [

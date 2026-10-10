@@ -12,7 +12,7 @@ const webDist = `${import.meta.dir}/../../web/dist`;
 
 /** SQLSTATEs that mean the live schema does not match the catalog this code ships with. */
 const SCHEMA_OUT_OF_DATE = new Set(["42P10", "42P01", "42703"]);
-const SCHEMA_OUT_OF_DATE_HINT = "database schema is out of date with the catalog; run `bun erp db:status`";
+const SCHEMA_OUT_OF_DATE_HINT = "database schema is out of date with the catalog; run `bun loom db:status`";
 
 async function main(): Promise<void> {
   let env: ReturnType<typeof loadEnv>;
@@ -20,7 +20,7 @@ async function main(): Promise<void> {
     env = loadEnv();
     if (env.APP_DEPLOY_TARGET !== "bun") {
       throw new ConfigError([
-        "APP_DEPLOY_TARGET=cloudflare uses `bun erp cloudflare:dev` or `bun erp cloudflare:deploy`",
+        "APP_DEPLOY_TARGET=cloudflare uses `bun loom cloudflare:dev` or `bun loom cloudflare:deploy`",
       ]);
     }
   } catch (err) {
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
 
   const servesWeb = !apiOnly && env.APP_WEB_MODE === "integrated";
   if (servesWeb && !(await Bun.file(`${webDist}/index.html`).exists())) {
-    process.stderr.write("Web build not found. Run `bun erp build` before `bun start`.\n");
+    process.stderr.write("Web build not found. Run `bun loom build` before `bun start`.\n");
     process.exit(1);
   }
 
@@ -123,7 +123,7 @@ function failBoot(env: ReturnType<typeof loadEnv>, error: unknown): never {
   const event = {
     level: 50,
     time: new Date().toISOString(),
-    service: "bun-erp",
+    service: "loom",
     environment: env.APP_ENV,
     release: env.APP_RELEASE,
     event: "boot.failed",

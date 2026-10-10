@@ -1,4 +1,4 @@
-/** QA credentials written by `bun erp ci:prepare` and consumed by `bun erp ci:owner`. */
+/** QA credentials written by `bun loom ci:prepare` and consumed by `bun loom ci:owner`. */
 export type QaCredentials = { email: string; password: string };
 
 /**

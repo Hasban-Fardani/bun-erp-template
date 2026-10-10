@@ -110,7 +110,7 @@ test("project:adopt strips markers, writes identity, removes template material, 
 old block
 <!-- guidelines:end -->
 `,
-      "README.md": `# Bun ERP Template
+      "README.md": `# Loom Template
 <!-- project-identity:start -->
 <!-- template-only -->
 Starter for internal applications.
@@ -152,12 +152,12 @@ test("project:adopt renames package, wrangler, queue, bucket and URL names deriv
     {
       "docs/template/README.md": "# Template material\n",
       "AGENTS.md": `${MARKED_AGENTS}\n<!-- guidelines:start -->\nold\n<!-- guidelines:end -->\n`,
-      "package.json": '{\n  "name": "bun-erp-template",\n  "private": true\n}\n',
+      "package.json": '{\n  "name": "loom-template",\n  "private": true\n}\n',
       "wrangler.jsonc": `{
-  "name": "bun-erp-template",
-  "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "bun-erp-template-files" }],
-  // wrangler queues create bun-erp-template-jobs
-  "vars": { "APP_URL": "https://bun-erp-template.example.workers.dev" }
+  "name": "loom-template",
+  "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "loom-template-files" }],
+  // wrangler queues create loom-template-jobs
+  "vars": { "APP_URL": "https://loom-template.example.workers.dev" }
 }
 `,
     },
@@ -170,7 +170,7 @@ test("project:adopt renames package, wrangler, queue, bucket and URL names deriv
       expect(wrangler).toContain("acme-erp-files");
       expect(wrangler).toContain("acme-erp-jobs");
       expect(wrangler).toContain("https://acme-erp.example.workers.dev");
-      expect(wrangler).not.toContain("bun-erp-template");
+      expect(wrangler).not.toContain("loom-template");
     },
     "lifecycle-adopt-names-",
   );
@@ -181,7 +181,7 @@ test("project:adopt gives the project its own database name and leaves host and 
     {
       "docs/template/README.md": "# Template material\n",
       "AGENTS.md": MARKED_AGENTS,
-      ".env.example": "A=1\nDATABASE_URL=postgresql://postgres:postgres@localhost:5432/bun_erp\nB=2\n",
+      ".env.example": "A=1\nDATABASE_URL=postgresql://postgres:postgres@localhost:5432/loom\nB=2\n",
       ".env": 'DATABASE_URL="postgresql://u:p%40ss@db.internal:55418/erp_ci?sslmode=disable"\n',
     },
     async (root) => {
@@ -217,7 +217,7 @@ test("project:adopt writes docs/tasks/README.md and the task gate ignores it", a
     async (root) => {
       await adoptProject(root, { name: "Acme", purpose: "ERP for Acme" });
       const readme = await Bun.file(`${root}/docs/tasks/README.md`).text();
-      expect(readme).toContain("bun erp task:new");
+      expect(readme).toContain("bun loom task:new");
       const { loadTasks } = await import("@cli/gates/tasks.ts");
       expect(await loadTasks(`${root}/docs/tasks`)).toEqual([]);
       expect(await checkLifecycle(root)).toEqual([]);
@@ -229,7 +229,7 @@ test("project:adopt writes docs/tasks/README.md and the task gate ignores it", a
 test("project mode: leak phrases outside template-only markers are findings", async () => {
   await withTempRoot(
     {
-      "README.md": "# Bun ERP Template\n",
+      "README.md": "# Loom Template\n",
       "docs/a.md": "The repo ships `apps/` empty.\n",
       "docs/b.md": "Use this template carefully.\n",
       "docs/c.md": "## Deployment (F3.2 Q9)\n",
@@ -253,7 +253,7 @@ test("template mode: leak phrases are allowed", async () => {
   await withTempRoot(
     {
       "docs/template/README.md": "# Template material\n",
-      "README.md": "# Bun ERP Template\nThis template ships `apps/` empty (F3.4).\n",
+      "README.md": "# Loom Template\nThis template ships `apps/` empty (F3.4).\n",
     },
     async (root) => {
       expect(await checkLifecycle(root)).toEqual([]);

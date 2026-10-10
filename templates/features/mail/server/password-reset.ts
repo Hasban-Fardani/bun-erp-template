@@ -1,4 +1,4 @@
-import { escapeHtml } from "@bun-erp/mail/server";
+import { escapeHtml } from "@loom/mail/server";
 import type { Database } from "../../database/index.ts";
 import { enqueueJob } from "../../infra/jobs/queue.ts";
 

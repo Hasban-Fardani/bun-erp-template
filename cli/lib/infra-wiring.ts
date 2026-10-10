@@ -19,17 +19,17 @@ import type { WiringEdit } from "./wiring.ts";
 type ApplyResult = { source: string; status: "added" | "present" | "skipped"; reason?: string };
 type Editor = {
   path: string;
-  /** Explicit `// @erp:` marker the catalog file carries at the insertion point. */
+  /** Explicit `// @loom:` marker the catalog file carries at the insertion point. */
   anchor: string;
   /** Every generated line the completed edit leaves behind. */
   markers: readonly string[];
   apply: (source: string) => ApplyResult;
 };
 
-const MAIL_MARKER = "// @erp:mail";
-const ORGANIZATIONS_MARKER = "// @erp:organizations";
+const MAIL_MARKER = "// @loom:mail";
+const ORGANIZATIONS_MARKER = "// @loom:organizations";
 
-const MAIL_PACKAGE = "@bun-erp/mail/server";
+const MAIL_PACKAGE = "@loom/mail/server";
 
 /** Insert `line` after the first occurrence of `anchor`; `undefined` when the anchor is missing. */
 function insertAfter(source: string, anchor: string, line: string): string | undefined {
@@ -421,7 +421,7 @@ const EDITORS: Record<InfraWiringOp, readonly Editor[]> = {
  * Applies the manifest's wiring operations; nothing is written here. Operations are composed per
  * file so two operations on one file (auth-plugin + auth-schema) do not overwrite each other.
  *
- * Each editor declares an explicit `// @erp:` anchor plus the generated lines it leaves behind:
+ * Each editor declares an explicit `// @loom:` anchor plus the generated lines it leaves behind:
  * all lines without the anchor, some lines only, or the anchor with some lines all report as
  * `partial`, and the installer aborts before writing anything. A missing anchor reports `skipped`.
  */

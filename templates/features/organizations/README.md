@@ -6,7 +6,7 @@ without adding routes, RBAC permissions, navigation or i18n keys — Better Auth
 endpoints under `/api/v1/auth/*`.
 
 ```
-bun erp features:install organizations
+bun loom features:install organizations
 ```
 
 What installs:
@@ -36,10 +36,10 @@ global and independent of organizations.
 ## Verify
 
 ```
-bun erp check
+bun loom check
 bun test apps/server/tests/features/organizations
 ```
 
 Removing the feature is manual: delete `apps/server/features/organizations` and its test, drop the
 migration tables (or leave the ledger entry and drop them in a later migration), then revert the
-wiring edits listed above and run `bun erp check`.
+wiring edits listed above and run `bun loom check`.

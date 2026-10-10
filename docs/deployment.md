@@ -3,14 +3,14 @@
 Use a deployment-owned environment and secret store. Set APP_DEPLOY_TARGET to `bun` or
 `cloudflare`, and APP_WEB_MODE to `integrated` or `separate` (Cloudflare requires `integrated`). Set
 APP_ENV=production, APP_RELEASE, DATABASE_DRIVER=postgres, DATABASE_URL and a strong
-BETTER_AUTH_SECRET. Run bun erp check,
-bun erp test, apply forward-only migrations, seed base records and verify readiness. Review each
+BETTER_AUTH_SECRET. Run bun loom check,
+bun loom test, apply forward-only migrations, seed base records and verify readiness. Review each
 migration against the target PostgreSQL version before application.
 
 ## Bun host
 
 Set `APP_DEPLOY_TARGET=bun`. For integrated hosting, set `APP_WEB_MODE=integrated`; build and run the
-semi-monolith with `bun erp build` then `bun start`. One Bun listener serves
+semi-monolith with `bun loom build` then `bun start`. One Bun listener serves
 the Vite build from `apps/web/dist` at `/` and Hono routes under `/api/*`; client-side routes fall
 back to `index.html`, hashed assets get immutable caching, and the entry HTML is revalidated. The
 server fails before database bootstrap when the web build is missing. Put it behind a TLS-terminating
@@ -18,16 +18,16 @@ reverse proxy on a VPS and keep the application port private to that proxy.
 
 The root Dockerfile builds the integrated web app, installs production dependencies, and runs the Bun
 server as the non-root `bun` user. It starts the queue worker alongside HTTP handling. Build with
-`docker build -t bun-erp-template .`; supply production settings through the host's secret/environment
+`docker build -t loom-template .`; supply production settings through the host's secret/environment
 manager, not a committed env file. `compose.yaml` is a local development stack with PostgreSQL and
 local storage; it binds the app port to loopback and is not a production preset. Production still needs
 HTTPS at a reverse proxy, a strong `BETTER_AUTH_SECRET`, `APP_ENV=production`, and durable database
-backups. The current template has no file upload feature; the `@bun-erp/storage` package supplies the
+backups. The current template has no file upload feature; the `@loom/storage` package supplies the
 server drivers and configuration (see operations.md) before a deployment adds file-backed features.
 
 For a separately hosted frontend, set `APP_WEB_MODE=separate`, build the Vite app, and use
-`bun erp server:api`; set `VITE_API_BASE_URL` to the public
-HTTPS API origin at web build time. Run a separate `bun erp jobs:work` process for durable jobs. Use
+`bun loom server:api`; set `VITE_API_BASE_URL` to the public
+HTTPS API origin at web build time. Run a separate `bun loom jobs:work` process for durable jobs. Use
 PostgreSQL for API and queue state. Hono applies
 secure response headers to API and Bun-hosted web responses. Production responses enable six-month
 HSTS without `includeSubDomains`; serve the app over HTTPS through the VPS reverse proxy.
@@ -35,9 +35,9 @@ HSTS without `includeSubDomains`; serve the app over HTTPS through the VPS rever
 ## Cloudflare Workers
 
 Set `APP_DEPLOY_TARGET=cloudflare` and `APP_WEB_MODE=integrated`. wrangler.jsonc is source
-configuration for the Cloudflare Vite plugin. `bun erp build` or `bun erp cloudflare:build` generates
+configuration for the Cloudflare Vite plugin. `bun loom build` or `bun loom cloudflare:build` generates
 a Worker bundle and web assets; deploy the generated
-apps/web/dist/bun_erp_template/wrangler.json. The build removes the Vite plugin's generated local
+apps/web/dist/loom_template/wrangler.json. The build removes the Vite plugin's generated local
 .dev.vars file so local secrets do not remain in the deploy output. The asset directory contains
 the Vite client build, not the Worker bundle. /api and /api/* reach the shared Hono Worker and
 other paths use the web asset fallback. Hyperdrive supplies PostgreSQL.
@@ -56,7 +56,7 @@ seconds apart, and fails the job unless it answers 200. Migrations are forward-o
 the deploy, so keep each migration compatible with the previous Worker version. To roll back code:
 
 ```
-bun run --cwd apps/web wrangler rollback --config dist/bun_erp_template/wrangler.json
+bun run --cwd apps/web wrangler rollback --config dist/loom_template/wrangler.json
 ```
 
 `wrangler rollback` (optionally with a version id from `wrangler versions list`) restores the
@@ -68,7 +68,7 @@ retention prune are sized for it; do not shorten the crons without checking that
 
 ### Booted Worker proof (2026-10-07)
 
-`bun erp cloudflare:dev` was run against a local PostgreSQL through Hyperdrive and the real Worker
+`bun loom cloudflare:dev` was run against a local PostgreSQL through Hyperdrive and the real Worker
 answered on workerd (ephemeral port, found with `lsof -nP -iTCP -sTCP:LISTEN | grep workerd`):
 
 ```
@@ -76,7 +76,7 @@ GET /api/v1/health -> 200 {"status":"ok"}
 GET /api/v1/ready  -> 200 {"status":"ready","checks":{"database":{"ok":true,"ms":44}}}
 ```
 
-`bun erp check:worker-boot` verifies the prerequisites for that run (`WORKER_BOOT=1`): `wrangler`
+`bun loom check:worker-boot` verifies the prerequisites for that run (`WORKER_BOOT=1`): `wrangler`
 resolves, `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` is set (env or
 `apps/web/.dev.vars`) and its database answers. The boot itself stays a manual, documented step
 because it starts Vite + workerd; run it whenever a change touches the Worker entry or its bindings.
@@ -87,7 +87,7 @@ because it starts Vite + workerd; run it whenever a change touches the Worker en
 |---|---|---|
 | Entry | `bun apps/server/bootstrap/server.ts` (one listener serves web + `/api/*`) | `apps/server/bootstrap/cloudflare-entry.ts` (fetch + scheduled + queue handlers) |
 | Database | postgres.js directly; `DATABASE_SSL_MODE` must be `require`/`verify-full` in production | Hyperdrive binding; `DATABASE_SSL_MODE=disable` is allowed because Hyperdrive terminates TLS |
-| Migrations / seed | `bun erp db:migrate`, `db:seed`, `db:reset --force` (local/test only) | never in the Worker graph — `check:worker` fails if a DDL path is reachable; the deploy workflow migrates before deploy |
+| Migrations / seed | `bun loom db:migrate`, `db:seed`, `db:reset --force` (local/test only) | never in the Worker graph — `check:worker` fails if a DDL path is reachable; the deploy workflow migrates before deploy |
 | Jobs | durable `background_jobs` + the polling worker (`jobs:work`), scheduler ticks every 5 s | same table; cron `*/5` sweeps and the optional `JOBS_QUEUE` wake-up signals new work after commit |
 | Scheduler | tick inside `jobs:work` | tick inside the `scheduled` handler |
 | Rate limiting | Better Auth `storage: "database"` (shared across processes) | same table through Hyperdrive (per-isolate memory would be bypassable) |
@@ -97,7 +97,7 @@ because it starts Vite + workerd; run it whenever a change touches the Worker en
 | Storage | `local` (dev/test only), `s3`, `memory` | `r2` binding or `memory`; **`s3` is refused** (needs `Bun.S3Client`); `local` is refused in production |
 | Web assets | `APP_WEB_MODE=integrated` (Bun serves `apps/web/dist`) | Workers Static Assets; **non-integrated is refused** |
 | API docs | `/api/docs` + `/api/openapi.json` follow `API_DOCS_ENABLED` (off by default in production) | same routes, but the Scalar reference page is loaded on the Bun target only (the Worker serves `/api/openapi.json`) |
-| Secrets | `BETTER_AUTH_SECRET` required outside development (≥32 chars in production) | same, pushed with `wrangler secret bulk` (`bun erp env:cloudflare`); secret-class keys never sit in `wrangler.jsonc` vars |
+| Secrets | `BETTER_AUTH_SECRET` required outside development (≥32 chars in production) | same, pushed with `wrangler secret bulk` (`bun loom env:cloudflare`); secret-class keys never sit in `wrangler.jsonc` vars |
 | Local speed | Bun-first: `check:fast` < 1.5 s, `--help` < 120 ms; `bun-first` gate bans sync Node IO and Bun-only APIs leaking into the Worker graph | the Worker graph is validated by `check:worker`; bundle and startup budget in the table above |
 
 Both targets share one codebase, one schema and one queue table; the differences above are the whole
@@ -108,9 +108,9 @@ at boot, with a test per guard.
 
 | Measurement | Value | How |
 |---|---|---|
-| Wrangler dry-run upload | **3,025.90 KiB raw / 530.64 KiB gzip** | `bunx --bun wrangler deploy --dry-run --outdir /tmp/wrangler-dry` after `bun erp cloudflare:build` |
-| Gate bundle (`Bun.build`, browser/workerd target) | ~1.04 MB raw / ~288 KB gzip | `bun erp check:worker` |
-| Vite Cloudflare Worker build | 1,244,243 B raw / 321,552 B gzip | `bun erp cloudflare:build` |
+| Wrangler dry-run upload | **3,025.90 KiB raw / 530.64 KiB gzip** | `bunx --bun wrangler deploy --dry-run --outdir /tmp/wrangler-dry` after `bun loom cloudflare:build` |
+| Gate bundle (`Bun.build`, browser/workerd target) | ~1.04 MB raw / ~288 KB gzip | `bun loom check:worker` |
+| Vite Cloudflare Worker build | 1,244,243 B raw / 321,552 B gzip | `bun loom cloudflare:build` |
 | Worker startup time | not reported by this Wrangler version | the dry run prints size and bindings only; measure in the dashboard |
 | Script size cap | 64 MiB uncompressed on Free and Paid, no compressed limit | Cloudflare Workers limits page, re-checked 2026-10-08 |
 | scrypt sign-in cost | ~110 ms CPU per hash/verify locally (pbkdf2 at 30,000 iterations: ~2-4 ms) | `better-auth/crypto`, N=16384 r=16 p=1 dkLen=64, Bun 1.4.2 on Apple silicon — about ten times the 10 ms Free budget |
@@ -130,7 +130,7 @@ emitted source around each hit:
 | `Bun.S3Client` | 4 | s3 storage driver | same factory guard |
 | `migrate(` | 1 | Kysely's own `Migrator.migrate()` | a dependency API, not this app's DDL; `database/migrate.ts` is not in the graph |
 
-`bun erp check:worker` (part of `bun erp check`) bundles this entry for a browser/workerd-like target
+`bun loom check:worker` (part of `bun loom check`) bundles this entry for a browser/workerd-like target
 and fails when a Bun global without a `typeof Bun` guard, a new Node built-in, a migration/seed
 module or an over-budget script reaches it. The Vite Cloudflare build of this stack measured
 1,244,243 bytes raw / 321,552 bytes gzip (314 KiB) for the Worker script; the gate's own `Bun.build`
@@ -177,9 +177,9 @@ The queue never replaces the database. A message that is lost, delayed, or redel
 a job; it can never lose one, because the row is committed before the signal is sent and the cron
 sweeper keeps polling. To enable queue mode on a Queues-enabled account:
 
-1. Create the queue: `bun run --cwd apps/web wrangler queues create bun-erp-template-jobs`.
+1. Create the queue: `bun run --cwd apps/web wrangler queues create loom-template-jobs`.
 2. Set `JOBS_WAKEUP_DRIVER=cloudflare-queue` (wrangler.jsonc `vars`), uncomment the `queues`
-   producer/consumer block in wrangler.jsonc, then run `bun erp cloudflare:build` and deploy.
+   producer/consumer block in wrangler.jsonc, then run `bun loom cloudflare:build` and deploy.
 3. The default `JOBS_WAKEUP_DRIVER=none` keeps an account without Queues working on the cron
    sweeper alone; a `cloudflare-queue` selection without the binding logs
    `jobs.wake_up.binding_missing` and falls back to `none`.
@@ -266,7 +266,7 @@ the default production target.
 
 - **R2 binding.** `wrangler.jsonc` declares `r2_buckets` with binding `STORAGE` (the name
   `STORAGE_R2_BINDING` selects). Create the bucket first:
-  `bun run --cwd apps/web wrangler r2 bucket create bun-erp-template-files`. Preflight fails when
+  `bun run --cwd apps/web wrangler r2 bucket create loom-template-files`. Preflight fails when
   `STORAGE_DRIVER=r2` has no matching binding with a `bucket_name`.
 - **`s3` is not supported on Workers.** The `s3` driver uses `Bun.S3Client`; preflight fails a
   Cloudflare config with `STORAGE_DRIVER=s3`. Use `r2` on Workers and `s3` on the Bun target (R2's
@@ -279,7 +279,7 @@ the default production target.
   to `<APP_URL>/api/v1/files` (preflight checks this on Cloudflare). R2 bindings cannot presign, so
   files stay private behind the session. A feature that needs per-file permissions checks them
   before linking to a file.
-- **`storage:copy`.** `bun erp storage:copy --from <prefix|current> --to <prefix|current>
+- **`storage:copy`.** `bun loom storage:copy --from <prefix|current> --to <prefix|current>
   [--key-prefix <path/>] [--dry-run]` copies every object between two configured stores. A prefix
   names an environment namespace: `SOURCE_` reads `SOURCE_STORAGE_DRIVER`, `SOURCE_S3_BUCKET`,
   `SOURCE_S3_ENDPOINT` and so on; `current` reads the live `STORAGE_*` / `S3_*` keys. Objects
@@ -293,7 +293,7 @@ the default production target.
 
 One list decides what is secret (`isSecretKey` in `cli/lib/cloudflare.ts`): `BETTER_AUTH_SECRET`,
 `DATABASE_URL` and any key ending `_SECRET`, `_PASSWORD`, `_API_KEY`, `_ACCESS_KEY_ID`,
-`_SECRET_ACCESS_KEY`, `_TOKEN` or `_PRIVATE_KEY`. `bun erp env:cloudflare [--env-file .env] [--write]`
+`_SECRET_ACCESS_KEY`, `_TOKEN` or `_PRIVATE_KEY`. `bun loom env:cloudflare [--env-file .env] [--write]`
 splits an env file: secrets go to `.data/cloudflare-secrets.json` (git-ignored; only key names are
 printed) and the rest can be merged into the `wrangler.jsonc` `vars` block with `--write` (comments
 and layout are kept). `DATABASE_URL` is not pushed because the Worker reads its connection from the
@@ -315,7 +315,7 @@ code. Do each move in a maintenance window: put the old side read-only, copy, sw
 2. Storage: create the R2 bucket, then run `storage:copy` with `SOURCE_*` pointing at the VPS store
    (`local` root or `s3`) and the destination as `s3` against R2's S3 endpoint. Re-run until it
    reports 0 copied, then set `STORAGE_DRIVER=r2` and `STORAGE_PUBLIC_URL=<APP_URL>/api/v1/files`.
-3. Secrets: `bun erp env:cloudflare --write`, then push with `wrangler secret bulk`. Keep the same
+3. Secrets: `bun loom env:cloudflare --write`, then push with `wrangler secret bulk`. Keep the same
    `BETTER_AUTH_SECRET` or every session and verification link becomes invalid.
 4. `APP_URL`: a new origin invalidates session cookies (users sign in again) and every link already
    emailed. Update `APP_URL`, `BETTER_AUTH_URL`, `AUTH_TRUSTED_ORIGINS` and `CLOUDFLARE_APP_URL` together.

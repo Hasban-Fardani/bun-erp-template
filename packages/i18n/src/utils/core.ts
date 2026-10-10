@@ -2,7 +2,7 @@ import type { enUS } from "./messages/en-US.ts";
 
 export const DEFAULT_LOCALE = "en-US" as const;
 export const SUPPORTED_LOCALES = ["en-US", "id-ID"] as const;
-export const LOCALE_STORAGE_KEY = "bun-erp.locale";
+export const LOCALE_STORAGE_KEY = "loom.locale";
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export type MessageKey = keyof typeof enUS;

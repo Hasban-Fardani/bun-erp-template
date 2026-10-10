@@ -20,7 +20,7 @@ export async function runMailTest(mailer: MailProbe, to: string, now: Date = new
     const result = await mailer.send({
       to,
       subject: `Mail transport test (${mailer.driver})`,
-      text: `This message was sent by "bun erp mail:test" through the ${mailer.driver} driver at ${now.toISOString()}.`,
+      text: `This message was sent by "bun loom mail:test" through the ${mailer.driver} driver at ${now.toISOString()}.`,
     });
     return { ok: true, driver: result.driver, messageId: result.messageId };
   } catch (error) {

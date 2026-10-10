@@ -4,7 +4,7 @@ Load only the skill triggered by the task. Rules are implemented by source/gates
 prose alone does not prove enforcement.
 
 Planning-to-delivery flow (`mattpocock/skills`, installed into `.agents/skills/` by
-`bun erp init` / `bun erp ai:update`, pinned in [skills-lock.json](../skills-lock.json), not
+`bun loom init` / `bun loom ai:update`, pinned in [skills-lock.json](../skills-lock.json), not
 tracked in git). Tickets live in `docs/tasks/`, not GitHub Issues. The skills do not read the
 config themselves: where one asks for a tracker, triage labels or `/setup-matt-pocock-skills`, use
 the Mapping table in [docs/agents/issue-tracker.md](../docs/agents/issue-tracker.md); glossary and
@@ -29,7 +29,7 @@ questions the code and docs already answer.
 - [Feature development](feature-development/SKILL.md): feature boundaries and work order.
 - [Database](database-drizzle/SKILL.md): Drizzle, migrations and driver parity.
 - [Testing](testing/SKILL.md): shared fixtures and evidence.
-- [UI](antislop-ui/SKILL.md): existing components, operator feedback, and the `bun erp check:gate motion` reduced-motion gate.
+- [UI](antislop-ui/SKILL.md): existing components, operator feedback, and the `bun loom check:gate motion` reduced-motion gate.
 - [Responsive layout](antislop-layoutmobile/SKILL.md): viewport/touch/native checks.
 - [Mobile development](mobile-development/SKILL.md): source ownership, API, logging and Capacitor release boundaries.
 - [Guardrails](handoff-guardrails/SKILL.md): gate diagnosis and truthful handoff.

@@ -15,12 +15,12 @@ This skill is self-contained; no external antislop core file is required.
 - Keep typography, spacing, radii and surfaces consistent with the existing design system.
 - Use explicit labels, keyboard access, visible focus, usable contrast and meaningful feedback.
 - Distinguish loading, refetch, no rows, no match and error; preserve rows during refetch.
-- Every data list shows all five states: loading, refetch (rows stay visible with a pending indicator), empty, no-match, and error. `bun erp check:gate ui` enforces `TABLE_FEEDBACK_MISSING`.
+- Every data list shows all five states: loading, refetch (rows stay visible with a pending indicator), empty, no-match, and error. `bun loom check:gate ui` enforces `TABLE_FEEDBACK_MISSING`.
 - A list/search error offers an in-place retry action; "reload the page" is not recovery.
 - Search is clearable with its own affordance, so a filtered list resets without deleting the query character by character.
 - Reuse toast, modal and sheet primitives; avoid new parallel UI systems.
 - Motion uses the shared duration/easing values in `packages/ui/src/styles.css`; do not invent inline keyframes or magic durations. Animation communicates a transition, not decoration.
-- Respect reduced motion: authored keyframes are disabled under `prefers-reduced-motion: reduce`, and looping utilities use `motion-safe:` or a reduced-motion escape (`bun erp check:gate motion`).
+- Respect reduced motion: authored keyframes are disabled under `prefers-reduced-motion: reduce`, and looping utilities use `motion-safe:` or a reduced-motion escape (`bun loom check:gate motion`).
 - A second palette is only "shipped" when a runtime switch selects it; a palette that cannot be reached changes nothing.
 
 Verify build and browser interactions, long values, empty/error states and both themes.

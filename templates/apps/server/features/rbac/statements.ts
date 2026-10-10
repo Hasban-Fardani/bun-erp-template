@@ -5,11 +5,11 @@ export const statements = {
   user: ["create", "read", "update", "delete", "impersonate"],
   // `assign` = granting a role to a user; managing roles & their permissions is guarded by create/update/delete.
   role: ["create", "read", "update", "delete", "assign"],
-  // @erp:permissions
+  // @loom:permissions
   audit: ["read"],
   // `use` = ask the built-in assistant; every question counts against AI_DAILY_LIMIT (docs/ai.md).
   ai: ["use"],
-  // `maintenance_bypass` lets a session keep using the API while `bun erp down` is active.
+  // `maintenance_bypass` lets a session keep using the API while `bun loom down` is active.
   app: ["maintenance_bypass"],
 } as const;
 

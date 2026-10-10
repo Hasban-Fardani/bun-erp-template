@@ -1,4 +1,4 @@
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import type { Transporter } from "nodemailer";
 import type { MailAttachment, MailDriver, MailDriverFactory, MailSendResult, ResolvedMail } from "../types.ts";
 

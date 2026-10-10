@@ -23,7 +23,7 @@ Pick the import form by what it targets, in this order:
 
 | Target | Form | Example |
 |---|---|---|
-| A workspace package | `@bun-erp/<name>` | `import { Button } from "@bun-erp/ui/atoms/button.tsx";` |
+| A workspace package | `@loom/<name>` | `import { Button } from "@loom/ui/atoms/button.tsx";` |
 | Server module or server test | `@/*` → `apps/server/*` | `import { rowsOf } from "@/database/rows.ts";` |
 | Web app or catalog feature web file | `@web/*` → `apps/web/src/*` | `import { rpc } from "@web/lib/rpc.ts";` |
 | Mobile app | `@mobile/*` → `apps/mobile/src/*` | `import { createMobileLogger } from "@mobile/lib/logger.ts";` |
@@ -38,8 +38,8 @@ three or more `../` segments, so the migration cannot regress. The root `tsconfi
 them identically; `apps/web/vite.config.ts` and `apps/mobile/vite.config.ts` repeat `@web` and
 `@mobile` for Vite.
 
-bun erp check runs lint, types and read-only gates concurrently. It does not run tests or builds.
-Run bun erp test and the relevant app build when the change requires them.
+bun loom check runs lint, types and read-only gates concurrently. It does not run tests or builds.
+Run bun loom test and the relevant app build when the change requires them.
 
 ## Bun-first
 
@@ -67,15 +67,15 @@ verbatim for upstream re-sync, and `cli/gates/slop.ts` runs them in a Worker thr
 
 ## App catalog
 
-Apps install from `templates/apps/<server|web|mobile>/` through `bun erp init` (an interactive
-numbered choice list, or `bun erp init --apps server,web --yes` in scripts and CI) or through
-`bun erp apps:create <name> <server|web|mobile>` later. `init` is the single door: it copies the
+Apps install from `templates/apps/<server|web|mobile>/` through `bun loom init` (an interactive
+numbered choice list, or `bun loom init --apps server,web --yes` in scripts and CI) or through
+`bun loom apps:create <name> <server|web|mobile>` later. `init` is the single door: it copies the
 catalogs, registers the root `workspaces`, runs the first `bun install`, and installs the agent
 tooling unless `--no-agents`. Full flow: [development](development.md).
 
-Catalog apps keep their real package names, so `init` lands `@bun-erp/server`, `@bun-erp/web` and
-`@bun-erp/mobile` at their reference paths. Web and mobile bind the server's typed Hono contract when
-the server app exists; without it they install detached (`src/lib/rpc.ts` stub, no `@bun-erp/server`
+Catalog apps keep their real package names, so `init` lands `@loom/server`, `@loom/web` and
+`@loom/mobile` at their reference paths. Web and mobile bind the server's typed Hono contract when
+the server app exists; without it they install detached (`src/lib/rpc.ts` stub, no `@loom/server`
 dependency) and a later `init` that adds the server re-fits the typed client. Server- and
 database-facing CLI commands live in `apps/server/cli/commands/`; the registry discovers them only
 while the server app is installed, and root `cli/` — its gates included — never imports `apps/**`.
@@ -83,7 +83,7 @@ while the server app is installed, and root `cli/` — its gates included — ne
 ## Feature catalog
 
 Features that are not part of the default install wait in `templates/features/<name>/`.
-`bun erp features:install <name>` reads the feature's `feature.json`, copies its files into
+`bun loom features:install <name>` reads the feature's `feature.json`, copies its files into
 `apps/*`, wires the sidebar entry and the `en-US`/`id-ID` keys, and regenerates the web route tree.
 A manifest is one of two kinds:
 
@@ -98,12 +98,12 @@ A manifest is one of two kinds:
   the Better Auth plugin/schema/session/export anchors). It may install a catalog package and ship a
   forward-only migration, and has no routes, permissions, audit, navigation or i18n. `mail` is the
   package-installing reference: the default server keeps only the database notification channel, and
-  `bun erp features:install mail` brings back the `@bun-erp/mail` transport. `organizations` is the
-  Better Auth reference: `bun erp features:install organizations` adds the opt-in tenant layer
+  `bun loom features:install mail` brings back the `@loom/mail` transport. `organizations` is the
+  Better Auth reference: `bun loom features:install organizations` adds the opt-in tenant layer
   (organization plugin, tables and session field) without adding routes or permissions.
 
 A web feature may declare `requires` catalog packages; the installer installs them and adds the
-`@bun-erp/<name>` workspace dependency to `apps/web` before writing any file. An infra feature adds
+`@loom/<name>` workspace dependency to `apps/web` before writing any file. An infra feature adds
 its package dependency to `apps/server` instead and may leave `requires` empty when it only wires
 core files. Shared table helpers
 (`use-table-state.ts`, `resource-table-labels.ts`) live once under `templates/features/_shared/web/`
@@ -113,8 +113,8 @@ installed feature. See `templates/features/README.md` for the full manifest cont
 
 The default install ships the core server modules `identity`, `rbac`, `audit` and
 `notifications`, and a web app that is login, overview and notifications only. Admin screens are
-opt-in: `bun erp features:install users roles audit`. Mail is opt-in too:
-`bun erp features:install mail`.
+opt-in: `bun loom features:install users roles audit`. Mail is opt-in too:
+`bun loom features:install mail`.
 
 ## Where code goes
 
@@ -127,7 +127,7 @@ Check this table before creating a file; it resolves the boundaries that are oth
 | Feature API, hooks, components, types | `apps/web/src/features/<feature>/{api,hooks,components,types}` | `lib/` |
 | Cross-feature infrastructure (RPC client, auth, query client, theme, table state) | `apps/web/src/lib/` | a feature folder |
 | App config and browser keys | `apps/web/src/config/` (`env.ts`, `storage-keys.ts`, `navigation.ts`, `ui.ts`) | inline `import.meta.env` or storage literals |
-| A mobile screen | `apps/mobile/src/screens/<name>.tsx` in the catalog app (`bun erp init` or `bun erp apps:create <name> mobile`), wired in `apps/mobile/src/main.tsx` (mobile has no router) | a `pages/` directory |
+| A mobile screen | `apps/mobile/src/screens/<name>.tsx` in the catalog app (`bun loom init` or `bun loom apps:create <name> mobile`), wired in `apps/mobile/src/main.tsx` (mobile has no router) | a `pages/` directory |
 | A mobile feature | `apps/mobile/src/features/<feature>/{components,stores}` | web source |
 | A server feature | `apps/server/features/<feature>/{route,validation,service,policy,schema}.ts`; add feature-specific modules only when used | permission strings inline in `route.ts` — use `policy.ts` |
 | Server infrastructure | `apps/server/infra/<concern>/` | `features/` |
@@ -135,8 +135,8 @@ Check this table before creating a file; it resolves the boundaries that are oth
 | Route assembly and version prefix | `apps/server/routes/api.ts` | `http/` |
 | A migration or seeder | `apps/server/database/migrations/NNNN_name.ts` or `apps/server/database/seeders/<name>.ts` | feature folders |
 | Shared UI | `packages/ui`, following atoms → molecules → organisms → templates | an app |
-| A new data table | the `data-table` catalog package (`bun erp packages:install data-table`) | `packages/ui` |
-| Charts | `@bun-erp/charts` from the opt-in catalog (lazy, runtime-isolated) | `packages/ui` |
+| A new data table | the `data-table` catalog package (`bun loom packages:install data-table`) | `packages/ui` |
+| Charts | `@loom/charts` from the opt-in catalog (lazy, runtime-isolated) | `packages/ui` |
 | Pure logic shared by two or more apps | `packages/utils` | an app's `lib/` |
 | Localization copy | `packages/i18n/src/utils/messages/` | app components |
 | An app unit test | `apps/<app>/tests/unit/<name>.test.ts` | beside the source |
@@ -144,7 +144,7 @@ Check this table before creating a file; it resolves the boundaries that are oth
 
 Two names look similar but are not interchangeable; choose deliberately:
 
-- `@bun-erp/ui/atoms/button.tsx` is the app-facing button; `atoms/button-primitives.tsx` is the
+- `@loom/ui/atoms/button.tsx` is the app-facing button; `atoms/button-primitives.tsx` is the
   complete shadcn primitive. Import a `*-primitives` module only when you need the upstream API.
 - Prefer `Dialog` (controlled overlay) and `Sheet` (side panel) for new overlays.
   `organisms/modal.tsx` predates them and stays only where it is already used.
@@ -157,4 +157,4 @@ plugins), or `utils` (runtime-neutral, shared by every side). `src/index.ts` (th
 `src/styles.css` stay at the root; every other source file belongs to a target directory. A package
 with a single target stays flat, and a flat UI or server package may keep `utils` helpers beside its
 dominant files. `storage` is the reference split (`src/ui`, `src/capacitor`, `src/server`,
-`src/utils`); `bun erp check:package-targets` rejects an unsplit multi-target package.
+`src/utils`); `bun loom check:package-targets` rejects an unsplit multi-target package.

@@ -4,14 +4,14 @@ Project-owned. The engineering skills (`to-spec`, `to-tickets`, `implement`, `co
 **not** read this file: they say "run `/setup-matt-pocock-skills`" and default to GitHub issues,
 `.scratch/` and the `ready-for-agent` label. `AGENTS.md` overrides that: whenever a skill asks for
 the tracker or labels, follow this file. Work lives in `docs/tasks/` and is validated by
-`bun erp check:gate task`.
+`bun loom check:gate task`.
 
 ## Mapping
 
 | Skill vocabulary | This repository |
 | --- | --- |
 | `/setup-matt-pocock-skills`, "issue tracker not provided" | Never run it; this file is the configuration |
-| Issue, spec issue, ticket issue | One markdown file `docs/tasks/<id>-<slug>.md`, created with `bun erp task:new` |
+| Issue, spec issue, ticket issue | One markdown file `docs/tasks/<id>-<slug>.md`, created with `bun loom task:new` |
 | Publish to the tracker, `.scratch/<slug>/issues/` | Write the file in `docs/tasks/`; never GitHub issues or `.scratch/` |
 | `ready-for-agent` | `status: in_progress` (an agent may take it) |
 | `needs-triage`, `needs-info` | `status: draft` (not started); `blocked` when waiting on a person |
@@ -22,7 +22,7 @@ the tracker or labels, follow this file. Work lives in `docs/tasks/` and is vali
 ## Conventions
 
 - One markdown file per spec and per ticket in `docs/tasks/`, created with
-  `bun erp task:new <id> "<title>"` and then edited. Never create GitHub issues.
+  `bun loom task:new <id> "<title>"` and then edited. Never create GitHub issues.
 - A spec uses the id `S<NN>` (for example `S12`). Its tickets use `S<NN>.<n>` (`S12.1`, `S12.2`),
   numbered from 1, one file each, never a combined list.
 - Front matter keys are `id`, `title`, `status`, `depends_on`, `evidence`, plus `tdd: required` (read
@@ -62,7 +62,7 @@ evidence: pending — append the commands run and their results
 
 - [ ] Failing test written first (red) and its output recorded
 - [ ] Implementation makes the same test pass (green)
-- [ ] `bun erp check` green
+- [ ] `bun loom check` green
 - [ ] Evidence recorded below
 
 ## Evidence

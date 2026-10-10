@@ -1,7 +1,7 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button.tsx";
-import { IconButton } from "@bun-erp/ui/atoms/icon-button.tsx";
-import { Skeleton } from "@bun-erp/ui/atoms/skeleton.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button.tsx";
+import { IconButton } from "@loom/ui/atoms/icon-button.tsx";
+import { Skeleton } from "@loom/ui/atoms/skeleton.tsx";
 import { cn } from "@web/lib/cn.ts";
 import { Check, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
 import { type FormEvent, useState } from "react";

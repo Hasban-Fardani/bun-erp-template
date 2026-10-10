@@ -8,7 +8,7 @@ enabled methods from the public `GET /api/v1/auth-options`). The schema refuses 
 
 `AUTH_PASSWORD_ENABLED=false` makes sign-in Google-only, which costs no password hashing and is the
 lightest choice on Cloudflare Workers Free; the schema refuses it without both Google keys, and
-`bun erp user:create` then generates an unusable password instead of asking for one.
+`bun loom user:create` then generates an unusable password instead of asking for one.
 
 Accounts are still provisioned: with `AUTH_SIGNUP_ENABLED=false` an unknown Google account is refused
 (`disableImplicitSignUp`), and a Google account whose verified email matches an existing user links

@@ -6,13 +6,13 @@ import { renderTemplate } from "@cli/lib/template.ts";
 import { CORE_FILES, withCoreFiles } from "./support/make-feature-fixture.ts";
 
 /**
- * Command-level contract for `bun erp make:feature`: the plan validates every explicit wiring
+ * Command-level contract for `bun loom make:feature`: the plan validates every explicit wiring
  * marker before the first write, so a marker-less core file aborts the command with zero files
  * written. `bun cli/index.ts` turns that rejection into a non-zero exit.
  */
 const ROUTES = CORE_FILES["apps/server/routes/api.ts"] ?? "";
-/** The route file without `// @erp:routes`: the installer must refuse, not fall back to guessing. */
-const ROUTES_WITHOUT_MARKER = ROUTES.replace("  // @erp:routes\n", "");
+/** The route file without `// @loom:routes`: the installer must refuse, not fall back to guessing. */
+const ROUTES_WITHOUT_MARKER = ROUTES.replace("  // @loom:routes\n", "");
 
 /** Every file under `root` with its contents, so a refused plan can prove it wrote nothing. */
 async function snapshotTree(root: string): Promise<Record<string, string>> {
@@ -26,7 +26,7 @@ async function snapshotTree(root: string): Promise<Record<string, string>> {
 test("make:feature exits without writing when the route marker is missing", async () => {
   await withCoreFiles({ "apps/server/routes/api.ts": ROUTES_WITHOUT_MARKER }, async (root) => {
     const before = await snapshotTree(root);
-    await expect(planMakeFeature(root, "invoices")).rejects.toThrow(/@erp:routes/);
+    await expect(planMakeFeature(root, "invoices")).rejects.toThrow(/@loom:routes/);
     // Zero files: the tree is byte-identical after the refusal.
     expect(await snapshotTree(root)).toEqual(before);
   });
@@ -37,7 +37,7 @@ test("make:feature writes nothing when any marker is missing", async () => {
     { "apps/server/features/rbac/statements.ts": 'export const statements = {\n  audit: ["read"],\n} as const;' },
     async (root) => {
       const before = await snapshotTree(root);
-      await expect(planMakeFeature(root, "invoices")).rejects.toThrow(/@erp:permissions/);
+      await expect(planMakeFeature(root, "invoices")).rejects.toThrow(/@loom:permissions/);
       expect(await snapshotTree(root)).toEqual(before);
     },
   );

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createObjectStorage } from "@bun-erp/storage/server";
+import { createObjectStorage } from "@loom/storage/server";
 import { createApp } from "@/http/app.ts";
 import { createHttpFixture, createTestClient } from "../../support/fixtures.ts";
 

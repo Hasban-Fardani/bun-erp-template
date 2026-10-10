@@ -1,4 +1,4 @@
-.bun-erp-editor {
+.loom-editor {
   --rte-background: var(--color-background, #fff);
   --rte-surface: var(--color-surface, #fff);
   --rte-border: var(--color-border, #d6d9df);
@@ -151,7 +151,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bun-erp-editor *,
-  .bun-erp-editor *::before,
-  .bun-erp-editor *::after { scroll-behavior: auto !important; }
+  .loom-editor *,
+  .loom-editor *::before,
+  .loom-editor *::after { scroll-behavior: auto !important; }
 }

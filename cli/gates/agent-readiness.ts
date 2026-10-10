@@ -14,7 +14,7 @@ export type AgentReadinessInput = {
   indexVersion?: string;
   /**
    * The template repo commits a state-neutral guidelines block, so its content is ignored there.
-   * A project must carry the block `bun erp init` / `ai:update` generates for its installed catalog.
+   * A project must carry the block `bun loom init` / `ai:update` generates for its installed catalog.
    */
   templateMode?: boolean;
   guidelinesBlock?: string;
@@ -30,22 +30,22 @@ export function evaluateAgentReadiness(input: AgentReadinessInput): string[] {
   if (input.indexError) {
     findings.push(`CodeGraph index is unavailable: ${input.indexError}`);
   } else if (!input.indexVersion) {
-    findings.push("CodeGraph index does not record its version; run bun erp init.");
+    findings.push("CodeGraph index does not record its version; run bun loom init.");
   } else if (input.indexVersion !== CODEGRAPH_VERSION) {
     findings.push(
-      `CodeGraph indexed this project with ${input.indexVersion}; the project pins ${CODEGRAPH_VERSION}. Run bun erp init.`,
+      `CodeGraph indexed this project with ${input.indexVersion}; the project pins ${CODEGRAPH_VERSION}. Run bun loom init.`,
     );
   }
   const indexedFiles = new Set(input.indexedFiles);
   for (const file of input.requiredIndexedFiles ?? REQUIRED_INDEXED_FILES) {
-    if (!indexedFiles.has(file)) findings.push(`CodeGraph has not indexed ${file}; run bun erp init.`);
+    if (!indexedFiles.has(file)) findings.push(`CodeGraph has not indexed ${file}; run bun loom init.`);
   }
-  if (input.indexedFiles.length < 30) findings.push("CodeGraph index is incomplete; run bun erp init.");
+  if (input.indexedFiles.length < 30) findings.push("CodeGraph index is incomplete; run bun loom init.");
   if (!input.templateMode) {
     if (!input.guidelinesBlock) {
-      findings.push("AGENTS.md has no guidelines block; run bun erp ai:update.");
+      findings.push("AGENTS.md has no guidelines block; run bun loom ai:update.");
     } else if (!input.guidelinesBlock.includes("- Apps:")) {
-      findings.push("AGENTS.md guidelines block is not generated for this project; run bun erp ai:update.");
+      findings.push("AGENTS.md guidelines block is not generated for this project; run bun loom ai:update.");
     }
   }
   return findings;
@@ -102,7 +102,7 @@ type IndexRead = { indexedFiles: string[]; indexVersion?: string };
 
 /**
  * Bun's SQLite refuses a read-only WAL database when the `-shm` sidecar is absent (a fresh
- * `bun erp init` leaves none), so fall back to a read-write open and still only read. The pinned
+ * `bun loom init` leaves none), so fall back to a read-write open and still only read. The pinned
  * CLI version comes from the index metadata: no `bunx` probe, so the gate stays offline.
  */
 function readIndex(path: string): IndexRead {

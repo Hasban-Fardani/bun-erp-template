@@ -1,14 +1,14 @@
 {
-  "$comment": "Defines the boundary between reusable template files and deployment-specific files. Enforced by `bun erp check:scope`.",
+  "$comment": "Defines the boundary between reusable template files and deployment-specific files. Enforced by `bun loom check:scope`.",
   "version": 1,
   "template": {
-    "name": "bun-erp-template",
+    "name": "loom-template",
     "license": "MIT"
   },
   "allowed": {
     "topLevelDirs": ["apps", "cli", "docs", "skills", "templates", ".githooks", ".github", ".agents", "packages"],
     "apps": [],
-    "note": "Deployment-specific business features stay out of this template. The template contains reusable foundations and reference features. apps/ ships empty; app catalogs live in templates/apps and are installed by `bun erp init`."
+    "note": "Deployment-specific business features stay out of this template. The template contains reusable foundations and reference features. apps/ ships empty; app catalogs live in templates/apps and are installed by `bun loom init`."
   },
   "forbidden": {
     "paths": [".env", ".env.local", ".env.production", ".data"],

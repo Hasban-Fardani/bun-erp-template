@@ -189,7 +189,7 @@ export const commands = [
   defineCommand("jobs:retry", async (args) => {
     const id = resolveRequired(args[0], "Job ID");
     if (!id) {
-      process.stderr.write("Usage: bun erp jobs:retry <job-id>\n");
+      process.stderr.write("Usage: bun loom jobs:retry <job-id>\n");
       process.exit(1);
     }
     const ctx = await createCliContext({ migrateOnStart: false });

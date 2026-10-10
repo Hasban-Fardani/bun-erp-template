@@ -1,4 +1,4 @@
-import { DriverRegistry } from "@bun-erp/utils";
+import { DriverRegistry } from "@loom/utils";
 import { localStorageDriver } from "./drivers/local.ts";
 import { memoryStorageDriver } from "./drivers/memory.ts";
 import { r2StorageDriver } from "./drivers/r2.ts";

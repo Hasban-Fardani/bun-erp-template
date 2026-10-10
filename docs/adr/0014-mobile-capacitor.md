@@ -4,7 +4,7 @@
 
 The owner clarified that mobile source must be separate from web. apps/mobile owns its
 React entry, pages, Vite configuration and Capacitor project identity. apps/web retains
-its own pages, routes and feature code. Both import @bun-erp/ui; shared blocks accept
+its own pages, routes and feature code. Both import @loom/ui; shared blocks accept
 props rather than importing either application's hooks. The previous web-source packaging
 approach is superseded by this requirement.
 

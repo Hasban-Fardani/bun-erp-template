@@ -1,5 +1,5 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { Button } from "@bun-erp/ui/atoms/button-primitives";
+import { useI18n } from "@loom/i18n/react";
+import { Button } from "@loom/ui/atoms/button-primitives";
 import { Eye } from "lucide-react";
 import { useSession, useStopImpersonation } from "../hooks/index.ts";
 

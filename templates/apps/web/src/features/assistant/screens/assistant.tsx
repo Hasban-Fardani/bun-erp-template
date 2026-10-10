@@ -1,6 +1,6 @@
-import { useI18n } from "@bun-erp/i18n/react";
-import { IconButton } from "@bun-erp/ui/atoms/icon-button.tsx";
-import { Sheet } from "@bun-erp/ui/organisms/sheet.tsx";
+import { useI18n } from "@loom/i18n/react";
+import { IconButton } from "@loom/ui/atoms/icon-button.tsx";
+import { Sheet } from "@loom/ui/organisms/sheet.tsx";
 import { MessageSquare, PanelLeftClose, PanelLeftOpen, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AssistantComposer } from "../components/assistant-composer.tsx";

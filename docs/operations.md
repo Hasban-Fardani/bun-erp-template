@@ -8,7 +8,7 @@ Sensitive fields are redacted; see security.md and the logging section below.
 GET /api/v1/health checks the process. GET /api/v1/ready queries the database.
 Bun startup applies numbered migrations. Cloudflare never runs DDL during a request; CI applies
 migrations and seed before deploying the Worker. The migration ledger makes repeat application
-idempotent. bun erp db:status reports pending work.
+idempotent. bun loom db:status reports pending work.
 
 ## Logging
 
@@ -27,7 +27,7 @@ record values; use the registered route template if one is available. Keep succe
 and log an error once at the boundary that can act on it. Never log a secret to explain a failure.
 
 Mobile code calls `createMobileLogger(area)` from `apps/mobile/src/lib/logger.ts` (install the catalog
-app with `bun erp apps:create <name> mobile` first). The mobile
+app with `bun loom apps:create <name> mobile` first). The mobile
 gate blocks direct `console` calls elsewhere. Debug events are disabled in production builds.
 
 ## Log rotation
@@ -118,7 +118,7 @@ retention and volume limits of your plan apply.
 
 ## Backup and restore
 
-`bun erp db:backup [--out <file>] [--force]` runs `pg_dump --format=custom` against `DATABASE_URL`
+`bun loom db:backup [--out <file>] [--force]` runs `pg_dump --format=custom` against `DATABASE_URL`
 and writes `.data/backups/<timestamp>.dump` by default. It needs the PostgreSQL client (`pg_dump`,
 major version at least the server's). The connection is passed through `PG*` environment variables
 so the password is never in the process list or the output. With `APP_ENV=production` it never
@@ -136,14 +136,14 @@ Restore runbook (practice it on a scratch database before you need it):
 1. Create an empty database and note its URL as `RESTORE_URL`.
 2. `pg_restore --list backup.dump | head` to confirm the file is readable.
 3. `pg_restore --no-owner --no-privileges --clean --if-exists -d "$RESTORE_URL" backup.dump`.
-4. Point `DATABASE_URL` at it and run `bun erp db:status` (expect zero pending) and check `/api/v1/ready`.
+4. Point `DATABASE_URL` at it and run `bun loom db:status` (expect zero pending) and check `/api/v1/ready`.
 5. Cut over (Hyperdrive origin or `DATABASE_URL`) and verify sign-in. Objects in R2/S3 are not part of the dump.
 
 ## Maintenance mode
 
 ```sh
-bun erp down --message "Back at 10:00"   # API answers 503 with that message
-bun erp up                               # resume
+bun loom down --message "Back at 10:00"   # API answers 503 with that message
+bun loom up                               # resume
 ```
 
 The switch is a row in `app_state` (key `maintenance`), so it applies to every replica and to
@@ -200,15 +200,15 @@ retains terminal rows in dead state. This provides durable at-least-once executi
 side effects. A handler must be idempotent and use a stable idempotency key when calling an external
 system. Payloads must be minimal and contain no credentials or unnecessary personal data.
 
-Run a persistent Bun worker with bun erp jobs:work. bun erp jobs:run-once is suitable for one batch
+Run a persistent Bun worker with bun loom jobs:work. bun loom jobs:run-once is suitable for one batch
 or an operator check. Cloudflare uses the Worker scheduled handler every five minutes and processes
 jobs through the same database queue per tick: up to 10 jobs, stopping once a 10-second wall-clock budget has passed (the job in flight finishes). Add a feature handler to its jobs.ts and
 register it in apps/server/features/jobs.ts. The template has no business-specific handlers. Keep
 Cloudflare job handlers short enough for the Worker's CPU limit (10 ms on Free; the shipped `limits.cpu_ms` on Paid, see deployment.md), and split heavier work
 into follow-up jobs.
 
-Inspect queue states with bun erp jobs:status and dead rows with bun erp jobs:dead. Requeue a
-specific dead job with bun erp jobs:retry <job-id> only after reviewing its idempotency and failure
+Inspect queue states with bun loom jobs:status and dead rows with bun loom jobs:dead. Requeue a
+specific dead job with bun loom jobs:retry <job-id> only after reviewing its idempotency and failure
 cause. Error messages are not persisted; only safe error codes and structured job identifiers are kept.
 
 Back up PostgreSQL before migrations and test restoration in a separate database. Production state
@@ -220,10 +220,10 @@ The default server ships no mail transport; `notify()` delivers through the data
 Install mail when the deployment needs it:
 
 ```
-bun erp features:install mail
+bun loom features:install mail
 ```
 
-That command installs the `@bun-erp/mail` catalog package and wires `ctx.mail`, the `mail.send` job
+That command installs the `@loom/mail` catalog package and wires `ctx.mail`, the `mail.send` job
 and the notifications `mail` channel into the composition root. After that, features call
 `ctx.mail.send(message)` for immediate delivery or `ctx.mail.queue(message)` to store a `mail.send`
 job and let the worker retry transient failures. The queue path stores the already-rendered HTML, so
@@ -243,8 +243,8 @@ register its own HTTP provider without editing the package:
   contains the key; the queue retries it and the idempotency key is forwarded to the provider.
 - `memory` captures messages in-process and is the seam tests assert against.
 
-Compose the body with `@bun-erp/email` components and `renderEmailDocument` (install the package with
-`bun erp packages:install email`), then pass the HTML to the mailer; the package stays opt-in because
+Compose the body with `@loom/email` components and `renderEmailDocument` (install the package with
+`bun loom packages:install email`), then pass the HTML to the mailer; the package stays opt-in because
 the correct transport depends on the deployment. The `MAIL_*` and `SMTP_*` config keys live in the
 core schema, so one validated environment serves both install states.
 
@@ -255,7 +255,7 @@ Switching is configuration only: no code change and no migration. Resend (`http`
 1. Set the env: `MAIL_DRIVER=smtp` with `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`,
    `SMTP_PASSWORD`; or `MAIL_DRIVER=http` with `MAIL_HTTP_PROVIDER=resend` and `MAIL_API_KEY`.
 2. Restart the app and the `jobs:work` worker. Both read the driver once at startup.
-3. Run `bun erp mail:test --to <your address>`. It sends one plain message synchronously through the
+3. Run `bun loom mail:test --to <your address>`. It sends one plain message synchronously through the
    configured driver (not the queue), prints the driver name and message id, and exits non-zero with the
    error message on failure. For SMTP it first runs nodemailer `verify()`, which checks the connection and
    login without sending.
@@ -270,7 +270,7 @@ Caveats:
   `MAIL_DRIVER=smtp` when `APP_DEPLOY_TARGET=cloudflare`; use `http` there.
 - A driver error carrying `retryable: false` (SMTP 535 login, any 5xx reply or bad envelope; Resend 4xx
   other than 408 and 429) dead-letters the job on the first attempt instead of retrying five times; fix
-  the cause, then `bun erp jobs:retry <id>`. Network errors, SMTP 4xx and Resend 5xx and 429 still retry.
+  the cause, then `bun loom jobs:retry <id>`. Network errors, SMTP 4xx and Resend 5xx and 429 still retry.
 - Jobs are at-least-once. Resend deduplicates a re-send by its `Idempotency-Key`; SMTP has no such
   header. If the worker crashes between the SMTP send and marking the job complete, the retry can deliver
   the message twice. The SMTP driver sets a stable `Message-ID` derived from the job so the duplicate is
@@ -278,14 +278,14 @@ Caveats:
 
 ## Object storage
 
-Storage lives in one package, `@bun-erp/storage`, with a subpath per platform so imports stay
+Storage lives in one package, `@loom/storage`, with a subpath per platform so imports stay
 explicit and a bundler never pulls the wrong runtime:
 
-- `@bun-erp/storage/server` — object store for Bun and Cloudflare. `apps/server/infra/storage.ts`
+- `@loom/storage/server` — object store for Bun and Cloudflare. `apps/server/infra/storage.ts`
   maps the validated environment onto `ServerStorageConfig` and exposes `ctx.storage`.
-- `@bun-erp/storage` — the runtime-neutral browser/mobile key/value store.
-- `@bun-erp/storage/ui` — IndexedDB and Web Storage adapters plus the default browser resolver.
-- `@bun-erp/storage/capacitor` — encrypted SQLite through `@capacitor-community/sqlite`.
+- `@loom/storage` — the runtime-neutral browser/mobile key/value store.
+- `@loom/storage/ui` — IndexedDB and Web Storage adapters plus the default browser resolver.
+- `@loom/storage/capacitor` — encrypted SQLite through `@capacitor-community/sqlite`.
 
 The server driver is chosen by STORAGE_DRIVER through `StorageDriverRegistry`, so feature code never
 branches on the runtime:
@@ -326,7 +326,7 @@ await notify(ctx, {
 ```
 
 - `database` (default) writes one `notifications` row per recipient: the in-app inbox.
-- `mail` exists only after `bun erp features:install mail`; it looks up each recipient's email and
+- `mail` exists only after `bun loom features:install mail`; it looks up each recipient's email and
   sends through `ctx.mail.queue`, so delivery is retried by the worker. Register a webhook or push
   channel by adding a factory to `createNotificationRegistry`.
 

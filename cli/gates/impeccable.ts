@@ -60,7 +60,7 @@ function reportLines(run: ImpeccableRun): string[] {
     .filter((line) => line.length > 0);
 }
 
-const UNAVAILABLE = `impeccable is unavailable; run bun erp ai:update to install the agent tooling.`;
+const UNAVAILABLE = `impeccable is unavailable; run bun loom ai:update to install the agent tooling.`;
 
 /**
  * `impeccable detect` exits 0 without primary findings, 2 with them, and 1 when a requested target
@@ -69,7 +69,7 @@ const UNAVAILABLE = `impeccable is unavailable; run bun erp ai:update to install
  */
 export async function checkImpeccable(root: string): Promise<string[]> {
   const targets = await impeccableTargets(root);
-  if (targets.length === 0) return ["No UI surface found to scan; run bun erp init to install an app."];
+  if (targets.length === 0) return ["No UI surface found to scan; run bun loom init to install an app."];
 
   let probe: ImpeccableRun;
   try {

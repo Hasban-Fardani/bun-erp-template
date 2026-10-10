@@ -111,7 +111,7 @@ function typeOnlySpecifiers(code: string, isTsx: boolean): string[] {
  * Backward paths like `../../..` obscure which module owns the target and break when a file moves.
  * The tsconfig aliases name the owner instead: `@/` (server), `@web/` (web src), `@mobile/`
  * (mobile src) and `@cli/` (the root CLI). The scan covers the catalogs and the installed apps, so
- * a deep import fails both before and after `bun erp init`.
+ * a deep import fails both before and after `bun loom init`.
  */
 async function noDeepRelativeFindings(index: FileIndex): Promise<string[]> {
   const findings: string[] = [];
@@ -144,7 +144,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
   const index = fileIndex(root);
   const files: string[] = [];
   for (const dir of ["apps/web/src", "apps/mobile/src", "packages/ui/src"]) {
-    // apps/mobile/src only exists after `bun erp apps:create <name> mobile`.
+    // apps/mobile/src only exists after `bun loom apps:create <name> mobile`.
     if (!(await directoryExists(`${root}/${dir}`))) continue;
     files.push(...(await index.files(`${dir}/**/*.{ts,tsx}`)));
   }
@@ -158,19 +158,19 @@ export async function checkArchitecture(root: string): Promise<string[]> {
     for (const specifier of imports) {
       const target = specifier.startsWith(".")
         ? relative(root, resolve(root, dirname(file), specifier))
-        : specifier.startsWith("@bun-erp/ui/")
-          ? specifier.replace("@bun-erp/ui/", "packages/ui/src/")
+        : specifier.startsWith("@loom/ui/")
+          ? specifier.replace("@loom/ui/", "packages/ui/src/")
           : specifier;
       const shared = file.startsWith("packages/ui/src/");
       if (
         shared &&
-        (/^(apps\/|@bun-erp\/(web|mobile|server)(\/|$)|hono(\/|$))/.test(target) ||
+        (/^(apps\/|@loom\/(web|mobile|server)(\/|$)|hono(\/|$))/.test(target) ||
           (target.startsWith("@tanstack/") && !SHARED_TANSTACK.has(target)))
       )
         findings.push(`${file}: UI_APPLICATION_DEPENDENCY — ${specifier}`);
-      if (file.startsWith("apps/mobile/src/") && /^(apps\/web\/|@bun-erp\/web(\/|$))/.test(target))
+      if (file.startsWith("apps/mobile/src/") && /^(apps\/web\/|@loom\/web(\/|$))/.test(target))
         findings.push(`${file}: MOBILE_WEB_SOURCE — ${specifier}`);
-      if (file.startsWith("apps/web/src/") && /^(apps\/mobile\/|@bun-erp\/mobile(\/|$))/.test(target))
+      if (file.startsWith("apps/web/src/") && /^(apps\/mobile\/|@loom\/mobile(\/|$))/.test(target))
         findings.push(`${file}: WEB_MOBILE_SOURCE — ${specifier}`);
       if (!shared || !target.startsWith("packages/ui/src/")) continue;
       const originLevel = LEVELS.indexOf(file.split("/")[3] ?? "");
@@ -223,7 +223,7 @@ export async function checkArchitecture(root: string): Promise<string[]> {
   for (const file of consumerFiles) {
     const source = await index.text(file);
     const imports = new Bun.Transpiler({ loader: file.endsWith(".tsx") ? "tsx" : "ts" }).scanImports(source);
-    if (imports.some(({ path }) => path === "@bun-erp/utils" || path.startsWith("@bun-erp/utils/"))) {
+    if (imports.some(({ path }) => path === "@loom/utils" || path.startsWith("@loom/utils/"))) {
       consumers.add(file.startsWith("apps/server/") ? "server" : file.startsWith("apps/web/") ? "web" : "mobile");
     }
   }

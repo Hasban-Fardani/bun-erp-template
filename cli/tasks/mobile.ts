@@ -5,18 +5,18 @@ const ROOT = `${import.meta.dir}/../..`;
 const MOBILE_DIR = `${ROOT}/apps/mobile`;
 const KNOWN_COMMANDS = ["build", "add", "sync", "open", "package"];
 
-// Mobile is a catalog app: the template ships no apps until `bun erp init` installs a combination.
+// Mobile is a catalog app: the template ships no apps until `bun loom init` installs a combination.
 // Point at the init flow instead of failing on a missing directory.
 if (!(await Bun.file(`${MOBILE_DIR}/package.json`).exists())) {
   process.stderr.write(
-    "apps/mobile is not installed. Run `bun erp init` (choose a combination with mobile) or `bun erp apps:create mobile mobile`, then bun install.\n",
+    "apps/mobile is not installed. Run `bun loom init` (choose a combination with mobile) or `bun loom apps:create mobile mobile`, then bun install.\n",
   );
   process.exit(1);
 }
 
 if (!KNOWN_COMMANDS.includes(command ?? "")) {
   throw new Error(
-    "Use bun erp mobile:build|mobile:add|mobile:sync|mobile:open|mobile:package [android|ios] [--mode debug|production]",
+    "Use bun loom mobile:build|mobile:add|mobile:sync|mobile:open|mobile:package [android|ios] [--mode debug|production]",
   );
 }
 if (command !== "build" && platform !== "android" && platform !== "ios") {

@@ -4,7 +4,7 @@ import { directoryExists } from "./exists.ts";
 
 /**
  * F3.3 Phase L — repository lifecycle. `docs/template/` marks the template repository; a fork that
- * ran `bun erp project:adopt` has no such directory and is a project, where template-only rules
+ * ran `bun loom project:adopt` has no such directory and is a project, where template-only rules
  * must be gone and the scope gate no longer applies.
  */
 export const TEMPLATE_DIR = "docs/template";
@@ -45,7 +45,7 @@ export function fillIdentityBlock(source: string, content: string): string | und
 const LEAK_PATTERNS: readonly { regex: RegExp; label: string }[] = [
   { regex: /ships `apps\/` empty/, label: "ships `apps/` empty" },
   { regex: /this template/i, label: "this template" },
-  { regex: /Bun ERP Template/, label: "Bun ERP Template" },
+  { regex: /Loom Template/, label: "Loom Template" },
   { regex: /\bF3\.\d+\b/, label: "F3.<n> reference" },
 ];
 
@@ -59,7 +59,7 @@ export async function checkLifecycle(root: string): Promise<string[]> {
   const findings: string[] = [];
   if (await Bun.file(join(root, SCOPE_FILE)).exists()) {
     findings.push(
-      `${SCOPE_FILE}: present in a project; bun erp project:adopt deletes it and the scope gate then skips`,
+      `${SCOPE_FILE}: present in a project; bun loom project:adopt deletes it and the scope gate then skips`,
     );
   }
   const index = fileIndex(root);
@@ -71,7 +71,7 @@ export async function checkLifecycle(root: string): Promise<string[]> {
       continue;
     }
     if (body.includes(TEMPLATE_ONLY_START) || body.includes(TEMPLATE_ONLY_END)) {
-      findings.push(`${file}: template-only marker left in a project; run bun erp project:adopt or remove the block`);
+      findings.push(`${file}: template-only marker left in a project; run bun loom project:adopt or remove the block`);
     }
     if (file.startsWith("docs/tasks/")) continue;
     for (const label of findLeakPhrases(body)) {

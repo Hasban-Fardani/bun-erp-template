@@ -26,7 +26,7 @@ const FORBIDDEN: { id: string; pattern: RegExp; why: string }[] = [
     pattern: /\b[a-z]+\.[a-z]{3,}\b(?=\s*[.,)]|\s*$)/,
     why: "raw permission identifier, not a business state",
   },
-  { id: "shell", pattern: /\bbun erp\b|\bnpm run\b|\bgit \w+/i, why: "shell command on a screen" },
+  { id: "shell", pattern: /\bbun loom\b|\bnpm run\b|\bgit \w+/i, why: "shell command on a screen" },
   {
     id: "build-vocab",
     pattern: /\b(build|konfigurasi|config|modul|module|migrasi|schema|query|trace)\b/i,
@@ -111,7 +111,7 @@ export async function checkUserCopy(root: string): Promise<CopyFinding[]> {
         for (const rule of FORBIDDEN) {
           const hit = rule.pattern.exec(text);
           if (!hit) continue;
-          // `bun erp` in a test id or a path is not copy; only prose is.
+          // `bun loom` in a test id or a path is not copy; only prose is.
           if (!/\s/.test(text) && rule.id !== "permission-id") continue;
           findings.push({
             file,

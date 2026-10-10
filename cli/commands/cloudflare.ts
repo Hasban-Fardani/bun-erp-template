@@ -16,7 +16,7 @@ export const commands = [
     await requireApps(["server", "web"]);
     await run(["bun", "cli/index.ts", "cloudflare:build"], "Cloudflare Worker build");
     await run(
-      ["bun", "run", "--cwd", "apps/web", "wrangler", "deploy", "--config", "dist/bun_erp_template/wrangler.json"],
+      ["bun", "run", "--cwd", "apps/web", "wrangler", "deploy", "--config", "dist/loom_template/wrangler.json"],
       "Cloudflare deploy",
     );
   }),

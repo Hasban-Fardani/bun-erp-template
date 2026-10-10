@@ -1,5 +1,5 @@
 {
-  "name": "@bun-erp/web",
+  "name": "@loom/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "dev:cloudflare": "vite --mode cloudflare",
     "build:cloudflare": "vite build --mode cloudflare",
-    "deploy:cloudflare": "vite build --mode cloudflare && wrangler deploy --config dist/bun_erp_template/wrangler.json"
+    "deploy:cloudflare": "vite build --mode cloudflare && wrangler deploy --config dist/loom_template/wrangler.json"
   },
   "dependencies": {
     "@tanstack/react-query": "5.103.1",
@@ -21,10 +21,10 @@
     "react-dom": "19.3.0",
     "zod": "4.6.5",
     "hono": "4.13.8",
-    "@bun-erp/ui": "workspace:*",
-    "@bun-erp/utils": "workspace:*",
-    "@bun-erp/storage": "workspace:*",
-    "@bun-erp/i18n": "workspace:*",
+    "@loom/ui": "workspace:*",
+    "@loom/utils": "workspace:*",
+    "@loom/storage": "workspace:*",
+    "@loom/i18n": "workspace:*",
     "@tanstack/react-form": "1.33.5"
   },
   "devDependencies": {
@@ -36,7 +36,7 @@
     "tailwindcss": "4.3.3",
     "vite": "8.3.0",
     "wrangler": "4.147.0",
-    "@bun-erp/server": "workspace:*",
+    "@loom/server": "workspace:*",
     "@tanstack/router-plugin": "1.168.40"
   }
 }

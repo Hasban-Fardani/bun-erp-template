@@ -1,4 +1,4 @@
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import { sql } from "drizzle-orm";
 import type { Database } from "../../database/index.ts";
 import { rowsOf } from "../../database/rows.ts";

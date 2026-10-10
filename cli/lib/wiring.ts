@@ -2,15 +2,15 @@
  * One planned edit to a core file, shared by the feature and infra installers. Installers compute
  * every edit before writing anything; a `skipped` or `partial` edit aborts the whole install.
  *
- * Presence is structural: an explicit marker comment the generators own (`// @erp:...`) plus the
+ * Presence is structural: an explicit marker comment the generators own (`// @loom:...`) plus the
  * generated lines. All present → `present`; none present → the edit can be applied; anything in
  * between → `partial`, so a half-wired file is never reported as `present`.
  */
 export const WIRING_MARKERS = {
-  permissions: "// @erp:permissions",
-  audit: "// @erp:audit",
-  routes: "// @erp:routes",
-  nav: "// @erp:nav",
+  permissions: "// @loom:permissions",
+  audit: "// @loom:audit",
+  routes: "// @loom:routes",
+  nav: "// @loom:nav",
 } as const;
 
 export type WiringStatus = "added" | "present" | "partial" | "skipped";

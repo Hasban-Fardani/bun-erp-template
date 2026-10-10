@@ -27,7 +27,7 @@ export async function checkWorkspaceVersions(root: string): Promise<VersionFindi
         version: "missing",
         expected,
         detail:
-          "Workspace has no package.json, so a fresh `bun install` fails; apps/ entries are added by `bun erp init`, not committed.",
+          "Workspace has no package.json, so a fresh `bun install` fails; apps/ entries are added by `bun loom init`, not committed.",
       });
       continue;
     }

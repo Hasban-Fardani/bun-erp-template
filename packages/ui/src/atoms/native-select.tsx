@@ -1,4 +1,4 @@
-import { cn } from "@bun-erp/ui/lib/cn.ts";
+import { cn } from "@loom/ui/lib/cn.ts";
 import { ChevronDownIcon } from "lucide-react";
 import type * as React from "react";
 

@@ -1,12 +1,12 @@
 # CI
 
 `apps/` is a disposable install of the catalog, so the shared setup action runs
-`bun erp init --apps server,web --yes` after the frozen install: every gate, test, build and QA job
+`bun loom init --apps server,web --yes` after the frozen install: every gate, test, build and QA job
 starts from the reference server+web combination. Change that command in
 `.github/actions/setup/action.yml` to test a different combination.
 
-CI starts lean: every push and pull request runs only `gates` (lint + `bun erp check`) and
-`test-postgres` (migrations twice, status, `bun erp test` on PostgreSQL 18). Browser QA (`e2e`)
+CI starts lean: every push and pull request runs only `gates` (lint + `bun loom check`) and
+`test-postgres` (migrations twice, status, `bun loom test` on PostgreSQL 18). Browser QA (`e2e`)
 and the Docker image run on demand from Actions → CI → Run workflow. To scale up, remove the
 `if: github.event_name == 'workflow_dispatch'` line from a job (and its name from `OPTIONAL` in
 `ci-ok`), or add a PostgreSQL version back as a matrix when you support more than one.
@@ -16,8 +16,8 @@ change. `ci-ok` fails if a required job fails, is cancelled or is unexpectedly s
 refuses at boot. Actions use verified
 commit pins. Bun is 1.4.2 and installation uses the frozen lockfile and a lock-keyed cache.
 
-Local equivalents: `bun erp check`, `bun erp test`, `bun erp build`, and `bun run qa`.
-For real PostgreSQL use a disposable database: set `TEST_DATABASE_URL` and run `bun erp test`.
+Local equivalents: `bun loom check`, `bun loom test`, `bun loom build`, and `bun run qa`.
+For real PostgreSQL use a disposable database: set `TEST_DATABASE_URL` and run `bun loom test`.
 The runner creates a unique temporary database and removes it even if the suite fails.
 The database login must be allowed to create databases; never point this at production.
 
@@ -33,7 +33,7 @@ The mobile build uses a reserved example API origin solely to verify packaging; 
 
 Owner action: enable branch protection for the default branch with **ci-ok** required and
 pull-request review required, so no agent push reaches it unchecked and a human approves task status
-(`task-approval` and the `tdd: required` evidence grammar run inside `bun erp check` there). This is
+(`task-approval` and the `tdd: required` evidence grammar run inside `bun loom check` there). This is
 a GitHub setting; the template does not automate it. Local `.githooks/pre-push` can be skipped with
 `--no-verify`, so CI is the final judge. A workflow file
 does not enable that setting. The first GitHub run and branch protection are NOT_RUN until

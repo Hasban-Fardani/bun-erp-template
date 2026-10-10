@@ -6,7 +6,7 @@ import { repoRoot } from "@cli/lib/repo.ts";
  * does not flake while a real regression (an eager import, a registry scan per command) still fails.
  *
  * Baseline (2026-10-08, Bun 1.4.2, macOS arm64, server + web + mail installed, load average ~3):
- * `bun erp --help` min 59 ms (5 runs), `bun erp check:fast` min 398 ms (3 runs). On an idle machine
+ * `bun loom --help` min 59 ms (5 runs), `bun loom check:fast` min 398 ms (3 runs). On an idle machine
  * the same commands took 27 ms and 270 ms (F3.3 Phase B), so the factor also absorbs a busy host.
  * Re-measure and update BASELINE_MS in the same commit when a command legitimately gets slower.
  *
@@ -41,11 +41,11 @@ test("the budgets are three times the recorded baseline", () => {
 });
 
 test.skipIf(SKIP)(
-  "bun erp --help stays inside its budget",
+  "bun loom --help stays inside its budget",
   async () => {
-    // The budget describes a repo where `bun erp init --apps server,web --yes` has been run.
+    // The budget describes a repo where `bun loom init --apps server,web --yes` has been run.
     if (!(await Bun.file(`${repoRoot}/apps/server/package.json`).exists())) return;
-    const help = await bestOf(["bun", "erp", "--help"], 3);
+    const help = await bestOf(["bun", "loom", "--help"], 3);
     process.stdout.write(`cli-perf: --help ${help.toFixed(0)}ms (budget ${HELP_BUDGET_MS}ms)\n`);
     expect(help).toBeLessThan(HELP_BUDGET_MS);
   },
@@ -53,11 +53,11 @@ test.skipIf(SKIP)(
 );
 
 test.skipIf(SKIP)(
-  "bun erp check:fast stays inside its budget",
+  "bun loom check:fast stays inside its budget",
   async () => {
     if (!(await Bun.file(`${repoRoot}/apps/server/package.json`).exists())) return;
     if (!(await Bun.file(`${repoRoot}/apps/web/package.json`).exists())) return;
-    const fast = await bestOf(["bun", "erp", "check:fast"], 2);
+    const fast = await bestOf(["bun", "loom", "check:fast"], 2);
     process.stdout.write(`cli-perf: check:fast ${fast.toFixed(0)}ms (budget ${CHECK_FAST_BUDGET_MS}ms)\n`);
     expect(fast).toBeLessThan(CHECK_FAST_BUDGET_MS);
   },

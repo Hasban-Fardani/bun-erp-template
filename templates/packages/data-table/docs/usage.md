@@ -5,7 +5,7 @@
 `DataTable` is the smallest path when the caller already has the full, bounded set of rows. It uses an opt-in TanStack feature set with client-side filtering, sorting, and pagination. Set `filter` to show a global text input. `initialPageSize` defaults to 25; use `getRowId` when rows have a stable key.
 
 ```tsx
-import { Column, DataTable } from "@bun-erp/data-table";
+import { Column, DataTable } from "@loom/data-table";
 
 type Department = { id: string; name: string; code: string };
 const departmentColumn = Column<Department>();
@@ -37,7 +37,7 @@ Local-first means in-memory table operations. It does not persist rows or filter
 `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, and `TableCell` are semantic HTML wrappers. `Filter` accepts a controlled string value; `Pagination` accepts a known count and page callbacks. They do not require TanStack Table, Hono, or a fetching library.
 
 ```tsx
-import { Filter, Pagination, Table, TableBody, TableCell, TableHeader, TableRow } from "@bun-erp/data-table/primitives";
+import { Filter, Pagination, Table, TableBody, TableCell, TableHeader, TableRow } from "@loom/data-table/primitives";
 
 <Filter label="Search" value={search} onChange={setSearch} />
 <Table aria-label="Current results">
@@ -54,7 +54,7 @@ import { Filter, Pagination, Table, TableBody, TableCell, TableHeader, TableRow 
 />
 ```
 
-Import `@bun-erp/data-table/styles.css` to use the package's neutral baseline. The stylesheet is optional and does not use app-specific design tokens.
+Import `@loom/data-table/styles.css` to use the package's neutral baseline. The stylesheet is optional and does not use app-specific design tokens.
 
 ## Manual rows with Hono RPC and TanStack Query
 
@@ -67,8 +67,8 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { hc } from "hono/client";
 import type { ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
-import { Filter, Pagination, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@bun-erp/data-table/primitives";
-import { createServerColumnHelper, useServerDataTable } from "@bun-erp/data-table/server";
+import { Filter, Pagination, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@loom/data-table/primitives";
+import { createServerColumnHelper, useServerDataTable } from "@loom/data-table/server";
 import type { AppType } from "@/server/features";
 
 type Person = { id: string; name: string; email: string };

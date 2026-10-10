@@ -34,7 +34,7 @@ export function ChartFrame({
   ...props
 }: ChartFrameProps) {
   const palette = Object.fromEntries(
-    DEFAULT_PALETTE.map((fallback, index) => [`--bun-erp-chart-${index + 1}`, colors[index] ?? fallback]),
+    DEFAULT_PALETTE.map((fallback, index) => [`--loom-chart-${index + 1}`, colors[index] ?? fallback]),
   ) as CSSProperties;
 
   return (
@@ -45,7 +45,7 @@ export function ChartFrame({
       style={{ ...palette, height, minWidth: 0, ...style }}
       {...props}
     >
-      <figcaption className="bun-erp-chart-visually-hidden">{label}</figcaption>
+      <figcaption className="loom-chart-visually-hidden">{label}</figcaption>
       {children}
     </figure>
   );

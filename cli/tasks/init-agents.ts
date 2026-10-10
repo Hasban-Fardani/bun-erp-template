@@ -264,7 +264,7 @@ export async function installAgentSkills(): Promise<void> {
 }
 
 /**
- * The CodeGraph and Context7 MCP wiring plus the project skills — the parts `bun erp ai:update`
+ * The CodeGraph and Context7 MCP wiring plus the project skills — the parts `bun loom ai:update`
  * re-syncs. `init` additionally builds the local index through `initializeAgentTooling`.
  */
 export async function updateAgentTooling(): Promise<void> {
@@ -281,7 +281,7 @@ export async function updateAgentTooling(): Promise<void> {
   await installAgentSkills();
 }
 
-/** Full `bun erp init` agent setup: build the index, then wire MCP and skills. */
+/** Full `bun loom init` agent setup: build the index, then wire MCP and skills. */
 export async function initializeAgentTooling(): Promise<void> {
   await syncCodegraphIndex();
   await updateAgentTooling();

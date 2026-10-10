@@ -1,5 +1,5 @@
 {
-  "name": "@bun-erp/storage",
+  "name": "@loom/storage",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "./server": "./src/server/index.ts"
   },
   "dependencies": {
-    "@bun-erp/utils": "workspace:*",
+    "@loom/utils": "workspace:*",
     "@capacitor-community/sqlite": "8.1.1"
   },
   "scripts": {

@@ -1,7 +1,7 @@
 # Documentation index
 
 Use this index to select only the context needed for a change. Source code, package manifests and
-bun erp --help define current behavior. An ADR records a decision; it is not proof that the
+bun loom --help define current behavior. An ADR records a decision; it is not proof that the
 decision has been implemented.
 
 | Need | Canonical document |

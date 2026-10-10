@@ -17,7 +17,7 @@ async function fixture(files: Record<string, string>): Promise<string> {
 test("flags a component module that the guide does not list", async () => {
   const root = await fixture({
     "packages/ui/src/atoms/button.tsx": "",
-    "packages/ui/llms.txt": "# @bun-erp/ui\n",
+    "packages/ui/llms.txt": "# @loom/ui\n",
   });
   try {
     const findings = await checkUiGuide(root);
@@ -30,8 +30,7 @@ test("flags a component module that the guide does not list", async () => {
 test("flags a guide entry whose module no longer exists", async () => {
   const root = await fixture({
     "packages/ui/src/atoms/button.tsx": "",
-    "packages/ui/llms.txt":
-      "# @bun-erp/ui\n\n| `atoms/button.tsx` | button | — |\n| `molecules/gone.tsx` | stale | — |\n",
+    "packages/ui/llms.txt": "# @loom/ui\n\n| `atoms/button.tsx` | button | — |\n| `molecules/gone.tsx` | stale | — |\n",
   });
   try {
     const findings = await checkUiGuide(root);
@@ -46,7 +45,7 @@ test("passes when every module is listed exactly once and nothing is stale", asy
   const root = await fixture({
     "packages/ui/src/atoms/button.tsx": "",
     "packages/ui/src/lib/cn.ts": "",
-    "packages/ui/llms.txt": "# @bun-erp/ui\n\n| `atoms/button.tsx` | button | — |\n| `lib/cn.ts` | classes | — |\n",
+    "packages/ui/llms.txt": "# @loom/ui\n\n| `atoms/button.tsx` | button | — |\n| `lib/cn.ts` | classes | — |\n",
   });
   try {
     expect(await checkUiGuide(root)).toEqual([]);

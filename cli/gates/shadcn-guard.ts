@@ -5,7 +5,7 @@ import { directoryExists } from "./exists.ts";
 /** Above this many options, a list must be searchable. */
 const MAX_SELECT_OPTIONS = 3;
 const BANNED_NATIVE: readonly { pattern: RegExp; shadcn: string }[] = [
-  { pattern: /<select[\s>]/, shadcn: "Select (@bun-erp/ui/molecules/select.tsx)" },
+  { pattern: /<select[\s>]/, shadcn: "Select (@loom/ui/molecules/select.tsx)" },
   { pattern: /<input[^>]*type="checkbox"/, shadcn: "Checkbox from the approved registry" },
   { pattern: /<input[^>]*type="radio"/, shadcn: "RadioGroup from the approved registry" },
 ];
@@ -240,7 +240,7 @@ export async function checkShadcn(root: string): Promise<ShadcnFinding[]> {
 
   for (const packageName of ["email", "pdf"] as const) {
     const catalogPath = join(root, `packages/${packageName}/component-sources.json`);
-    // These packages are opt-in: they live in templates/packages until `bun erp packages:install`
+    // These packages are opt-in: they live in templates/packages until `bun loom packages:install`
     // copies one into the workspace. Provenance is checked once the package is actually installed.
     if (!(await Bun.file(catalogPath).exists())) continue;
     const catalog = (await Bun.file(catalogPath).json()) as {
@@ -295,7 +295,7 @@ function oversizedLists(file: string, code: string): ShadcnFinding[] {
         file,
         line: lineOf(code, match.index ?? 0),
         rule: "SELECT_TOO_MANY_OPTIONS",
-        detail: `${count} options exceeds ${MAX_SELECT_OPTIONS} — use Combobox (@bun-erp/ui/organisms/combobox.tsx)`,
+        detail: `${count} options exceeds ${MAX_SELECT_OPTIONS} — use Combobox (@loom/ui/organisms/combobox.tsx)`,
       });
   }
   for (const match of code.matchAll(/<Select[\s>][\s\S]*?<\/Select>/g)) {
@@ -305,7 +305,7 @@ function oversizedLists(file: string, code: string): ShadcnFinding[] {
         file,
         line: lineOf(code, match.index ?? 0),
         rule: "SELECT_TOO_MANY_OPTIONS",
-        detail: `${count} options exceeds ${MAX_SELECT_OPTIONS} — use Combobox (@bun-erp/ui/organisms/combobox.tsx)`,
+        detail: `${count} options exceeds ${MAX_SELECT_OPTIONS} — use Combobox (@loom/ui/organisms/combobox.tsx)`,
       });
   }
   return findings;

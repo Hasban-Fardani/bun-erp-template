@@ -276,7 +276,7 @@ export async function runDueSchedules(
   return db.transaction(async (transaction) => {
     const tx = transaction;
     const acquired = rowsOf<{ locked: boolean }>(
-      await tx.execute(sql`select pg_try_advisory_xact_lock(hashtextextended('bun-erp:job-schedules', 0)) as locked`),
+      await tx.execute(sql`select pg_try_advisory_xact_lock(hashtextextended('loom:job-schedules', 0)) as locked`),
     )[0]?.locked;
     if (!acquired) return { acquired: false, enqueued: [] };
 

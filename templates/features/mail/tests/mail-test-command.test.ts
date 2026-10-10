@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createMailer, createMemoryMailDriver } from "@bun-erp/mail/server";
+import { createMailer, createMemoryMailDriver } from "@loom/mail/server";
 import { runMailTest } from "@/cli/lib/mail-test.ts";
 import { testEnv } from "../../support/fixtures.ts";
 

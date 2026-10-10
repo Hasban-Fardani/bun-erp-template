@@ -34,11 +34,11 @@ export type MakePlan = {
 };
 
 const JOBS_REGISTRY = "apps/server/features/jobs.ts";
-const JOBS_MARKER = "// @erp:jobs";
+const JOBS_MARKER = "// @loom:jobs";
 const LISTENERS_REGISTRY = "apps/server/features/events.ts";
-const LISTENERS_MARKER = "// @erp:listeners";
+const LISTENERS_MARKER = "// @loom:listeners";
 const NOTIFICATIONS_INDEX = "apps/server/features/notifications/index.ts";
-const NOTIFICATIONS_MARKER = "// @erp:notifications";
+const NOTIFICATIONS_MARKER = "// @loom:notifications";
 const MAIL_WIRING = "apps/server/features/mail/wiring.ts";
 /** The registry accepts only these job names (infra/jobs/registry.ts); fail here, not at boot. */
 const JOB_NAME = /^[a-z][a-z0-9_.-]{1,119}$/;
@@ -96,7 +96,7 @@ export async function planMakeFactory(
   const schemaPath = `apps/server/features/${name}/schema.ts`;
   const schema = await readOptional(root, schemaPath);
   if (schema === undefined) {
-    throw new Error(`No ${schemaPath}; run \`bun erp make:feature ${name}\` or write the schema first.`);
+    throw new Error(`No ${schemaPath}; run \`bun loom make:feature ${name}\` or write the schema first.`);
   }
   const tables = [...schema.matchAll(/export const (\w+) = pgTable\(/g)].map((match) => match[1] ?? "");
   const table = options.table ?? (tables.length === 1 ? tables[0] : undefined);
@@ -263,7 +263,7 @@ export async function planMakeNotification(
 /** `make:mail <name>`: a pure renderer plus a queue helper; only when the mail feature is installed. */
 export async function planMakeMail(root: string, rawName: string): Promise<MakePlan> {
   if (!(await exists(root, MAIL_WIRING))) {
-    throw new Error("The mail feature is not installed. Run `bun erp features:install mail` first.");
+    throw new Error("The mail feature is not installed. Run `bun loom features:install mail` first.");
   }
   const file = toKebabName(rawName, "Mail");
   const pascal = toPascalName(file);
@@ -281,7 +281,7 @@ export async function planMakeMail(root: string, rawName: string): Promise<MakeP
   return { files, edits: [] };
 }
 
-/** `bun erp make:event` names must stay valid for `defineEvent`: `<feature>.<event>`, at most 60 characters. */
+/** `bun loom make:event` names must stay valid for `defineEvent`: `<feature>.<event>`, at most 60 characters. */
 const EVENT_NAME_MAX = 60;
 
 function toCamelName(kebab: string): string {
@@ -333,7 +333,7 @@ export async function planMakeListener(
   await assertServerFeature(root, feature);
   const eventPath = `apps/server/features/${feature}/events/${event}.ts`;
   if (!(await exists(root, eventPath))) {
-    throw new Error(`No event at ${eventPath}. Run \`bun erp make:event ${feature} ${event}\` first.`);
+    throw new Error(`No event at ${eventPath}. Run \`bun loom make:event ${feature} ${event}\` first.`);
   }
   const values = {
     feature,

@@ -29,7 +29,7 @@ jobs:
           fi
   android:
     needs: detect
-    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
+    # Mobile waits in templates/apps/mobile until `bun loom apps:create <name> mobile` installs it.
     if: needs.detect.outputs.present == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -40,14 +40,14 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - run: bun erp mobile:build
+      - run: bun loom mobile:build
         env:
           VITE_API_BASE_URL: https://api.example.test
-      - run: bun erp mobile:add android
+      - run: bun loom mobile:add android
         env:
           MOBILE_APP_ID: com.example.erptemplate
           MOBILE_APP_NAME: ERP Template
-      - run: bun erp mobile:sync android
+      - run: bun loom mobile:sync android
         env:
           MOBILE_APP_ID: com.example.erptemplate
           MOBILE_APP_NAME: ERP Template
@@ -60,21 +60,21 @@ jobs:
           retention-days: 14
   ios-simulator:
     needs: detect
-    # Mobile waits in templates/apps/mobile until `bun erp apps:create <name> mobile` installs it.
+    # Mobile waits in templates/apps/mobile until `bun loom apps:create <name> mobile` installs it.
     if: needs.detect.outputs.present == 'true'
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4, verified
       - uses: ./.github/actions/setup
-      - run: bun erp mobile:build
+      - run: bun loom mobile:build
         env:
           VITE_API_BASE_URL: https://api.example.test
-      - run: bun erp mobile:add ios
+      - run: bun loom mobile:add ios
         env:
           MOBILE_APP_ID: com.example.erptemplate
           MOBILE_APP_NAME: ERP Template
-      - run: bun erp mobile:sync ios
+      - run: bun loom mobile:sync ios
         env:
           MOBILE_APP_ID: com.example.erptemplate
           MOBILE_APP_NAME: ERP Template

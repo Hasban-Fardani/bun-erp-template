@@ -1,6 +1,6 @@
-import type { Translate } from "@bun-erp/i18n";
-import { useI18n } from "@bun-erp/i18n/react";
-import { useToast } from "@bun-erp/ui/organisms/toast.tsx";
+import type { Translate } from "@loom/i18n";
+import { useI18n } from "@loom/i18n/react";
+import { useToast } from "@loom/ui/organisms/toast.tsx";
 import { useEffect } from "react";
 import { ApiError } from "./api.ts";
 

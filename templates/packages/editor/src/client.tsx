@@ -108,7 +108,7 @@ export function EditorProvider({
   children,
 }: EditorProviderProps) {
   const [initialConfig] = useState<InitialConfigType>(() => ({
-    namespace: "BunErpRichTextEditor",
+    namespace: "LoomRichTextEditor",
     theme,
     nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode],
     editorState: initialValue ? JSON.stringify(initialValue) : null,
@@ -118,7 +118,7 @@ export function EditorProvider({
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className={joinClassNames("bun-erp-editor", className)}>
+      <div className={joinClassNames("loom-editor", className)}>
         <HistoryPlugin />
         <ListPlugin />
         <LinkPlugin validateUrl={isSafeLinkUrl} />

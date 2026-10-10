@@ -1,4 +1,4 @@
-import { createUuid } from "@bun-erp/utils";
+import { createUuid } from "@loom/utils";
 import type { AppContext } from "@/bootstrap/context.ts";
 import type { Logger } from "@/infra/observability/logger.ts";
 import { createTestContext } from "./fixtures.ts";
