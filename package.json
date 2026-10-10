@@ -27,10 +27,10 @@
     "qa": "bun loom qa"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.5.15",
     "@types/bun": "1.4.2",
     "playwright-core": "1.63.0",
-    "react-doctor": "0.9.14",
+    "react-doctor": "0.9.17",
     "typescript": "7.0.2"
   },
   "engines": {
