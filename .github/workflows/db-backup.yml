@@ -40,7 +40,7 @@ jobs:
         run: aws s3 cp --endpoint-url "$R2_ENDPOINT" --no-progress erp-*.dump "s3://$R2_BACKUP_BUCKET/db/"
       - name: Keep as a workflow artifact (no R2 bucket configured)
         if: ${{ env.R2_BACKUP_BUCKET == '' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, verified
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v4, verified
         with:
           name: db-backup
           path: erp-*.dump
