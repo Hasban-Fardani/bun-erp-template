@@ -1,11 +1,12 @@
 import { Database } from "bun:sqlite";
 import { GUIDELINES_END, GUIDELINES_START } from "../lib/guidelines.ts";
-import { REQUIRED_AGENT_SKILLS } from "./agent-skills.ts";
+import { AGENT_SKILL_DIRS, missingAgentSkills, REQUIRED_AGENT_SKILLS } from "./agent-skills.ts";
 import { CODEGRAPH_VERSION } from "./codegraph.ts";
 import { isTemplateRepo } from "./lifecycle.ts";
 
 export type AgentReadinessInput = {
-  installedSkills: string[];
+  /** Repo-relative `<dir>/<skill>` paths present on disk, for every directory in `AGENT_SKILL_DIRS`. */
+  installedSkills: readonly string[];
   indexedFiles: string[];
   /** Files the index must contain; callers pass only the ones that exist on disk (apps ship empty). */
   requiredIndexedFiles?: readonly string[];
@@ -24,8 +25,12 @@ const REQUIRED_INDEXED_FILES = ["apps/server/http/app.ts", "apps/web/src/main.ts
 
 export function evaluateAgentReadiness(input: AgentReadinessInput): string[] {
   const findings: string[] = [];
-  for (const skill of REQUIRED_AGENT_SKILLS) {
-    if (!input.installedSkills.includes(skill)) findings.push(`Install the project skill .agents/skills/${skill}.`);
+  const installed = new Set(input.installedSkills);
+  for (const dir of AGENT_SKILL_DIRS) {
+    for (const skill of REQUIRED_AGENT_SKILLS) {
+      const path = `${dir}/${skill}`;
+      if (!installed.has(path)) findings.push(`Install the project skill ${path}; run bun loom ai:skills.`);
+    }
   }
   if (input.indexError) {
     findings.push(`CodeGraph index is unavailable: ${input.indexError}`);
@@ -52,10 +57,10 @@ export function evaluateAgentReadiness(input: AgentReadinessInput): string[] {
 }
 
 export async function checkAgentReadiness(root: string): Promise<string[]> {
-  const installedSkills: string[] = [];
-  for (const skill of REQUIRED_AGENT_SKILLS) {
-    if (await Bun.file(`${root}/.agents/skills/${skill}/SKILL.md`).exists()) installedSkills.push(skill);
-  }
+  const missing = new Set(await missingAgentSkills(root));
+  const installedSkills = AGENT_SKILL_DIRS.flatMap((dir) =>
+    REQUIRED_AGENT_SKILLS.map((skill) => `${dir}/${skill}`).filter((path) => !missing.has(path)),
+  );
 
   // `apps/` ships empty, so an app file can only be required when the app is actually installed.
   const requiredIndexedFiles: string[] = [];

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkTaskEvidence, loadTasks, validateTasks } from "@cli/gates/tasks.ts";
+import { checkTaskEvidence, FLOW_PHASES, loadDesignPacks, loadTasks, validateTasks } from "@cli/gates/tasks.ts";
 
 const GOOD = [
   "## Evidence",
@@ -48,11 +48,18 @@ test("unticked items and fenced examples are ignored", () => {
 
 test("only tasks with tdd: required are checked", async () => {
   const dir = `/tmp/erp-task-evidence-${crypto.randomUUID()}`;
-  const doc = (tdd: string) =>
-    `---\nid: X\ntitle: X\nstatus: in_progress\n${tdd}---\n\n- [x] **T1** done\n\n## Evidence\n`;
-  await Bun.write(`${dir}/A-required.md`, doc("tdd: required\n"));
-  await Bun.write(`${dir}/B-legacy.md`, doc(""));
-  const findings = validateTasks(await loadTasks(dir));
+  const flow = FLOW_PHASES.map((phase, index) => `- [${index < 3 ? "x" : " "}] ${phase}: done`).join("\n");
+  const doc = (id: string, tdd: string) =>
+    `---\nid: ${id}\ntitle: X\nstatus: in_progress\n${tdd}---\n\n## Flow\n\n${flow}\n\n## Plan\n\nOne step\n\n- [x] **T1** done\n\n## Evidence\n`;
+  for (const id of ["A", "B"]) {
+    for (const file of ["system.md", "database.md", "pages.md"])
+      await Bun.write(`${dir}/design/${id}/${file}`, "n/a — none\n");
+    await Bun.write(`${dir}/design/${id}/flow.html`, "<svg></svg>");
+  }
+  await Bun.write(`${dir}/tasks/A-required.md`, doc("A", "tdd: required\n"));
+  await Bun.write(`${dir}/tasks/B-legacy.md`, doc("B", ""));
+  const tasks = await loadTasks(`${dir}/tasks`);
+  const findings = validateTasks(tasks, await loadDesignPacks(`${dir}/design`, tasks));
   expect([...new Set(findings.map((f) => f.file))]).toEqual(["A-required.md"]);
   await Bun.$`rm -rf ${dir}`;
 });

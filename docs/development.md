@@ -68,9 +68,18 @@ The skills are installed from [Matthew Pocock's skills repository](https://githu
 [i-have-adhd](https://github.com/ayghri/i-have-adhd) and
 [diagram-design](https://github.com/cathrynlavery/diagram-design). Two skill directories coexist and
 are not interchangeable: `skills/` holds this repository's own skills (see `skills/README.md`), while
-`.agents/skills/` holds the externally installed skills above. `skills-lock.json` records their
-pinned sources; `.agents/skills/` itself is ignored by Git and restored by `bun loom ai:update`. The QA
-project context at `.agents/qa-project-context.md` records this repository's test stack and rules.
+`.agents/skills/` (Codex and compatible agents) and `.claude/skills/` (Claude Code) each hold a copy
+of the externally installed skills above, because each agent reads only its own directory.
+`skills-lock.json` records their pinned sources; both directories are ignored by Git and restored by
+`bun loom ai:skills`, which copies a skill into every directory that lacks it and needs no network
+when nothing is missing (`init` and `ai:update` run it too). The QA project context at
+`.agents/qa-project-context.md` records this repository's test stack and rules.
+
+Claude Code also reads the tracked `.claude/settings.json`: its SessionStart hook runs
+`cli/tasks/agent-hook.ts session`, which restores missing skills, asks Claude Code to reload them and
+states the delivery flow; its UserPromptSubmit hook names the next phase of every in-progress owner
+task on each prompt. `.diagram-design` selects the default `diagram-design` profile so the first
+diagram never stops on the style question; change it to `profile: <slug>` for a branded profile.
 
 The Matthew Pocock set is the planning-to-delivery flow: `grill-with-docs`, `domain-modeling`,
 `to-spec`, `to-tickets`, `implement`, `tdd`, `code-review`, `diagnosing-bugs` and `codebase-design`

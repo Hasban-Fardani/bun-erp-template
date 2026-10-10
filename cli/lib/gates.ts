@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { checkScope } from "../gates/scope.ts";
 import { validateSkills } from "../gates/skills.ts";
-import { loadTasks, validateTasks } from "../gates/tasks.ts";
+import { loadDesignPacks, loadTasks, validateTasks } from "../gates/tasks.ts";
 import { GateFailure, repoRoot } from "./repo.ts";
 
 export type GateCatalogEntry = {
@@ -290,7 +290,11 @@ export const GATE_IMPLEMENTATIONS: Readonly<Record<GateName, GateImplementation>
   migrations: async (root) => (await import("../gates/migrations.ts")).checkMigrations(root),
   "package-targets": async (root) => (await import("../gates/package-targets.ts")).checkPackageTargets(root),
   skills: async (root) => (await validateSkills(join(root, "skills"))).map((f) => `${f.file}: ${f.message}`),
-  task: async (root) => validateTasks(await loadTasks(join(root, "docs/tasks"))).map((f) => `${f.file}: ${f.message}`),
+  task: async (root) => {
+    const tasks = await loadTasks(join(root, "docs/tasks"));
+    const designPacks = await loadDesignPacks(join(root, "docs/design"), tasks);
+    return validateTasks(tasks, designPacks).map((f) => `${f.file}: ${f.message}`);
+  },
   "task-approval": async (root) => (await import("../gates/task-approval.ts")).checkTaskApproval(root),
   tdd: async (root) => {
     const { checkTdd } = await import("../gates/tdd.ts");

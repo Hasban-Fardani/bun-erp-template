@@ -3,21 +3,25 @@
 Load only the skill triggered by the task. Rules are implemented by source/gates where stated;
 prose alone does not prove enforcement.
 
-Planning-to-delivery flow (`mattpocock/skills`, installed into `.agents/skills/` by
-`bun loom init` / `bun loom ai:update`, pinned in [skills-lock.json](../skills-lock.json), not
-tracked in git). Tickets live in `docs/tasks/`, not GitHub Issues. The skills do not read the
-config themselves: where one asks for a tracker, triage labels or `/setup-matt-pocock-skills`, use
+Delivery flow: every change walks brainstorm → plan → design → execute → review → iterate. The
+skills are installed into `.agents/skills/` and `.claude/skills/` by `bun loom ai:skills` (also run
+by `init`, `ai:update` and the Claude Code SessionStart hook), pinned in
+[skills-lock.json](../skills-lock.json), not tracked in git. Tickets live in `docs/tasks/`, not
+GitHub Issues: where a skill asks for a tracker, triage labels or `/setup-matt-pocock-skills`, use
 the Mapping table in [docs/agents/issue-tracker.md](../docs/agents/issue-tracker.md); glossary and
 ADRs are in [docs/agents/domain.md](../docs/agents/domain.md) (`GLOSSARY.md`, `docs/adr/`).
 
-1. `grill-with-docs` (or `grill-me` / `grilling`): settle open product decisions; it writes
-   glossary terms and ADRs through `domain-modeling`.
-2. `to-spec`: synthesize the conversation into a spec task file.
-3. `to-tickets`: split the spec into tracer-bullet tickets, one `docs/tasks/S<NN>.<n>-*.md` each,
-   `depends_on` for blockers, status `draft` or `in_progress` only.
-4. `implement` (calls `tdd`) per ticket: red, green, evidence under `## Evidence`.
-5. `code-review`: standards and spec review; then a human moves the status.
-6. `diagnosing-bugs` for failures and regressions; `codebase-design` for module seams.
+| Phase | Skills | Produces (ticked in the owner's `## Flow`) | Gate |
+| --- | --- | --- | --- |
+| 1. brainstorm | `grill-with-docs` (or `grill-me` / `grilling`), `domain-modeling` | Open decisions settled under `## Decisions`; glossary terms and ADRs | note required |
+| 2. plan | `to-spec`, `to-tickets`, `bun loom task:new`, `bun loom task:plan` | One ticket per smallest vertical slice, each with checkpoints and `depends_on`; the waves under `## Plan` | plan section, a checkpoint per ticket, no cycle |
+| 3. design | `diagram-design`, `impeccable`, `codebase-design` | `docs/design/<id>/`: `system.md` (design system), `database.md`, `pages.md`, `flow.html`, plus `database.html` and `pages.html` when those apply | every heading filled or whole-document n/a; diagrams present |
+| 4. execute | `implement` with `tdd`, wave by wave | Red then green evidence per checkpoint | no ticket or checkpoint before design; every checkpoint ticked |
+| 5. review | `code-review`; `bun run lint`, `bun loom check`, `bun loom test` | Standards and spec findings, gate results | note required |
+| 6. iterate | `diagnosing-bugs` for failures | Findings fixed; execute and review repeated until clean | `ready`/`done` need all six phases |
+
+Tickets in one wave run in parallel (one agent each when several are available); a ticket stays
+`draft` until its owner ticks design and its `depends_on` tickets have started.
 
 Autonomy: decide conventional or reversible choices yourself and state them in one line. Ask only
 for product decisions, destructive actions or missing secrets, in one batched message. Run every

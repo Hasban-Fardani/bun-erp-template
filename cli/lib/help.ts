@@ -48,6 +48,7 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["about", "Show runtime versions, installed catalog, migrations, routes, database and CodeGraph state"],
       ["mcp", "Run the read-only stdio MCP server that exposes project introspection tools"],
       ["ai:update", "Refresh the AGENTS.md guidelines block, CodeGraph MCP wiring and project skills"],
+      ["ai:skills", "Restore missing project skills in .agents/skills and .claude/skills"],
     ],
   },
   {
@@ -67,7 +68,8 @@ export const HELP_GROUPS: readonly HelpSection[] = [
       ["make:test <feature> [name]", "Create a feature test skeleton (typed testClient when the feature has routes)"],
       ["make:notification <name> [--type <domain.event>]", "Create a database-channel notification definition"],
       ["make:mail <name>", "Create a mail renderer and queue helper (requires the mail feature)"],
-      ["task:new <id> <title>", "Create a plan/task markdown with TDD checkpoints and an evidence section"],
+      ["task:new <id> <title>", "Create an owner (six-phase flow + design pack) or a ticket (--depends-on <ids>)"],
+      ["task:plan [id]", "Print an owner's tickets as parallel waves from depends_on"],
     ],
   },
   {

@@ -1,7 +1,7 @@
 import { mkdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { AGENT_SKILL_SOURCES } from "../gates/agent-skills.ts";
+import { AGENT_SKILL_SOURCES, AGENT_SKILL_TARGETS, missingAgentSkills } from "../gates/agent-skills.ts";
 import { CODEGRAPH_VERSION, codegraphCommand, codegraphMcpCommand } from "../gates/codegraph.ts";
 import { run } from "../lib/repo.ts";
 
@@ -249,42 +249,43 @@ export async function syncCodegraphIndex(): Promise<void> {
   }
 }
 
-/** Installs every required project skill; already installed skills are left untouched. */
+/** One `skills add` run copies the named skills into every agent directory in `AGENT_SKILL_TARGETS`. */
+export function skillsAddArgv(repository: string, skills: readonly string[]): string[] {
+  return [
+    "bunx",
+    "--bun",
+    `skills@${SKILLS_CLI_VERSION}`,
+    "add",
+    repository,
+    "--skill",
+    ...skills,
+    "--agent",
+    ...AGENT_SKILL_TARGETS.map(({ agent }) => agent),
+    "--copy",
+    "--yes",
+  ];
+}
+
+/**
+ * Installs every required project skill into every agent directory. A skill counts as missing when
+ * any directory lacks it, so a copy that exists for Codex but not for Claude Code is restored too;
+ * skills present everywhere are left untouched and need no network.
+ */
 export async function installAgentSkills(): Promise<void> {
   for (const source of AGENT_SKILL_SOURCES) {
-    const missing = await Promise.all(
-      source.skills.map(async (skill) =>
-        (await Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()) ? undefined : skill,
-      ),
-    ).then((skills) => skills.filter((skill): skill is NonNullable<typeof skill> => skill !== undefined));
+    const absent = await missingAgentSkills(root, source.skills);
+    const missing = source.skills.filter((skill) => absent.some((path) => path.endsWith(`/${skill}`)));
 
     if (missing.length === 0) {
       process.stdout.write(`Required skills from ${source.repository} are already installed.\n`);
       continue;
     }
 
-    await run(
-      [
-        "bunx",
-        "--bun",
-        `skills@${SKILLS_CLI_VERSION}`,
-        "add",
-        source.repository,
-        "--skill",
-        ...missing,
-        "--agent",
-        "codex",
-        "--copy",
-        "--yes",
-      ],
-      `${source.repository} skills setup`,
-    );
+    await run(skillsAddArgv(source.repository, missing), `${source.repository} skills setup`);
 
-    const installed = await Promise.all(
-      missing.map((skill) => Bun.file(resolve(root, `.agents/skills/${skill}/SKILL.md`)).exists()),
-    );
-    if (installed.some((ready) => !ready)) {
-      throw new Error(`Required skills from ${source.repository} were not installed: ${missing.join(", ")}`);
+    const stillAbsent = await missingAgentSkills(root, missing);
+    if (stillAbsent.length > 0) {
+      throw new Error(`Required skills from ${source.repository} were not installed: ${stillAbsent.join(", ")}`);
     }
   }
 }

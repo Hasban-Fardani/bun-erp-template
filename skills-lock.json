@@ -65,7 +65,7 @@
       "source": "cathrynlavery/diagram-design",
       "sourceType": "github",
       "skillPath": "skills/diagram-design/SKILL.md",
-      "computedHash": "f89f11b1cc3acbb7ac40c8937aff53496f1abaa37f74973174867ff26f4623db"
+      "computedHash": "d704ff4aed59bbfdd6a268233ae12b93f2760e077400a22249d381ab70c4a575"
     },
     "domain-modeling": {
       "source": "mattpocock/skills",
@@ -113,7 +113,7 @@
       "source": "pbakaus/impeccable",
       "sourceType": "github",
       "skillPath": ".agents/skills/impeccable/SKILL.md",
-      "computedHash": "bb4d6fad4900cfef09ddf05c41711b74ef9a1b2c3d4ef8b20743ec66aeadfb63"
+      "computedHash": "de7de6829490819b3c18cfdad2c93d002bd428c4b738d29b971ef3dc8f911d08"
     },
     "implement": {
       "source": "mattpocock/skills",

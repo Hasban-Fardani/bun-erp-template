@@ -27,4 +27,10 @@ export const commands = [
     const { updateAgentTooling } = await import("../tasks/init-agents.ts");
     await updateAgentTooling();
   }),
+
+  defineCommand("ai:skills", async () => {
+    // The fast path of `ai:update`: no MCP or global wiring, and no network when nothing is missing.
+    const { installAgentSkills } = await import("../tasks/init-agents.ts");
+    await installAgentSkills();
+  }),
 ];

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S01 · Enforced delivery flow · Process</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--paper:#f5f5f5;--ink:#2d3142;--muted:#4f5d75;--soft:#7a8399;--accent:#eb6c36;--accent-tint:rgba(235,108,54,.08);--rule:rgba(45,49,66,.12);--label-rule:rgba(45,49,66,.20);--lane:rgba(45,49,66,.018);--node:#fff;--node-stroke:rgba(45,49,66,.25);--chip:rgba(45,49,66,.12);--dot:rgba(45,49,66,.10);--db:#5e7a9b;--ls:#7c8f6f;--fl:#9c6b50;--tb:#b8915a;--wb:#6e6479;--sans:'Geist',system-ui,sans-serif;--serif:'Instrument Serif',serif;--mono:'Geist Mono',ui-monospace,monospace}
+    body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:3rem 2rem}
+    .frame{max-width:1120px;width:100%}.eyebrow{font:500 .66rem var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}h1{font:400 clamp(1.5rem,2.4vw + .75rem,2rem)/1.15 var(--serif);letter-spacing:-.02em;margin-bottom:1.5rem}svg{width:100%;min-width:840px;display:block}
+    svg text{font-family:var(--sans)}.mono{font-family:var(--mono)}.lane{fill:var(--lane)}.rule{stroke:var(--rule)}.label-rule{stroke:var(--label-rule)}.actor{fill:var(--muted);font:500 8px var(--mono);letter-spacing:.08em}.step-label{fill:var(--muted);font:500 6px var(--mono);letter-spacing:.12em}.step-chip{fill:var(--chip)}.step-num{fill:var(--ink);font:600 7px var(--mono)}.connector{fill:none;stroke:var(--muted);stroke-width:1}.connector.focal{stroke:var(--accent);stroke-width:1.2}.connector.loop{stroke-dasharray:3 2}.node-mask{fill:var(--paper)}.node{fill:var(--node);stroke:var(--node-stroke)}.node.focal{fill:var(--accent-tint);stroke:var(--accent);stroke-width:1.2}.role{fill:rgba(45,49,66,.10)}.role.focal{fill:rgba(235,108,54,.25)}.role-text{fill:var(--ink);font:600 6px var(--mono)}.role-text.focal{fill:var(--accent)}.node-title{fill:var(--ink);font:600 9px var(--sans)}.node-sub{fill:var(--muted);font:6.5px var(--mono)}.node-tool{fill:var(--soft);font:6.5px var(--mono)}.data-text{fill:white;font:700 5px var(--mono)}.legend-key{fill:var(--muted);font:500 7px var(--mono);letter-spacing:.12em}.legend-text{fill:var(--muted);font:8px var(--sans)}
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Process · S01 design</p>
+    <h1>Six phases, each guarded before the next starts</h1>
+    <svg viewBox="0 0 840 276" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="flow-title flow-desc">
+      <title id="flow-title">Loom delivery flow with the gates that enforce it</title>
+      <desc id="flow-desc">Process diagram: the agent moves through brainstorm, plan, design, execute, review and iterate; iterate loops back to execute until review is clean. A gate lane shows the task gate checks under plan, design, execute and review.</desc>
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="var(--dot)"/></pattern>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="var(--muted)"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="var(--accent)"/></marker>
+      </defs>
+      <rect width="840" height="276" fill="var(--paper)"/><rect width="840" height="276" fill="url(#dots)" opacity=".55"/>
+      <rect class="lane" x="140" y="36" width="700" height="80"/>
+      <g class="rule" stroke-width=".8"><line x1="0" y1="36" x2="840" y2="36"/><line x1="0" y1="116" x2="840" y2="116"/><line x1="0" y1="196" x2="840" y2="196"/></g>
+      <line class="label-rule" x1="140" y1="36" x2="140" y2="196"/>
+      <g class="actor" text-anchor="middle"><text x="70" y="80">AGENT</text><text x="70" y="160">GATE</text></g>
+      <g text-anchor="middle">
+        <rect class="step-chip" x="190" y="8" width="16" height="16" rx="8"/><text class="step-num" x="198" y="19">1</text><text class="step-label" x="198" y="32">BRAINSTORM</text>
+        <rect class="step-chip" x="302" y="8" width="16" height="16" rx="8"/><text class="step-num" x="310" y="19">2</text><text class="step-label" x="310" y="32">PLAN</text>
+        <rect x="414" y="8" width="16" height="16" rx="8" fill="rgba(235,108,54,.20)"/><text x="422" y="19" fill="var(--accent)" font-size="7" font-weight="600" class="mono">3</text><text x="422" y="32" fill="var(--accent)" font-size="6" font-weight="500" letter-spacing=".12em" class="mono">DESIGN</text>
+        <rect class="step-chip" x="526" y="8" width="16" height="16" rx="8"/><text class="step-num" x="534" y="19">4</text><text class="step-label" x="534" y="32">EXECUTE</text>
+        <rect class="step-chip" x="638" y="8" width="16" height="16" rx="8"/><text class="step-num" x="646" y="19">5</text><text class="step-label" x="646" y="32">REVIEW</text>
+        <rect class="step-chip" x="750" y="8" width="16" height="16" rx="8"/><text class="step-num" x="758" y="19">6</text><text class="step-label" x="758" y="32">ITERATE</text>
+      </g>
+      <!-- Sequential handoffs; the iterate loop returns under the lane to execute. -->
+      <line class="connector" x1="248" y1="76" x2="260" y2="76" marker-end="url(#arrow)"/>
+      <line class="connector focal" x1="360" y1="76" x2="372" y2="76" marker-end="url(#arrow-accent)"/>
+      <line class="connector focal" x1="472" y1="76" x2="484" y2="76" marker-end="url(#arrow-accent)"/>
+      <line class="connector" x1="584" y1="76" x2="596" y2="76" marker-end="url(#arrow)"/>
+      <line class="connector" x1="696" y1="76" x2="708" y2="76" marker-end="url(#arrow)"/>
+      <path class="connector loop" d="M758 108 V111 Q758 113 756 113 H536 Q534 113 534 111 V110" marker-end="url(#arrow)"/>
+      <g text-anchor="middle">
+        <g><rect class="node-mask" x="148" y="44" width="100" height="64" rx="6"/><rect class="node" x="148" y="44" width="100" height="64" rx="6"/><rect class="role" x="152" y="48" width="20" height="10" rx="2"/><text class="role-text" x="162" y="56">AGT</text><text class="node-title" x="198" y="70">Brainstorm</text><text class="node-sub" x="198" y="84">idea → decisions</text><text class="node-tool" x="198" y="96">grill-with-docs</text><rect x="228" y="98" width="16" height="8" rx="2" fill="var(--wb)"/><text class="data-text" x="236" y="104">DC</text></g>
+        <g><rect class="node-mask" x="260" y="44" width="100" height="64" rx="6"/><rect class="node" x="260" y="44" width="100" height="64" rx="6"/><rect class="role" x="264" y="48" width="20" height="10" rx="2"/><text class="role-text" x="274" y="56">AGT</text><text class="node-title" x="310" y="70">Plan</text><text class="node-sub" x="310" y="84">spec → ticket waves</text><text class="node-tool" x="310" y="96">to-spec · to-tickets</text><rect x="264" y="98" width="16" height="8" rx="2" fill="var(--wb)"/><text class="data-text" x="272" y="104">DC</text><rect x="340" y="98" width="16" height="8" rx="2" fill="var(--ls)"/><text class="data-text" x="348" y="104">TK</text></g>
+        <g><rect class="node-mask" x="372" y="44" width="100" height="64" rx="6"/><rect class="node focal" x="372" y="44" width="100" height="64" rx="6"/><rect class="role focal" x="376" y="48" width="20" height="10" rx="2"/><text class="role-text focal" x="386" y="56">AGT</text><text class="node-title" x="422" y="70">Design</text><text class="node-sub" x="422" y="84">system · db · pages</text><text class="node-tool" x="422" y="96">diagram-design</text><rect x="376" y="98" width="16" height="8" rx="2" fill="var(--ls)"/><text class="data-text" x="384" y="104">TK</text><rect x="452" y="98" width="16" height="8" rx="2" fill="var(--fl)"/><text class="data-text" x="460" y="104">DP</text></g>
+        <g><rect class="node-mask" x="484" y="44" width="100" height="64" rx="6"/><rect class="node" x="484" y="44" width="100" height="64" rx="6"/><rect class="role" x="488" y="48" width="20" height="10" rx="2"/><text class="role-text" x="498" y="56">AGT</text><text class="node-title" x="534" y="70">Execute</text><text class="node-sub" x="534" y="84">ticket → red → green</text><text class="node-tool" x="534" y="96">implement · tdd</text><rect x="488" y="98" width="16" height="8" rx="2" fill="var(--fl)"/><text class="data-text" x="496" y="104">DP</text><rect x="564" y="98" width="16" height="8" rx="2" fill="var(--db)"/><text class="data-text" x="572" y="104">CD</text></g>
+        <g><rect class="node-mask" x="596" y="44" width="100" height="64" rx="6"/><rect class="node" x="596" y="44" width="100" height="64" rx="6"/><rect class="role" x="600" y="48" width="20" height="10" rx="2"/><text class="role-text" x="610" y="56">AGT</text><text class="node-title" x="646" y="70">Review</text><text class="node-sub" x="646" y="84">diff → findings</text><text class="node-tool" x="646" y="96">code-review</text><rect x="600" y="98" width="16" height="8" rx="2" fill="var(--db)"/><text class="data-text" x="608" y="104">CD</text><rect x="676" y="98" width="16" height="8" rx="2" fill="var(--tb)"/><text class="data-text" x="684" y="104">FD</text></g>
+        <g><rect class="node-mask" x="708" y="44" width="100" height="64" rx="6"/><rect class="node" x="708" y="44" width="100" height="64" rx="6"/><rect class="role" x="712" y="48" width="20" height="10" rx="2"/><text class="role-text" x="722" y="56">AGT</text><text class="node-title" x="758" y="70">Iterate</text><text class="node-sub" x="758" y="84">findings → fixes</text><text class="node-tool" x="758" y="96">diagnosing-bugs</text><rect x="712" y="98" width="16" height="8" rx="2" fill="var(--tb)"/><text class="data-text" x="720" y="104">FD</text></g>
+        <g><rect class="node-mask" x="260" y="124" width="100" height="64" rx="6"/><rect class="node" x="260" y="124" width="100" height="64" rx="6"/><rect class="role" x="264" y="128" width="20" height="10" rx="2"/><text class="role-text" x="274" y="136">GTE</text><text class="node-title" x="310" y="150">Ticket graph</text><text class="node-sub" x="310" y="164">acyclic · waves</text><text class="node-tool" x="310" y="176">task:plan</text></g>
+        <g><rect class="node-mask" x="372" y="124" width="100" height="64" rx="6"/><rect class="node" x="372" y="124" width="100" height="64" rx="6"/><rect class="role" x="376" y="128" width="20" height="10" rx="2"/><text class="role-text" x="386" y="136">GTE</text><text class="node-title" x="422" y="150">Design pack</text><text class="node-sub" x="422" y="164">3 docs + diagrams</text><text class="node-tool" x="422" y="176">check:task</text></g>
+        <g><rect class="node-mask" x="484" y="124" width="100" height="64" rx="6"/><rect class="node" x="484" y="124" width="100" height="64" rx="6"/><rect class="role" x="488" y="128" width="20" height="10" rx="2"/><text class="role-text" x="498" y="136">GTE</text><text class="node-title" x="534" y="150">Design first</text><text class="node-sub" x="534" y="164">no work before design</text><text class="node-tool" x="534" y="176">check:task</text></g>
+        <g><rect class="node-mask" x="596" y="124" width="100" height="64" rx="6"/><rect class="node" x="596" y="124" width="100" height="64" rx="6"/><rect class="role" x="600" y="128" width="20" height="10" rx="2"/><text class="role-text" x="610" y="136">GTE</text><text class="node-title" x="646" y="150">All gates</text><text class="node-sub" x="646" y="164">lint · check · test</text><text class="node-tool" x="646" y="176">bun loom check</text></g>
+      </g>
+      <g>
+        <text class="legend-key" x="144" y="215">ARTIFACT</text>
+        <rect x="216" y="208" width="16" height="8" rx="2" fill="var(--wb)"/><text class="legend-text" x="238" y="215">DC · decisions</text>
+        <rect x="316" y="208" width="16" height="8" rx="2" fill="var(--ls)"/><text class="legend-text" x="338" y="215">TK · tickets</text>
+        <rect x="408" y="208" width="16" height="8" rx="2" fill="var(--fl)"/><text class="legend-text" x="430" y="215">DP · design pack</text>
+        <rect x="516" y="208" width="16" height="8" rx="2" fill="var(--db)"/><text class="legend-text" x="538" y="215">CD · code</text>
+        <rect x="596" y="208" width="16" height="8" rx="2" fill="var(--tb)"/><text class="legend-text" x="618" y="215">FD · findings</text>
+        <text class="legend-key" x="144" y="236">FLOW</text>
+        <line x1="216" y1="232" x2="244" y2="232" stroke="var(--accent)" stroke-width="1.2" marker-end="url(#arrow-accent)"/><text class="legend-text" x="252" y="236">Into and out of design</text>
+        <line x1="364" y1="232" x2="392" y2="232" stroke="var(--muted)" marker-end="url(#arrow)"/><text class="legend-text" x="400" y="236">Sequential handoff</text>
+        <line x1="500" y1="232" x2="528" y2="232" stroke="var(--muted)" stroke-dasharray="3 2" marker-end="url(#arrow)"/><text class="legend-text" x="536" y="236">Iterate until review is clean</text>
+        <text class="legend-key" x="144" y="257">ALWAYS ON</text>
+        <text class="legend-text" x="216" y="257">Session start restores every skill in .agents/skills and .claude/skills; each prompt names the next phase</text>
+      </g>
+    </svg>
+  </div>
+</body>
+</html>

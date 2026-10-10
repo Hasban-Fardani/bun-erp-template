@@ -1,61 +1,69 @@
 import { resolve } from "node:path";
+import { DESIGN_DOCUMENTS, formatPlan, loadTasks, ownerOf } from "../gates/tasks.ts";
+import { parseCommandOptions } from "../lib/options.ts";
 import { resolveRequired } from "../lib/prompt.ts";
-import { TASKS_DIR } from "../lib/repo.ts";
+import { repoRoot, TASKS_DIR } from "../lib/repo.ts";
 import { formatScaffold, writeScaffold } from "../lib/scaffold.ts";
 import { toKebabName } from "../lib/scaffolding.ts";
+import { renderDesignDocument, renderOwnerTask, renderTicket } from "../lib/task-templates.ts";
 import { defineCommand } from "../registry.ts";
 
-/** A task file is a checkpoint plus its evidence; the TDD checkpoints mirror AGENTS.md. */
-function renderTask(id: string, title: string): string {
-  return `---
-id: ${id}
-title: ${title}
-status: in_progress
-tdd: required
-evidence: pending — append the commands run and their results
----
-
-> Living task. Human-owned status: an agent leaves this at \`in_progress\` with real evidence and
-> never raises it to \`ready\` or \`done\` itself.
-
-# ${id} — ${title}
-
-## Goal
-
-## Checkpoints
-
-- [ ] **${id}.1** Replace this with one verifiable item; tick it only after its red and green lines exist
-- [ ] **${id}.2** \`bun loom check\` green
-
-## Evidence
-
-\`tdd: required\` makes \`bun loom check\` enforce this grammar for every ticked \`**<ID>**\` item:
-
-\`\`\`text
-- red: ${id}.1 \`bun loom test --filter thing\` — 1 fail: expected 2, received 1
-- green: ${id}.1 \`bun loom test --filter thing\` — 1 pass
-- red: ${id}.3 n/a — docs-only, nothing executable to fail
-- green: ${id}.3 \`bun loom check\` — 0 findings
-\`\`\`
-
-Red comes before green for the same ID. \`NOT_RUN\` and \`BLOCKED\` items stay unticked.
-`;
-}
+const DESIGN_DIR = resolve(repoRoot, "docs/design");
 
 export const commands = [
   defineCommand("task:new", async (args) => {
-    const id = resolveRequired(args[0], "Task id");
-    const title = resolveRequired(args[1], "Task title");
+    const parsed = parseCommandOptions(args, { values: ["depends-on"] });
+    const id = resolveRequired(parsed.positional[0], "Task id");
+    const title = resolveRequired(parsed.positional[1], "Task title");
     if (!id || !title) {
-      process.stderr.write("Usage: bun loom task:new <id> <title>\n");
+      process.stderr.write("Usage: bun loom task:new <id> <title> [--depends-on <id,id>]\n");
       process.exit(1);
     }
+    const dependsOn = (parsed.values.get("depends-on") ?? "")
+      .split(",")
+      .map((dep) => dep.trim())
+      .filter(Boolean);
     const slug = toKebabName(title, "Task").slice(0, 48);
     const file = `${id}-${slug}.md`;
     const path = resolve(TASKS_DIR, file);
     if (await Bun.file(path).exists()) throw new Error(`Task already exists: docs/tasks/${file}`);
-    await writeScaffold(path, renderTask(id, title));
-    await formatScaffold([path]);
-    process.stdout.write(`Created docs/tasks/${file}\n`);
+
+    // A ticket's parent already has a task file; anything else owns its flow and design pack.
+    const tasks = await loadTasks(TASKS_DIR);
+    const byId = new Map(tasks.map((task) => [task.id, task]));
+    const parent = id.includes(".") ? byId.get(id.slice(0, id.lastIndexOf("."))) : undefined;
+    const written = [path];
+    if (parent) {
+      await writeScaffold(path, renderTicket(id, title, dependsOn));
+      process.stdout.write(`Created docs/tasks/${file} (ticket of ${ownerOf(parent, byId).id}, draft)\n`);
+    } else {
+      await writeScaffold(path, renderOwnerTask(id, title, dependsOn));
+      process.stdout.write(`Created docs/tasks/${file} (owner: six-phase flow)\n`);
+      for (const document of Object.keys(DESIGN_DOCUMENTS)) {
+        const designPath = resolve(DESIGN_DIR, id, document);
+        if (await Bun.file(designPath).exists()) continue;
+        await writeScaffold(designPath, renderDesignDocument(id, document));
+        written.push(designPath);
+        process.stdout.write(`Created docs/design/${id}/${document}\n`);
+      }
+      process.stdout.write(`Draw docs/design/${id}/flow.html (and database.html, pages.html) with diagram-design.\n`);
+    }
+    await formatScaffold(written);
+  }),
+
+  defineCommand("task:plan", async (args) => {
+    const tasks = await loadTasks(TASKS_DIR);
+    const byId = new Map(tasks.map((task) => [task.id, task]));
+    const requested = args[0];
+    const owners = requested
+      ? [byId.get(requested)]
+      : tasks.filter(
+          (task) =>
+            ownerOf(task, byId) === task && tasks.some((other) => other !== task && ownerOf(other, byId) === task),
+        );
+    if (requested && !owners[0]) throw new Error(`No task ${requested} in docs/tasks`);
+    for (const owner of owners) {
+      if (owner) process.stdout.write(`${formatPlan(ownerOf(owner, byId), tasks)}\n`);
+    }
   }),
 ];

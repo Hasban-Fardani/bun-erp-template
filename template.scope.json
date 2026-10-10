@@ -6,7 +6,18 @@
     "license": "MIT"
   },
   "allowed": {
-    "topLevelDirs": ["apps", "cli", "docs", "skills", "templates", ".githooks", ".github", ".agents", "packages"],
+    "topLevelDirs": [
+      "apps",
+      "cli",
+      "docs",
+      "skills",
+      "templates",
+      ".githooks",
+      ".github",
+      ".agents",
+      ".claude",
+      "packages"
+    ],
     "apps": [],
     "note": "Deployment-specific business features stay out of this template. The template contains reusable foundations and reference features. apps/ ships empty; app catalogs live in templates/apps and are installed by `bun loom init`."
   },

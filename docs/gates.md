@@ -38,7 +38,7 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 
 | Gate | Command | File | What it checks | When it skips |
 |---|---|---|---|---|
-| agents | `check:agents` | `cli/gates/agent-readiness.ts` | Required agent skills, the pinned CodeGraph CLI and a complete local index | Installed app entries only; a missing app is not required |
+| agents | `check:agents` | `cli/gates/agent-readiness.ts` | Required agent skills in both `.agents/skills` and `.claude/skills`, the pinned CodeGraph CLI and a complete local index | Installed app entries only; a missing app is not required |
 | architecture | `check:architecture` | `cli/gates/architecture-guard.ts` | UI atomic-layer imports, app isolation, page-wrapper rules and deep relative imports (`NO_DEEP_RELATIVE`) | Missing app, screen or package source directories |
 | bun-first | `check:bun-first` | `cli/gates/bun-first.ts` | Bun-first APIs: no banned sync Node built-ins or packages Bun replaces | Vendored governance validators, the Worker graph, and browser code under `templates/apps/web` |
 | ci | `check:ci` | `cli/gates/ci-guard.ts` | Required CI jobs, the init step and `docs/ci.md` | Never |
@@ -61,7 +61,7 @@ screen and reason per entry); a missing or malformed exemptions file is itself a
 | skills | `skills:validate` | `cli/gates/skills.ts` | `SKILL.md` frontmatter, matching name, trigger description and body length | `skills/` is missing |
 | slop | `check:slop` | `cli/gates/slop.ts` | Narrative comments, oversized page components, governance AST slop | Missing scan targets; a missing bundled validator is a finding |
 | surface | `check:surface` | `cli/gates/interactive-surface.ts` | Inline alerts outside the reviewed allowlist | Missing web or mobile source |
-| task | `check:task` | `cli/gates/tasks.ts` | Task front matter, dependencies, evidence for `ready`/`done`, and the red/green grammar for `tdd: required` tasks | `docs/tasks/` is missing; tasks without `tdd: required` skip the grammar |
+| task | `check:task` | `cli/gates/tasks.ts` | Task front matter, dependencies and cycles, evidence for `ready`/`done`, the delivery flow and design pack of every owner, and the red/green grammar for `tdd: required` tasks | `docs/tasks/` is missing; tasks without `tdd: required` skip the grammar |
 | task-approval | `check:task-approval` | `cli/gates/task-approval.ts` | No agent-authored commit or uncommitted change sets a task to `ready`/`done` or sets `approved_by` | Not a git repository |
 | tdd | `check:tdd` | `cli/gates/tdd.ts` | Every server feature has a test under `tests/features/<name>/` | No server features exist |
 | ui | `check:ui` | `cli/gates/ui-completeness.ts` | List states, visible focus, a working theme switch | Missing screen directories; the theme check needs `apps/web/src/config/ui.ts` |
@@ -87,6 +87,27 @@ Rules: each `red:`/`green:` line is `<ID>`, a backticked command, then an output
 n/a — <reason>` is allowed (non-empty reason) but `green:` always needs a command. A `green:` before
 its `red:`, a missing line, or a ticked item marked `NOT_RUN`/`BLOCKED` is a finding. Rejected:
 `- green: F9.1 tests passed` (no command), `- red: F9.2 n/a —` (no reason).
+
+## Delivery flow (`## Flow`)
+
+Every owner task (its parent id has no file) carries six phase lines in this order; tickets inherit
+their owner's flow. Grammar, outside code fences:
+
+```text
+- [x] brainstorm: <what it produced>
+- [ ] plan:
+```
+
+Rules: the six phases appear in order (`brainstorm`, `plan`, `design`, `execute`, `review`,
+`iterate`); a ticked phase needs a note and every earlier phase ticked. Ticked plan needs a
+`## Plan` section and a checkpoint in every ticket. Ticked design needs `docs/design/<id>/` with
+every heading of `system.md`, `database.md` and `pages.md` filled (HTML comments do not count) or
+the whole document `n/a — <reason>`, plus `flow.html`, and `database.html` / `pages.html` unless
+their document is n/a. Before design, no checkpoint may be ticked and no ticket may leave `draft`.
+Ticked execute needs every ticket started and every checkpoint ticked; `ready`/`done` need all six.
+`depends_on` may join two unstarted tasks; a started task may not depend on an unstarted one, and a
+cycle fails. `bun loom task:plan <id>` prints the parallel waves. The phase guide is `PHASE_GUIDE`
+in the gate; the headings are `DESIGN_DOCUMENTS`.
 
 ## Task approval (`task-approval`)
 

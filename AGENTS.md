@@ -62,6 +62,7 @@ Laravel-level productivity for agents and humans, on one codebase that runs on a
 - Migrations stay forward-only TypeScript; feature route mounting stays explicit for Hono RPC inference.
 - `bun loom role:list` shows role keys. The first `bun loom user:create` account defaults to owner; later accounts default to staff. Use `--role` to choose; `role:*` and `user:*` deletes require `--force`.
 - Browser QA is Playwright-only. Run `bun loom qa` (web app installed) against local/non-production data; do not add or run Cypress.
+- Every change walks the delivery flow brainstorm → plan → design → execute → review → iterate (skills/README.md maps each phase to its skills). Anything beyond a one-line fix is an owner task with a `## Flow` section: plan splits it into the smallest tickets with `depends_on` (`bun loom task:plan` prints the parallel waves), design delivers `docs/design/<id>/` (design system, database, pages and `diagram-design` diagrams), and `bun loom check:task` rejects a skipped, reordered or note-less phase, an incomplete design pack, and any ticket or checkpoint started before design.
 <!-- template-only -->
 - `apps/` ships empty; app catalogs live in `templates/apps/{server,web,mobile}`. Root `cli/` never imports `apps/**`, and the template must typecheck and pass `bun loom check` with `apps/` empty.
 <!-- /template-only -->
@@ -76,13 +77,16 @@ Laravel-level productivity for agents and humans, on one codebase that runs on a
    When a mattpocock skill (`to-spec`, `to-tickets`, `implement`, `code-review`) asks for an issue
    tracker, triage labels or `/setup-matt-pocock-skills`, use `docs/agents/issue-tracker.md`
    instead; never GitHub issues, `.scratch/` or `ready-for-agent`. Tickets are
-   `docs/tasks/<id>-*.md` with status `draft` or `in_progress`.
+   `docs/tasks/<id>-*.md` with status `draft` or `in_progress`. Required skills live in both
+   `.agents/skills` and `.claude/skills`; `bun loom ai:skills` restores a missing copy and the
+   Claude Code SessionStart hook (`.claude/settings.json`) runs it for you.
 4. Query CodeGraph first when locating or tracing code (MCP when available, otherwise the pinned
    CLI). Use text search after CodeGraph narrows the files.
-5. Before a nontrivial feature or architecture change, run the planning flow (skills/README.md):
-   `grill-with-docs` (or `grill-me`) → `to-spec` → `to-tickets`, which writes one `docs/tasks/`
-   file per ticket (docs/agents/issue-tracker.md) → `implement` with `tdd` per ticket →
-   `code-review`. Use `diagnosing-bugs` for failures. A human moves task status.
+5. Run the delivery flow (skills/README.md): brainstorm (`grill-with-docs`) → plan (`to-spec`,
+   `to-tickets`, `bun loom task:new`, `bun loom task:plan`) → design (`docs/design/<id>/` with
+   `diagram-design` and `impeccable`) → execute (`implement` with `tdd`, wave by wave) → review
+   (`code-review` and the gates) → iterate until review is clean. Tick each phase in the owner's
+   `## Flow` with what it produced (docs/agents/issue-tracker.md). A human moves task status.
 
 Autonomy:
 
@@ -97,7 +101,8 @@ Mandatory agent tools:
 - `impeccable` for any UI or design work; `bun loom check` must stay impeccable-clean (0 findings).
 - Every explanation follows `i-have-adhd`: action first, numbered steps, at most five items, no
   preamble or closers, next step stated explicitly.
-- Start every phase with a `diagram-design` diagram of the plan or flow.
+- `diagram-design` draws every design phase: `flow.html`, plus `database.html` and `pages.html`
+  when those documents apply, in `docs/design/<id>/`; use it too for any plan or flow explained in chat.
 - For any tech-stack or library question, query Context7 instead of relying on training data.
 
 ## Commands
@@ -151,6 +156,6 @@ Mandatory agent tools:
 ## Active task
 
 <!-- template-only -->
-- Template program: `docs/tasks/F3.3-goal-alignment.md` is the current work.
+- Template program: `docs/tasks/S01-enforced-delivery-flow.md` is the current work.
 <!-- /template-only -->
 - Project work lives in `docs/tasks/`; read the task front matter for status and evidence.
